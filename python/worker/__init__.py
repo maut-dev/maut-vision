@@ -1,6 +1,6 @@
 """Python Training worker Maut Vision.
 
-Исполняет одну ML-операцию над папкой задачи training/jobs/<jobId>/ и ничего
-не знает о приложении: ни о SQLite, ни о host, ни о доменах. Контракт —
-только файлы задачи и JSON Lines в stdout (см. README.md).
+Runs one ML operation on the job folder training/jobs/<jobId>/ and knows nothing
+about the application: neither SQLite, nor the host, nor the domains. The contract is
+only the job files and JSON Lines in stdout (see README.md).
 """

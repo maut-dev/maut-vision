@@ -1,8 +1,8 @@
-"""Общая часть проверок predict/live: загрузка весов, прогон кадра, превью, сводка.
+"""The common part of predict/live checks: loading weights, running a frame, preview, summary.
 
-Кадр — numpy BGR (как у OpenCV и как ждёт ultralytics для ndarray). Рамки
-возвращаются в долях анализируемого кадра, поэтому их можно рисовать поверх
-уменьшенного превью без пересчёта.
+A frame is numpy BGR (as in OpenCV and as ultralytics expects for an ndarray). Boxes
+are returned as fractions of the analyzed frame, so they can be drawn over
+a reduced preview without recalculation.
 """
 from __future__ import annotations
 
@@ -28,33 +28,34 @@ from worker.protocol import (
     WorkerError,
 )
 
-# Превью — уменьшенная копия кадра в JPEG, файлом в output/previews/: host читает
-# его и удаляет, через события и мост байты не идут.
+# Preview — a reduced JPEG copy of the frame, as a file in output/previews/: the host reads
+# and deletes it; the bytes do not go through events and the bridge.
 PREVIEW_DIR = "previews"
 
 
 def load(ctx: OperationContext, model_path: Path, claimed: str, device: str) -> tuple[Any, str | int, dict[int, str]]:
-    """Веса версии → YOLO; архитектура сверяется по чекпоинту, как у evaluate."""
+    """Version weights → YOLO; the architecture is checked against the checkpoint, as in evaluate."""
     ultralytics_setup.configure(ctx.layout.work_dir)
     checked = _check_device(device)
     ctx.stage("loading_model")
     model = _load_model(model_path)
-    architecture.verify(claimed, model, "веса версии")
+    architecture.verify(claimed, model, "version_weights")
     raw = getattr(model, "names", None) or {}
     names = {int(k): str(v) for k, v in raw.items()} if isinstance(raw, dict) else {i: str(n) for i, n in enumerate(raw)}
     return model, checked, names
 
 
 def crop(frame: Any, region: Region | None, where: str) -> Any:
-    """Вырез рамки. Рамка за пределами кадра — отказ, а не молчаливая обрезка:
-    модель обучена на кадрах ровно этого размера."""
+    """Crop cut-out. A crop outside the frame is a refusal, not a silent clip:
+    the model is trained on frames of exactly this size."""
     if region is None:
         return frame
     height, width = frame.shape[:2]
     if region.x + region.width > width or region.y + region.height > height:
         raise WorkerError(
             ErrorCode.REGION_INVALID,
-            f"Рамка {region.width}×{region.height} в точке ({region.x}, {region.y}) выходит за {where} {width}×{height}",
+            f"outside_{where}",
+            {"width": region.width, "height": region.height, "x": region.x, "y": region.y, "frameWidth": width, "frameHeight": height},
             {"frame": {"width": width, "height": height}},
         )
     return frame[region.y : region.y + region.height, region.x : region.x + region.width]
@@ -64,12 +65,13 @@ def detect(model: Any, frame: Any, *, imgsz: int, conf: float, device: str | int
     try:
         with complete_nms(max_det, imgsz):
             results = model.predict(frame, imgsz=imgsz, conf=conf, device=device, max_det=max_det if max_det is not None else imgsz * imgsz, verbose=False)
-    except Exception as exc:  # noqa: BLE001 — сбой прогона описывается в result.json
+    except Exception as exc:  # noqa: BLE001 — an inference failure is described in result.json
         traceback.print_exc(file=sys.stderr)
         oom = "out of memory" in str(exc).lower()
         raise WorkerError(
             ErrorCode.OUT_OF_MEMORY if oom else ErrorCode.PREDICTION_FAILED,
-            ("Не хватило памяти устройства. " if oom else "Прогон модели упал: ") + f"{type(exc).__name__}: {exc}"[:1000],
+            "predict" if oom else None,
+            {"error": f"{type(exc).__name__}: {exc}"[:1000]},
         ) from None
     boxes = getattr(results[0], "boxes", None) if results else None
     if boxes is None or len(boxes) == 0:
@@ -96,9 +98,9 @@ def detect(model: Any, frame: Any, *, imgsz: int, conf: float, device: str | int
 
 
 def write_preview(ctx: OperationContext, frame: Any, index: int, max_side: int = 960) -> str | None:
-    """JPEG q80 в output/previews/frame-<index>.jpg (запись через временный файл и
-    переименование: host не прочтёт половину). Возвращает путь относительно outputRoot
-    для поля previewFile; не закодировалось — превью нет."""
+    """JPEG q80 in output/previews/frame-<index>.jpg (written via a temporary file and
+    a rename: the host never reads half of it). Returns the path relative to outputRoot
+    for the previewFile field; if encoding failed, there is no preview."""
     import cv2
 
     height, width = frame.shape[:2]
@@ -118,7 +120,7 @@ def write_preview(ctx: OperationContext, frame: Any, index: int, max_side: int =
 
 
 class Summary:
-    """Сводка прогона по классам: в скольких кадрах, сколько рамок, максимум уверенности."""
+    """Per-class run summary: in how many frames, how many boxes, the maximum confidence."""
 
     def __init__(self) -> None:
         self.frames_processed = 0
@@ -154,7 +156,7 @@ class Summary:
 
 
 class PreviewClock:
-    """Превью не чаще интервала: крупные строки событий не должны забивать пайп."""
+    """Preview no more often than the interval: large event lines must not clog the pipe."""
 
     def __init__(self, interval_ms: int):
         self._interval = interval_ms / 1000

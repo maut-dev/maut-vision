@@ -1,9 +1,9 @@
-"""Отчётные файлы обучения: картинки ultralytics и консольный лог.
+"""Training report files: ultralytics images and the console log.
 
-Не веса и не контракт качества модели (метрики — в result.json), а то, что
-человек смотрит в паспорте версии: сводные графики, матрицы ошибок, батчи
-обучения, консольный вывод. Поэтому сбор — «лучшее усилие»: отказ здесь
-даёт предупреждение, а не проваленное обучение.
+Not weights and not the model quality contract (metrics are in result.json), but what
+a person looks at in the version passport: summary plots, confusion matrices, training
+batches, console output. So collecting them is "best effort": a refusal here
+gives a warning, not a failed training.
 """
 from __future__ import annotations
 
@@ -11,19 +11,19 @@ import re
 import shutil
 from pathlib import Path
 
-# Имена файлов, которые ultralytics кладёт в папку запуска: results.png,
+# File names ultralytics puts into the run folder: results.png,
 # confusion_matrix*.png, labels.jpg, train_batch*.jpg, val_batch*_{labels,pred}.jpg,
-# Box{F1,P,R,PR}_curve.png. Берём любые безопасные png/jpg из корня папки.
+# Box{F1,P,R,PR}_curve.png. Any safe png/jpg from the folder root is taken.
 _PLOT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}\.(png|jpg|jpeg)$", re.IGNORECASE)
-# CSI-последовательности терминала (цвета ultralytics) и прочие ESC-коды
+# Terminal CSI sequences (ultralytics colors) and other ESC codes
 _ANSI = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]|\x1b[@-Z\\-_]")
 
 
 def collect_plots(run_dir: Path, target_dir: Path) -> list[Path]:
-    """Скопировать картинки из папки запуска ultralytics в target_dir.
+    """Copy the images from the ultralytics run folder into target_dir.
 
-    Порядок стабилен (по имени): UI сам упорядочивает галерею.
-    Квот объёма и количества нет; неподдерживаемые имена/пустые файлы пропускаются.
+    The order is stable (by name): the UI orders the gallery itself.
+    There are no size or count quotas; unsupported names and empty files are skipped.
     """
     if not run_dir.is_dir():
         return []
@@ -42,11 +42,11 @@ def collect_plots(run_dir: Path, target_dir: Path) -> list[Path]:
 
 
 def clean_console_text(raw: str) -> str:
-    """Сырой консольный вывод → читаемые строки.
+    """Raw console output → readable lines.
 
-    Прогресс-бары tqdm перерисовывают строку через \\r: от каждой строки
-    остаётся последнее состояние. Переводы строк Windows нормализуются,
-    ANSI-цвета снимаются.
+    tqdm progress bars redraw a line via \\r: of each line
+    only the last state remains. Windows line breaks are normalized,
+    ANSI colors are removed.
     """
     text = _ANSI.sub("", raw.replace("\r\n", "\n"))
     lines = []

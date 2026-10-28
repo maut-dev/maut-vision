@@ -1,5 +1,5 @@
-"""Операции работника. Каждая получает проверенный запрос и контекст задачи
-и возвращает поля result.json; отказ — WorkerError."""
+"""Worker operations. Each receives a validated request and the job context
+and returns the result.json fields; a refusal is WorkerError."""
 from __future__ import annotations
 
 from typing import Any
@@ -22,8 +22,8 @@ def run_operation(
     ctx: OperationContext,
 ) -> dict[str, Any]:
     if isinstance(request, TrainRequest):
-        # импорт здесь: torch и ultralytics грузятся секунды, и отказ по
-        # битому запросу не должен их ждать
+        # import here: torch and ultralytics take seconds to load, and a refusal of
+        # a broken request should not wait for them
         from worker.operations.train import run_train
 
         return run_train(request, ctx)
@@ -40,16 +40,16 @@ def run_operation(
 
         return run_live(request, ctx)
     if isinstance(request, ScreenshotRequest):
-        # без torch/ultralytics: снимок нужен за секунду, а не за время загрузки сети
+        # without torch/ultralytics: a screenshot is needed in a second, not after the network loads
         from worker.operations.screenshot import run_screenshot
 
         return run_screenshot(request, ctx)
-    # export уже есть в протоколе, чтобы host строил запросы
-    # по окончательной схеме; исполнение — следующим шагом
+    # export is already in the protocol so that the host builds requests
+    # by the final schema; execution is the next step
     raise WorkerError(
         ErrorCode.OPERATION_NOT_IMPLEMENTED,
-        f"Операция '{request.operation}' есть в протоколе, но в этой версии работника не реализована",
-        {"operation": request.operation, "implemented": ["train", "evaluate", "predict", "live", "screenshot"]},
+        args={"operation": request.operation},
+        details={"operation": request.operation, "implemented": ["train", "evaluate", "predict", "live", "screenshot"]},
     )
 
 

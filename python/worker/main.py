@@ -1,13 +1,13 @@
-"""Точка входа: maut-training-worker <jobDir>.
+"""Entry point: maut-training-worker <jobDir>.
 
-Коды выхода (итог всё равно решает result.json — код 0 без валидного
-результата успехом не считается):
-  0   — succeeded, result.json опубликован
-  1   — failed, result.json с ошибкой опубликован
-  2   — неверный вызов: нет папки задачи; результат писать некуда
-  3   — result.json не удалось записать
-  4   — в папке задачи уже есть результат или артефакты: автоповтор запрещён
-  130 — прерван (Ctrl+C/Ctrl+Break); результата нет, как и при убийстве
+Exit codes (result.json decides the outcome anyway — code 0 without a valid
+result does not count as success):
+  0   — succeeded, result.json published
+  1   — failed, result.json with an error published
+  2   — invalid call: no job folder; there is nowhere to write the result
+  3   — result.json could not be written
+  4   — the job folder already has a result or artifacts: automatic repeat is forbidden
+  130 — interrupted (Ctrl+C/Ctrl+Break); no result, as when killed
 """
 from __future__ import annotations
 
@@ -34,16 +34,16 @@ def _read_request(path: Path) -> Any:
     from worker.protocol import ErrorCode, WorkerError
 
     if not path.is_file():
-        raise WorkerError(ErrorCode.REQUEST_NOT_FOUND, "В папке задачи нет request.json")
+        raise WorkerError(ErrorCode.REQUEST_NOT_FOUND)
     try:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise WorkerError(ErrorCode.REQUEST_UNREADABLE, f"request.json не читается как JSON: {exc}") from None
+        raise WorkerError(ErrorCode.REQUEST_UNREADABLE, args={"error": exc}) from None
 
 
 def _raw_field(raw: Any, key: str) -> str | None:
-    """Поле из непрошедшего проверку запроса — только чтобы host
-    связала отказ со своей операцией. Берём лишь короткую безопасную строку."""
+    """A field of a request that failed validation — only so that the host
+    can link the refusal to its operation. Only a short safe string is taken."""
     value = raw.get(key) if isinstance(raw, dict) else None
     if isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9._-]{1,128}", value):
         return value
@@ -51,7 +51,7 @@ def _raw_field(raw: Any, key: str) -> str | None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Первым делом: stdout — только под события, до любых тяжёлых импортов.
+    # First of all: stdout is reserved for events, before any heavy imports.
     events_stream = take_over_stdout()
 
     from worker.operations import OperationContext, run_operation
@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
 
     args = sys.argv[1:] if argv is None else argv
     if len(args) != 1 or not Path(args[0]).is_dir():
-        print("Использование: maut-training-worker <папка задачи>", file=sys.stderr)
+        print("Usage: maut-training-worker <job folder>", file=sys.stderr)
         return EXIT_USAGE
 
     events = EventEmitter(events_stream)
@@ -78,14 +78,14 @@ def main(argv: list[str] | None = None) -> int:
     started_at = utc_now()
     layout = JobLayout(Path(args[0]))
     attach_log_file(layout.logs_dir / "worker.log")
-    print(f"[worker] pid {os.getpid()}, задача {layout.job_dir}", file=sys.stderr, flush=True)
+    print(f"[worker] pid {os.getpid()}, job {layout.job_dir}", file=sys.stderr, flush=True)
 
     def refuse_rerun(lay: JobLayout) -> bool:
         leftovers = lay.previous_run_leftovers()
         if leftovers:
             print(
-                f"[worker] задача уже исполнялась ({', '.join(leftovers)}); "
-                "повтор запрещён — решение за Domain Training",
+                f"[worker] the job has already run ({', '.join(leftovers)}); "
+                "a repeat is forbidden — Domain Training decides",
                 file=sys.stderr,
                 flush=True,
             )
@@ -118,17 +118,17 @@ def main(argv: list[str] | None = None) -> int:
         ctx = OperationContext(layout, events)
         fields = run_operation(request, ctx)
     except WorkerError as exc:
-        print(f"[worker] отказ {exc.code}: {exc.message}", file=sys.stderr, flush=True)
-        error = ResultError(code=exc.code, message=exc.message, details=exc.details)
+        print(f"[worker] refusal {exc.code}: {exc.message}", file=sys.stderr, flush=True)
+        error = ResultError(code=exc.code, message=exc.message, details=exc.details, reason=exc.reason, args=exc.message_args)
     except KeyboardInterrupt:
-        # Отмена — не сбой: результата нет, как и при убийстве процесса.
-        print("[worker] прерван", file=sys.stderr, flush=True)
+        # Cancellation is not a failure: no result, as when the process is killed.
+        print("[worker] interrupted", file=sys.stderr, flush=True)
         return EXIT_INTERRUPTED
-    except Exception as exc:  # noqa: BLE001 — непредвиденное: трейсбек в stderr, в result — код и сообщение
+    except Exception as exc:  # noqa: BLE001 — unexpected: traceback to stderr, code and message to result
         traceback.print_exc(file=sys.stderr)
+        unexpected = WorkerError(ErrorCode.INTERNAL_ERROR, "unexpected", {"error": f"{type(exc).__name__}: {exc}"[:1000]})
         error = ResultError(
-            code=ErrorCode.INTERNAL_ERROR,
-            message=f"Внутренняя ошибка работника: {type(exc).__name__}: {exc}"[:1000],
+            code=unexpected.code, message=unexpected.message, reason=unexpected.reason, args=unexpected.message_args
         )
 
     status = ResultStatus.FAILED if error else ResultStatus.SUCCEEDED
@@ -146,7 +146,7 @@ def main(argv: list[str] | None = None) -> int:
             **({} if error else fields),
         )
         atomic_write_json(layout.result_path, result.model_dump(mode="json", by_alias=True))
-    except Exception:  # noqa: BLE001 — без result.json host всё равно увидит провал по коду выхода
+    except Exception:  # noqa: BLE001 — without result.json the host still sees the failure by the exit code
         traceback.print_exc(file=sys.stderr)
         return EXIT_RESULT_NOT_WRITTEN
 

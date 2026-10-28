@@ -1,14 +1,14 @@
-"""Операция live: захват рамки экрана → predict → событие frame, до отмены.
+"""The live operation: capture of the screen crop → predict → frame event, until cancelled.
 
-Штатная остановка — снаружи: Domain Training завершает дерево процессов
-(отмена проверки), result.json тогда нет. Страховка от забытой проверки —
-maxDurationSec: по нему цикл выходит сам и пишет сводку. Закрытый пайп
-событий (приложение умерло) останавливает работника на первом же кадре.
+The normal stop is external: Domain Training ends the process tree
+(check cancellation), and there is no result.json then. The safeguard against a forgotten check is
+maxDurationSec: on it the loop exits by itself and writes the summary. A closed event
+pipe (the application died) stops the worker on the very next frame.
 
-Событие frame — на каждый кадр, даже пустой: интерфейс показывает «сейчас
-ничего». Превью — файл output/previews/ (previewFile) не чаще previewIntervalMs.
-expectedMonitor сверяется до загрузки модели: рамка выбрана на снимке этого
-монитора.
+A frame event is sent for every frame, even an empty one: the interface shows "nothing
+right now". Preview — a file in output/previews/ (previewFile) no more often than previewIntervalMs.
+expectedMonitor is compared before the model loads: the crop was chosen on a screenshot of this
+monitor.
 """
 from __future__ import annotations
 
@@ -54,7 +54,7 @@ def run_live(request: LiveRequest, ctx: OperationContext) -> dict[str, Any]:
             left = period - (time.monotonic() - tick)
             if left > 0:
                 time.sleep(left)
-        ctx.warn("live_time_limit", f"Проверка с экрана остановлена по пределу {p.max_duration_sec} с")
+        ctx.warn("live_time_limit", args={"seconds": p.max_duration_sec})
         return {
             "effective_params": {
                 "architecture": p.architecture,

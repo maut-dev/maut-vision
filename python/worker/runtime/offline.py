@@ -1,15 +1,15 @@
-"""Офлайн-режим: работник не ходит в сеть ни при каких условиях.
+"""Offline mode: the worker never goes to the network under any conditions.
 
-Ultralytics по дороге норовит скачать: базовые веса по имени, сеть для
-проверки AMP, шрифт Arial для графиков, недостающие pip-пакеты
-(AutoUpdate), телеметрию. Флагов окружения на всё не хватает — check_font,
-например, их не читает. Поэтому два слоя:
+Ultralytics tends to download along the way: base weights by name, a network for
+the AMP check, the Arial font for plots, missing pip packages
+(AutoUpdate), telemetry. Environment flags do not cover everything — check_font,
+for example, does not read them. So there are two layers:
 
-1. переменные окружения до импорта ultralytics — чтобы он сам знал, что
-   сети нет, и не пытался (YOLO_OFFLINE, YOLO_AUTOINSTALL);
-2. запрет исходящих соединений на уровне socket — последняя линия: любая
-   попытка выйти наружу получает OSError, а в stderr остаётся след, кто
-   пытался. Loopback разрешён — им пользуется сам torch.
+1. environment variables before the ultralytics import — so that it knows itself that
+   there is no network and does not try (YOLO_OFFLINE, YOLO_AUTOINSTALL);
+2. a ban on outgoing connections at the socket level — the last line: any
+   attempt to go outside gets OSError, and stderr keeps a trace of who
+   tried. Loopback is allowed — torch itself uses it.
 """
 from __future__ import annotations
 
@@ -23,18 +23,18 @@ _LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1", "0.0.0.0", ""}
 
 
 def configure_environment(config_dir: Path) -> None:
-    """Вызывать до импорта ultralytics: часть флагов читается при импорте."""
+    """Call before the ultralytics import: some flags are read at import."""
     config_dir.mkdir(parents=True, exist_ok=True)
     os.environ["YOLO_OFFLINE"] = "true"
     os.environ["YOLO_AUTOINSTALL"] = "false"
-    # Настройки ultralytics (settings.json, weights_dir, datasets_dir) — в
-    # черновик задачи, а не в %APPDATA%\Ultralytics: работник не пишет за
-    # пределы папки задачи и не зависит от того, что там оставил кто-то ещё.
+    # Ultralytics settings (settings.json, weights_dir, datasets_dir) go into
+    # the job draft, not %APPDATA%\Ultralytics: the worker does not write outside
+    # the job folder and does not depend on what someone else left there.
     os.environ["YOLO_CONFIG_DIR"] = str(config_dir)
     os.environ.setdefault("YOLO_VERBOSE", "true")
     os.environ["PYTHONUTF8"] = "1"
     os.environ["PYTHONIOENCODING"] = "utf-8"
-    # hub-клиенты torch/hf тоже не должны лезть наружу
+    # torch/hf hub clients must not go outside either
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
@@ -46,10 +46,10 @@ def _host_of(address: object) -> str:
 
 
 def _blocked(what: str, host: str) -> OSError:
-    # стек глубокий: первые кадры — urllib3/requests, виновник ниже
+    # the stack is deep: the first frames are urllib3/requests, the culprit is lower
     caller = "".join(traceback.format_stack(limit=25)[:-2])
-    print(f"[offline] заблокировано {what} {host!r}:\n{caller}", file=sys.stderr, flush=True)
-    return OSError(f"Работник обучения офлайн: сетевой доступ к {host!r} запрещён")
+    print(f"[offline] blocked {what} {host!r}:\n{caller}", file=sys.stderr, flush=True)
+    return OSError(f"The training worker is offline: network access to {host!r} is forbidden")
 
 
 def block_network() -> None:
@@ -60,17 +60,17 @@ def block_network() -> None:
     def connect(self: socket.socket, address: object) -> None:
         if self.family == getattr(socket, "AF_UNIX", None) or _host_of(address) in _LOOPBACK_HOSTS:
             return real_connect(self, address)
-        raise _blocked("соединение с", _host_of(address))
+        raise _blocked("connection to", _host_of(address))
 
     def connect_ex(self: socket.socket, address: object) -> int:
         if self.family == getattr(socket, "AF_UNIX", None) or _host_of(address) in _LOOPBACK_HOSTS:
             return real_connect_ex(self, address)
-        raise _blocked("соединение с", _host_of(address))
+        raise _blocked("connection to", _host_of(address))
 
     def getaddrinfo(host, *args, **kwargs):  # type: ignore[no-untyped-def]
         if host is None or str(host) in _LOOPBACK_HOSTS:
             return real_getaddrinfo(host, *args, **kwargs)
-        raise socket.gaierror(socket.EAI_NONAME, str(_blocked("разрешение имени", str(host))))
+        raise socket.gaierror(socket.EAI_NONAME, str(_blocked("name resolution of", str(host))))
 
     socket.socket.connect = connect  # type: ignore[method-assign]
     socket.socket.connect_ex = connect_ex  # type: ignore[method-assign]

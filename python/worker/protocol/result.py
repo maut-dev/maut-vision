@@ -1,9 +1,9 @@
-"""Схема result.json.
+"""Schema of result.json.
 
-Результат публикуется один раз, атомарно, когда артефакты уже на месте
-(runtime/job_layout.py). Пути артефактов — относительно outputRoot:
-host сам проверяет, что они не выходят за его пределы, и
-сверяет sha256 перед регистрацией модели.
+The result is published once, atomically, when the artifacts are already in place
+(runtime/job_layout.py). Artifact paths are relative to outputRoot:
+the host itself checks that they do not leave it and
+compares sha256 before registering the model.
 """
 from __future__ import annotations
 
@@ -31,21 +31,29 @@ class ArtifactKind(StrEnum):
 
 
 class ReportKind(StrEnum):
-    """Отчётные файлы обучения: не веса, в пакет модели не входят."""
+    """Training report files: not weights, they are not part of the model package."""
 
     PLOT = "plot"
     LOG = "log"
 
 
 class ResultError(_ResultModel):
+    """code — the protocol code; reason and args — the key and values of the text the UI shows (protocol 1, optional); message — English."""
+
     code: ErrorCode
     message: str
     details: dict[str, Any] = Field(default_factory=dict)
+    reason: str | None = None
+    args: dict[str, str] = Field(default_factory=dict)
 
 
 class ResultWarning(_ResultModel):
+    """A warning: code, optional reason and args of its text (worker/protocol/messages.py), the English message."""
+
     code: str
     message: str
+    reason: str | None = None
+    args: dict[str, str] = Field(default_factory=dict)
 
 
 class Artifact(_ResultModel):
@@ -56,9 +64,9 @@ class Artifact(_ResultModel):
 
 
 class ReportFile(_ResultModel):
-    """Картинка ultralytics (plot) или консольный лог обучения (log) в outputRoot.
+    """An ultralytics image (plot) or the training console log (log) in outputRoot.
 
-    Проверяется так же, как артефакт: путь внутри outputRoot, sha256 и размер.
+    Checked the same way as an artifact: path inside outputRoot, sha256 and size.
     """
 
     kind: ReportKind
@@ -68,7 +76,7 @@ class ReportFile(_ResultModel):
 
 
 class DetectedArchitecture(_ResultModel):
-    """Что записано в самих весах — не имя файла, а конфиг из чекпоинта."""
+    """What is recorded in the weights themselves — not the file name but the config from the checkpoint."""
 
     yaml_file: str
     scale: str
@@ -83,21 +91,21 @@ class EpochHistoryFile(_ResultModel):
 
 
 class EpochRecord(_ResultModel):
-    """Эпоха обучения. losses — потери train (box_loss, cls_loss, dfl_loss) из
-    trainer.tloss; metrics — качество на val (precision, recall, mAP50,
-    mAP50_95) и потери val (valBoxLoss, valClsLoss, valDflLoss) из
-    trainer.metrics — оба источника читаются в коллбэке on_fit_epoch_end."""
+    """A training epoch. losses — train losses (box_loss, cls_loss, dfl_loss) from
+    trainer.tloss; metrics — quality on val (precision, recall, mAP50,
+    mAP50_95) and val losses (valBoxLoss, valClsLoss, valDflLoss) from
+    trainer.metrics — both sources are read in the on_fit_epoch_end callback."""
 
     epoch: int
     losses: dict[str, float]
     metrics: dict[str, float]
     lr: float | None = None
-    # fitness ultralytics этой эпохи: по её максимуму trainer выбирает best.pt
+    # ultralytics fitness of this epoch: the trainer picks best.pt by its maximum
     fitness: float | None = None
 
 
 class ClassMetrics(_ResultModel):
-    """Метрики одного класса операции evaluate; index — выход модели."""
+    """Metrics of one class of the evaluate operation; index — the model output."""
 
     index: int
     name: str
@@ -105,7 +113,7 @@ class ClassMetrics(_ResultModel):
 
 
 class DetectionBox(_ResultModel):
-    """Рамка в долях анализируемого кадра (вырез, если задан region): 0..1."""
+    """A box as fractions of the analyzed frame (the cut-out, if region is set): 0..1."""
 
     x: float
     y: float
@@ -121,7 +129,7 @@ class Detection(_ResultModel):
 
 
 class PredictedFrame(_ResultModel):
-    """Кадр с обнаружениями. index — номер кадра видео (0 у картинки), timeMs — его время."""
+    """A frame with detections. index — video frame number (0 for an image), timeMs — its time."""
 
     index: int
     time_ms: int
@@ -144,7 +152,7 @@ class PredictionSummary(_ResultModel):
 
 
 class SourceInfo(_ResultModel):
-    """Что работник увидел во входе: размер кадра, длительность и fps видео."""
+    """What the worker saw in the input: frame size, video duration and fps."""
 
     width: int
     height: int
@@ -161,7 +169,7 @@ class MonitorInfo(_ResultModel):
 
 
 class Screenshot(_ResultModel):
-    """Снимок монитора в outputRoot (png), проверяется как артефакт: путь, размер, sha256."""
+    """A monitor screenshot in outputRoot (png), checked like an artifact: path, size, sha256."""
 
     path: str
     size_bytes: int
@@ -174,7 +182,7 @@ class Screenshot(_ResultModel):
 
 class JobResult(_ResultModel):
     protocol_version: int
-    # None, только если request.json не прочитан: связать результат не с чем
+    # None only if request.json was not read: there is nothing to link the result to
     operation_id: str | None
     operation: str | None
     status: ResultStatus
@@ -184,22 +192,22 @@ class JobResult(_ResultModel):
     error: ResultError | None = None
     warnings: list[ResultWarning] = Field(default_factory=list)
     architecture: DetectedArchitecture | None = None
-    # фактически применённые параметры, включая посчитанные lr0 и разогрев
+    # the parameters actually applied, including the computed lr0 and warmup
     effective_params: dict[str, Any] | None = None
     metrics: dict[str, float] | None = None
     epochs_completed: int | None = None
     stopped_early: bool | None = None
     history: list[EpochRecord] = Field(default_factory=list)
     history_file: EpochHistoryFile | None = None
-    # только evaluate: метрики по классам, у которых в выборке есть объекты
+    # evaluate only: per-class metrics for classes that have objects in the split
     class_metrics: list[ClassMetrics] = Field(default_factory=list)
     artifacts: list[Artifact] = Field(default_factory=list)
-    # только train: картинки ultralytics и консольный лог; необязательное поле протокола v1
+    # train only: ultralytics images and the console log; an optional field of protocol v1
     reports: list[ReportFile] = Field(default_factory=list)
     environment: dict[str, Any] = Field(default_factory=dict)
-    # только predict/live: сводка прогона, вход и (у картинки) её единственный кадр
+    # predict/live only: run summary, input and (for an image) its single frame
     summary: PredictionSummary | None = None
     source: SourceInfo | None = None
     frames: list[PredictedFrame] = Field(default_factory=list)
-    # только screenshot
+    # screenshot only
     screenshot: Screenshot | None = None

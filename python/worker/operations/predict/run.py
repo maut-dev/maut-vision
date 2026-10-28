@@ -1,13 +1,13 @@
-"""Операция predict: веса версии по картинке или по видео из input/source.
+"""The predict operation: version weights on an image or a video from input/source.
 
-Картинка: один кадр, событие frame всегда (с превью), в result — этот кадр.
-Видео: чтение ПОСЛЕДОВАТЕЛЬНОЕ, пропускаемые кадры только grab() без
-декодирования — перемотка (CAP_PROP_POS_FRAMES) в OpenCV на порядок медленнее
-(по замеру). Событие frame — на каждый проанализированный кадр с
-обнаружениями и, ради превью, на кадр без них не чаще previewIntervalMs;
-progress — не чаще раза в секунду. Превью — файлы output/previews/ (previewFile).
-Источник — жёсткая ссылка в input/ или абсолютный путь externalSource
-(OpenCV 5 и np.fromfile открывают не-ASCII пути). Артефактов нет.
+Image: one frame, a frame event always (with a preview), the result holds this frame.
+Video: reading is SEQUENTIAL, skipped frames only grab() without
+decoding — seeking (CAP_PROP_POS_FRAMES) in OpenCV is an order of magnitude slower
+(measured). A frame event is sent for every analyzed frame with
+detections and, for the preview, for a frame without them no more often than previewIntervalMs;
+progress — at most once per second. Previews — files in output/previews/ (previewFile).
+The source is a hard link in input/ or the absolute path externalSource
+(OpenCV 5 and np.fromfile open non-ASCII paths). There are no artifacts.
 """
 from __future__ import annotations
 
@@ -28,11 +28,11 @@ def _read_image(path: Any) -> Any:
     try:
         data = np.fromfile(str(path), dtype=np.uint8)
     except OSError as exc:
-        raise WorkerError(ErrorCode.SOURCE_INVALID, f"Не удалось прочитать изображение: {exc}") from None
-    # imdecode, а не imread: imread на Windows не открывает пути с кириллицей
+        raise WorkerError(ErrorCode.SOURCE_INVALID, "image_unreadable", {"error": exc}) from None
+    # imdecode, not imread: imread on Windows does not open paths with Cyrillic characters
     frame = cv2.imdecode(data, cv2.IMREAD_COLOR) if data.size else None
     if frame is None:
-        raise WorkerError(ErrorCode.SOURCE_INVALID, "Файл не распознан как изображение (PNG, JPEG, WebP)")
+        raise WorkerError(ErrorCode.SOURCE_INVALID, "image_format")
     return frame
 
 
@@ -42,7 +42,7 @@ def _open_video(ctx: OperationContext, request: PredictRequest) -> Any:
     if request.input.external_source is not None:
         capture = cv2.VideoCapture(request.input.external_source, cv2.CAP_FFMPEG)
     else:
-        # Относительный ASCII-путь из папки задачи: папка данных может быть с кириллицей.
+        # A relative ASCII path from the job folder: the data folder may contain Cyrillic characters.
         cwd = os.getcwd()
         os.chdir(ctx.layout.job_dir)
         try:
@@ -50,7 +50,7 @@ def _open_video(ctx: OperationContext, request: PredictRequest) -> Any:
         finally:
             os.chdir(cwd)
     if not capture.isOpened():
-        raise WorkerError(ErrorCode.SOURCE_INVALID, "Видео не открылось: формат не поддерживается OpenCV или файл повреждён")
+        raise WorkerError(ErrorCode.SOURCE_INVALID, "video_unopened")
     return capture
 
 
@@ -58,7 +58,7 @@ def _predict_image(request: PredictRequest, ctx: OperationContext, model: Any, d
     p = request.params
     frame = _read_image(_source_path(ctx, request))
     height, width = frame.shape[:2]
-    analyzed = common.crop(frame, p.region, "изображение")
+    analyzed = common.crop(frame, p.region, "image")
     ctx.stage("predicting")
     started = time.monotonic()
     found = common.detect(model, analyzed, imgsz=p.imgsz, conf=p.conf, device=device, max_det=p.max_detections, names=names)
@@ -79,7 +79,7 @@ def _predict_video(request: PredictRequest, ctx: OperationContext, model: Any, d
     try:
         fps = float(capture.get(cv2.CAP_PROP_FPS) or 0.0)
         if not math.isfinite(fps) or fps <= 0:
-            ctx.warn("video_fps_unknown", "Видео не сообщает частоту кадров: время кадров посчитано для 30 к/с")
+            ctx.warn("video_fps_unknown")
             fps = 30.0
         total = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
         width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
@@ -95,7 +95,7 @@ def _predict_video(request: PredictRequest, ctx: OperationContext, model: Any, d
         ctx.stage("predicting")
         while True:
             if index % step:
-                # пропуск: кадр читается из потока, но не декодируется
+                # skip: the frame is read from the stream but not decoded
                 if not capture.grab():
                     break
                 index += 1
@@ -104,7 +104,7 @@ def _predict_video(request: PredictRequest, ctx: OperationContext, model: Any, d
             if not ok:
                 break
             position_ms = round(index * 1000 / fps)
-            analyzed = common.crop(frame, p.region, "кадр видео")
+            analyzed = common.crop(frame, p.region, "video_frame")
             started = time.monotonic()
             found = common.detect(model, analyzed, imgsz=p.imgsz, conf=p.conf, device=device, max_det=p.max_detections, names=names)
             summary.add(found)
@@ -131,7 +131,7 @@ def _predict_video(request: PredictRequest, ctx: OperationContext, model: Any, d
                 )
             index += 1
         if summary.frames_processed == 0:
-            raise WorkerError(ErrorCode.SOURCE_INVALID, "Из видео не прочитано ни одного кадра")
+            raise WorkerError(ErrorCode.SOURCE_INVALID, "video_empty")
         ctx.events.emit(
             "progress",
             framesProcessed=summary.frames_processed,
@@ -157,7 +157,7 @@ def run_predict(request: PredictRequest, ctx: OperationContext) -> dict[str, Any
     ctx.stage("validating")
     source = _source_path(ctx, request)
     if not source.is_file():
-        raise WorkerError(ErrorCode.SOURCE_INVALID, "Нет файла источника проверки")
+        raise WorkerError(ErrorCode.SOURCE_INVALID, "missing")
     model, device, names = common.load(ctx, ctx.layout.resolve(request.input.model), p.architecture, p.device)
     fields = (_predict_image if p.source == "image" else _predict_video)(request, ctx, model, device, names)
     return {
