@@ -89,9 +89,11 @@
 ## Установка
 
 > [!IMPORTANT]
-> **Скачать:** [MautVision-Setup-1.0.0.exe](DOWNLOAD_URL) <!-- DOWNLOAD_URL: заменить ссылкой на выпуск перед публикацией -->
+> **Скачать:** [MautVision-Setup-1.0.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.0.0/MautVision-Setup-1.0.0.exe) (1,83 ГБ)
 >
-> Пока выпуски распространяются по ссылке для скачивания; позже появятся сайт и выпуски на GitHub.
+> Все версии и описание изменений: [выпуски на GitHub](https://github.com/maut-dev/maut-vision/releases).
+>
+> SHA-256: `8f72bf8ac1b06f8f891cea2eab1c9675bedb55fb70cbb6a3b2461a72403d66d7`
 
 **Проверьте файл.** Сравните SHA-256 установщика с хешем, опубликованным рядом со ссылкой:
 
