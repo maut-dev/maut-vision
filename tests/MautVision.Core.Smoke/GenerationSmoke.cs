@@ -292,15 +292,15 @@ internal static class GenerationSmoke
 
         // Repeat drafts and deletion of runs.
         var draft = await generation.GetRepeatDraftAsync(job.Id);
-        Check(draft.Recipe.Name == "Кошки и собаки · повтор" && draft.Seed == 42 && draft.RequestedCount == 10 && draft.SourceRunId == job.Id
+        Check(draft.Recipe.Name == "Кошки и собаки" && draft.Seed == 42 && draft.RequestedCount == 10 && draft.SourceRunId == job.Id
             && draft.Recipe.ClassVariantIds.SequenceEqual(recipe.ClassVariantIds) && draft.Recipe.VariantWeights.SequenceEqual(recipe.VariantWeights),
-            "«Настроить повтор» gives the run settings with « · повтор», its seed and count.");
+            "\"Configure repeat\" gives the run settings with the preset name (the UI adds the repeat suffix), its seed and count.");
         var longName = await Variant(new string('д', 120), form);
         var longRun = await RunAsync(core, project, await generation.PrepareRunAsync(longName.Id, 1, 1, 1, "run-long"), "run-long");
         var longDraft = await generation.GetRepeatDraftAsync(longRun.Id);
-        Check(longDraft.Recipe.Name.Length == 120 && longDraft.Recipe.Name.EndsWith(" · повтор", StringComparison.Ordinal)
+        Check(longDraft.Recipe.Name == new string('д', 120)
             && (await project.Images.GetGroupAsync(Result(longRun).OutputGroupId!.Value)).Name.Length == 120,
-            "Long names are shortened to 120 characters in the repeat draft and the group name.");
+            "A long preset name stays whole in the repeat draft; the group name is shortened to 120 characters.");
         await generation.DeleteRunAsync(job.Id);
         await RejectsCode("generation.unavailable", () => generation.GetRunAsync(job.Id));
         Check((await project.Images.GetGroupAsync(group.Id)).ImageCount == 10 && (await generation.ListRunsAsync()).Items.All(item => item.Job.Id != job.Id),

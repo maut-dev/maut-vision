@@ -1,16 +1,16 @@
 namespace MautVision.Core.Interfaces.Python;
 
 /// <summary>
-/// Состояние среды Python worker: Configured — host передал описание запуска; Available — его файлы на месте; Mode — packaged |
-/// interpreter (null без настройки); Code — <c>runtime_not_configured</c> или <c>runtime_missing</c>, пока среда недоступна.
+/// State of the Python worker runtime: Configured — the host passed a launch description; Available — its files are in place; Mode — packaged |
+/// interpreter (null without configuration); Code — <c>runtime_not_configured</c> or <c>runtime_missing</c> while the runtime is unavailable.
 /// </summary>
 public sealed record PythonRuntimeStatus(bool Configured, bool Available, string? Mode, string? Code);
 
-/// <summary>Среда Python worker. Проверка лишь показывает состояние: запуск обучения проверяет среду сам.</summary>
+/// <summary>Python worker runtime. The check only shows the state: a training run checks the runtime itself.</summary>
 public interface IPythonRuntime
 {
     PythonRuntimeStatus GetStatus();
 
-    /// <summary>ID процессов идущих worker вместе с их дочерними процессами (DataLoader); пусто, если worker не запущены.</summary>
+    /// <summary>IDs of running worker processes with their child processes (DataLoader); empty if no worker is running.</summary>
     IReadOnlyList<int> GetWorkerProcessIds();
 }

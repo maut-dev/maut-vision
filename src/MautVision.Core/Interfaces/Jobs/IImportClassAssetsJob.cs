@@ -1,27 +1,27 @@
 namespace MautVision.Core.Interfaces.Jobs;
 
 /// <summary>
-/// Файлы, выбранные пользователем, для одного варианта класса. Files — абсолютные пути; они хранятся во входных данных
-/// задачи в project.db и наружу (в снимок задачи и UI) не выходят.
+/// Files chosen by the user for one class variant. Files — absolute paths; they are stored in the job input
+/// in project.db and never leave it (into the job snapshot or the UI).
 /// </summary>
 public sealed record ImportClassAssetsInput(Guid ClassVariantId, IReadOnlyList<string> Files);
 
 /// <summary>
-/// Импорт исходных изображений варианта класса (CPU). Принимаются PNG, JPEG, WebP и BMP; байты копируются без изменений.
-/// Одинаковый файл (SHA-256) в той же привязке пропускается. Итог — <see cref="ImportClassAssetsResult"/> в
-/// <see cref="JobInfo.Result"/>, в том числе после отмены. Привязка в архиве или удалена — задача завершается
-/// с <c>classes.variant_unavailable</c>.
+/// Import of source images of a class variant (CPU). PNG, JPEG, WebP and BMP are accepted; bytes are copied unchanged.
+/// An identical file (SHA-256) in the same binding is skipped. The result is <see cref="ImportClassAssetsResult"/> in
+/// <see cref="JobInfo.Result"/>, including after cancellation. If the binding is archived or deleted, the job ends
+/// with <c>classes.variant_unavailable</c>.
 /// </summary>
 [JobKind("classes.import_assets")]
 public interface IImportClassAssetsJob : IJobDefinition<ImportClassAssetsInput>
 {
 }
 
-/// <summary>Отклонённый файл: только имя без папки и код причины (<c>classes.asset_invalid</c>, <c>classes.asset_unreadable</c>).</summary>
+/// <summary>Rejected file: only the name without the folder and the reason code (<c>classes.asset_invalid</c>, <c>classes.asset_unreadable</c>).</summary>
 public sealed record ImportRejectedFile(string Name, string Reason);
 
 /// <summary>
-/// Итог импорта. Rejected — число отклонённых; RejectedFiles — первые <see cref="MaxRejectedFiles"/> из них.
+/// Import result. Rejected — number of rejected files; RejectedFiles — the first <see cref="MaxRejectedFiles"/> of them.
 /// </summary>
 public sealed record ImportClassAssetsResult(int Total, int Added, int Duplicates, int Rejected, IReadOnlyList<ImportRejectedFile> RejectedFiles)
 {

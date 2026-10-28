@@ -7,7 +7,7 @@ namespace MautVision.Desktop.Controllers;
 /// <param name="PickImageFiles">Multi-select dialog for PNG, JPEG, WebP and BMP files with the given title.</param>
 /// <param name="PickFolder">Folder dialog with the given title.</param>
 /// <param name="PickVideo">Single-file dialog for MP4, MKV, AVI, MOV, WebM and M4V with the given title.</param>
-/// <param name="PickSaveFile">«Сохранить как» for a ZIP archive with the given title, file name and filter text («ZIP-архив»); overwriting is
+/// <param name="PickSaveFile">"Save as" for a ZIP archive with the given title, file name and filter text ("ZIP archive"); overwriting is
 /// confirmed in the dialog.</param>
 /// <param name="PickImageFile">Single-file dialog for one PNG, JPEG, WebP or BMP image with the given title (a model check).</param>
 /// <param name="PickArchive">Single-file dialog for a project archive (*.zip) with the given title.</param>

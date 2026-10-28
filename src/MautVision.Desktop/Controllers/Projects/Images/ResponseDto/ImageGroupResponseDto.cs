@@ -1,9 +1,9 @@
 namespace MautVision.Desktop.Controllers.Projects.Images.ResponseDto;
 
 /// <summary>
-/// Группа изображений. Origin: manual, generated. SplitHint: unassigned, train, validation, test. GenerationState: producing,
-/// completed, partial или null (ручная группа). ImageCount — все изображения, включая архивные; ArchivedImageCount — архивные.
-/// Revision растёт при изменении полей группы, архиве и перемещении изображений; импорт меняет только счётчики.
+/// Image group. Origin: manual, generated. SplitHint: unassigned, train, validation, test. GenerationState: producing,
+/// completed, partial or null (manual group). ImageCount — all images, including archived ones; ArchivedImageCount — archived ones.
+/// Revision grows on a change of group fields, archiving and moving images; import changes only the counters.
 /// </summary>
 public sealed record ImageGroupResponseDto(
     Guid Id,

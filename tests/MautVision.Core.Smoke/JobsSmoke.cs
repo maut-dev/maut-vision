@@ -126,7 +126,7 @@ internal static class JobsSmoke
         {
             for (var step = 0; step < 120; step++)
             {
-                context.ReportProgress(step * 100.0 / 120, $"Шаг {step}", step, 120);
+                context.ReportProgress(step * 100.0 / 120, CodedText.Of("progress.smoke_step", ("step", step)), step, 120);
                 await Task.Delay(10, context.CancellationToken);
             }
         };
@@ -143,7 +143,7 @@ internal static class JobsSmoke
         Check(progressEvents.Zip(progressEvents.Skip(1)).All(pair => pair.First.Job.Progress <= pair.Second.Job.Progress
             && Stopwatch.GetElapsedTime(pair.First.Timestamp, pair.Second.Timestamp).TotalMilliseconds >= JobsManager.ProgressInterval.TotalMilliseconds * 0.8),
             "Progress events never go backwards and are at most about four per second.");
-        Check(progressEvents[^1].Job is { Total: 120, ProgressText: not null, Processed: > 0 }, "Progress carries text and counters.");
+        Check(progressEvents[^1].Job is { Total: 120, ProgressMessage.Code: "progress.smoke_step", Processed: > 0 }, "Progress carries text and counters.");
         Console.WriteLine($"Job progress: {progressEvents.Length} events for 120 reports in {progressMilliseconds:F0} ms.");
 
         // Cancel of a queued job: it never starts. Cancel of a running job: the handler stops through the token.
@@ -250,21 +250,25 @@ internal static class JobsSmoke
             Interlocked.Increment(ref activeCpuStarted);
             await holdActive.Task;
         };
-        var gpuRunner = await jobs.EnqueueAsync<IGpuSmokeJob, string>("active-gpu", id, "op-active-gpu", "  Датасет «Номера»  ");
+        var gpuRunner = await jobs.EnqueueAsync<IGpuSmokeJob, string>("active-gpu", id, "op-active-gpu", CodedText.Plain("  Датасет «Номера»  "));
         await activeGpuStarted.Task.WaitAsync(WaitLimit);
         var longLabel = new string('я', JobInfo.MaxLabelLength + 50);
-        var gpuWaiter = await jobs.EnqueueAsync<IGpuSmokeJob, string>("active-gpu", id, "op-active-gpu-2", longLabel);
+        var gpuWaiter = await jobs.EnqueueAsync<IGpuSmokeJob, string>("active-gpu", id, "op-active-gpu-2", CodedText.Plain(longLabel));
         var activeCpu = new List<JobInfo>();
         for (var index = 0; index < 5; index++)
-            activeCpu.Add(await jobs.EnqueueAsync<ICpuSmokeJob, string>("active-cpu", id, "op-active-cpu-" + index, index == 4 ? " " : "Группа " + index));
+            activeCpu.Add(await jobs.EnqueueAsync<ICpuSmokeJob, string>("active-cpu", id, "op-active-cpu-" + index, CodedText.Plain(index == 4 ? " " : "Группа " + index)));
         await WaitUntilAsync(() => Volatile.Read(ref activeCpuStarted) == 2, "two CPU jobs of the active list started");
-        Check(gpuRunner.Label == "Датасет «Номера»" && gpuWaiter.Label == longLabel[..JobInfo.MaxLabelLength] && activeCpu[4].Label is null
-            && activeCpu[0].Label == "Группа 0", "A label is trimmed, cut to its limit, and empty becomes null.");
+        Check(gpuRunner.Label?.Text == "Датасет «Номера»" && gpuWaiter.Label?.Text == longLabel[..JobInfo.MaxLabelLength] && activeCpu[4].Label is null
+            && activeCpu[0].Label?.Text == "Группа 0", "A label is trimmed, cut to its limit, and empty becomes null.");
         Check((await jobs.GetAsync(id, gpuRunner.Id)).Label == gpuRunner.Label && (await jobs.ListAsync(id, limit: 1))[0].Label is null
-            && (await jobs.ListAsync(id, limit: 2))[1].Label == "Группа 3", "Get and list return the stored label.");
+            && (await jobs.ListAsync(id, limit: 2))[1].Label?.Text == "Группа 3", "Get and list return the stored label.");
         Check(EventsOf(gpuRunner.Id).Length >= 2 && EventsOf(gpuRunner.Id).All(job => job.Label == gpuRunner.Label), "Every job event carries the label.");
-        var duplicateLabel = await jobs.EnqueueAsync<IGpuSmokeJob, string>("active-gpu", id, "op-active-gpu", "Другая подпись");
+        var duplicateLabel = await jobs.EnqueueAsync<IGpuSmokeJob, string>("active-gpu", id, "op-active-gpu", CodedText.Plain("Другая подпись"));
         Check(duplicateLabel.Id == gpuRunner.Id && duplicateLabel.Label == gpuRunner.Label, "A repeated operation keeps the label of its job.");
+        Check(CodedTextJson.Parse("Эпоха 1 из 5") is { Code: null, Text: "Эпоха 1 из 5" }
+            && CodedTextJson.Parse(CodedTextJson.Serialize(CodedText.Plain("{\"code\":\"x\"}"))) is { Code: null, Text: "{\"code\":\"x\"}" }
+            && CodedTextJson.Parse(CodedTextJson.Serialize(CodedText.Of("progress.epoch", ("epoch", 1), ("total", 5)))) is { Code: "progress.epoch", Args: { } epochArgs }
+            && epochArgs["epoch"] == "1" && epochArgs["total"] == "5", "Stored texts of version 1.0.0 read back as texts, codes as codes.");
         var cancelling = await jobs.CancelAsync(id, activeCpu[0].Id);
         var active = await jobs.ListActiveAsync(id, limit: JobsManager.MaxListLimit);
         var queueOrder = new[] { gpuRunner.Id, gpuWaiter.Id }.Concat(activeCpu.Select(job => job.Id)).ToArray();
@@ -324,7 +328,7 @@ internal static class JobsSmoke
             hangingStarted[context.OperationId] = true;
             await hang.Task;
         };
-        var resumable = await jobs.EnqueueAsync<IResumableSmokeJob, string>("resume", id, "op-resume", "Возобновляемая");
+        var resumable = await jobs.EnqueueAsync<IResumableSmokeJob, string>("resume", id, "op-resume", CodedText.Plain("Возобновляемая"));
         var interrupted = await jobs.EnqueueAsync<ICpuSmokeJob, string>("hang", id, "op-plain");
         var removed = await jobs.EnqueueAsync<IRemovedSmokeJob, string>("hang", id, "op-removed");
         var cancelPending = await jobs.EnqueueAsync<ICpuSmokeJob, string>("hang", id, "op-cancel-pending");
@@ -378,7 +382,7 @@ internal static class JobsSmoke
 
         await restarted.Projects.OpenAsync(id);
         var resumed = await WaitAsync(restartedJobs, id, resumable.Id, JobStatus.Succeeded);
-        Check(resumed.Label == "Возобновляемая", "The label survives the restart.");
+        Check(resumed.Label?.Text == "Возобновляемая", "The label survives the restart.");
         Check(resumedFrom == new ResumeCheckpoint(1) && stepARan == false && stepBRan == true && stepAActions == 1,
             "A resumable job continues from its checkpoint and skips completed steps.");
         Check(await ScalarAsync(Database(project), $"SELECT count(*) FROM job_steps WHERE job_id = '{resumable.Id:D}';") == 0, "A finished job drops its step receipts.");

@@ -17,15 +17,15 @@ public interface ICore
     IJobsManager Jobs { get; }
     IMediaManager Media { get; }
 
-    /// <summary>Пресеты параметров обучения, общие для всех проектов.</summary>
+    /// <summary>Training parameter presets shared by all projects.</summary>
     ITrainingPresetsManager TrainingPresets { get; }
 
-    /// <summary>Видеокарты для выбора устройства обучения.</summary>
+    /// <summary>GPUs for choosing the training device.</summary>
     IHardwareManager Hardware { get; }
 
-    /// <summary>Состояние среды Python worker.</summary>
+    /// <summary>State of the Python worker runtime.</summary>
     IPythonRuntime Python { get; }
 
-    /// <summary>Мониторы и снимок экрана для проверки с экрана.</summary>
+    /// <summary>Monitors and a screenshot for the screen check.</summary>
     IScreenManager Screen { get; }
 }

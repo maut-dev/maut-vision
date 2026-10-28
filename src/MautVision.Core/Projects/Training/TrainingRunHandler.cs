@@ -34,17 +34,18 @@ internal sealed class TrainingRunHandler(IProjectsManager projects) : IJobHandle
         var directory = training.JobDirectory(runId);
         var epochs = input.Parameters.TryGetValue("epochs", out var requested) && requested.TryGetInt32(out var count) ? count : 1;
         await training.RegisterRunAsync(runId).ConfigureAwait(false);
-        context.ReportProgress(0, "Подготовка");
+        context.ReportProgress(0, CodedText.Of("progress.preparing"));
         var succeeded = false;
+        CodedText? workerText = null;
         var recorder = training.CreateRecorder(runId);
         try
         {
-            recorder.Log(TrainingLogKind.System, "Подготовка папки задачи: датасет, базовые веса, параметры.");
+            recorder.Log(TrainingLogKind.System, CodedText.Of("trainingLog.preparing_folder"));
             await TrainingJobFolder.PrepareAsync(training, directory, runId, input, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             await recorder.FlushAsync().ConfigureAwait(false);
-            await training.SetPhaseAsync(runId, "training", systemLine: "Запуск Python worker.").ConfigureAwait(false);
-            context.ReportProgress(0, $"Эпоха 0 из {epochs}", 0, epochs);
+            await training.SetPhaseAsync(runId, "training", systemLine: CodedText.Of("trainingLog.worker_started")).ConfigureAwait(false);
+            context.ReportProgress(0, Epoch(0, epochs), 0, epochs);
             var outcome = await training.Python.RunAsync(directory, TrainingManager.OperationIdOf(runId), "train",
                 worker => OnEventAsync(worker, recorder, context, ref epochs), WorkerResults.ParseTrainAsync, token).ConfigureAwait(false);
             if (Pause is { } pause) await pause("worker-exited", runId).ConfigureAwait(false);
@@ -54,9 +55,10 @@ internal sealed class TrainingRunHandler(IProjectsManager projects) : IJobHandle
                 case WorkerOutcomeKind.Cancelled:
                     throw new OperationCanceledException(token);
                 case WorkerOutcomeKind.Failed:
+                    workerText = outcome.WorkerText;
                     throw new CoreException("training." + outcome.Code, outcome.Message ?? "");
             }
-            context.ReportProgress(100, "Сохранение версии модели", epochs, epochs);
+            context.ReportProgress(100, CodedText.Of("progress.saving_version"), epochs, epochs);
             await recorder.DisposeAsync().ConfigureAwait(false);
             var versionId = await training.AcceptAsync(runId, input, outcome.Result!, CancellationToken.None).ConfigureAwait(false);
             context.SetResult(new TrainingRunResult(versionId));
@@ -64,20 +66,20 @@ internal sealed class TrainingRunHandler(IProjectsManager projects) : IJobHandle
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
-            await Finish(null, null, "Обучение отменено.").ConfigureAwait(false);
+            await Finish(null, null, CodedText.Of("trainingLog.cancelled")).ConfigureAwait(false);
             throw;
         }
         catch (CoreException error)
         {
             context.Logger.LogWarning("Training run {RunId} of project {ProjectId} failed with {Code}: {Message}", runId, context.ProjectId, error.Code, error.Message);
-            await Finish(error.Code, error.Message, "Обучение завершилось с ошибкой.").ConfigureAwait(false);
+            await Finish(error.Code, error.Message, CodedText.Of("trainingLog.failed")).ConfigureAwait(false);
             throw;
         }
         catch (Exception error) when (error is not JobDataException)
         {
             context.Logger.LogError(error, "Training run {RunId} of project {ProjectId} failed.", runId, context.ProjectId);
             var code = FailureCode(error);
-            await Finish(code, error.Message, "Обучение завершилось с ошибкой.").ConfigureAwait(false);
+            await Finish(code, error.Message, CodedText.Of("trainingLog.failed")).ConfigureAwait(false);
             throw new CoreException(code, error.Message, error);
         }
         finally
@@ -86,14 +88,17 @@ internal sealed class TrainingRunHandler(IProjectsManager projects) : IJobHandle
             training.CleanJobFolder(runId, succeeded);
         }
 
-        async Task Finish(string? code, string? message, string line)
+        async Task Finish(string? code, string? message, CodedText line)
         {
             await recorder.DisposeAsync().ConfigureAwait(false);
-            await training.SetPhaseAsync(runId, "finished", code, message, line).ConfigureAwait(false);
+            await training.SetPhaseAsync(runId, "finished", code, message, line, workerText).ConfigureAwait(false);
         }
     }
 
-    /// <summary>Worker events: live fields and history of the run, progress of the job («Эпоха X из Y», batches inside the epoch).</summary>
+    /// <summary>The progress line "Epoch X of Y" (progress.epoch).</summary>
+    private static CodedText Epoch(int epoch, int total) => CodedText.Of("progress.epoch", ("epoch", epoch), ("total", total));
+
+    /// <summary>Worker events: live fields and history of the run, progress of the job ("Epoch X of Y", batches inside the epoch).</summary>
     private static Task OnEventAsync(WorkerEvent worker, TrainingRunRecorder recorder, JobContext context, ref int epochs)
     {
         switch (worker)
@@ -105,13 +110,13 @@ internal sealed class TrainingRunHandler(IProjectsManager projects) : IJobHandle
                 recorder.Batch(batch);
                 var total = recorder.TotalEpochs ?? epochs;
                 var fraction = batch.Batches > 0 ? Math.Clamp((double)batch.Batch / batch.Batches, 0, 1) : 0;
-                context.ReportProgress(Math.Clamp(100.0 * (batch.Epoch - 1 + fraction) / Math.Max(1, total), 0, 100), $"Эпоха {batch.Epoch} из {total}",
+                context.ReportProgress(Math.Clamp(100.0 * (batch.Epoch - 1 + fraction) / Math.Max(1, total), 0, 100), Epoch(batch.Epoch, total),
                     batch.Epoch - 1, total);
                 break;
             case WorkerEpochEvent epoch:
                 recorder.Epoch(epoch);
                 epochs = epoch.Epochs;
-                context.ReportProgress(Math.Clamp(100.0 * epoch.Epoch.Epoch / Math.Max(1, epoch.Epochs), 0, 100), $"Эпоха {epoch.Epoch.Epoch} из {epoch.Epochs}",
+                context.ReportProgress(Math.Clamp(100.0 * epoch.Epoch.Epoch / Math.Max(1, epoch.Epochs), 0, 100), Epoch(epoch.Epoch.Epoch, epoch.Epochs),
                     epoch.Epoch.Epoch, epoch.Epochs);
                 break;
             case WorkerEffectiveParamsEvent effective:
@@ -121,10 +126,10 @@ internal sealed class TrainingRunHandler(IProjectsManager projects) : IJobHandle
                 recorder.Environment(environment.Environment);
                 break;
             case WorkerLogEvent log:
-                recorder.Log(TrainingLogKind.Log, log.Message);
+                recorder.Log(TrainingLogKind.Log, CodedText.Plain(log.Message));
                 break;
             case WorkerWarningEvent warning:
-                recorder.Log(TrainingLogKind.Warning, $"{warning.Code}: {warning.Message}");
+                recorder.Log(TrainingLogKind.Warning, warning.Text);
                 break;
         }
         return Task.CompletedTask;

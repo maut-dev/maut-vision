@@ -7,14 +7,17 @@ import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { CodedTextDto } from "@/api/coded-text-dto";
 import { i18n } from "@/i18n";
+import { codedText } from "@/lib/coded-text";
 import { errorMessage } from "@/lib/format";
 
 /** «Обучение · fake:hang», «Живая проверка»; an unknown kind as is. */
-function activityTitle(kind: string, label: string | null): string {
+function activityTitle(kind: string, label: CodedTextDto | null): string {
     const key = `jobs.kinds.${kind}`;
     const name = i18n.exists(key) ? (i18n.t as unknown as (key: string) => string)(key) : kind;
-    return label ? `${name} · ${label}` : name;
+    const text = label ? codedText(label) : "";
+    return text ? `${name} · ${text}` : name;
 }
 
 /**

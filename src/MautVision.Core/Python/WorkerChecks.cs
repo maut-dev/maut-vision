@@ -40,13 +40,13 @@ internal static partial class WorkerChecks
     {
         var detections = new List<WorkerDetection>();
         if (!root.TryGetProperty("detections", out var items) || items.ValueKind != JsonValueKind.Array || items.GetArrayLength() > MaxDetections)
-            throw Invalid("frame: detections должен быть массивом.");
+            throw Invalid("frame: detections must be an array.");
         foreach (var item in items.EnumerateArray()) detections.Add(Detection(item, "frame"));
         string? preview = null;
         if (root.TryGetProperty("previewFile", out var file) && file.ValueKind == JsonValueKind.String)
         {
             preview = file.GetString()!;
-            if (!PreviewPattern().IsMatch(preview)) throw Invalid("frame: previewFile вне папки previews/.");
+            if (!PreviewPattern().IsMatch(preview)) throw Invalid("frame: previewFile is outside the previews/ folder.");
         }
         return new WorkerFrame(Long(root, "index", 0), Long(root, "timeMs", 0), Integer(root, "width", 0), Integer(root, "height", 0),
             root.TryGetProperty("inferenceMs", out var inference) && inference.TryGetInt32(out var ms) && ms >= 0 ? ms : 0, detections, preview);
@@ -76,8 +76,8 @@ internal static partial class WorkerChecks
 
     private static WorkerPredictResult ReadPredict(JsonElement root)
     {
-        if (WorkerEventParser.String(root, "status") != "succeeded") throw Invalid("result.json: статус не означает успех.");
-        if (!root.TryGetProperty("summary", out var summary) || summary.ValueKind != JsonValueKind.Object) throw Invalid("result.summary отсутствует.");
+        if (WorkerEventParser.String(root, "status") != "succeeded") throw Invalid("result.json: the status does not mean success.");
+        if (!root.TryGetProperty("summary", out var summary) || summary.ValueKind != JsonValueKind.Object) throw Invalid("result.summary is missing.");
         var classes = new List<WorkerClassSummary>();
         if (summary.TryGetProperty("classes", out var items) && items.ValueKind == JsonValueKind.Array)
         {
@@ -99,14 +99,14 @@ internal static partial class WorkerChecks
 
     private static WorkerEvaluateResult ReadEvaluate(JsonElement root)
     {
-        if (WorkerEventParser.String(root, "status") != "succeeded") throw Invalid("result.json: статус не означает успех.");
+        if (WorkerEventParser.String(root, "status") != "succeeded") throw Invalid("result.json: the status does not mean success.");
         var metrics = WorkerEventParser.Numbers(root, "metrics", "result_invalid");
         var classes = new List<WorkerClassMetrics>();
         if (root.TryGetProperty("classMetrics", out var items) && items.ValueKind == JsonValueKind.Array)
         {
             foreach (var item in items.EnumerateArray())
             {
-                if (item.ValueKind != JsonValueKind.Object) throw Invalid("classMetrics: ожидается объект.");
+                if (item.ValueKind != JsonValueKind.Object) throw Invalid("classMetrics: an object is expected.");
                 classes.Add(new WorkerClassMetrics(Integer(item, "index", 0), WorkerEventParser.String(item, "name") ?? "",
                     WorkerEventParser.Numbers(item, "metrics", "result_invalid")));
             }
@@ -125,48 +125,36 @@ internal static partial class WorkerChecks
     private static WorkerDetection Detection(JsonElement item, string where)
     {
         if (item.ValueKind != JsonValueKind.Object || !item.TryGetProperty("box", out var box) || box.ValueKind != JsonValueKind.Object)
-            throw Invalid($"{where}: обнаружение без рамки.");
+            throw Invalid($"{where}: a detection without a box.");
         var name = WorkerEventParser.String(item, "name") ?? "";
         return new WorkerDetection(Integer(item, "classIndex", 0), name.Length <= 200 ? name : name[..200], Fraction(item, "confidence"), Fraction(box, "x"),
             Fraction(box, "y"), Fraction(box, "width"), Fraction(box, "height"));
     }
 
-    private static IReadOnlyList<WorkerWarning> Warnings(JsonElement root)
-    {
-        var warnings = new List<WorkerWarning>();
-        if (!root.TryGetProperty("warnings", out var items) || items.ValueKind != JsonValueKind.Array) return warnings;
-        foreach (var warning in items.EnumerateArray())
-        {
-            if (warning.ValueKind != JsonValueKind.Object) continue;
-            var code = WorkerEventParser.String(warning, "code") ?? "";
-            var message = WorkerEventParser.String(warning, "message") ?? "";
-            warnings.Add(new WorkerWarning(code.Length <= 100 ? code : code[..100], message.Length <= 2000 ? message : message[..2000]));
-        }
-        return warnings;
-    }
+    private static IReadOnlyList<WorkerWarning> Warnings(JsonElement root) => WorkerWarning.ReadAll(root);
 
     private static double Fraction(JsonElement root, string name)
     {
         var value = Number(root, name);
         // Rounding of the worker may step a hair outside 0..1.
-        if (value is < -0.001 or > 1.001) throw Invalid($"{name}: значение вне 0..1.");
+        if (value is < -0.001 or > 1.001) throw Invalid($"{name}: the value is outside 0..1.");
         return Math.Clamp(value, 0, 1);
     }
 
     private static double Number(JsonElement root, string name)
         => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && double.IsFinite(value.GetDouble())
             ? value.GetDouble()
-            : throw Invalid($"{name}: ожидается конечное число.");
+            : throw Invalid($"{name}: a finite number is expected.");
 
     private static int Integer(JsonElement root, string name, int minimum)
-        => root.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) && number >= minimum ? number : throw Invalid($"{name}: ожидается целое ≥ {minimum}.");
+        => root.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) && number >= minimum ? number : throw Invalid($"{name}: an integer ≥ {minimum} is expected.");
 
     private static long Long(JsonElement root, string name, long minimum)
-        => root.TryGetProperty(name, out var value) && value.TryGetInt64(out var number) && number >= minimum ? number : throw Invalid($"{name}: ожидается целое ≥ {minimum}.");
+        => root.TryGetProperty(name, out var value) && value.TryGetInt64(out var number) && number >= minimum ? number : throw Invalid($"{name}: an integer ≥ {minimum} is expected.");
 
     private static long? OptionalLong(JsonElement root, string name)
         => root.TryGetProperty(name, out var value) && value.ValueKind != JsonValueKind.Null ? value.TryGetInt64(out var number) && number >= 0 ? number
-            : throw Invalid($"{name}: ожидается целое ≥ 0 или null.") : null;
+            : throw Invalid($"{name}: an integer ≥ 0 or null is expected.") : null;
 
     private static WorkerProtocolException Invalid(string message) => new("protocol_event", message);
 

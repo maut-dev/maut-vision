@@ -1,20 +1,20 @@
 namespace MautVision.Core.Interfaces.Media;
 
 /// <summary>
-/// Видео для импорта кадров (изображения, позже фоны). Читается ffmpeg и ffprobe из <see cref="CoreOptions.FfmpegDirectory"/>;
-/// без них — <c>video.ffmpeg_missing</c>. Сетевые протоколы не читаются, только локальный файл.
+/// Video for importing frames (images, later backgrounds). Read by ffmpeg and ffprobe from <see cref="CoreOptions.FfmpegDirectory"/>;
+/// without them — <c>video.ffmpeg_missing</c>. Network protocols are not read, only a local file.
 /// </summary>
 public interface IMediaManager
 {
     /// <summary>
-    /// Свойства первой видеодорожки: размер кадра с учётом поворота, длительность, частота кадров, кодек. Файл не хешируется.
-    /// Расширение не из <see cref="VideoFormats.Extensions"/> — <c>video.unsupported</c>; файл не читается, нет видеодорожки
-    /// или длительности — <c>video.unreadable</c>.
+    /// Properties of the first video track: frame size with rotation applied, duration, frame rate, codec. The file is not hashed.
+    /// An extension not in <see cref="VideoFormats.Extensions"/> — <c>video.unsupported</c>; the file is unreadable, has no video track
+    /// or no duration — <c>video.unreadable</c>.
     /// </summary>
     Task<VideoInfo> ProbeVideoAsync(string path, CancellationToken cancellationToken = default);
 }
 
-/// <summary>Width/Height — размер выдаваемых кадров (поворот из метаданных уже применён); FrameRate — средняя частота, 0 если неизвестна.</summary>
+/// <summary>Width/Height — size of the produced frames (rotation from metadata already applied); FrameRate — average rate, 0 if unknown.</summary>
 public sealed record VideoInfo(int Width, int Height, long DurationMs, double FrameRate, string Codec);
 
 public static class VideoFormats

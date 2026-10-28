@@ -3,8 +3,8 @@ using System.Text.RegularExpressions;
 namespace MautVision.Core.Interfaces.Projects.Catalog;
 
 /// <summary>
-/// Цвета рамок вариантов классов. Без сохранённого цвета привязка получает цвет палитры по FNV-1a от своего ID,
-/// поэтому разметка сразу разноцветная и цвет не меняется между запусками.
+/// Box colors of class variants. Without a saved color a binding gets a palette color by FNV-1a of its ID,
+/// so the annotation is multicolored right away and the color does not change between runs.
 /// </summary>
 public static partial class VariantColors
 {
@@ -26,7 +26,7 @@ public static partial class VariantColors
         return Palette[(int)(hash % (uint)Palette.Count)];
     }
 
-    /// <summary>Значение <c>#rrggbb</c> в нижнем регистре или null, если формат неверен.</summary>
+    /// <summary>The <c>#rrggbb</c> value in lowercase, or null if the format is invalid.</summary>
     public static string? Normalize(string? value)
         => value is not null && HexPattern().IsMatch(value) ? value.ToLowerInvariant() : null;
 

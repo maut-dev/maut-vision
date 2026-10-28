@@ -1,0 +1,5 @@
+{
+  "version": "Version {{number}}",
+  "version_dataset": "Version {{number}} · {{dataset}}",
+  "class_variant": "{{class}} · {{variant}}"
+}

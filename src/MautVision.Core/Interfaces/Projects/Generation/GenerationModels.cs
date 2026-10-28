@@ -3,14 +3,14 @@ using MautVision.Core.Interfaces.Projects.Images;
 
 namespace MautVision.Core.Interfaces.Projects.Generation;
 
-/// <summary>Доля варианта проекта в кадрах: 0–100 %, сумма долей пресета — 100 % (± 1e-6).</summary>
+/// <summary>Share of a project variant in frames: 0–100 %, the sum of the preset shares is 100 % (± 1e-6).</summary>
 public sealed record GenerationVariantWeight(Guid VariantId, double Percentage);
 
 /// <summary>
-/// Настройки пресета из формы. Width/Height — размер кадра (обычно вход проекта; кратны 32). BackgroundSetIds — наборы фонов
-/// в порядке выбора; ClassVariantIds — привязки (варианты классов), чей вариант проекта имеет долю больше 0; VariantWeights —
-/// доли вариантов проекта (порядок задаёт выбор варианта). ObjectsPerImage — целое ≥ 0, EmptyProbability — 0..1,
-/// Scale — больше 0, наибольшая доля стороны кадра (больше 1 действует как 1).
+/// Preset settings from the form. Width/Height — frame size (usually the project input; multiples of 32). BackgroundSetIds — background sets
+/// in selection order; ClassVariantIds — bindings (class variants) whose project variant has a share above 0; VariantWeights —
+/// shares of project variants (the order drives variant selection). ObjectsPerImage — integer ≥ 0, EmptyProbability — 0..1,
+/// Scale — above 0, the largest share of the frame side (above 1 acts as 1).
 /// </summary>
 public sealed record GenerationRecipeInput(
     string Name,
@@ -25,8 +25,8 @@ public sealed record GenerationRecipeInput(
     double Scale);
 
 /// <summary>
-/// Пресет генерации. Revision растёт с каждым сохранённым изменением (правка, архив); запуск хранит копию пресета с его ревизией.
-/// Архивный пресет только для чтения, кроме восстановления и удаления.
+/// Generation preset. Revision grows with every saved change (edit, archive); a run keeps a copy of the preset with its revision.
+/// An archived preset is read-only, except for restoring and deletion.
 /// </summary>
 public sealed record GenerationRecipe(
     Guid Id,
@@ -45,15 +45,15 @@ public sealed record GenerationRecipe(
     DateTimeOffset UpdatedAt,
     DateTimeOffset? ArchivedAt)
 {
-    /// <summary>Настройки пресета в виде формы.</summary>
+    /// <summary>Preset settings in form shape.</summary>
     public GenerationRecipeInput ToInput() => new(Name, Description, Width, Height, BackgroundSetIds, ClassVariantIds, VariantWeights,
         ObjectsPerImage, EmptyProbability, Scale);
 }
 
 /// <summary>
-/// Запуск генерации — задача <see cref="IGenerationRunJob"/>. Job — её снимок (состояние, прогресс: Processed — опубликовано,
-/// Total — запрошено; ошибка; итог <see cref="GenerationRunResult"/>). Recipe — копия пресета на момент запуска.
-/// ProducedCount — непрерывный префикс опубликованных кадров; OutputGroupId — группа результата (null, пока запуск не подготовлен).
+/// Generation run — the job <see cref="IGenerationRunJob"/>. Job — its snapshot (state, progress: Processed — published,
+/// Total — requested; error; result <see cref="GenerationRunResult"/>). Recipe — a copy of the preset at run time.
+/// ProducedCount — the contiguous prefix of published frames; OutputGroupId — the result group (null until the run is prepared).
 /// </summary>
 public sealed record GenerationRun(
     JobInfo Job,
@@ -65,35 +65,35 @@ public sealed record GenerationRun(
     Guid? OutputGroupId,
     string OutputGroupName);
 
-/// <summary>Страница запусков, новые первыми; Total — все запуски проекта.</summary>
+/// <summary>Page of runs, newest first; Total — all project runs.</summary>
 public sealed record GenerationRunPage(IReadOnlyList<GenerationRun> Items, long Total);
 
 /// <summary>
-/// Итог запуска (в <see cref="JobInfo.Result"/>, также после отмены и сбоя): RequestedCount, ProducedCount — опубликовано,
-/// MissingObjectFrames — кадров, в которых не нашлось места части объектов («Кадров с недостающими объектами: N»),
-/// OutputGroupId — группа результата, Seed.
+/// Run result (in <see cref="JobInfo.Result"/>, also after cancellation and failure): RequestedCount, ProducedCount — published,
+/// MissingObjectFrames — frames where some objects found no place ("Frames with missing objects: N"),
+/// OutputGroupId — the result group, Seed.
 /// </summary>
 public sealed record GenerationRunResult(int RequestedCount, int ProducedCount, int MissingObjectFrames, Guid? OutputGroupId, uint Seed);
 
-/// <summary>«Настроить повтор»: настройки запуска для формы (к имени добавлено « · повтор»), его seed и количество.</summary>
+/// <summary>"Configure repeat": the run settings for the form (the name is the preset name unchanged; the UI adds " · repeat" in the user's language), its seed and count.</summary>
 public sealed record GenerationRepeatDraft(GenerationRecipeInput Recipe, uint Seed, int RequestedCount, Guid SourceRunId);
 
-/// <summary>Объект кадра: класс, привязка (вариант класса) и рамка в долях кадра.</summary>
+/// <summary>Frame object: class, binding (class variant) and box as fractions of the frame.</summary>
 public sealed record GenerationSampleObject(Guid ClassId, Guid ClassVariantId, ImageBox Box);
 
 /// <summary>
-/// «Пример кадра»: PNG тех же пикселей, что даст запуск с этим seed для SampleIndex, фон BackgroundId, объекты с рамками и
-/// MissingObjects — сколько объектов не поместилось.
+/// "Sample frame": a PNG with the same pixels that a run with this seed produces for SampleIndex, background BackgroundId, objects with boxes and
+/// MissingObjects — how many objects did not fit.
 /// </summary>
 public sealed record GenerationSample(int SampleIndex, Guid BackgroundId, IReadOnlyList<GenerationSampleObject> Objects, int MissingObjects,
     byte[] Png, int Width, int Height);
 
-/// <summary>Изменённый или удалённый (Revision = null) пресет.</summary>
+/// <summary>Changed or deleted (Revision = null) preset.</summary>
 public sealed record GenerationEntityChange(Guid Id, long? Revision);
 
 /// <summary>
-/// Что изменилось в генерации проекта: Recipes — пресеты с новыми ревизиями или удалённые; Runs — запуски, у которых изменились
-/// данные помимо состояния задачи (подготовлен — появилась группа результата; удалён). Состояние и прогресс — событие JobChanged.
+/// What changed in the project generation: Recipes — presets with new revisions or deleted ones; Runs — runs whose
+/// data changed beyond the job state (prepared — the result group appeared; deleted). State and progress — the JobChanged event.
 /// </summary>
 public sealed class GenerationChangedEventArgs(string projectId, IReadOnlyList<GenerationEntityChange> recipes, IReadOnlyList<Guid> runs) : EventArgs
 {

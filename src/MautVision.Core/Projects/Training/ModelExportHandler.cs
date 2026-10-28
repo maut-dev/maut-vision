@@ -85,7 +85,7 @@ internal sealed class ModelExportHandler(IProjectsManager projects) : IJobHandle
             {
                 sha256 = Convert.ToHexStringLower(await SHA256.HashDataAsync(archive, token).ConfigureAwait(false));
             }
-            // The user confirmed the overwrite in «Сохранить как»; the old file is replaced only by a complete archive.
+            // The user confirmed the overwrite in "Save as"; the old file is replaced only by a complete archive.
             File.Move(temporary, input.DestinationPath, overwrite: true);
             moved = true;
             context.SetResult(new ModelExportResult(version.Id, version.Number, Path.GetFileName(input.DestinationPath), bytes, sha256));
@@ -206,7 +206,8 @@ internal sealed class ModelExportHandler(IProjectsManager projects) : IJobHandle
             ["sha256"] = file.Sha256,
             ["byteSize"] = file.ByteSize,
         }).ToArray()),
-        ["notes"] = new JsonArray(version.Notes.Select(note => (JsonNode)JsonValue.Create(note)!).ToArray()),
+        // Notes are worker warnings as "code: English message"; a version of 1.0.0 stored the text itself.
+        ["notes"] = new JsonArray(version.Notes.Select(note => (JsonNode)JsonValue.Create(NoteText(note))!).ToArray()),
         ["environment"] = JsonNode.Parse(version.Environment.GetRawText()),
     };
 
@@ -223,43 +224,54 @@ internal sealed class ModelExportHandler(IProjectsManager projects) : IJobHandle
         }).ToArray()),
     };
 
-    /// <summary>README.md in Russian: architecture, input, parameters, the class table, metrics and files with SHA-256.</summary>
+    /// <summary>A note of the version as text: "code: English message" of a worker warning, the stored text of a version of 1.0.0.</summary>
+    internal static string NoteText(CodedText note)
+    {
+        if (note.Code is null) return note.Text ?? "";
+        var code = note.Code.StartsWith("worker.", StringComparison.Ordinal) ? note.Code["worker.".Length..].Split('.')[0] : note.Code;
+        return note.Text is { Length: > 0 } text ? code + ": " + text : code;
+    }
+
+    /// <summary>
+    /// README.md in English (the archive is shared with others, whatever the language of the interface): architecture, input, parameters,
+    /// the class table, metrics and files with SHA-256.
+    /// </summary>
     internal static string Readme(ModelVersion version, IReadOnlyList<ModelVersionFile> weights)
     {
         static string Cell(string text) => text.Replace("|", "\\|", StringComparison.Ordinal).Replace('\r', ' ').Replace('\n', ' ');
         static string Value(System.Text.Json.JsonElement value) => value.ValueKind switch
         {
             JsonValueKind.String => value.GetString()!,
-            JsonValueKind.Null => "авто",
+            JsonValueKind.Null => "auto",
             _ => value.GetRawText(),
         };
         string Parameter(string key) => version.EffectiveParams.ValueKind == JsonValueKind.Object && version.EffectiveParams.TryGetProperty(key, out var effective)
             ? Value(effective)
             : version.Parameters.TryGetValue(key, out var requested) ? Value(requested) : "—";
         var text = new StringBuilder();
-        text.Append("# Модель, версия ").Append(version.Number).Append("\n\n");
-        text.Append("Пакет выгружен из Maut Vision. Порядок классов ниже совпадает с номерами выходов модели;\n");
-        text.Append("подробный паспорт — в manifest.json (архитектура, вход, параметры, метрики, sha256).\n");
-        text.Append("Точная карта выходов — classes.json: class_index, name и class_id.\n\n");
-        text.Append("- Архитектура: ").Append(version.Architecture).Append('\n');
-        text.Append("- Вход: ").Append(version.Input.Width).Append(" × ").Append(version.Input.Height).Append(" (imgsz ").Append(version.ImageSize).Append(")\n");
-        text.Append("- Обучение: эпох ").Append(version.EpochsCompleted).Append(version.StoppedEarly ? " (ранняя остановка)" : "")
-            .Append(", batch ").Append(Parameter("batch")).Append(", lr0 ").Append(Parameter("lr0")).Append(", оптимизатор ").Append(Parameter("optimizer"))
-            .Append(", устройство ").Append(Parameter("device")).Append('\n');
-        text.Append("- Датасет: ").Append(version.Dataset.Name).Append(" (manifest ").Append(version.Dataset.ManifestHash).Append(")\n");
-        text.Append("- Создана: ").Append(version.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture)).Append("\n\n");
-        text.Append("## Классы\n\n| Индекс | Название | ID класса |\n|---|---|---|\n");
+        text.Append("# Model, version ").Append(version.Number).Append("\n\n");
+        text.Append("Exported from Maut Vision. The order of the classes below matches the output indexes of the model;\n");
+        text.Append("the full passport is in manifest.json (architecture, input, parameters, metrics, sha256).\n");
+        text.Append("The exact output map is classes.json: class_index, name and class_id.\n\n");
+        text.Append("- Architecture: ").Append(version.Architecture).Append('\n');
+        text.Append("- Input: ").Append(version.Input.Width).Append(" × ").Append(version.Input.Height).Append(" (imgsz ").Append(version.ImageSize).Append(")\n");
+        text.Append("- Training: epochs ").Append(version.EpochsCompleted).Append(version.StoppedEarly ? " (stopped early)" : "")
+            .Append(", batch ").Append(Parameter("batch")).Append(", lr0 ").Append(Parameter("lr0")).Append(", optimizer ").Append(Parameter("optimizer"))
+            .Append(", device ").Append(Parameter("device")).Append('\n');
+        text.Append("- Dataset: ").Append(version.Dataset.Name).Append(" (manifest ").Append(version.Dataset.ManifestHash).Append(")\n");
+        text.Append("- Created: ").Append(version.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture)).Append("\n\n");
+        text.Append("## Classes\n\n| Index | Name | Class ID |\n|---|---|---|\n");
         foreach (var item in version.Classes.OrderBy(item => item.Index))
         {
             text.Append("| ").Append(item.Index).Append(" | ").Append(Cell(item.Name)).Append(" | ").Append(item.ClassId?.ToString("D") ?? "—").Append(" |\n");
         }
-        text.Append("\n## Метрики\n\n");
-        if (version.Metrics.Count == 0) text.Append("- нет данных\n");
+        text.Append("\n## Metrics\n\n");
+        if (version.Metrics.Count == 0) text.Append("- no data\n");
         foreach (var (name, value) in version.Metrics) text.Append("- ").Append(name).Append(": ").Append(value.ToString("0.000", CultureInfo.InvariantCulture)).Append('\n');
-        text.Append("\n## Файлы\n\n");
+        text.Append("\n## Files\n\n");
         foreach (var file in weights)
         {
-            text.Append("- weights/").Append(file.Name).Append(" (").Append(file.ByteSize).Append(" байт, sha256 ").Append(file.Sha256).Append(")\n");
+            text.Append("- weights/").Append(file.Name).Append(" (").Append(file.ByteSize).Append(" bytes, sha256 ").Append(file.Sha256).Append(")\n");
         }
         return text.ToString();
     }

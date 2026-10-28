@@ -3,6 +3,7 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isId } from "../../catalog/catalog-guards";
 import type { CheckRegionDto } from "../request-dto/checks-request-dto";
 import { isCheckErrorDto, type CheckErrorDto } from "./model-evaluation-response-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
 export type LiveCheckMode = "image" | "video" | "screen";
 
@@ -125,9 +126,10 @@ export interface LiveCheckJournalPageResponseDto {
     journal: LiveCheckJournalInfoDto;
 }
 
+/** A warning of the worker: code for the log; message — a code of the catalog worker with values and the English fallback. */
 export interface LiveCheckWarningDto {
     code: string;
-    message: string;
+    message: CodedTextDto;
 }
 
 /**
@@ -203,7 +205,7 @@ export function isLiveCheckResponseDto(value: unknown): value is LiveCheckRespon
         && (value.preview === null || (isRecord(value.preview) && isCount(value.preview.number) && isCount(value.preview.frameIndex) && isCount(value.preview.timeMs)
             && isCount(value.preview.width) && isCount(value.preview.height) && isResourceUrl(value.preview.url)))
         && isLiveCheckJournalInfoDto(value.journal) && Array.isArray(value.recentFrames) && value.recentFrames.every(isLiveCheckFrameDto)
-        && Array.isArray(value.warnings) && value.warnings.every(item => isRecord(item) && typeof item.code === "string" && typeof item.message === "string")
+        && Array.isArray(value.warnings) && value.warnings.every(item => isRecord(item) && typeof item.code === "string" && isCodedTextDto(item.message))
         && (value.error === null || isCheckErrorDto(value.error)) && (value.stopReason === null || (typeof value.stopReason === "string" && reasons.includes(value.stopReason)))
         && isDate(value.startedAt) && isDateOrNull(value.finishedAt) && isCount(value.sequence);
 }

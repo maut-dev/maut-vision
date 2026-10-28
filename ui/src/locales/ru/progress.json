@@ -1,0 +1,8 @@
+{
+  "preparing": "Подготовка",
+  "epoch": "Эпоха {{epoch}} из {{total}}",
+  "saving_version": "Сохранение версии модели",
+  "validating_dataset": "Проверка датасета",
+  "loading_model": "Загрузка модели",
+  "evaluating": "Идёт проверка"
+}

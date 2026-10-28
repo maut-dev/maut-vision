@@ -1,4 +1,4 @@
 namespace MautVision.Desktop.Controllers.Projects.Images.RequestDto;
 
-/// <summary>До 200 изображений, обычно одна страница галереи.</summary>
+/// <summary>Up to 200 images, usually one gallery page.</summary>
 public sealed record ListImageAnnotationsRequestDto(string ProjectId, Guid[] ImageIds);

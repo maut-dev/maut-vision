@@ -1,0 +1,9 @@
+{
+  "preparing_folder": "Preparing the job folder: dataset, base weights, parameters.",
+  "worker_started": "Starting the Python worker.",
+  "cancelled": "Training cancelled.",
+  "failed": "Training ended with an error.",
+  "version_created": "Model version {{number}} created.",
+  "interrupted": "The run was interrupted when the application stopped.",
+  "warning": "{{code}}: {{message}}"
+}

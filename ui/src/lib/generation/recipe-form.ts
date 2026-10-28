@@ -7,6 +7,7 @@ import {
     distributeEvenly,
     eligibleClassVariants,
     generationTexts,
+    maxRecipeNameLength,
     recipeClassVariantIds,
     recipeFieldError,
     weightsTotal,
@@ -15,6 +16,7 @@ import {
 import type { GenerationRecipeFormDto, GenerationVariantWeightDto } from "@/api/projects/generation/request-dto/generation-recipe-form-dto";
 import type { GenerationRecipeResponseDto } from "@/api/projects/generation/response-dto/generation-recipe-response-dto";
 import type { GenerationRepeatDraftResponseDto } from "@/api/projects/generation/response-dto/generation-sample-response-dto";
+import { i18n } from "@/i18n";
 import { locale } from "@/lib/format";
 
 /** Режим формы: новый пресет, изменение сохранённого или повтор запуска (настройки снимка до «Редактировать варианты…»). */
@@ -70,7 +72,15 @@ const repeatNotice = "Настройки сохранённого запуска
 
 /** «Настроить повтор»: настройки снимка запуска; доли и привязки — из снимка, пока пользователь не перейдёт к текущим источникам. */
 export function formForRepeat(draft: GenerationRepeatDraftResponseDto): RecipeFormValues {
-    return fromRecipe(draft.recipe, { kind: "repeat", sourceRunId: draft.sourceRunId, notice: repeatNotice, snapshot: draft.recipe });
+    return fromRecipe(draft.recipe, { kind: "repeat", sourceRunId: draft.sourceRunId, notice: repeatNotice, snapshot: draft.recipe },
+        repeatName(draft.recipe.name));
+}
+
+/** «<имя> · повтор» in the language of the page; the name is shortened so the whole fits 120 characters. */
+export function repeatName(name: string): string {
+    const suffixLength = i18n.t("generation.repeatName", { name: "" }).length;
+    const stem = name.length + suffixLength > maxRecipeNameLength ? name.slice(0, Math.max(0, maxRecipeNameLength - suffixLength)).trimEnd() : name;
+    return i18n.t("generation.repeatName", { name: stem });
 }
 
 /** «Редактировать варианты по текущим источникам»: повтор становится обычным новым пресетом с теми же значениями. */

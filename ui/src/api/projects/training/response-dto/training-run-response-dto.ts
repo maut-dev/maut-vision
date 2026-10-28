@@ -5,6 +5,7 @@ import { isDatasetSplitCountsDto, type DatasetClassEntryDto, type DatasetSplitCo
 import type { InputSizeDto } from "../../input-size-dto";
 import type { TrainingParameters } from "../request-dto/training-request-dto";
 import { isTrainingParameters } from "./training-runtime-response-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
 /** Вид задачи запуска обучения: её снимки приходят в job.changed. */
 export const trainingJobKind = "training.run";
@@ -31,14 +32,17 @@ export interface TrainingRunProgressDto {
     metrics: Record<string, number>;
 }
 
-/** Error of a run: code — what the UI translates; workerMessage — the worker's own message for its training.worker_* codes, null otherwise. */
+/**
+ * Error of a run: code — what the UI translates; workerMessage — for a failure the worker reported itself (training.worker_*), a code of
+ * the catalog worker with values and its English message as the fallback (a run of 1.0.0: the stored text); null otherwise.
+ */
 export interface TrainingRunErrorDto {
     code: string;
-    workerMessage: string | null;
+    workerMessage: CodedTextDto | null;
 }
 
 /**
- * Запуск обучения. job — снимок задачи training.run (job.progress 0–100, job.progressText «Эпоха X из Y», job.cancelRequested); state —
+ * Запуск обучения. job — снимок задачи training.run (job.progress 0–100, job.progressMessage progress.epoch «Эпоха X из Y», job.cancelRequested); state —
  * единое состояние для подписей; parameters — запрошенные (все ключи), effectiveParams — фактические от worker (null, пока не пришли;
  * outputClasses — карта выходов, lr0Source — request | computed | optimizer-auto); environment — python, torch, ultralytics, cuda,
  * deviceName; epochCount и logCount — для «История эпох» и «Журнал обучения»; resultVersionId — версия модели после «Готово»;
@@ -87,11 +91,12 @@ export interface TrainingEpochPageResponseDto {
 
 export type TrainingLogKind = "log" | "stage" | "warning" | "system";
 
+/** message — a console line or a stage as text; a system line (trainingLog.*) or a warning (worker.*) as a code with values; lines of 1.0.0 as text. */
 export interface TrainingLogEntryDto {
     sequence: number;
     at: string;
     kind: TrainingLogKind;
-    message: string;
+    message: CodedTextDto;
 }
 
 /** total — все записи; nextAfter — sequence для продолжения (у tailLog — последней записи, чтобы дочитывать новые). */
@@ -128,7 +133,7 @@ export function isTrainingRunResponseDto(value: unknown): value is TrainingRunRe
         && isNullableCount(progress.epochs) && isNullableCount(progress.batch) && isNullableCount(progress.batches) && isNumbers(progress.metrics)
         && isCount(value.epochCount) && isCount(value.logCount) && (value.environment === null || isRecord(value.environment))
         && (value.error === null || (isRecord(value.error) && typeof value.error.code === "string"
-            && (value.error.workerMessage === null || typeof value.error.workerMessage === "string")))
+            && (value.error.workerMessage === null || isCodedTextDto(value.error.workerMessage))))
         && (value.resultVersionId === null || isId(value.resultVersionId)) && isCount(value.revision);
 }
 
@@ -147,7 +152,7 @@ export function isTrainingEpochPageResponseDto(value: unknown): value is Trainin
 
 export function isTrainingLogPageResponseDto(value: unknown): value is TrainingLogPageResponseDto {
     return isRecord(value) && Array.isArray(value.items) && value.items.every(item => isRecord(item) && isCount(item.sequence) && isDate(item.at)
-        && ["log", "stage", "warning", "system"].includes(item.kind as string) && typeof item.message === "string")
+        && ["log", "stage", "warning", "system"].includes(item.kind as string) && isCodedTextDto(item.message))
         && isCount(value.total) && isNullableCount(value.nextAfter);
 }
 

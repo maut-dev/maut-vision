@@ -1,6 +1,8 @@
 /** «Экспортировать…»: открывает «Сохранить как» с именем «<имя> <YYYY-MM-DD>.zip». */
 export interface SelectProjectExportRequestDto {
     projectId: string;
+    /** The file name in the language of the page when the project name has no characters a file name can keep («Проект»). */
+    fallbackName?: string | null;
 }
 
 /** selectionToken — ответ selectExportDestination; operationId — новый на каждое нажатие (повтор вернёт ту же задачу). */
@@ -17,6 +19,8 @@ export type SelectProjectArchiveRequestDto = Record<string, never>;
 export interface StartProjectImportRequestDto {
     operationId: string;
     selectionToken: string;
+    /** The word of the suffix a copy gets when its name is taken: «импорт» → «Имя (импорт)»; without it the host uses "import". */
+    copyLabel?: string | null;
 }
 
 export interface GetProjectImportRequestDto {

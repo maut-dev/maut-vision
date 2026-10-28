@@ -154,7 +154,8 @@ internal static partial class SmokeRunner
             const failed = await finished(failing.data.id);
             const failedRun = await request('training.getRun', {projectId, runId: failing.data.id});
             assert(failed.data.status === 'failed' && failed.data.error.code === 'training.worker_device_unavailable'
-              && failedRun.data.state === 'failed' && failedRun.data.error.workerMessage === 'Сообщение worker: device_unavailable.',
+              && failedRun.data.state === 'failed' && failedRun.data.error.workerMessage?.code === 'worker.device_unavailable.fake'
+              && failedRun.data.error.workerMessage.text === 'Worker message: device_unavailable.' && failedRun.data.error.workerMessage.args?.code === 'device_unavailable',
               'A worker failure keeps the worker code and its own message');
 
             await rename('fake:hang');

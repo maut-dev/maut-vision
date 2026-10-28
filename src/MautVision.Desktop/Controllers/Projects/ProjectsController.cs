@@ -79,11 +79,11 @@ internal sealed class ProjectsController(IProjectsManager projects, IJobsManager
         lock (openGate) latestOpen = 0;
     }
 
-    /// <summary>«Сохранить как» with «&lt;имя&gt; &lt;YYYY-MM-DD&gt;.zip»; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
+    /// <summary>"Save as" with "&lt;name&gt; &lt;YYYY-MM-DD&gt;.zip"; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
     public async Task<ProjectExportSelectionResponseDto> SelectExportDestinationAsync(SelectProjectExportRequestDto request, CancellationToken cancellationToken)
     {
         var project = await projects.GetAsync(request.ProjectId, cancellationToken);
-        var path = await dialogs.PickSaveFile(Strings.DialogExportProject, DefaultFileName(project.Name, DateTime.Now), Strings.FilterProjectArchive, cancellationToken);
+        var path = await dialogs.PickSaveFile(Strings.DialogExportProject, DefaultFileName(project.Name, DateTime.Now, request.FallbackName), Strings.FilterProjectArchive, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new ProjectExportSelectionResponseDto(null, null);
         return new ProjectExportSelectionResponseDto(selections.Register([path], FileSelectionKind.SaveFile), Path.GetFileName(path));
     }
@@ -97,7 +97,7 @@ internal sealed class ProjectsController(IProjectsManager projects, IJobsManager
             throw new CoreException("projects.export_selection_expired", "The export destination is unknown, expired or belongs to another operation.");
         // projects.transfer_busy carries the area of the running work in details.section (images, datasets…); the page names it.
         var input = await projects.PrepareExportAsync(request.ProjectId, selection.Paths[0], request.OperationId, cancellationToken);
-        var job = await jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, request.ProjectId, request.OperationId, input.ProjectName,
+        var job = await jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.ProjectName),
             cancellationToken);
         exports[job.Id] = request.ProjectId;
         return JobResponseMapper.Map(job);
@@ -119,7 +119,7 @@ internal sealed class ProjectsController(IProjectsManager projects, IJobsManager
         if (selection is not { Kind: FileSelectionKind.Archive, Paths.Count: 1, Stamps: [var stamp] })
             throw new CoreException("projects.import_selection_expired", "The archive is unknown, expired or belongs to another operation.");
         var import = await projects.StartImportAsync(new ProjectArchiveSource(selection.Paths[0], stamp.Length, stamp.LastWriteTimeUtc), request.OperationId,
-            cancellationToken);
+            request.CopyLabel, cancellationToken);
         return ProjectResponseMapper.Map(import);
     }
 
@@ -136,7 +136,7 @@ internal sealed class ProjectsController(IProjectsManager projects, IJobsManager
     {
         var review = await projects.ReviewDeletionAsync(request.ProjectId, cancellationToken);
         return new ProjectDeletionReviewResponseDto(review.ProjectId, review.Name, review.Revision,
-            review.Activities.Select(item => new ProjectActivityResponseDto(item.Kind, item.JobId, item.Label)).ToArray(), review.TransferActive);
+            review.Activities.Select(item => new ProjectActivityResponseDto(item.Kind, item.JobId, CodedTextDto.MapOrNull(item.Label))).ToArray(), review.TransferActive);
     }
 
     public async Task<ProjectDeletionResponseDto> DeleteAsync(DeleteProjectRequestDto request, CancellationToken cancellationToken)
@@ -147,7 +147,7 @@ internal sealed class ProjectsController(IProjectsManager projects, IJobsManager
     }
 
     /// <summary>
-    /// The application exits: running exports and imports are cancelled («перенос будет отменён») and awaited for at most the wait, so an
+    /// The application exits: running exports and imports are cancelled ("the transfer will be cancelled") and awaited for at most the wait, so an
     /// export removes its temporary file and an import its staging folder; what is left is removed after the next start.
     /// </summary>
     internal async Task CancelTransfersAsync(TimeSpan wait)
@@ -186,15 +186,24 @@ internal sealed class ProjectsController(IProjectsManager projects, IJobsManager
         }
     }
 
-    /// <summary>«&lt;имя&gt; &lt;YYYY-MM-DD&gt;.zip»: characters a file name cannot have become «_», the whole name fits 100 characters.</summary>
-    internal static string DefaultFileName(string name, DateTime today)
+    /// <summary>
+    /// "&lt;name&gt; &lt;YYYY-MM-DD&gt;.zip": characters a file name cannot have become "_", the whole name fits 100 characters. A name with nothing
+    /// left takes the fallback the page passed in its language, otherwise "Project".
+    /// </summary>
+    internal static string DefaultFileName(string name, DateTime today, string? fallback = null)
     {
-        var invalid = Path.GetInvalidFileNameChars();
         var suffix = " " + today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + ".zip";
-        var stem = new string(name.Trim().Select(character => invalid.Contains(character) || char.IsControl(character) ? '_' : character).ToArray()).Trim().TrimEnd('.');
-        if (stem.Length == 0) stem = "Проект";
+        var stem = Stem(name);
+        if (stem.Length == 0) stem = Stem(fallback ?? "");
+        if (stem.Length == 0) stem = "Project";
         if (stem.Length + suffix.Length > MaxFileNameLength) stem = stem[..(MaxFileNameLength - suffix.Length)].TrimEnd();
         return stem + suffix;
+
+        static string Stem(string value)
+        {
+            var invalid = Path.GetInvalidFileNameChars();
+            return new string(value.Trim().Select(character => invalid.Contains(character) || char.IsControl(character) ? '_' : character).ToArray()).Trim().TrimEnd('.');
+        }
     }
 
     private static InputSize Map(InputSizeDto size) => new(size.Width, size.Height);

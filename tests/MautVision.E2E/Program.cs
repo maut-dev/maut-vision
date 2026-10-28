@@ -310,7 +310,7 @@ try
     await Step("Project export", async () =>
     {
         var input = await core.Projects.PrepareExportAsync(project.Id, projectArchive, "project-export");
-        var job = await core.Jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, project.Id, "project-export", input.ProjectName);
+        var job = await core.Jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, project.Id, "project-export", CodedText.Plain(input.ProjectName));
         var result = Result<ProjectExportResult>(await WaitJobAsync(project.Id, job.Id, TimeSpan.FromMinutes(10), null));
         if (result.Links < dataset.Counts.Total) throw new E2EException($"{result.Links} links for {dataset.Counts.Total} hard-linked dataset frames.");
         return $"{result.Files:N0} files, {result.Links:N0} links, {result.Bytes:N0} bytes → archive {result.ArchiveBytes:N0} bytes in {result.ElapsedMs} ms";
@@ -431,7 +431,7 @@ async Task<JobInfo> WaitJobAsync(string projectId, Guid jobId, TimeSpan limit, F
         if (watch.Elapsed - reported > TimeSpan.FromSeconds(15))
         {
             reported = watch.Elapsed;
-            Console.WriteLine($"      … {job.Kind} {job.Status} {job.Progress:N0}% {job.ProgressText}");
+            Console.WriteLine($"      … {job.Kind} {job.Status} {job.Progress:N0}% {job.ProgressMessage?.Code ?? job.ProgressMessage?.Text}");
         }
         await Task.Delay(100);
     }

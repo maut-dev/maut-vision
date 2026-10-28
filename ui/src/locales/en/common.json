@@ -89,7 +89,12 @@
     "exportInterrupted": "The export was interrupted. Repeat the export.",
     "importInterrupted": "The import was interrupted. Repeat the import.",
     "bytes": "{{processed}} of {{total}}",
-    "progress": "Progress: {{title}}"
+    "progress": "Progress: {{title}}",
+    "copyLabel": "import",
+    "fallbackName": "Project"
+  },
+  "generation": {
+    "repeatName": "{{name}} · repeat"
   },
   "projectEditor": {
     "newTitle": "New project",

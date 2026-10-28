@@ -33,7 +33,7 @@ const dialogTimeoutMs = 600_000;
  * datasetsApi.list.
  *
  * Запуск: startRun возвращает запуск сразу (state queued / preparing); cancelRun — «Отменить обучение». Ход: job.changed (kind
- * training.run: progress, progressText «Эпоха X из Y», state задачи) и training.changed (subscribeTrainingChanged: runs с revision —
+ * training.run: progress, progressMessage progress.epoch «Эпоха X из Y», state задачи) и training.changed (subscribeTrainingChanged: runs с revision —
  * перечитать getRun; versions — перечитать listModelVersions). История эпох — listEpochs страницами (after = nextAfter); журнал —
  * tailLog (последние сообщения), затем listLog с after = nextAfter для дочитывания новых и всей истории страницами.
  *

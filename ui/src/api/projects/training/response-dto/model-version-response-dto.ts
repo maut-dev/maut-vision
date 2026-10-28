@@ -4,6 +4,7 @@ import type { InputSizeDto } from "../../input-size-dto";
 import type { TrainingParameters } from "../request-dto/training-request-dto";
 import { isTrainingDatasetDto, type TrainingDatasetDto } from "./training-run-response-dto";
 import { isTrainingParameters } from "./training-runtime-response-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
 /** Класс выхода модели; classId = null у объединённого класса singleCls, sourceClassIds — классы проекта, которые он представляет. */
 export interface ModelClassDto {
@@ -26,7 +27,7 @@ export interface ModelVersionFileDto {
  * Краткий паспорт версии модели: number — «Версия N»; runId — «Паспорт запуска»; dataset — датасет и его паспорт; parameters —
  * запрошенные, effectiveParams — фактические; epochsCompleted и stoppedEarly — «ранняя остановка»; bestEpoch — лучшая эпоха (по
  * fitness); classes — в порядке выходов модели; metrics — проверка best.pt (precision, recall, mAP50, mAP50_95); files с SHA-256;
- * notes — предупреждения worker «код: текст»; environment — окружение обучения; isWorking — «Рабочая». История эпох версии —
+ * notes — предупреждения worker (коды worker.* с args; у версий 1.0.0 — текст «код: текст»); environment — окружение обучения; isWorking — «Рабочая». История эпох версии —
  * trainingApi.listEpochs(runId).
  */
 export interface ModelVersionResponseDto {
@@ -45,7 +46,7 @@ export interface ModelVersionResponseDto {
     classes: ModelClassDto[];
     metrics: Record<string, number>;
     files: ModelVersionFileDto[];
-    notes: string[];
+    notes: CodedTextDto[];
     environment: Record<string, unknown>;
     isWorking: boolean;
     revision: number;
@@ -62,7 +63,7 @@ export function isModelVersionResponseDto(value: unknown): value is ModelVersion
         && isRecord(value.metrics) && Object.values(value.metrics).every(item => typeof item === "number")
         && Array.isArray(value.files) && value.files.every(file => isRecord(file) && ["weights_pt", "onnx", "plot", "log"].includes(file.kind as string)
             && typeof file.name === "string" && isCount(file.byteSize) && typeof file.sha256 === "string" && (file.url === null || typeof file.url === "string"))
-        && Array.isArray(value.notes) && value.notes.every(note => typeof note === "string") && isRecord(value.environment)
+        && Array.isArray(value.notes) && value.notes.every(isCodedTextDto) && isRecord(value.environment)
         && typeof value.isWorking === "boolean" && isCount(value.revision) && isDate(value.createdAt);
 }
 

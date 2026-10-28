@@ -1,6 +1,7 @@
 using MautVision.Core.Interfaces.Jobs;
 using MautVision.Core.Interfaces.Projects;
 using MautVision.Core.Interfaces.Projects.Generation;
+using MautVision.Desktop.Controllers.Jobs;
 using MautVision.Desktop.Controllers.Projects.Generation.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Generation.ResponseDto;
 using MautVision.Desktop.Resources;
@@ -62,7 +63,7 @@ internal sealed class GenerationController(IProjectsManager projects, IJobsManag
         var generation = await Generation(request.ProjectId, cancellationToken);
         var input = await generation.PrepareRunAsync(request.RecipeId, request.RecipeRevision, GenerationResponseMapper.Seed(request.Seed), request.Count,
             request.OperationId, cancellationToken);
-        var job = await jobs.EnqueueAsync<IGenerationRunJob, GenerationRunInput>(input, request.ProjectId, request.OperationId, input.Recipe.Name,
+        var job = await jobs.EnqueueAsync<IGenerationRunJob, GenerationRunInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.Recipe.Name),
             cancellationToken);
         return GenerationResponseMapper.Map(await generation.GetRunAsync(job.Id, cancellationToken));
     }

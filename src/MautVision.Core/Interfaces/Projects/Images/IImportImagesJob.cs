@@ -4,40 +4,40 @@ using MautVision.Core.Interfaces.Media;
 namespace MautVision.Core.Interfaces.Projects.Images;
 
 /// <summary>
-/// Вид источника импорта. Новый вид (кадры видео) добавляется значением и необязательными полями источника,
-/// без изменения остального входа задачи.
+/// Import source kind. A new kind (video frames) is added as a value and optional source fields,
+/// without changing the rest of the job input.
 /// </summary>
 public enum ImageImportSourceKind
 {
-    /// <summary>Один файл PNG, JPEG, WebP или BMP.</summary>
+    /// <summary>A single PNG, JPEG, WebP or BMP file.</summary>
     File,
 
-    /// <summary>Папка: файлы с этими расширениями, по относительному пути в естественном порядке; ссылки не читаются.</summary>
+    /// <summary>Folder: files with these extensions, by relative path in natural order; links are not followed.</summary>
     Folder,
 
     /// <summary>
-    /// Кадры видео (MP4, MKV, AVI, MOV, WebM, M4V) на отметках <see cref="ImageImportSource.Frames"/>: PNG исходного размера
-    /// с именем «&lt;имя видео&gt;-frame-&lt;отметка, мс&gt;.png» и происхождением video.
+    /// Video frames (MP4, MKV, AVI, MOV, WebM, M4V) at the marks <see cref="ImageImportSource.Frames"/>: PNG of the original size
+    /// named "&lt;video name&gt;-frame-&lt;mark, ms&gt;.png" with origin video.
     /// </summary>
     Video,
 }
 
 /// <summary>
-/// Источник импорта. Path — абсолютный путь; хранится во входе задачи в project.db и наружу не выходит.
-/// Recursive — для папки: включая вложенные папки. Frames — для видео: отметки кадров (обязательны).
+/// Import source. Path — absolute path; stored in the job input in project.db and never leaves it.
+/// Recursive — for a folder: including subfolders. Frames — for a video: frame marks (required).
 /// </summary>
 public sealed record ImageImportSource(ImageImportSourceKind Kind, string Path, bool Recursive = false, VideoFrameRange? Frames = null);
 
 /// <summary>
-/// Вход задачи импорта в ручную группу. Порядок кадров в группе — порядок источников, внутри папки — по относительному
-/// пути. SkipDuplicates — пропускать кадры, пиксели которых (PixelHash) уже есть в группе.
+/// Input of the job that imports into a manual group. The frame order in the group is the source order, inside a folder — by relative
+/// path. SkipDuplicates — skip frames whose pixels (PixelHash) are already in the group.
 /// </summary>
 public sealed record ImportImagesInput(Guid GroupId, IReadOnlyList<ImageImportSource> Sources, bool SkipDuplicates = true);
 
 /// <summary>
-/// Итог импорта: Total — файлов (кадров) после раскрытия папок и видео, Added, Duplicates (пропущенные повторы), Rejected;
-/// RejectedFiles — первые <see cref="MaxRejectedFiles"/> отклонённых (имя или относительный путь в папке, код причины
-/// <c>images.file_invalid</c>, <c>images.file_unreadable</c> или <c>video.frame_unavailable</c> — видео кончилось раньше отметки).
+/// Import result: Total — files (frames) after expanding folders and videos, Added, Duplicates (skipped duplicates), Rejected;
+/// RejectedFiles — the first <see cref="MaxRejectedFiles"/> rejected ones (name or relative path in the folder, reason code
+/// <c>images.file_invalid</c>, <c>images.file_unreadable</c> or <c>video.frame_unavailable</c> — the video ended before the mark).
 /// </summary>
 public sealed record ImportImagesResult(int Total, int Added, int Duplicates, int Rejected, IReadOnlyList<ImportRejectedFile> RejectedFiles)
 {
@@ -45,14 +45,14 @@ public sealed record ImportImagesResult(int Total, int Added, int Duplicates, in
 }
 
 /// <summary>
-/// Импорт изображений в группу (CPU, возобновляемая). Каждый файл декодируется один раз полностью: размер с учётом
-/// EXIF-ориентации, проверка пикселей, PixelHash; файл копируется без изменений. Ревизия группы не требуется. Группа не
-/// ручная — <c>images.group_not_manual</c>, в архиве или удалена — <c>images.group_archived</c>, <c>images.group_not_found</c>;
-/// папка недоступна — <c>images.folder_unavailable</c>; состав папок или видео изменился до продолжения после перезапуска —
-/// <c>images.import_sources_changed</c>. Видео: нет ffmpeg — <c>video.ffmpeg_missing</c>, файл не читается —
-/// <c>video.unreadable</c> или <c>video.unsupported</c>, отметки неверны — <c>video.frames_invalid</c>, последняя не раньше
-/// конца — <c>video.range_invalid</c>. Кадры одного видео декодирует один процесс ffmpeg; хеш семьи (SHA-256 файла)
-/// считается в задаче. Отмена и сбой оставляют добавленное; итог — в <see cref="JobInfo.Result"/>.
+/// Import of images into a group (CPU, resumable). Each file is fully decoded once: size with
+/// EXIF orientation applied, pixel check, PixelHash; the file is copied unchanged. The group revision is not required. A group that is not
+/// manual — <c>images.group_not_manual</c>, archived or deleted — <c>images.group_archived</c>, <c>images.group_not_found</c>;
+/// folder unavailable — <c>images.folder_unavailable</c>; the content of folders or videos changed before resuming after a restart —
+/// <c>images.import_sources_changed</c>. Video: no ffmpeg — <c>video.ffmpeg_missing</c>, the file is unreadable —
+/// <c>video.unreadable</c> or <c>video.unsupported</c>, invalid marks — <c>video.frames_invalid</c>, the last one not before
+/// the end — <c>video.range_invalid</c>. Frames of one video are decoded by one ffmpeg process; the family hash (SHA-256 of the file)
+/// is computed in the job. Cancellation and failure keep what was added; the result is in <see cref="JobInfo.Result"/>.
 /// </summary>
 [JobKind("images.import")]
 public interface IImportImagesJob : IJobDefinition<ImportImagesInput>

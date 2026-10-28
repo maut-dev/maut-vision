@@ -5,6 +5,7 @@ import type { TrainingRunResponseDto } from "@/api/projects/training/response-dt
 import { isActiveTrainingRun, trainingMetricLabels, trainingRunStateLabels, trainingStageLabels } from "@/api/projects/training/training-parameters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { logLineText } from "@/lib/coded-text";
 import { formatDate } from "@/lib/format";
 import { lossSeries, qualitySeries } from "@/lib/training/epoch-chart";
 import { count, environmentText, formatNumber, runError, runPercent } from "@/lib/training/run-view";
@@ -178,7 +179,7 @@ export function TrainingRunPassport({ projectId, run, version, versionDeleted, b
                     {details.log.length ? details.log.map(entry => (
                         <p key={entry.sequence} data-kind={entry.kind}
                             className={`whitespace-pre-wrap break-all ${entry.kind === "warning" ? "text-amber-700 dark:text-amber-400" : entry.kind === "stage" || entry.kind === "system" ? "text-muted-foreground" : ""}`}>
-                            {entry.message}
+                            {logLineText(entry)}
                         </p>
                     )) : <p className="font-sans text-muted-foreground">Сообщений пока нет.</p>}
                 </div>

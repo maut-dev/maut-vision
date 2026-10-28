@@ -1,4 +1,6 @@
+import type { CodedTextDto } from "@/api/coded-text-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { codedText } from "@/lib/coded-text";
 import { i18n } from "@/i18n";
 
 type Details = Readonly<Record<string, string>> | null | undefined;
@@ -40,9 +42,12 @@ export function jobErrorText(error: { code: string; message: string | null }): s
     return errorText(error.code, null, error.message);
 }
 
-/** A training run or check error: the worker's own message for its codes, otherwise the text of the code. */
-export function workerErrorText(error: { code: string; workerMessage: string | null }): string {
-    return error.workerMessage || errorText(error.code);
+/**
+ * A training run or check error: for a failure the worker reported itself, the text of its worker code with values (its English message
+ * for a code the catalogs do not know, its stored text for a run of 1.0.0); otherwise the text of the error code.
+ */
+export function workerErrorText(error: { code: string; workerMessage: CodedTextDto | null }): string {
+    return (error.workerMessage && codedText(error.workerMessage)) || errorText(error.code);
 }
 
 /** Dialogs that list deletion blockers; the same code reads differently in each. */

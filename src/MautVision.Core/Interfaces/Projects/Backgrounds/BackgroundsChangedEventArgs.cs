@@ -1,12 +1,12 @@
 namespace MautVision.Core.Interfaces.Projects.Backgrounds;
 
-/// <summary>Изменённый или удалённый (Revision = null) объект: набор или фон.</summary>
+/// <summary>Changed or deleted (Revision = null) object: a set or a background.</summary>
 public sealed record BackgroundsEntityChange(Guid Id, long? Revision);
 
 /// <summary>
-/// Что изменилось в фонах проекта. Sets — наборы с новыми ревизиями или удалённые; Items — фоны, изменённые явной операцией
-/// («Убрать», «Восстановить», удаление выбранных); ItemsChangedIn — наборы, у которых изменился состав или счётчики (подготовка,
-/// «Убрать», удаление): UI перечитывает их набор и страницы. Подготовка сообщает об изменениях не чаще раза в 500 мс на набор.
+/// What changed in the project backgrounds. Sets — sets with new revisions or deleted ones; Items — backgrounds changed by an explicit operation
+/// ("Remove", "Restore", deletion of selected ones); ItemsChangedIn — sets whose content or counters changed (preparation,
+/// "Remove", deletion): the UI rereads their set and pages. Preparation reports changes at most once per 500 ms per set.
 /// </summary>
 public sealed class BackgroundsChangedEventArgs(
     string projectId,

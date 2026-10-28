@@ -6,6 +6,7 @@ import { ResourceImage } from "@/components/resource-image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImageViewer } from "@/components/viewer/image-viewer";
+import { workerWarningText } from "@/lib/coded-text";
 import { formatDate, locale } from "@/lib/format";
 import {
     deviceLabel,
@@ -178,7 +179,7 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
                     {version.notes.length > 0 && (
                         <div className="space-y-1 text-xs" data-testid="model-version-notes">
                             <p className="text-muted-foreground">Замечания обучения</p>
-                            {version.notes.map(note => <p key={note} className="whitespace-pre-wrap">{note}</p>)}
+                            {version.notes.map((note, index) => <p key={index} className="whitespace-pre-wrap">{workerWarningText(note)}</p>)}
                         </div>
                     )}
                 </div>

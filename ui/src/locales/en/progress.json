@@ -1,0 +1,8 @@
+{
+  "preparing": "Preparing",
+  "epoch": "Epoch {{epoch}} of {{total}}",
+  "saving_version": "Saving the model version",
+  "validating_dataset": "Checking the dataset",
+  "loading_model": "Loading the model",
+  "evaluating": "Checking"
+}

@@ -4,6 +4,7 @@ import { liveCheckStateLabels } from "@/api/projects/checks/response-dto/live-ch
 import type { ResourceUrl } from "@/api/resources/resource-url";
 import { Badge } from "@/components/ui/badge";
 import { classColor, formatConfidence } from "@/lib/checks/check-view";
+import { codedText } from "@/lib/coded-text";
 import { workerErrorText } from "@/lib/errors";
 import { locale } from "@/lib/format";
 
@@ -29,7 +30,7 @@ export function CheckStatus({ check, testPrefix }: { check: LiveCheckResponseDto
             </p>
             {check.error && <p role="alert" className="text-destructive" data-testid={`${testPrefix}-error`}>{workerErrorText(check.error)}</p>}
             {check.warnings.map(warning => (
-                <p key={warning.code} className="text-xs text-muted-foreground" data-testid={`${testPrefix}-warning`}>⚠ {warning.message}</p>
+                <p key={warning.code} className="text-xs text-muted-foreground" data-testid={`${testPrefix}-warning`}>⚠ {codedText(warning.message)}</p>
             ))}
         </div>
     );

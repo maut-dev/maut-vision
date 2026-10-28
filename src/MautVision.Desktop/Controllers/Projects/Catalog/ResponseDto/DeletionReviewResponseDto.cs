@@ -11,8 +11,8 @@ public sealed record DeletionBlockerResponseDto(string Code, int Count, string[]
 }
 
 /// <summary>
-/// Состав удаления. TargetKind: variant, class, classVariant, asset. TargetName — название цели (у изображения пусто).
-/// Revision передаётся в удаление; непустой Blockers — удаление сейчас недоступно.
+/// What a deletion removes. TargetKind: variant, class, classVariant, asset. TargetName — the target name (empty for an image).
+/// Revision is passed to the deletion; non-empty Blockers — the deletion is unavailable now.
 /// </summary>
 public sealed record DeletionReviewResponseDto(
     string TargetKind,
@@ -24,5 +24,5 @@ public sealed record DeletionReviewResponseDto(
     DeletionBlockerResponseDto[] Blockers,
     string Revision);
 
-/// <summary>Удалено строк; CleanupPending — файлы ещё удаляются в фоне, очистка продолжится при следующем открытии проекта.</summary>
+/// <summary>Rows deleted; CleanupPending — files are still being deleted in the background, the cleanup continues the next time the project is opened.</summary>
 public sealed record DeletionResultResponseDto(long Classes, long ClassVariants, long Assets, bool CleanupPending);

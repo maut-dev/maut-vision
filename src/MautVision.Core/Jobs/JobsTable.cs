@@ -218,7 +218,7 @@ internal static class JobsTable
         command.Parameters.AddWithValue("$kind", job.Kind);
         command.Parameters.AddWithValue("$operation", job.OperationId);
         command.Parameters.AddWithValue("$created", Time(job.CreatedAt));
-        command.Parameters.AddWithValue("$label", (object?)job.Label ?? DBNull.Value);
+        command.Parameters.AddWithValue("$label", (object?)CodedTextJson.SerializeOrNull(job.Label) ?? DBNull.Value);
         command.Parameters.AddWithValue("$input", input);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -309,7 +309,7 @@ internal static class JobsTable
         command.Parameters.AddWithValue("$id", Key(job.Id));
         command.Parameters.AddWithValue("$status", StatusKey(job.Status));
         command.Parameters.AddWithValue("$progress", (object?)job.Progress ?? DBNull.Value);
-        command.Parameters.AddWithValue("$text", (object?)job.ProgressText ?? DBNull.Value);
+        command.Parameters.AddWithValue("$text", (object?)CodedTextJson.SerializeOrNull(job.ProgressMessage) ?? DBNull.Value);
         command.Parameters.AddWithValue("$processed", (object?)job.Processed ?? DBNull.Value);
         command.Parameters.AddWithValue("$total", (object?)job.Total ?? DBNull.Value);
         command.Parameters.AddWithValue("$errorCode", (object?)job.Error?.Code ?? DBNull.Value);
@@ -335,7 +335,7 @@ internal static class JobsTable
         reader.GetString(2),
         ParseStatus(reader.GetString(3)),
         reader.IsDBNull(4) ? null : reader.GetDouble(4),
-        reader.IsDBNull(5) ? null : reader.GetString(5),
+        reader.IsDBNull(5) ? null : CodedTextJson.Parse(reader.GetString(5)),
         reader.IsDBNull(6) ? null : reader.GetInt64(6),
         reader.IsDBNull(7) ? null : reader.GetInt64(7),
         reader.IsDBNull(8) ? null : new JobError(reader.GetString(8), reader.IsDBNull(9) ? "" : reader.GetString(9)),
@@ -346,7 +346,7 @@ internal static class JobsTable
         reader.IsDBNull(15) ? null : Time(reader.GetInt64(15)),
         reader.GetInt64(11),
         reader.IsDBNull(16) ? null : ParseResult(reader.GetString(16)),
-        reader.IsDBNull(17) ? null : reader.GetString(17));
+        reader.IsDBNull(17) ? null : CodedTextJson.Parse(reader.GetString(17)));
 
     private static JsonElement ParseResult(string json)
     {

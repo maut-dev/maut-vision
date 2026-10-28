@@ -48,7 +48,7 @@ public partial class MainWindow : Window
     private readonly IAppTray tray;
     private readonly HostSettings hostSettings;
     private readonly HostLanguage language;
-    // «Выйти» (or the end of a smoke run): closing the window ends the application; otherwise it hides the window in the tray.
+    // "Exit" (or the end of a smoke run): closing the window ends the application; otherwise it hides the window in the tray.
     private bool exiting;
     private bool leftoversStarted;
     private bool drained;
@@ -351,7 +351,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// «Выйти» of the tray: shows the window, asks when background work runs (jobs of open projects, an import), then closes it through
+    /// "Exit" of the tray: shows the window, asks when background work runs (jobs of open projects, an import), then closes it through
     /// the unsaved changes guard of the page. The question is a native message box: it works even when the page does not answer.
     /// </summary>
     internal void RequestQuit()
@@ -390,7 +390,7 @@ public partial class MainWindow : Window
         return MessageBox.Show(this, question, "Maut Vision", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
     }
 
-    /// <summary>Smoke seams of «Выйти»: the work count to use instead of Core's, the answer to the question and the questions asked.</summary>
+    /// <summary>Smoke seams of "Exit": the work count to use instead of Core's, the answer to the question and the questions asked.</summary>
     internal int? SmokeActiveWork { get; set; }
 
     internal bool SmokeQuitAnswer { get; set; }
@@ -504,7 +504,7 @@ public partial class MainWindow : Window
     /// </summary>
     internal static string? SmokeSaveAnswer;
 
-    /// <summary>Native «Сохранить как» for a ZIP archive owned by this window; it asks before overwriting an existing file.</summary>
+    /// <summary>Native "Save as" for a ZIP archive owned by this window; it asks before overwriting an existing file.</summary>
     private Task<string?> PickSaveFileAsync(string title, string fileName, string filter, CancellationToken cancellationToken)
     {
         if (options.SmokeReport is not null) return Task.FromResult(Interlocked.Exchange(ref SmokeSaveAnswer, null));
@@ -644,7 +644,7 @@ public partial class MainWindow : Window
             if (closing) return;
             if (!allowed)
             {
-                // The page shows its dialog; «Уйти без сохранения» or a save asks for the exit again (system.close).
+                // The page shows its dialog; "Leave without saving" or a save asks for the exit again (system.close).
                 exiting = false;
                 return;
             }
@@ -694,7 +694,7 @@ public partial class MainWindow : Window
         await Task.Yield();
         try
         {
-            // «перенос будет отменён»: an export removes its temporary file, an import its staging folder, if they manage in time.
+            // "the transfer will be cancelled": an export removes its temporary file, an import its staging folder, if they manage in time.
             await projectsController.CancelTransfersAsync(TimeSpan.FromSeconds(5));
         }
         catch (Exception error)

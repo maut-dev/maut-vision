@@ -10,6 +10,7 @@ import {
     type ProjectImportResponseDto,
 } from "@/api/projects/response-dto/project-lifecycle-response-dto";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 import { isJobActive } from "./use-asset-imports";
 
@@ -71,7 +72,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
             const next: ProjectExportTransfer = {
                 kind: "export",
                 projectId: latest.projectId,
-                projectName: start?.projectName ?? current?.projectName ?? names.current.get(latest.projectId) ?? latest.label ?? "",
+                projectName: start?.projectName ?? current?.projectName ?? names.current.get(latest.projectId) ?? latest.label?.text ?? "",
                 fileName: start?.fileName ?? current?.fileName ?? null,
                 job: latest,
                 result: parseProjectExportResult(latest),
@@ -126,7 +127,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
     const startExport = useCallback(async (project: ProjectResponseDto) => {
         setError(undefined);
         try {
-            const destination = await projectsApi.selectExportDestination({ projectId: project.id });
+            const destination = await projectsApi.selectExportDestination({ projectId: project.id, fallbackName: i18n.t("transfer.fallbackName") });
             if (!destination.selectionToken) return;
             const job = await projectsApi.startExport({ projectId: project.id, operationId: crypto.randomUUID(), selectionToken: destination.selectionToken });
             if (mounted.current) applyJob(job, { projectName: project.name, fileName: destination.fileName });
@@ -141,7 +142,9 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         try {
             const archive = await projectsApi.selectImportArchive();
             if (!archive.selectionToken) return;
-            const operation = await projectsApi.startImport({ operationId: crypto.randomUUID(), selectionToken: archive.selectionToken });
+            const operation = await projectsApi.startImport({
+                operationId: crypto.randomUUID(), selectionToken: archive.selectionToken, copyLabel: i18n.t("transfer.copyLabel"),
+            });
             if (mounted.current) applyImport(operation, true);
         } catch (cause) {
             if (mounted.current) setError(errorMessage(cause));

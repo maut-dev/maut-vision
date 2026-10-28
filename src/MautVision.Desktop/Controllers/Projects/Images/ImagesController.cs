@@ -175,7 +175,7 @@ internal sealed class ImagesController(
             _ => selection.Paths.Select(path => new ImageImportSource(ImageImportSourceKind.File, path)).ToArray(),
         };
         var job = await jobs.EnqueueAsync<IImportImagesJob, ImportImagesInput>(new ImportImagesInput(group.Id, sources, request.SkipDuplicates),
-            request.ProjectId, request.OperationId, group.Name, cancellationToken);
+            request.ProjectId, request.OperationId, JobLabels.Name(group.Name), cancellationToken);
         return JobResponseMapper.Map(job);
     }
 

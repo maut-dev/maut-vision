@@ -59,11 +59,11 @@ internal sealed class BaseModelsManager : IBaseModelsManager
             {
                 entries = await JsonSerializer.DeserializeAsync<List<BaseModelCatalogEntry?>>(file, JsonOptions, cancellationToken)
                     .ConfigureAwait(false)
-                    ?? throw new InvalidDataException("Каталог моделей должен содержать JSON-массив, а не null.");
+                    ?? throw new InvalidDataException("The model catalog must contain a JSON array, not null.");
             }
             catch (JsonException error)
             {
-                throw new InvalidDataException("Не удалось разобрать yolo-catalog.json: ожидается массив записей моделей.", error);
+                throw new InvalidDataException("Failed to parse yolo-catalog.json: an array of model entries is expected.", error);
             }
 
             var models = new List<IBaseModel>(entries.Count);
@@ -73,12 +73,12 @@ internal sealed class BaseModelsManager : IBaseModelsManager
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (entry is null || string.IsNullOrWhiteSpace(entry.Id))
-                    throw new InvalidDataException("Каждая запись каталога должна иметь непустой id.");
+                    throw new InvalidDataException("Every catalog entry must have a non-empty id.");
                 if (!ids.Add(entry.Id))
-                    throw new InvalidDataException($"В каталоге повторяется id модели: {entry.Id}.");
+                    throw new InvalidDataException($"The catalog repeats the model id: {entry.Id}.");
                 Validate(entry);
                 if (!fileNames.Add(entry.FileName))
-                    throw new InvalidDataException($"В каталоге повторяется имя файла: {entry.FileName}.");
+                    throw new InvalidDataException($"The catalog repeats the file name: {entry.FileName}.");
                 var model = new BaseModel(entry, weightsDirectory, http, OnModelChanged, logger);
                 model.InspectStoredFile();
                 models.Add(model);
@@ -154,15 +154,15 @@ internal sealed class BaseModelsManager : IBaseModelsManager
         var fileName = entry.FileName;
         if (string.IsNullOrWhiteSpace(fileName) || fileName != Path.GetFileName(fileName) || fileName.StartsWith('.')
             || fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || fileName.EndsWith(BaseModel.DownloadExtension, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException($"Недопустимое имя файла модели {entry.Id}.");
+            throw new InvalidDataException($"Invalid model file name {entry.Id}.");
         if (entry.Stride is not (32 or 64))
-            throw new InvalidDataException($"Шаг входа модели {entry.Id} должен быть 32 или 64.");
+            throw new InvalidDataException($"The input stride of model {entry.Id} must be 32 or 64.");
         if (entry.ByteSize <= 0)
-            throw new InvalidDataException($"Размер модели {entry.Id} должен быть положительным.");
+            throw new InvalidDataException($"The size of model {entry.Id} must be positive.");
         if (entry.Sha256.Length != 64 || !entry.Sha256.All(char.IsAsciiHexDigitLower))
-            throw new InvalidDataException($"SHA-256 модели {entry.Id} должен состоять из 64 строчных шестнадцатеричных символов.");
+            throw new InvalidDataException($"The SHA-256 of model {entry.Id} must consist of 64 lowercase hexadecimal characters.");
         if (!Uri.TryCreate(entry.Url, UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps)
-            throw new InvalidDataException($"Адрес модели {entry.Id} должен быть абсолютным HTTPS URL.");
+            throw new InvalidDataException($"The URL of model {entry.Id} must be an absolute HTTPS URL.");
     }
 
     private static HttpClient CreateHttpClient()

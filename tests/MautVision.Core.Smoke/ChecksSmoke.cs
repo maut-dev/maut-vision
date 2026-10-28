@@ -132,8 +132,8 @@ internal static class ChecksSmoke
                 && classes["classes"]![0]!["class_id"]!.GetValue<string>() == dataset.ClassMap[0].ClassId.ToString("D"), "classes.json maps outputs to classes.");
             using var readme = new StreamReader(zip.GetEntry("README.md")!.Open());
             var text = await readme.ReadToEndAsync();
-            Check(text.StartsWith("# Модель, версия 1") && text.Contains("| 0 | Кошка |") && text.Contains("sha256 " + first.Files.First(file => file.Kind == ModelFileKind.WeightsPt).Sha256),
-                "README.md describes the model in Russian with the class table and hashes.");
+            Check(text.StartsWith("# Model, version 1") && text.Contains("## Classes") && text.Contains("| 0 | Кошка |") && text.Contains("sha256 " + first.Files.First(file => file.Kind == ModelFileKind.WeightsPt).Sha256),
+                "README.md describes the model in English with the class table and hashes.");
         }
         var again = await ExportAsync(first.Id, "again.zip", "ch-export-2", JobStatus.Succeeded);
         Check(again.Result!.Value.Deserialize<ModelExportResult>(MautVision.Core.Jobs.JobsManager.Json)!.Sha256 == result.Sha256, "Exporting the same version again gives the same bytes.");

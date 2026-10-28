@@ -1,6 +1,6 @@
 namespace MautVision.Core.BaseModels;
 
-/// <summary>Запись yolo-catalog.json. Не выходит за пределы BaseModels.</summary>
+/// <summary>An entry of yolo-catalog.json. Does not leave BaseModels.</summary>
 internal sealed record BaseModelCatalogEntry
 {
     public required string Id { get; init; }

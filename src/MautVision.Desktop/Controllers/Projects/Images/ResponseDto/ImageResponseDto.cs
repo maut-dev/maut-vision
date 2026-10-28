@@ -1,8 +1,8 @@
 namespace MautVision.Desktop.Controllers.Projects.Images.ResponseDto;
 
 /// <summary>
-/// Происхождение кадра. Kind: file, video, generated. SourceFamilyId объединяет кадры одного источника. Поля видео
-/// (VideoName, TimestampMs, FrameIndex) и генерации (GenerationRunId, SampleIndex, RecipeRevision) — null у других видов.
+/// Frame origin. Kind: file, video, generated. SourceFamilyId joins frames of one source. Video fields
+/// (VideoName, TimestampMs, FrameIndex) and generation fields (GenerationRunId, SampleIndex, RecipeRevision) are null for other kinds.
 /// </summary>
 public sealed record ImageLineageResponseDto(
     string Kind,
@@ -15,10 +15,10 @@ public sealed record ImageLineageResponseDto(
     long? RecipeRevision);
 
 /// <summary>
-/// Изображение группы. Format: png, jpeg, webp, bmp. Width/Height — с учётом EXIF-ориентации (как показывает &lt;img&gt;).
-/// Revision растёт при сохранении разметки, архиве и перемещении; AnnotationRevision — текущая ревизия разметки (её
-/// передают в images.saveAnnotation). ObjectCount и ReviewState (unreviewed, reviewed) — из текущей разметки.
-/// OriginalUrl и ThumbnailUrl (JPEG до 256 px) — URL канала ресурсов на ограниченное время.
+/// Group image. Format: png, jpeg, webp, bmp. Width/Height — with EXIF orientation applied (as &lt;img&gt; shows it).
+/// Revision grows on saving the annotation, archiving and moving; AnnotationRevision — the current annotation revision (it is
+/// passed to images.saveAnnotation). ObjectCount and ReviewState (unreviewed, reviewed) — from the current annotation.
+/// OriginalUrl and ThumbnailUrl (JPEG up to 256 px) — resource channel URLs valid for a limited time.
 /// </summary>
 public sealed record ImageResponseDto(
     Guid Id,
@@ -38,15 +38,15 @@ public sealed record ImageResponseDto(
     string OriginalUrl,
     string ThumbnailUrl);
 
-/// <summary>Страница по порядку импорта; NextCursor — значение after для следующей страницы того же фильтра, null на последней.</summary>
+/// <summary>Page in import order; NextCursor — the after value for the next page of the same filter, null on the last one.</summary>
 public sealed record ImagePageResponseDto(ImageResponseDto[] Items, string? NextCursor);
 
-/// <summary>Результат перемещения: обе группы с новыми ревизиями и перемещённые изображения.</summary>
+/// <summary>Move result: both groups with new revisions and the moved images.</summary>
 public sealed record MovedImagesResponseDto(ImageGroupResponseDto Source, ImageGroupResponseDto Target, ImageResponseDto[] Images);
 
 /// <summary>
-/// Выбор в нативном диалоге. Kind: files или folder. SelectionToken — null, если пользователь закрыл диалог; действует
-/// 30 минут и только на этой странице. FileCount — число выбранных файлов (для папки null: состав определит задача).
-/// FolderName — имя выбранной папки без пути (для файлов null). Пути в UI не передаются.
+/// Selection in a native dialog. Kind: files or folder. SelectionToken — null if the user closed the dialog; valid for
+/// 30 minutes and only on this page. FileCount — number of selected files (null for a folder: the job determines the content).
+/// FolderName — name of the selected folder without path (null for files). Paths are not passed to the UI.
 /// </summary>
 public sealed record ImageSelectionResponseDto(string Kind, string? SelectionToken, int? FileCount, string? FolderName);

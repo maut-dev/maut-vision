@@ -1,10 +1,10 @@
 namespace MautVision.Core.Interfaces.Projects;
 
-/// <summary>Размер входа модели в пикселях; обе стороны кратны шагу выбранной базовой модели.</summary>
+/// <summary>Model input size in pixels; both sides are multiples of the stride of the chosen base model.</summary>
 public sealed record InputSize(int Width, int Height);
 
 /// <summary>
-/// Изменяемые пользователем настройки проекта. BaseModelId — базовая модель для обучения;
-/// InputSize определяет размер фонов, кадров генерации и датасетов.
+/// User-editable project settings. BaseModelId — the base model for training;
+/// InputSize sets the size of backgrounds, generation frames and datasets.
 /// </summary>
 public sealed record ProjectSettings(string Name, string Description, string BaseModelId, InputSize InputSize);

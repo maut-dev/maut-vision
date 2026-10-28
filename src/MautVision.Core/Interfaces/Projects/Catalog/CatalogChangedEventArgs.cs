@@ -1,11 +1,11 @@
 namespace MautVision.Core.Interfaces.Projects.Catalog;
 
-/// <summary>Изменённый или удалённый (Revision = null) объект каталога.</summary>
+/// <summary>Changed or deleted (Revision = null) catalog object.</summary>
 public sealed record CatalogEntityChange(Guid Id, long? Revision);
 
 /// <summary>
-/// Что изменилось в каталоге проекта. AssetsChangedIn — привязки, у которых изменился список изображений (и их счётчики).
-/// CatalogRevision растёт с каждым изменением каталога: событие с меньшим значением, чем уже известное, устарело.
+/// What changed in the project catalog. AssetsChangedIn — bindings whose image list (and its counters) changed.
+/// CatalogRevision grows with every catalog change: an event with a lower value than an already known one is stale.
 /// </summary>
 public sealed class CatalogChangedEventArgs(
     string projectId,

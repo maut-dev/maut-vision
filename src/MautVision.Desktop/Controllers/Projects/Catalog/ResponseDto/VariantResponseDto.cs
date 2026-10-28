@@ -1,6 +1,6 @@
 namespace MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 
-/// <summary>Вариант проекта. SortOrder — порядок в списке; ArchivedAt — null для активного.</summary>
+/// <summary>Project variant. SortOrder — order in the list; ArchivedAt — null for an active one.</summary>
 public sealed record VariantResponseDto(
     Guid Id,
     string Name,

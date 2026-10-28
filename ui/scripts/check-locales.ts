@@ -2,7 +2,9 @@
 //   - every language has the same namespaces and the same keys (plural forms are compared by their base key);
 //   - a key has the same {{placeholders}} in every language; Russian plurals have one/few/many, English one/other;
 //   - every error code the host can send (C# under src/, the UI bridge) has a text in the errors namespace;
-//   - keys of the errors namespace that look like codes nobody sends are reported as warnings.
+//   - keys of the errors namespace that look like codes nobody sends are reported as warnings;
+//   - every line code the host sends (C# literals "progress.<key>", "trainingLog.<key>", "jobLabels.<key>") has a text in its namespace,
+//     and the worker namespace has exactly the keys of python/worker/protocol/messages.py with the same {placeholders}.
 // Run: npm run check-locales (also part of npm run typecheck). Exit code 1 on an error.
 import fs from "node:fs";
 import path from "node:path";
@@ -183,8 +185,60 @@ for (const language of languages) {
     }
 }
 
+// Lines the host sends as codes (CodedText): "<namespace>.<key>" is the key <key> of the namespace.
+const codedNamespaces = ["progress", "trainingLog", "jobLabels"];
+const lineCodes = new Map<string, string>();
+const lineLiteral = new RegExp(`"((?:${codedNamespaces.join("|")})\\.([a-z][a-z0-9_]*))"`, "g");
+for (const file of sourceFiles(path.join(repository, "src"), ".cs")) {
+    const text = fs.readFileSync(file, "utf8");
+    for (const match of text.matchAll(lineLiteral)) if (!lineCodes.has(match[1])) lineCodes.set(match[1], path.relative(repository, file));
+}
+// Keys the UI uses itself ("trainingLog:warning") are not codes of the host.
+const uiKeys = new Set<string>();
+for (const file of [...sourceFiles(path.join(ui, "src"), ".ts"), ...sourceFiles(path.join(ui, "src"), ".tsx")]) {
+    for (const match of fs.readFileSync(file, "utf8").matchAll(/"((?:progress|trainingLog|jobLabels|worker):[A-Za-z0-9_.]+)"/g)) uiKeys.add(match[1]);
+}
+// Messages of the worker: the keys and English texts of python/worker/protocol/messages.py ({name} there, {{name}} in the catalogs).
+const workerMessages = new Map<string, string>();
+const messagesFile = path.join(repository, "python", "worker", "protocol", "messages.py");
+if (fs.existsSync(messagesFile)) {
+    const source = fs.readFileSync(messagesFile, "utf8");
+    const table = source.slice(source.indexOf("MESSAGES"), source.indexOf("\n}", source.indexOf("MESSAGES")));
+    // An entry is "key": "text" or "key": ("part " "part") over several lines.
+    for (const match of table.matchAll(/"([a-z0-9_.]+)":\s*\(?\s*((?:"(?:[^"\\]|\\.)*"\s*)+)\)?,/g)) {
+        const text = [...match[2].matchAll(/"((?:[^"\\]|\\.)*)"/g)].map(part => part[1]).join("");
+        workerMessages.set(match[1], text);
+    }
+    if (workerMessages.size === 0) errors.push(`No worker messages found in ${path.relative(repository, messagesFile)}.`);
+}
+const pythonPlaceholders = (text: string) => [...text.matchAll(/\{(\w+)\}/g)].map(match => match[1]).filter(name => name !== "count").sort().join(",");
+for (const language of languages) {
+    const namespaces = catalogs.get(language)!;
+    for (const [code, where] of lineCodes) {
+        const [namespace] = code.split(".", 1);
+        const key = code.slice(namespace.length + 1);
+        if (!baseKeys(namespaces.get(namespace) ?? new Map()).has(key)) errors.push(`${language}/${namespace}: no text for ${code} (${where}).`);
+    }
+    if (language === reference) {
+        for (const namespace of codedNamespaces) {
+            for (const key of baseKeys(namespaces.get(namespace) ?? new Map()).keys()) {
+                if (!lineCodes.has(`${namespace}.${key}`) && !uiKeys.has(`${namespace}:${key}`)) warnings.push(`${namespace}: ${key} is not sent by the host or used by the UI.`);
+            }
+        }
+    }
+    const worker = namespaces.get("worker") ?? new Map<string, string>();
+    for (const [key, english] of workerMessages) {
+        const text = worker.get(key);
+        if (text === undefined) errors.push(`${language}/worker: no text for the worker message ${key} (python/worker/protocol/messages.py).`);
+        else if (placeholders(text) !== pythonPlaceholders(english))
+            errors.push(`${language}/worker: ${key} has placeholders {${placeholders(text)}}, the worker sends {${pythonPlaceholders(english)}}.`);
+    }
+    for (const key of worker.keys()) if (workerMessages.size > 0 && !workerMessages.has(key)) errors.push(`${language}/worker: ${key} is not a worker message.`);
+}
+
 for (const warning of warnings) console.warn(`warning: ${warning}`);
 for (const error of errors) console.error(`error: ${error}`);
 const total = [...referenceCatalog.values()].reduce((sum, keys) => sum + baseKeys(keys).size, 0);
-console.log(`Locales ${languages.join(", ")}: ${referenceCatalog.size} namespaces, ${total} keys, ${sent.size} error codes; ${errors.length} errors, ${warnings.length} warnings.`);
+console.log(`Locales ${languages.join(", ")}: ${referenceCatalog.size} namespaces, ${total} keys, ${sent.size} error codes, ${lineCodes.size} line codes, `
+    + `${workerMessages.size} worker messages; ${errors.length} errors, ${warnings.length} warnings.`);
 process.exit(errors.length ? 1 : 0);

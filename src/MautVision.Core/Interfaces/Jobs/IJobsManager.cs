@@ -1,43 +1,43 @@
 namespace MautVision.Core.Interfaces.Jobs;
 
 /// <summary>
-/// Задачи проекта хранятся в его project.db и выполняются, только пока проект открыт
-/// (<see cref="Projects.IProjectsManager.OpenAsync"/>). Операции с задачами проекта, который в этом
-/// процессе не открывали, отклоняются кодом <c>jobs.project_not_open</c>. Глобальных задач нет.
+/// Jobs of a project are kept in its project.db and run only while the project is open
+/// (<see cref="Projects.IProjectsManager.OpenAsync"/>). Operations on jobs of a project that was not opened in this
+/// process are refused with the code <c>jobs.project_not_open</c>. There are no global jobs.
 /// </summary>
 public interface IJobsManager
 {
-    /// <summary>Снимок после каждого сохранённого изменения, в порядке Sequence; может прийти из фонового потока.</summary>
+    /// <summary>A snapshot after every saved change, in Sequence order; may come from a background thread.</summary>
     event EventHandler<JobChangedEventArgs>? JobChanged;
 
     /// <summary>
-    /// Сохраняет задачу и сразу возвращает её снимок, не дожидаясь выполнения. Повтор с тем же
-    /// operationId в проекте возвращает существующую задачу. Ошибка выполнения сохраняется в задаче.
-    /// label — подпись для списков задач (имя датасета, номер версии); пробелы по краям убираются, длиннее
-    /// <see cref="JobInfo.MaxLabelLength"/> символов обрезается, пустая — null.
+    /// Saves the job and returns its snapshot at once, without waiting for it to run. A repeat with the same
+    /// operationId in the project returns the existing job. An error of the run is saved in the job.
+    /// label — what lists of jobs show after the kind: a name as a text (a dataset) or a code with values (a version number); the text
+    /// is trimmed and cut to <see cref="JobInfo.MaxLabelLength"/> characters, an empty text is null.
     /// </summary>
-    Task<JobInfo> EnqueueAsync<TJob, TInput>(TInput input, string projectId, string operationId, string? label = null,
+    Task<JobInfo> EnqueueAsync<TJob, TInput>(TInput input, string projectId, string operationId, CodedText? label = null,
         CancellationToken cancellationToken = default) where TJob : IJobDefinition<TInput>;
 
-    /// <summary>Задача по ID; отсутствующая — CoreException <c>jobs.not_found</c>.</summary>
+    /// <summary>A job by ID; a missing one is CoreException <c>jobs.not_found</c>.</summary>
     Task<JobInfo> GetAsync(string projectId, Guid jobId, CancellationToken cancellationToken = default);
 
-    /// <summary>Задачи проекта, новые первыми, не больше limit (1–200); before — ID последней задачи предыдущей страницы.</summary>
+    /// <summary>Jobs of the project, newest first, at most limit (1–200); before — the ID of the last job of the previous page.</summary>
     Task<IReadOnlyList<JobInfo>> ListAsync(string projectId, int limit = 50, Guid? before = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Активные задачи проекта (в очереди и выполняемые, включая отменяемые) в порядке очереди, не больше limit (1–200); after —
-    /// NextCursor предыдущей страницы. Total и CountsByKind — точные числа всех активных задач, не только страницы.
+    /// Active jobs of the project (queued and running, cancelling ones included) in queue order, at most limit (1–200); after —
+    /// NextCursor of the previous page. Total and CountsByKind are exact numbers of all active jobs, not only of the page.
     /// </summary>
     Task<ActiveJobsPage> ListActiveAsync(string projectId, int limit = 30, Guid? after = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Идемпотентная отмена. Задача в очереди или Blocked отменяется сразу; выполняемая получает CancelRequested
-    /// и становится Cancelled, когда обработчик остановится. Завершённая задача не меняется.
+    /// Idempotent cancellation. A queued or Blocked job is cancelled at once; a running one gets CancelRequested
+    /// and becomes Cancelled when its handler stops. A finished job does not change.
     /// </summary>
     Task<JobInfo> CancelAsync(string projectId, Guid jobId, CancellationToken cancellationToken = default);
 
-    /// <summary>Активные задачи (в очереди и выполняемые) всех открытых в этом процессе проектов, из памяти; например, перед выходом.</summary>
+    /// <summary>Active jobs (queued and running) of all projects open in this process, from memory; for example, before exit.</summary>
     int CountActive();
 }

@@ -10,22 +10,23 @@ public enum JobStatus
     Failed,
     Cancelled,
 
-    /// <summary>Выполнение оборвалось вместе с процессом, а вид задачи не умеет продолжать.</summary>
+    /// <summary>The run ended together with the process, and the job kind cannot resume.</summary>
     Interrupted,
 
-    /// <summary>Эта версия приложения не может выполнить задачу (неизвестный вид, несовместимые данные); данные сохранены.</summary>
+    /// <summary>This version of the application cannot run the job (an unknown kind, incompatible data); the data is kept.</summary>
     Blocked,
 }
 
-/// <summary>Code — стабильный код ошибки; Message — текст для журнала, пользовательский текст выбирает Desktop по коду.</summary>
+/// <summary>Code — a stable error code; Message — a text for the log, the UI chooses the text for the user by the code.</summary>
 public sealed record JobError(string Code, string Message);
 
 /// <summary>
-/// Снимок задачи. Sequence увеличивается при каждом сохранённом изменении: из двух снимков новее тот,
-/// у кого Sequence больше. Progress — 0–100 или null, если объём работы неизвестен.
-/// Result — итог задачи в JSON, который задаёт её вид (например, <see cref="ImportClassAssetsResult"/>); null, пока его нет.
-/// Label — подпись, которую задал постановщик (имя группы, датасета, номер версии), до <see cref="MaxLabelLength"/> символов;
-/// null у задач без подписи и у задач, поставленных до её появления.
+/// A snapshot of a job. Sequence grows with every saved change: of two snapshots the one with the larger Sequence is newer.
+/// Progress — 0–100 or null when the amount of work is unknown; ProgressMessage — what the job is doing as a code with values
+/// (<c>progress.epoch</c> with epoch and total), or a stored text of version 1.0.0; null when the job reports only counters.
+/// Result — the summary of the job in JSON defined by its kind (for example, <see cref="ImportClassAssetsResult"/>); null until there is one.
+/// Label — what the job works on, given by the one who enqueued it: a name as a text (a group, a dataset) or a code with values
+/// (<c>jobLabels.version</c> with number); its text is at most <see cref="MaxLabelLength"/> characters; null for jobs without a label.
 /// </summary>
 public sealed record JobInfo(
     Guid Id,
@@ -34,7 +35,7 @@ public sealed record JobInfo(
     string OperationId,
     JobStatus Status,
     double? Progress,
-    string? ProgressText,
+    CodedText? ProgressMessage,
     long? Processed,
     long? Total,
     JobError? Error,
@@ -45,7 +46,7 @@ public sealed record JobInfo(
     DateTimeOffset? FinishedAt,
     long Sequence,
     JsonElement? Result = null,
-    string? Label = null)
+    CodedText? Label = null)
 {
     public const int MaxLabelLength = 200;
 }

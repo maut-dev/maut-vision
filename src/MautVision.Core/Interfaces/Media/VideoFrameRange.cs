@@ -1,16 +1,16 @@
 namespace MautVision.Core.Interfaces.Media;
 
 /// <summary>
-/// Кадры видео на отметках StartMs + i × IntervalMs, i = 0…Count−1. Кадр отметки — первый кадр, время которого не раньше
-/// отметки (с допуском 0,5 мс); размер — исходный.
+/// Video frames at marks StartMs + i × IntervalMs, i = 0…Count−1. The frame of a mark is the first frame whose time is not earlier
+/// than the mark (with a 0.5 ms tolerance); the size is the original one.
 /// </summary>
 public sealed record VideoFrameRange(long StartMs, long IntervalMs, int Count)
 {
     public long TimestampMs(int index) => StartMs + index * IntervalMs;
 
     /// <summary>
-    /// Начало ≥ 0, интервал ≥ 1 мс, количество ≥ 1 — иначе <c>video.frames_invalid</c>; последняя отметка строго раньше
-    /// конца видео — иначе <c>video.range_invalid</c>.
+    /// Start ≥ 0, interval ≥ 1 ms, count ≥ 1 — otherwise <c>video.frames_invalid</c>; the last mark must be strictly before
+    /// the end of the video — otherwise <c>video.range_invalid</c>.
     /// </summary>
     public void Validate(long durationMs)
     {

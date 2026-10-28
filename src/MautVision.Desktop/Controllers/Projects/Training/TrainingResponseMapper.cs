@@ -36,7 +36,7 @@ internal static class TrainingResponseMapper
         run.EpochCount,
         run.LogCount,
         run.Environment,
-        run.Error is { } error ? new TrainingRunErrorDto(error.Code, WorkerErrors.OwnMessage("training", error.Code, error.Message)) : null,
+        run.Error is { } error ? new TrainingRunErrorDto(error.Code, CodedTextDto.MapOrNull(WorkerErrors.OwnMessage("training", error.Code, error.Message, error.Worker))) : null,
         run.ResultVersionId,
         run.Revision);
 
@@ -53,7 +53,7 @@ internal static class TrainingResponseMapper
             TrainingLogKind.Warning => "warning",
             TrainingLogKind.System => "system",
             _ => "log",
-        }, entry.Message)).ToArray(), page.Total, page.NextAfter);
+        }, CodedTextDto.Map(entry.Message))).ToArray(), page.Total, page.NextAfter);
 
     internal static ModelVersionResponseDto Map(string projectId, ModelVersion version, ResourceHandles resources) => new(
         version.Id,
@@ -74,7 +74,7 @@ internal static class TrainingResponseMapper
             file.Kind == ModelFileKind.Plot
                 ? resources.Issue(projectId, new ResourceReference(ModelVersion.ResourceKind, file.ResourceId), ResourceVariant.Original)
                 : null)).ToArray(),
-        version.Notes.ToArray(),
+        version.Notes.Select(CodedTextDto.Map).ToArray(),
         version.Environment,
         version.IsWorking,
         version.Revision,

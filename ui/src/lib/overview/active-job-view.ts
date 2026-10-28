@@ -1,4 +1,6 @@
 import type { ActiveJobResponseDto } from "@/api/jobs/response-dto/active-jobs-page-response-dto";
+import type { CodedTextDto } from "@/api/coded-text-dto";
+import { codedText } from "@/lib/coded-text";
 import { formatBytes } from "@/lib/training/run-view";
 import { locale } from "@/lib/format";
 
@@ -32,7 +34,8 @@ const count = (value: number) => value.toLocaleString(locale());
 /** «Сборка датасета · Датасет 1»; неизвестный вид — как есть. */
 export function activeJobTitle(item: ActiveJobResponseDto): string {
     const kind = activeJobKinds[item.job.kind]?.label ?? item.job.kind;
-    return item.job.label ? `${kind} · ${item.job.label}` : kind;
+    const label = item.job.label ? codedText(item.job.label) : "";
+    return label ? `${kind} · ${label}` : kind;
 }
 
 /**
@@ -43,7 +46,7 @@ export function activeJobState(item: ActiveJobResponseDto): string {
     const { job } = item;
     if (job.cancelRequested) return "Отмена…";
     if (job.status === "queued") return item.waitingForGpu ? "Ожидает видеокарту" : "В очереди";
-    if (job.progressText) return job.progressText;
+    if (job.progressMessage) return codedText(job.progressMessage);
     if (job.processed === null) return "Выполняется";
     const unit = activeJobKinds[job.kind]?.unit ?? null;
     if (unit === "bytes") return `Выполняется · ${formatBytes(job.processed)}${job.total !== null ? ` / ${formatBytes(job.total)}` : ""}`;
@@ -58,8 +61,9 @@ export function activeJobPercent(item: ActiveJobResponseDto): number | null {
     return job.total ? Math.min(100, ((job.processed ?? 0) / job.total) * 100) : null;
 }
 
-/** «Версия N» из подписи выгрузки модели: по номеру «Открыть» находит версию. */
-export function exportedVersionNumber(label: string | null): number | null {
-    const match = label ? /^Версия (\d+)/.exec(label) : null;
+/** The version number of a model export label (jobLabels.version; a label of 1.0.0 is the text «Версия N»): «Открыть» finds the version by it. */
+export function exportedVersionNumber(label: CodedTextDto | null): number | null {
+    if (label?.code === "jobLabels.version" && label.args?.number && /^\d+$/.test(label.args.number)) return Number(label.args.number);
+    const match = label?.text ? /^Версия (\d+)/.exec(label.text) : null;
     return match ? Number(match[1]) : null;
 }

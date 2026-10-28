@@ -6,7 +6,7 @@ using MautVision.Desktop.Controllers.Hardware.ResponseDto;
 namespace MautVision.Desktop.Controllers.Hardware;
 
 /// <summary>
-/// «Ваш компьютер»: the Core snapshot plus the memory of the application, which only the host can sum up — itself, its WebView2 processes
+/// "Your computer": the Core snapshot plus the memory of the application, which only the host can sum up — itself, its WebView2 processes
 /// (webViewProcessIds, kept by the window) and the Python workers of Core.
 /// </summary>
 internal sealed class HardwareController(IHardwareManager hardware, IPythonRuntime python, Func<IReadOnlyList<int>> webViewProcessIds)

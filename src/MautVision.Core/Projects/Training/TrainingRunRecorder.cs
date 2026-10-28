@@ -1,4 +1,5 @@
 using System.Text.Json;
+using MautVision.Core.Interfaces;
 using MautVision.Core.Interfaces.Projects.Training;
 using MautVision.Core.Jobs;
 using MautVision.Core.Python;
@@ -22,7 +23,7 @@ internal sealed class TrainingRunRecorder : IAsyncDisposable
     private readonly object gate = new();
     private readonly SemaphoreSlim writer = new(1, 1);
     private readonly List<TrainingEpoch> epochs = [];
-    private readonly List<(DateTimeOffset At, TrainingLogKind Kind, string Message)> lines = [];
+    private readonly List<(DateTimeOffset At, TrainingLogKind Kind, CodedText Message)> lines = [];
     private string? stage;
     private int? epoch;
     private int? totalEpochs;
@@ -54,7 +55,7 @@ internal sealed class TrainingRunRecorder : IAsyncDisposable
     internal void Stage(string value) => Change(() =>
     {
         stage = value;
-        lines.Add((Now(), TrainingLogKind.Stage, value));
+        lines.Add((Now(), TrainingLogKind.Stage, CodedText.Plain(value)));
     });
 
     internal void Batch(WorkerBatchEvent value) => Change(() =>
@@ -79,7 +80,8 @@ internal sealed class TrainingRunRecorder : IAsyncDisposable
 
     internal void Environment(JsonElement value) => Change(() => environment = value);
 
-    internal void Log(TrainingLogKind kind, string message) => Change(() => lines.Add((Now(), kind, message)));
+    /// <summary>A line of the log: a console line as text, a system line or a warning as a code with values.</summary>
+    internal void Log(TrainingLogKind kind, CodedText message) => Change(() => lines.Add((Now(), kind, message)));
 
     /// <summary>Writes everything collected so far; waits for a write already in progress.</summary>
     internal async Task FlushAsync()
@@ -172,4 +174,4 @@ internal sealed record TrainingRunSnapshot(
     JsonElement? EffectiveParams,
     JsonElement? Environment,
     IReadOnlyList<TrainingEpoch> NewEpochs,
-    IReadOnlyList<(DateTimeOffset At, TrainingLogKind Kind, string Message)> Lines);
+    IReadOnlyList<(DateTimeOffset At, TrainingLogKind Kind, CodedText Message)> Lines);

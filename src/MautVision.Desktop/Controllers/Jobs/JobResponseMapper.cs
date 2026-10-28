@@ -22,7 +22,7 @@ internal static class JobResponseMapper
         job.OperationId,
         Map(job.Status),
         job.Progress,
-        job.ProgressText,
+        CodedTextDto.MapOrNull(job.ProgressMessage),
         job.Processed,
         job.Total,
         job.Error is { } error ? new JobErrorDto(error.Code, error.Message) : null,
@@ -33,7 +33,7 @@ internal static class JobResponseMapper
         job.FinishedAt,
         job.Sequence,
         MapResult(job),
-        job.Label);
+        CodedTextDto.MapOrNull(job.Label));
 
     private static readonly JsonSerializerOptions ResultJson = new(JsonSerializerDefaults.Web);
 

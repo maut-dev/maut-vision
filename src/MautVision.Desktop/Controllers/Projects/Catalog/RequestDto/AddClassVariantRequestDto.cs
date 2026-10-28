@@ -1,6 +1,6 @@
 namespace MautVision.Desktop.Controllers.Projects.Catalog.RequestDto;
 
-/// <summary>VariantId — ID варианта проекта.</summary>
+/// <summary>VariantId — ID of the project variant.</summary>
 public sealed record AddClassVariantRequestDto(
     string ProjectId,
     Guid ClassId,

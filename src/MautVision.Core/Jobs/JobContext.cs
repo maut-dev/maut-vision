@@ -1,11 +1,12 @@
 using System.Diagnostics;
 using System.Text.Json;
+using MautVision.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace MautVision.Core.Jobs;
 
 /// <summary>Progress fields of one report; null means unknown.</summary>
-internal sealed record JobProgress(double? Percent, string? Text, long? Processed, long? Total);
+internal sealed record JobProgress(double? Percent, CodedText? Message, long? Processed, long? Total);
 
 /// <summary>
 /// What a handler gets for one run: cancellation, progress, checkpoint and step receipts of its job.
@@ -15,6 +16,7 @@ internal sealed record JobProgress(double? Percent, string? Text, long? Processe
 internal sealed class JobContext
 {
     internal const int MaxProgressTextLength = 200;
+    internal const int MaxProgressArgLength = 200;
     internal const int MaxStepKeyLength = 200;
 
     private readonly JobsManager owner;
@@ -44,19 +46,24 @@ internal sealed class JobContext
 
     public ILogger Logger { get; }
 
-    /// <summary>Never blocks on storage; the latest report wins when reports come faster than they are saved.</summary>
-    public void ReportProgress(double? percent, string? text = null, long? processed = null, long? total = null)
+    /// <summary>
+    /// Never blocks on storage; the latest report wins when reports come faster than they are saved. message — what the job is doing as a
+    /// code of the UI catalog progress with values (<c>CodedText.Of("progress.epoch", ("epoch", 3), ("total", 10))</c>), never a text.
+    /// </summary>
+    public void ReportProgress(double? percent, CodedText? message = null, long? processed = null, long? total = null)
     {
         if (percent is { } value && (double.IsNaN(value) || value < 0 || value > 100))
             throw new ArgumentOutOfRangeException(nameof(percent), "Progress must be between 0 and 100.");
         if (processed < 0 || total < 0)
             throw new ArgumentOutOfRangeException(nameof(processed), "Counters must not be negative.");
-        if (text is { Length: > MaxProgressTextLength }) text = text[..MaxProgressTextLength];
+        if (message?.Args is { } args && args.Values.Any(value => value.Length > MaxProgressArgLength))
+            message = message with { Args = args.ToDictionary(pair => pair.Key, pair => pair.Value.Length > MaxProgressArgLength ? pair.Value[..MaxProgressArgLength] : pair.Value) };
+        if (message?.Text is { Length: > MaxProgressTextLength } text) message = message with { Text = text[..MaxProgressTextLength] };
         TimeSpan delay;
         lock (gate)
         {
             if (closed) return;
-            pendingProgress = new JobProgress(percent, text, processed, total);
+            pendingProgress = new JobProgress(percent, message, processed, total);
             if (flushScheduled) return;
             flushScheduled = true;
             delay = lastFlush == 0 ? TimeSpan.Zero : JobsManager.ProgressInterval - Stopwatch.GetElapsedTime(lastFlush);

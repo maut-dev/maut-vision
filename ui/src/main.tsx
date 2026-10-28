@@ -7,6 +7,7 @@ import { App } from "./App";
 import { UnsavedChangesProvider } from "./components/unsaved-changes";
 import { applyLanguage, browserLanguage, currentLanguage, initLocalization, type Language } from "./i18n";
 import { installErrorReporting } from "./lib/error-reporting";
+import { codedText } from "./lib/coded-text";
 import { backgroundReasonText, blockerText, errorText, planWarningText } from "./lib/errors";
 import "./index.css";
 
@@ -19,6 +20,7 @@ declare global {
             blockerText: typeof blockerText;
             planWarningText: typeof planWarningText;
             backgroundReasonText: typeof backgroundReasonText;
+            codedText: typeof codedText;
         };
     }
 }
@@ -37,6 +39,6 @@ installErrorReporting();
 void startupLanguage().then(language => {
     initLocalization(language);
     subscribeLanguageChanged(event => void applyLanguage(event.data.language));
-    window.mautLocale = { language: currentLanguage, errorText, blockerText, planWarningText, backgroundReasonText };
+    window.mautLocale = { language: currentLanguage, errorText, blockerText, planWarningText, backgroundReasonText, codedText };
     createRoot(document.getElementById("root")!).render(<StrictMode><UnsavedChangesProvider><App /></UnsavedChangesProvider></StrictMode>);
 });

@@ -1,4 +1,5 @@
 import type { JobErrorDto, JobResponseDto } from "../../jobs/response-dto/job-response-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../coded-text-dto";
 import { isRecord } from "../../transport/envelopes";
 
 /** Вид задачи экспорта проекта. */
@@ -46,7 +47,8 @@ export interface ProjectImportResponseDto {
 export interface ProjectActivityResponseDto {
     kind: string;
     jobId: string | null;
-    label: string | null;
+    /** The label of the job: a name as text or a code of jobLabels (lib/coded-text.ts). */
+    label: CodedTextDto | null;
 }
 
 /** activities — что удаление отменит («Отменить задачи и удалить»); transferActive — идёт экспорт, удаление откажет. */
@@ -105,7 +107,7 @@ export function isProjectImportListResponseDto(value: unknown): value is Project
 }
 
 function isProjectActivityResponseDto(value: unknown): value is ProjectActivityResponseDto {
-    return isRecord(value) && isText(value.kind) && isOptionalText(value.jobId) && (value.label === null || typeof value.label === "string");
+    return isRecord(value) && isText(value.kind) && isOptionalText(value.jobId) && (value.label === null || isCodedTextDto(value.label));
 }
 
 export function isProjectDeletionReviewResponseDto(value: unknown): value is ProjectDeletionReviewResponseDto {

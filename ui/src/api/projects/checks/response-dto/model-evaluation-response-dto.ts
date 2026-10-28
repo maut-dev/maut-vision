@@ -3,6 +3,7 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isId } from "../../catalog/catalog-guards";
 import { isTrainingDatasetDto, type TrainingDatasetDto } from "../../training/response-dto/training-run-response-dto";
 import type { EvaluationSplit } from "../request-dto/checks-request-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
 /** Вид задачи оценки на датасете: её снимки приходят в job.changed. */
 export const modelEvaluationJobKind = "checks.evaluate";
@@ -29,10 +30,13 @@ export interface EvaluationClassMetricsDto {
     metrics: Record<string, number>;
 }
 
-/** Error of a check: code — what the UI translates; workerMessage — the worker's own message for its checks.worker_* codes, null otherwise. */
+/**
+ * Error of a check: code — what the UI translates; workerMessage — for a failure the worker reported itself (checks.worker_*), a code of the
+ * catalog worker with values and its English message as the fallback; null otherwise.
+ */
 export interface CheckErrorDto {
     code: string;
-    workerMessage: string | null;
+    workerMessage: CodedTextDto | null;
 }
 
 /**
@@ -68,7 +72,7 @@ const isNumbers = (value: unknown) => isRecord(value) && Object.values(value).ev
 
 export function isCheckErrorDto(value: unknown): value is CheckErrorDto {
     return isRecord(value) && typeof value.code === "string" && value.code.length > 0
-        && (value.workerMessage === null || typeof value.workerMessage === "string");
+        && (value.workerMessage === null || isCodedTextDto(value.workerMessage));
 }
 
 export function isModelEvaluationResponseDto(value: unknown): value is ModelEvaluationResponseDto {

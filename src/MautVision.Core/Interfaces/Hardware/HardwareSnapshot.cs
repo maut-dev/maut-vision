@@ -1,6 +1,6 @@
 namespace MautVision.Core.Interfaces.Hardware;
 
-/// <summary>Состояние показателя: есть значение, собирается первый замер (нагрузка CPU) или недоступен.</summary>
+/// <summary>Metric state: has a value, the first sample is being collected (CPU load) or unavailable.</summary>
 public enum HardwareStatus
 {
     Available,
@@ -9,25 +9,25 @@ public enum HardwareStatus
 }
 
 /// <summary>
-/// Процессор: Model — из реестра (null, если не прочитана), PhysicalCores — ядра по топологии Windows, LogicalThreads — потоки.
-/// UtilizationPercent — нагрузка системы между двумя замерами; null со статусом Collecting на первом замере и после паузы
-/// больше 10 с. ReasonCode — <c>hardware.cpu_collecting</c> или <c>hardware.cpu_unavailable</c>.
+/// Processor: Model — from the registry (null if not read), PhysicalCores — cores by Windows topology, LogicalThreads — threads.
+/// UtilizationPercent — system load between two samples; null with status Collecting on the first sample and after a pause
+/// longer than 10 s. ReasonCode — <c>hardware.cpu_collecting</c> or <c>hardware.cpu_unavailable</c>.
 /// </summary>
 public sealed record CpuSnapshot(string? Model, int? PhysicalCores, int LogicalThreads, double? UtilizationPercent, HardwareStatus Status, string? ReasonCode);
 
-/// <summary>Физическая память системы в байтах; UtilizationPercent — UsedBytes от TotalBytes.</summary>
+/// <summary>Physical system memory in bytes; UtilizationPercent — UsedBytes of TotalBytes.</summary>
 public sealed record MemorySnapshot(long TotalBytes, long UsedBytes, double UtilizationPercent);
 
 /// <summary>
-/// Видеокарта NVIDIA: Index — тот же номер, что у nvidia-smi и устройства обучения; значение, которое драйвер не сообщает, — null.
+/// NVIDIA GPU: Index — the same number as in nvidia-smi and the training device; a value the driver does not report is null.
 /// </summary>
 public sealed record GpuSnapshot(int Index, string Name, string? DriverVersion, long? MemoryTotalBytes, long? MemoryUsedBytes, double? UtilizationPercent,
     double? TemperatureC);
 
 /// <summary>
-/// Снимок нагрузки компьютера. Gpus пуст, если GpuStatus — Unavailable; GpuReasonCode — <c>hardware.gpu_not_found</c>,
-/// <c>hardware.gpu_driver_missing</c>, <c>hardware.gpu_timeout</c> или <c>hardware.gpu_failed</c>. GpuSource — <c>nvml</c> или
-/// <c>nvidia-smi</c>; GpuSampledAt — время чтения видеокарт (у nvidia-smi ответ кешируется на 5 с).
+/// Computer load snapshot. Gpus is empty if GpuStatus is Unavailable; GpuReasonCode — <c>hardware.gpu_not_found</c>,
+/// <c>hardware.gpu_driver_missing</c>, <c>hardware.gpu_timeout</c> or <c>hardware.gpu_failed</c>. GpuSource — <c>nvml</c> or
+/// <c>nvidia-smi</c>; GpuSampledAt — time the GPUs were read (the nvidia-smi answer is cached for 5 s).
 /// </summary>
 public sealed record HardwareSnapshot(
     DateTimeOffset Timestamp,

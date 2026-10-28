@@ -11,7 +11,8 @@ internal static partial class SmokeRunner
     /// The interface language without a restart: settings.setLanguage to English switches the page (settings.languageChanged), the tray and
     /// host-settings.json; the library, the base model catalog, the project settings and the navigation of a project speak English with no
     /// Cyrillic outside the names the user typed; a bridge error (a stale revision in the project settings) is shown in English; plural
-    /// forms follow the language; switching back restores Russian. The run itself is Russian (--language ru of the smoke).
+    /// forms follow the language; job progress, a job label and a system line of the training log (codes from the host) read in English;
+    /// switching back restores Russian. The run itself is Russian (--language ru of the smoke).
     /// </summary>
     private static async Task CheckLanguageAsync(CoreWebView2 web, string root, string projectId, SmokeHostProbe host, JsonNode report, CancellationToken token)
     {
@@ -118,6 +119,26 @@ internal static partial class SmokeRunner
           assert(labelled('Overview') && labelled('Training') && labelled('Checks')
             && document.body.textContent.includes('Overview · Project data, current jobs, models and computer load.'),
             'The sections and their descriptions are in English');
+
+          // Lines the host sends as codes: job progress, job labels and system lines of the training log.
+          const jobs = (await request('jobs.list', {projectId, limit: 200})).data;
+          const trained = jobs.find(job => job.kind === 'training.run' && job.status === 'succeeded');
+          assert(trained && trained.progressMessage?.code === 'progress.saving_version' && mautLocale.codedText(trained.progressMessage) === 'Saving the model version'
+            && mautLocale.codedText({code: 'progress.epoch', args: {epoch: '3', total: '10'}, text: null}) === 'Epoch 3 of 10',
+            'Job progress comes as a code and reads in English');
+          const versionLabelled = jobs.find(job => job.label?.code === 'jobLabels.version_dataset' || job.label?.code === 'jobLabels.version');
+          assert(versionLabelled && /^Version \d+( · .+)?$/.test(mautLocale.codedText(versionLabelled.label))
+            && mautLocale.codedText({code: null, args: null, text: 'Версия 2'}) === 'Версия 2',
+            'A job label with a code reads in English; a stored label of 1.0.0 stays as it was');
+          $('[data-section="training"]').click();
+          const card = await wait(() => $('[data-testid="training-run-card"][data-run-id="' + trained.id + '"]'), 'English training history');
+          $('[data-testid="training-run-card-open"]', card).click();
+          await wait(() => $('[data-testid="training-run-passport"]')?.dataset.runId === trained.id, 'English run passport');
+          const lines = await wait(() => {
+            const found = $$('[data-testid="training-log-lines"] p').map(item => item.textContent);
+            return found.some(line => /^Model version \d+ created\.$/.test(line)) && found;
+          }, 'English system line of the training log', () => $$('[data-testid="training-log-lines"] p').map(item => item.textContent).slice(-3).join(' | '));
+          assert(!lines.some(line => cyrillic.test(line)), 'The training log has no Cyrillic in English: system lines are translated, console lines are raw');
           await toEnglishLibrary();
           return {checks};
         """;
@@ -130,6 +151,12 @@ internal static partial class SmokeRunner
           assert(text('h1') === 'Проекты' && text('[data-testid="create-project"]') === 'Создать проект'
             && mautLocale.errorText('projects.revision_conflict') === 'Проект уже изменился. Закройте настройки, проверьте данные и повторите изменение.',
             'Switching back restores the Russian interface and error texts');
+          assert(mautLocale.codedText({code: 'progress.epoch', args: {epoch: '3', total: '10'}, text: null}) === 'Эпоха 3 из 10'
+            && mautLocale.codedText({code: 'trainingLog.version_created', args: {number: '2'}, text: null}) === 'Создана версия модели 2.'
+            && mautLocale.codedText({code: 'worker.device_unavailable.gpu_missing', args: {index: '1', count: '0'}, text: 'GPU 1 is requested, but 0 are visible'})
+              === 'Запрошен GPU 1, а видно 0'
+            && mautLocale.codedText({code: 'worker.unknown_code', args: null, text: 'English fallback'}) === 'English fallback',
+            'Coded lines read in Russian again; an unknown worker code shows the English message of the worker');
           assert(mautLocale.errorText('bridge.timeout', {count: '1'}) === 'Приложение не ответило за 1 секунду. Повторите запрос.'
             && mautLocale.errorText('bridge.timeout', {count: '3'}) === 'Приложение не ответило за 3 секунды. Повторите запрос.'
             && mautLocale.errorText('bridge.timeout', {count: '10'}) === 'Приложение не ответило за 10 секунд. Повторите запрос.',

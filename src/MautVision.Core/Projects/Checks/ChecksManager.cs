@@ -212,7 +212,9 @@ internal sealed class ChecksManager : IChecksManager
         RaiseEvaluation(evaluationId, revision);
     }
 
-    internal async Task SetEvaluationPhaseAsync(Guid evaluationId, string phase, string? errorCode = null, string? errorMessage = null)
+    /// <summary>workerText — what the UI shows for a failure the worker reported itself, kept in error_message (<see cref="CodedTextJson"/>).</summary>
+    internal async Task SetEvaluationPhaseAsync(Guid evaluationId, string phase, string? errorCode = null, string? errorMessage = null,
+        CodedText? workerText = null)
     {
         var revision = await store.WriteAsync(async (connection, transaction, token) =>
         {
@@ -224,7 +226,8 @@ internal sealed class ChecksManager : IChecksManager
             command.Parameters.AddWithValue("$id", Key(evaluationId));
             command.Parameters.AddWithValue("$phase", phase);
             command.Parameters.AddWithValue("$code", (object?)errorCode ?? DBNull.Value);
-            command.Parameters.AddWithValue("$message", (object?)errorMessage ?? DBNull.Value);
+            command.Parameters.AddWithValue("$message", (object?)(workerText is not null ? CodedTextJson.Serialize(workerText with { Text = errorMessage }) : errorMessage)
+                ?? DBNull.Value);
             command.Parameters.AddWithValue("$now", Time(Now()));
             return await ScalarAsync(command, token).ConfigureAwait(false);
         }).ConfigureAwait(false);
@@ -261,7 +264,7 @@ internal sealed class ChecksManager : IChecksManager
     }
 
     /// <summary>
-    /// After the application ended: evaluations whose job is not active any more are finished (the job is already interrupted — «Прервано»).
+    /// After the application ended: evaluations whose job is not active any more are finished (the job is already interrupted — "Interrupted").
     /// Live check folders never survive; finished evaluation folders are cleaned in the background.
     /// </summary>
     internal async Task RecoverAsync(IReadOnlySet<Guid> activeJobs, CancellationToken cancellationToken)
@@ -548,7 +551,7 @@ internal sealed class ChecksManager : IChecksManager
                     break;
                 case WorkerOutcomeKind.Failed:
                     failed = true;
-                    session.Finish(LiveCheckState.Failed, new LiveCheckError("checks." + outcome.Code, outcome.Message ?? ""));
+                    session.Finish(LiveCheckState.Failed, new LiveCheckError("checks." + outcome.Code, outcome.Message ?? "", outcome.WorkerText));
                     logger.LogWarning("Project {ProjectId}: live check {CheckId} failed with checks.{Code}.", projectId, session.Id, outcome.Code);
                     break;
                 default:
@@ -602,10 +605,17 @@ internal sealed class ChecksManager : IChecksManager
                 session.Progress(WorkerChecks.ParseProgress(progress.Data));
                 break;
             case WorkerWarningEvent warning:
-                session.Warning(warning.Code, warning.Message);
+                session.Warning(warning.Code, warning.Message, warning.Text);
                 break;
         }
         return Task.CompletedTask;
+    }
+
+    /// <summary>A failure of an evaluation as stored: a worker failure keeps what the UI shows in error_message (<see cref="CodedTextJson"/>).</summary>
+    private static ModelEvaluationError StoredError(string code, string? message)
+    {
+        var stored = CodedTextJson.Parse(message);
+        return stored?.Code is not null ? new ModelEvaluationError(code, stored.Text ?? "", stored) : new ModelEvaluationError(code, message ?? "");
     }
 
     /// <summary>Reads a preview the worker published and removes it; a missing or oversized file only means no preview this time.</summary>
@@ -665,7 +675,7 @@ internal sealed class ChecksManager : IChecksManager
             _ => ModelEvaluationState.Failed,
         };
         ModelEvaluationError? error = state is ModelEvaluationState.Failed or ModelEvaluationState.Interrupted
-            ? row?.ErrorCode is { } code ? new ModelEvaluationError(code, row.ErrorMessage ?? "")
+            ? row?.ErrorCode is { } code ? StoredError(code, row.ErrorMessage)
                 : info.Error is { } jobError ? new ModelEvaluationError(jobError.Code, jobError.Message) : null
             : null;
         return new ModelEvaluation(

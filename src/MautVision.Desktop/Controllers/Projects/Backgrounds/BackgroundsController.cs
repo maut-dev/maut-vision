@@ -28,7 +28,7 @@ internal sealed class BackgroundsController(
     NativeDialogs dialogs,
     IMediaManager media)
 {
-    /// <summary>Files of one «Нарезать из изображений» run: their indexes and crops must fit one bridge message.</summary>
+    /// <summary>Files of one "Cut from images" run: their indexes and crops must fit one bridge message.</summary>
     internal const int MaxCropSources = 500;
     private const int DefaultPreviewSide = 1600;
 
@@ -173,7 +173,7 @@ internal sealed class BackgroundsController(
         // Checked here for an immediate answer; the run checks again before it writes.
         var set = await (await Backgrounds(request.ProjectId, cancellationToken)).GetSetAsync(request.SetId, cancellationToken);
         if (set.ArchivedAt is not null) throw new CoreException("backgrounds.set_archived", $"Background set {set.Id} is archived.");
-        var job = await jobs.EnqueueAsync<IImportBackgroundsJob, ImportBackgroundsInput>(input, request.ProjectId, request.OperationId, set.Name, cancellationToken);
+        var job = await jobs.EnqueueAsync<IImportBackgroundsJob, ImportBackgroundsInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(set.Name), cancellationToken);
         return JobResponseMapper.Map(job);
     }
 

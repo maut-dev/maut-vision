@@ -26,7 +26,7 @@ internal static class ChecksResponseMapper
         new Dictionary<string, double>(evaluation.Metrics),
         evaluation.ClassMetrics.Select(item => new EvaluationClassMetricsDto(item.Index, item.ClassId, item.Name, new Dictionary<string, double>(item.Metrics))).ToArray(),
         evaluation.Environment,
-        evaluation.Error is { } error ? new CheckErrorDto(error.Code, WorkerErrors.OwnMessage("checks", error.Code, error.Message)) : null,
+        evaluation.Error is { } error ? new CheckErrorDto(error.Code, CodedTextDto.MapOrNull(WorkerErrors.OwnMessage("checks", error.Code, error.Message, error.Worker))) : null,
         evaluation.Revision);
 
     internal static LiveCheckResponseDto Map(LiveCheck check, string? previewUrl, int detectionLimit = int.MaxValue) => new(
@@ -56,8 +56,8 @@ internal static class ChecksResponseMapper
             : null,
         Map(check.Journal),
         check.RecentFrames.Select(frame => Map(frame, int.MaxValue)).ToArray(),
-        check.Warnings.Select(warning => new LiveCheckWarningDto(warning.Code, warning.Message)).ToArray(),
-        check.Error is { } error ? new CheckErrorDto(error.Code, WorkerErrors.OwnMessage("checks", error.Code, error.Message)) : null,
+        check.Warnings.Select(warning => new LiveCheckWarningDto(warning.Code, CodedTextDto.Map(warning.Text))).ToArray(),
+        check.Error is { } error ? new CheckErrorDto(error.Code, CodedTextDto.MapOrNull(WorkerErrors.OwnMessage("checks", error.Code, error.Message, error.Worker))) : null,
         check.StopReason switch
         {
             null => null,

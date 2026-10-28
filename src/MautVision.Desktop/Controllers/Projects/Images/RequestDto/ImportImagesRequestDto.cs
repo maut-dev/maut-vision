@@ -1,11 +1,11 @@
 namespace MautVision.Desktop.Controllers.Projects.Images.RequestDto;
 
 /// <summary>
-/// SelectionToken — из images.selectFiles, images.selectFolder или images.selectVideo; действует 30 минут и только на этой
-/// странице. OperationId — создаётся UI на одно действие; повтор с тем же значением вернёт ту же задачу.
-/// Recursive — для папки: включая вложенные папки. SkipDuplicates — пропускать повторы в группе (по умолчанию да).
-/// StartMs, IntervalMs, Count — для видео (обязательны): кадры на отметках StartMs + i × IntervalMs; начало ≥ 0,
-/// интервал ≥ 1 мс, количество ≥ 1, последняя отметка раньше конца видео. Для файлов и папки не передаются.
+/// SelectionToken — from images.selectFiles, images.selectFolder or images.selectVideo; valid for 30 minutes and only on this
+/// page. OperationId — created by the UI per action; a repeat with the same value returns the same job.
+/// Recursive — for a folder: including subfolders. SkipDuplicates — skip duplicates in the group (default yes).
+/// StartMs, IntervalMs, Count — for a video (required): frames at marks StartMs + i × IntervalMs; start ≥ 0,
+/// interval ≥ 1 ms, count ≥ 1, the last mark before the end of the video. Not passed for files and a folder.
 /// </summary>
 public sealed record ImportImagesRequestDto(
     string ProjectId,

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using MautVision.Core.Interfaces;
 using MautVision.Core.Interfaces.Projects.Checks;
 using MautVision.Core.Interfaces.Projects.Training;
 using MautVision.Core.Python;
@@ -74,7 +75,7 @@ internal sealed class LiveCheckSession
 
     internal DateTimeOffset StartedAt { get; }
 
-    /// <summary>Cancelled by «Остановить», a project switch or the end of the page session.</summary>
+    /// <summary>Cancelled by "Stop", a project switch or the end of the page session.</summary>
     internal CancellationToken StopToken => stop.Token;
 
     /// <summary>Completes when the worker ended and the outcome is recorded.</summary>
@@ -96,7 +97,7 @@ internal sealed class LiveCheckSession
         }
     }
 
-    /// <summary>«Остановить»: the first reason wins; the worker tree ends and the check becomes Cancelled.</summary>
+    /// <summary>"Stop": the first reason wins; the worker tree ends and the check becomes Cancelled.</summary>
     internal void Stop(LiveCheckStopReason reason)
     {
         lock (gate)
@@ -201,12 +202,12 @@ internal sealed class LiveCheckSession
         Changed();
     }
 
-    internal void Warning(string code, string message)
+    internal void Warning(string code, string message, CodedText text)
     {
         lock (gate)
         {
             if (warnings.Count >= MaxWarnings || warnings.Any(item => item.Code == code && item.Message == message)) return;
-            warnings.Add(new LiveCheckWarning(code, message));
+            warnings.Add(new LiveCheckWarning(code, message, text));
             if (code == "live_time_limit") stopReason ??= LiveCheckStopReason.TimeLimit;
             sequence++;
         }
@@ -215,7 +216,7 @@ internal sealed class LiveCheckSession
 
     /// <summary>
     /// The worker succeeded: its summary over every frame replaces the one collected from events. A stop that came meanwhile still
-    /// ends the check as «Остановлено» (<see cref="Finish"/>).
+    /// ends the check as "Stopped" (<see cref="Finish"/>).
     /// </summary>
     internal void Succeeded(WorkerPredictResult result)
     {
@@ -246,7 +247,7 @@ internal sealed class LiveCheckSession
             foreach (var warning in result.Warnings)
             {
                 if (warnings.Count < MaxWarnings && !warnings.Any(item => item.Code == warning.Code && item.Message == warning.Message))
-                    warnings.Add(new LiveCheckWarning(warning.Code, warning.Message));
+                    warnings.Add(new LiveCheckWarning(warning.Code, warning.Message, warning.Text));
                 if (warning.Code == "live_time_limit") stopReason ??= LiveCheckStopReason.TimeLimit;
             }
         }
@@ -258,7 +259,7 @@ internal sealed class LiveCheckSession
         lock (gate)
         {
             if (state is LiveCheckState.Succeeded or LiveCheckState.Failed or LiveCheckState.Cancelled) return;
-            // A stop that came while the worker was finishing still ends as «Остановлено».
+            // A stop that came while the worker was finishing still ends as "Stopped".
             state = state == LiveCheckState.Cancelling && final != LiveCheckState.Failed ? LiveCheckState.Cancelled : final;
             error = state == LiveCheckState.Failed ? failure : null;
             finishedAt = Now();

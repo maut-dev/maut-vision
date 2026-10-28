@@ -2,14 +2,14 @@ using MautVision.Desktop.Controllers.Projects;
 
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 
-/// <summary>Размытие запуска с выбранным seed.</summary>
+/// <summary>Run blur with the chosen seed.</summary>
 public sealed record BackgroundBlurResponseDto(double MinRadius, double MaxRadius, long Seed);
 
 /// <summary>
-/// Пример будущего фона. SourceIndex — номер файла в выборе (у видео — номер кадра от начала), TimestampMs — отметка кадра видео.
-/// Пропуск: Reason — код (backgrounds.wrong_size, backgrounds.crop_out_of_bounds, backgrounds.image_unreadable, backgrounds.similar,
-/// backgrounds.duplicate, video.frame_unavailable; the page builds «Размер a×b, нужен W×H» and others from it), ImageUrl — null.
-/// Иначе ImageUrl — PNG будущего фона ровно размера набора, Crop и BlurRadius — как у будущего фона.
+/// Sample of a future background. SourceIndex — index of the file in the selection (for video — frame index from the start), TimestampMs — video frame mark.
+/// Skip: Reason — code (backgrounds.wrong_size, backgrounds.crop_out_of_bounds, backgrounds.image_unreadable, backgrounds.similar,
+/// backgrounds.duplicate, video.frame_unavailable; the page builds "Size a×b, W×H needed" and others from it), ImageUrl — null.
+/// Otherwise ImageUrl — PNG of the future background of exactly the set size, Crop and BlurRadius — as in the future background.
 /// </summary>
 public sealed record BackgroundSampleResponseDto(
     int SourceIndex,
@@ -22,5 +22,5 @@ public sealed record BackgroundSampleResponseDto(
     double? BlurRadius,
     string? ImageUrl);
 
-/// <summary>«Примеры будущих фонов W × H · размытие a–b px, seed S» и до 6 примеров.</summary>
+/// <summary>"Samples of future backgrounds W × H · blur a–b px, seed S" and up to 6 samples.</summary>
 public sealed record BackgroundImportPreviewResponseDto(InputSizeDto TargetSize, BackgroundBlurResponseDto? Blur, BackgroundSampleResponseDto[] Samples);

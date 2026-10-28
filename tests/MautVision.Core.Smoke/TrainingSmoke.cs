@@ -153,7 +153,7 @@ internal static class TrainingSmoke
         var done = await WaitAsync(core.Jobs, project.Id, ok, JobStatus.Succeeded);
         var run = await training.GetRunAsync(ok);
         Check(run.State == TrainingRunState.Succeeded && run.ResultVersionId is { } && run.EpochCount == 3 && run.LogCount > 5 && run.Progress.Epochs == 3
-            && run.Dataset.Name == "Успех" && run.Dataset.VersionId == dataset && done.Progress == 100 && done.ProgressText == "Сохранение версии модели",
+            && run.Dataset.Name == "Успех" && run.Dataset.VersionId == dataset && done.Progress == 100 && done.ProgressMessage?.Code == "progress.saving_version",
             "The run ends with a version, its epochs and its log.");
         Check(run.EffectiveParams is { } effective && effective.GetProperty("padding").GetString()!.Length == 300_000 && effective.GetProperty("optimizer").GetString() == "AdamW",
             "A large effectiveParams line is accepted and stored.");
@@ -166,14 +166,14 @@ internal static class TrainingSmoke
             && rest.Items[0].Metrics["mAP50"] > 0.149 && rest.Items[0].Losses.ContainsKey("box_loss") && rest.Items[0].Fitness > 0.089, "History pages go by epoch.");
         var tail = await training.TailLogAsync(ok, 3);
         var log = await training.ListLogAsync(ok, limit: 1000);
-        Check(tail.Items.Count == 3 && tail.Items[^1].Message.StartsWith("Создана версия модели 1") && log.Items.Count == log.Total && log.Total == run.LogCount
-            && log.Items.Any(item => item.Kind == TrainingLogKind.Stage && item.Message == "training") && log.Items[0].Message.StartsWith("Подготовка")
-            && log.Items.Any(item => item.Kind == TrainingLogKind.Log && item.Message.Contains("box_loss")), $"The log keeps stages, warnings, console lines and system lines ({log.Total}/{run.LogCount}: {string.Join(" | ", log.Items.Select(item => item.Sequence + ":" + item.Kind + ":" + item.Message))}).");
+        Check(tail.Items.Count == 3 && tail.Items[^1].Message is { Code: "trainingLog.version_created", Args: { } created } && created["number"] == "1" && log.Items.Count == log.Total && log.Total == run.LogCount
+            && log.Items.Any(item => item.Kind == TrainingLogKind.Stage && item.Message.Text == "training") && log.Items[0].Message.Code == "trainingLog.preparing_folder"
+            && log.Items.Any(item => item.Kind == TrainingLogKind.Log && item.Message.Text!.Contains("box_loss")), $"The log keeps stages, warnings, console lines and system lines ({log.Total}/{run.LogCount}: {string.Join(" | ", log.Items.Select(item => item.Sequence + ":" + item.Kind + ":" + (item.Message.Code ?? item.Message.Text)))}).");
         var first1 = await training.GetVersionAsync(run.ResultVersionId!.Value);
         var versionFolder = Path.Combine(root, "projects", project.Id, "files", "models", first1.Id.ToString("D"));
         Check(first1.Number == 1 && first1.IsWorking && first1.RunId == ok && first1.EpochsCompleted == 3 && !first1.StoppedEarly && first1.BestEpoch == 3
             && first1.Classes.Select(item => (item.Index, item.ClassId)).SequenceEqual(version.ClassMap.Select(item => (item.Index, (Guid?)item.ClassId)))
-            && first1.Notes.Single() == "fake_warning: Поддельное предупреждение." && first1.Metrics["mAP50"] == 0.3 && first1.Dataset.ManifestHash == version.ManifestHash
+            && first1.Notes.Single() is { Code: "worker.fake_warning", Text: "Fake warning." } && first1.Metrics["mAP50"] == 0.3 && first1.Dataset.ManifestHash == version.ManifestHash
             && first1.Parameters["batch"].GetInt32() == 4 && first1.Environment.GetProperty("torch").GetString() == "2.14.0+fake", "The first version is the working one with its passport.");
         Check(first1.Files.Select(file => file.Name).Order().SequenceEqual(["best.onnx", "best.pt", "plots/results.png", "training.log"])
             && first1.Files.All(file => Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(Path.Combine([versionFolder, .. file.Name.Split('/')])))) == file.Sha256),
@@ -197,13 +197,13 @@ internal static class TrainingSmoke
         Check(working.IsWorking && !(await training.GetVersionAsync(first1.Id)).IsWorking && (await training.ListVersionsAsync()).Select(item => item.Number).SequenceEqual([2, 1]),
             "Exactly one version is working; versions are listed newest first.");
 
-        // Failures: the worker's code and Russian message, protocol violations; no version, logs kept.
+        // Failures: the worker's code, its English message and the text for the UI, protocol violations; no version, logs kept.
         foreach (var (scenario, code, text) in new[]
         {
-            ("fail=out_of_memory", "training.worker_out_of_memory", "Сообщение worker: out_of_memory."),
-            ("crash", "training.worker_crashed", "поддельный сбой"),
+            ("fail=out_of_memory", "training.worker_out_of_memory", "Worker message: out_of_memory."),
+            ("crash", "training.worker_crashed", "fake failure"),
             ("badsha", "training.artifact_integrity", "SHA-256"),
-            ("sequence", "training.protocol_sequence", "порядок"),
+            ("sequence", "training.protocol_sequence", "order"),
             ("exit0", "training.result_missing", "result.json"),
         })
         {
@@ -213,6 +213,9 @@ internal static class TrainingSmoke
             var failedRun = await training.GetRunAsync(failing);
             var folder = Path.Combine(root, "projects", project.Id, "training", "jobs", failing.ToString("D"));
             Check(failed.Error?.Code == code && failedRun.State == TrainingRunState.Failed && failedRun.Error?.Code == code && failedRun.Error.Message.Contains(text)
+                && (scenario != "fail=out_of_memory" || failedRun.Error.Worker is { Code: "worker.out_of_memory.fake", Text: "Worker message: out_of_memory.", Args: { } workerArgs }
+                    && workerArgs["code"] == "out_of_memory")
+                && (scenario == "fail=out_of_memory" || failedRun.Error.Worker is null)
                 && failedRun.ResultVersionId is null && File.Exists(Path.Combine(folder, "logs", "stderr.log")) && !Directory.Exists(Path.Combine(folder, "input")),
                 $"{scenario}: the run fails with {code}, keeps its logs and drops its inputs ({failed.Error?.Code}: {failedRun.Error?.Message}).");
         }
@@ -225,8 +228,11 @@ internal static class TrainingSmoke
         var queued = await StartAsync(core, project, Params(("epochs", 5)), "run-queued");
         var hangFolder = Path.Combine(root, "projects", project.Id, "training", "jobs", hanging.ToString("D"));
         var childPid = await WaitForFileAsync(Path.Combine(hangFolder, "logs", "child.pid"));
-        await WaitUntilAsync(async () => (await training.GetRunAsync(hanging)).EpochCount == 1 && (await core.Jobs.GetAsync(project.Id, hanging)).ProgressText == "Эпоха 1 из 5",
+        await WaitUntilAsync(async () => (await training.GetRunAsync(hanging)).EpochCount == 1 && (await core.Jobs.GetAsync(project.Id, hanging)).ProgressMessage is { Code: "progress.epoch", Args: { } hangingArgs }
+            && hangingArgs["epoch"] == "1" && hangingArgs["total"] == "5",
             "the first epoch of the hanging run");
+        await WaitUntilAsync(async () => (await training.ListLogAsync(hanging, limit: 1000)).Items.Any(item => item.Kind == TrainingLogKind.Warning
+            && item.Message is { Code: "worker.fake_hang", Text: "The fake worker waits for cancellation." }), "the warning of the hanging run as a code with its message");
         var hangingRun = await training.GetRunAsync(hanging);
         Check(hangingRun.State == TrainingRunState.Training && hangingRun.Progress.Epoch == 1 && hangingRun.Progress.Epochs == 5
             && (await core.Jobs.GetAsync(project.Id, hanging)).Progress == 20, "A running run reports its epoch.");

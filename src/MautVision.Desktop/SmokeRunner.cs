@@ -2412,8 +2412,9 @@ internal static partial class SmokeRunner
           await wait(() => !$('[data-testid="training-chart-tooltip"]', quality), 'Tooltip hidden');
 
           const lines = $$('[data-testid="training-log-lines"] p').map(item => item.textContent);
-          assert(lines.some(line => line.includes('8/8  box_loss')) && text('[data-testid="training-log-caption"]').startsWith('Окно последних 200 сообщений'),
-            '«Журнал обучения» shows the latest messages including the last epoch');
+          assert(lines.some(line => line.includes('8/8  box_loss')) && lines.some(line => /^Создана версия модели \d+\.$/.test(line))
+            && text('[data-testid="training-log-caption"]').startsWith('Окно последних 200 сообщений'),
+            '«Журнал обучения» shows the latest messages including the last epoch and the Russian system line');
           $('[data-testid="training-log-history"]').click();
           const total = (await request('training.listLog', {projectId, runId: ended.dataset.runId, limit: 1})).data.total;
           await wait(() => text('[data-testid="training-log-caption"]') === 'Всего сохранено сообщений: ' + total + '. Страница до 200 сообщений.'
@@ -2432,7 +2433,7 @@ internal static partial class SmokeRunner
           const version = await wait(() => $('[data-testid="model-version-passport"]', ended), 'Version passport');
           const stored = (await request('training.getModelVersion', {projectId, versionId: version.dataset.versionId})).data;
           assert(text('[data-testid="model-version-metric-mAP50"]').startsWith('mAP500.300') && text('[data-testid="model-version-best-epoch"]').startsWith('лучшая эпоха' + stored.bestEpoch)
-            && text('[data-testid="model-version-best-epoch"]').includes('пройдено 8 из 8') && text('[data-testid="model-version-notes"]').includes('Поддельное предупреждение.')
+            && text('[data-testid="model-version-best-epoch"]').includes('пройдено 8 из 8') && text('[data-testid="model-version-notes"]').includes('fake_warning: Fake warning.')
             && $('[data-file-kind="weights_pt"]', version) && $('[data-file-kind="onnx"]', version),
             'The short version passport shows metrics, the best epoch, notes and files: ' + text('[data-testid="model-version-best-epoch"]'));
           // Thumbnails load lazily: the plots are scrolled into view first.

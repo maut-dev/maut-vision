@@ -89,7 +89,12 @@
     "exportInterrupted": "Экспорт прерван. Повторите экспорт.",
     "importInterrupted": "Импорт прерван. Повторите импорт.",
     "bytes": "{{processed}} из {{total}}",
-    "progress": "Ход: {{title}}"
+    "progress": "Ход: {{title}}",
+    "copyLabel": "импорт",
+    "fallbackName": "Проект"
+  },
+  "generation": {
+    "repeatName": "{{name}} · повтор"
   },
   "projectEditor": {
     "newTitle": "Новый проект",

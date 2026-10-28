@@ -3,8 +3,8 @@ using MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 namespace MautVision.Desktop.Controllers.Projects.Images.ResponseDto;
 
 /// <summary>
-/// Состав удаления навсегда: вся группа (WholeGroup) или выбранные изображения. Revision передаётся в удаление;
-/// непустой Blockers — удаление сейчас недоступно (строки списка — Message).
+/// What a permanent deletion removes: the whole group (WholeGroup) or the selected images. Revision is passed to the deletion;
+/// non-empty Blockers — the deletion is unavailable now (list lines — Message).
 /// </summary>
 public sealed record ImageDeletionReviewResponseDto(
     Guid GroupId,
@@ -14,15 +14,15 @@ public sealed record ImageDeletionReviewResponseDto(
     DeletionBlockerResponseDto[] Blockers,
     string Revision);
 
-/// <summary>Строки удалены; CleanupPending — файлы ещё удаляются в фоне, очистка продолжится при следующем открытии проекта.</summary>
+/// <summary>Rows are deleted; CleanupPending — files are still being deleted in the background, the cleanup continues the next time the project is opened.</summary>
 public sealed record ImageDeletionResultResponseDto(Guid GroupId, bool GroupDeleted, long Images, bool CleanupPending);
 
-/// <summary>Изменённая или удалённая (Revision = null) группа или изображение.</summary>
+/// <summary>Changed or deleted (Revision = null) group or image.</summary>
 public sealed record ImagesEntityChangeDto(Guid Id, long? Revision);
 
 /// <summary>
-/// Событие images.changed. Groups — группы с новыми ревизиями или удалённые; Images — изображения, изменённые явной
-/// операцией; ImagesChangedIn — группы, у которых изменился состав или счётчики: UI перечитывает их группу и страницы.
+/// The images.changed event. Groups — groups with new revisions or deleted ones; Images — images changed by an explicit
+/// operation; ImagesChangedIn — groups whose content or counters changed: the UI rereads their group and pages.
 /// </summary>
 public sealed record ImagesChangedEventDto(
     string ProjectId,

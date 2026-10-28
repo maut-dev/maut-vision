@@ -34,7 +34,7 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
         var input = await checks.PrepareEvaluationAsync(new ModelEvaluationRequest(request.VersionId, request.DatasetVersionId,
             ChecksResponseMapper.ParseSplit(request.Split), request.Device, request.Batch ?? 16), request.OperationId, cancellationToken);
         var job = await jobs.EnqueueAsync<IModelEvaluationJob, ModelEvaluationInput>(input, request.ProjectId, request.OperationId,
-            $"{JobLabels.Version(input.VersionNumber)} · {input.Dataset.Name}", cancellationToken);
+            JobLabels.VersionDataset(input.VersionNumber, input.Dataset.Name), cancellationToken);
         return ChecksResponseMapper.Map(await checks.GetEvaluationAsync(job.Id, cancellationToken));
     }
 
@@ -84,7 +84,7 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
             video.FrameRate > 0 ? video.FrameRate : null, frame);
     }
 
-    /// <summary>«Показать другой кадр».</summary>
+    /// <summary>"Show another frame".</summary>
     public async Task<CheckVideoFrameResponseDto> PreviewVideoFrameAsync(PreviewCheckVideoFrameRequestDto request, CancellationToken cancellationToken)
     {
         var project = await projects.GetAsync(request.ProjectId, cancellationToken);
@@ -96,7 +96,7 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
     public Task<MonitorResponseDto[]> ListMonitorsAsync(ListMonitorsRequestDto request, CancellationToken cancellationToken)
         => Task.FromResult(screen.ListMonitors().Select(ChecksResponseMapper.Map).ToArray());
 
-    /// <summary>«Снять экран»: the PNG goes to the page as a transient resource.</summary>
+    /// <summary>"Capture screen": the PNG goes to the page as a transient resource.</summary>
     public async Task<ScreenShotResponseDto> CaptureScreenAsync(CaptureScreenRequestDto request, CancellationToken cancellationToken)
     {
         await Checks(request.ProjectId, cancellationToken);

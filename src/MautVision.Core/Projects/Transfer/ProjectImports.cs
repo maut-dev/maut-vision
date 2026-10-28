@@ -26,14 +26,15 @@ internal sealed class ProjectImports
 
     private readonly string projectsDirectory;
     private readonly int schemaVersion;
-    private readonly Func<string, CancellationToken, Task<Project>> publish;
+    private readonly Func<string, string?, CancellationToken, Task<Project>> publish;
     private readonly Action<ProjectImportInfo> changed;
     private readonly ILogger logger;
     private readonly Lock gate = new();
     private readonly List<Operation> operations = [];
 
-    /// <param name="publish">Moves a checked staging folder into the library under a free id and name and returns the project.</param>
-    internal ProjectImports(string projectsDirectory, int schemaVersion, Func<string, CancellationToken, Task<Project>> publish,
+    /// <param name="publish">Moves a checked staging folder into the library under a free id and name (a taken name gets the copy label of the
+    /// import) and returns the project.</param>
+    internal ProjectImports(string projectsDirectory, int schemaVersion, Func<string, string?, CancellationToken, Task<Project>> publish,
         Action<ProjectImportInfo> changed, ILogger logger)
     {
         this.projectsDirectory = projectsDirectory;
@@ -49,7 +50,7 @@ internal sealed class ProjectImports
     /// <summary>Smoke seam: awaited after each extracted file with the count of files so far.</summary>
     internal Func<long, Task>? Pause { get; set; }
 
-    internal ProjectImportInfo Start(ProjectArchiveSource source, string operationId)
+    internal ProjectImportInfo Start(ProjectArchiveSource source, string operationId, string? copyLabel = null)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentException.ThrowIfNullOrWhiteSpace(operationId);
@@ -61,7 +62,10 @@ internal sealed class ProjectImports
             if (operations.FirstOrDefault(item => item.OperationId == operationId) is { } existing) return existing.Snapshot();
             if (operations.Any(item => item.Status == ProjectImportStatus.Running))
                 throw new CoreException("projects.import_active", "Another project import is running.");
-            operation = new Operation(Guid.NewGuid(), operationId, source, Path.Combine(projectsDirectory, StagingPrefix + Guid.NewGuid().ToString("N")));
+            operation = new Operation(Guid.NewGuid(), operationId, source, Path.Combine(projectsDirectory, StagingPrefix + Guid.NewGuid().ToString("N")))
+            {
+                CopyLabel = copyLabel,
+            };
             operations.Insert(0, operation);
         }
         var started = operation.Snapshot();
@@ -132,7 +136,7 @@ internal sealed class ProjectImports
             CheckDatabase(Path.Combine(operation.Staging, ProjectArchive.DatabaseName));
             RequireUnchanged(operation.Source);
             token.ThrowIfCancellationRequested();
-            var project = await publish(operation.Staging, token).ConfigureAwait(false);
+            var project = await publish(operation.Staging, operation.CopyLabel, token).ConfigureAwait(false);
             operation.Finish(ProjectImportStatus.Succeeded, project.Id, project.Name, null, null);
             logger.LogInformation("Project import {ImportId}: project {ProjectId} added with {Files} files ({Bytes} bytes) in {Elapsed} ms ({Rate} MB/s).",
                 operation.Id, project.Id, operation.ProcessedFiles, operation.ProcessedBytes, watch.ElapsedMilliseconds,
@@ -337,6 +341,9 @@ internal sealed class ProjectImports
     /// <summary>State of one import; counters are updated by the extraction threads, the rest under the lock.</summary>
     private sealed class Operation(Guid id, string operationId, ProjectArchiveSource source, string staging)
     {
+        /// <summary>The word of the copy suffix « (&lt;label&gt;)» in the language of the user; null — English «import».</summary>
+        internal string? CopyLabel { get; init; }
+
         private readonly Lock gate = new();
         private long processedFiles;
         private long processedBytes;

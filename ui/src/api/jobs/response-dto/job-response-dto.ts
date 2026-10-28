@@ -1,3 +1,4 @@
+import { isCodedTextDto, type CodedTextDto } from "../../coded-text-dto";
 import { isRecord } from "../../transport/envelopes";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "interrupted" | "blocked";
@@ -16,7 +17,8 @@ export interface JobResponseDto {
     status: JobStatus;
     /** 0–100 или null, если объём работы неизвестен. */
     progress: number | null;
-    progressText: string | null;
+    /** What the job is doing: a code of the catalog progress with values («Эпоха 3 из 10»), a stored text of 1.0.0, or null. */
+    progressMessage: CodedTextDto | null;
     processed: number | null;
     total: number | null;
     error: JobErrorDto | null;
@@ -37,8 +39,8 @@ export interface JobResponseDto {
      * TrainingRunResultDto (parseTrainingRunResult в api/projects/training).
      */
     result: unknown;
-    /** Подпись постановщика: группа, набор, пресет, датасет, «Версия N»; null у задач без подписи. */
-    label: string | null;
+    /** What the job works on: a name as text (group, set, preset, dataset) or a code of jobLabels («Версия N»); null without one. */
+    label: CodedTextDto | null;
 }
 
 const statuses: readonly string[] = ["queued", "running", "succeeded", "failed", "cancelled", "interrupted", "blocked"] satisfies JobStatus[];
@@ -58,7 +60,7 @@ export function isJobResponseDto(value: unknown): value is JobResponseDto {
         && typeof value.operationId === "string" && value.operationId.length > 0
         && typeof value.status === "string" && statuses.includes(value.status)
         && (value.progress === null || (typeof value.progress === "number" && value.progress >= 0 && value.progress <= 100))
-        && (value.progressText === null || typeof value.progressText === "string")
+        && (value.progressMessage === null || isCodedTextDto(value.progressMessage))
         && isCounter(value.processed) && isCounter(value.total)
         && (value.error === null || isJobErrorDto(value.error))
         && typeof value.cancelRequested === "boolean"
@@ -67,5 +69,5 @@ export function isJobResponseDto(value: unknown): value is JobResponseDto {
         && (value.finishedAt === null || isDate(value.finishedAt))
         && Number.isSafeInteger(value.sequence) && (value.sequence as number) >= 1
         && Object.hasOwn(value, "result")
-        && (value.label === null || typeof value.label === "string");
+        && (value.label === null || isCodedTextDto(value.label));
 }

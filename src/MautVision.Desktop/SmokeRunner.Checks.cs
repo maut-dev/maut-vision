@@ -14,7 +14,7 @@ internal static partial class SmokeRunner
 {
     /// <summary>
     /// Model checks API from the real page with the fake worker, on the versions the training check made: deletion review and the refusal
-    /// for the working version with its Russian text; the ZIP export through «Сохранить как» and job.changed (the archive is opened in
+    /// for the working version with its Russian text; the ZIP export through "Save as" and job.changed (the archive is opened in
     /// C#); an evaluation with the compatibility text formatted from details, its metrics through checks.changed; an image check whose
     /// preview loads from the resource channel; immediate refusal while the GPU is busy and stop; monitors and the screenshot; a video
     /// check with its sample frame; a screen check stopped by the reload of the page.
@@ -45,7 +45,7 @@ internal static partial class SmokeRunner
             if (!archive.Entries.Select(entry => entry.FullName).SequenceEqual(["weights/best.pt", "weights/best.onnx", "manifest.json", "classes.json", "README.md"]))
                 throw new InvalidOperationException("The exported archive has other entries: " + string.Join(", ", archive.Entries.Select(entry => entry.FullName)));
         }
-        checks.Add("The archive saved through «Сохранить как» has weights, manifest, classes and README");
+        checks.Add("The archive saved through \"Save as\" has weights, manifest, classes and README");
 
         MainWindow.SmokeFilesAnswer = [hang];
         MainWindow.SmokeVideoAnswer = Path.Combine(root, "smoke-video", "улица.mp4");
@@ -126,7 +126,7 @@ internal static partial class SmokeRunner
             && mautLocale.errorText(refused.error.code, refused.error.details).startsWith('Версию сейчас нельзя удалить'), 'Deleting the working version is refused with the reason');
 
           const selection = await request('training.selectModelExportDestination', {projectId, versionId: working.id});
-          assert(selection.ok && selection.data.token && selection.data.fileName === 'model-v1.zip', '«Сохранить как» gives a destination token');
+          assert(selection.ok && selection.data.token && selection.data.fileName === 'model-v1.zip', '"Save as" gives a destination token');
           const export1 = await request('training.startModelExport', {projectId, versionId: working.id, destinationToken: selection.data.token, operationId: 'checks-smoke-export'});
           assert(export1.ok && export1.data.kind === 'training.export', 'training.startModelExport returns the job at once');
           const exported = await finished(export1.data.id);

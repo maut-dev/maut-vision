@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using MautVision.Core.Interfaces;
 
 namespace MautVision.Core.Python;
 
@@ -11,7 +12,26 @@ internal sealed record WorkerFile(string Kind, string RelativePath, string Absol
     internal string Name => RelativePath[(RelativePath.LastIndexOf('/') + 1)..];
 }
 
-internal sealed record WorkerWarning(string Code, string Message);
+/// <summary>A warning of the result: Code and Message for the log, Text — what the UI shows (<see cref="WorkerEventParser.Text"/>).</summary>
+internal sealed record WorkerWarning(string Code, string Message, CodedText Text)
+{
+    /// <summary>The entries of result.warnings that are objects; code and message are cut to 100 and 2000 characters.</summary>
+    internal static IReadOnlyList<WorkerWarning> ReadAll(JsonElement root)
+    {
+        var warnings = new List<WorkerWarning>();
+        if (!root.TryGetProperty("warnings", out var items) || items.ValueKind != JsonValueKind.Array) return warnings;
+        foreach (var warning in items.EnumerateArray())
+        {
+            if (warning.ValueKind != JsonValueKind.Object) continue;
+            var code = WorkerEventParser.String(warning, "code") ?? "";
+            var message = WorkerEventParser.String(warning, "message") ?? "";
+            code = code.Length <= 100 ? code : code[..100];
+            message = message.Length <= 2000 ? message : message[..2000];
+            warnings.Add(new WorkerWarning(code, message, WorkerEventParser.Text(warning, code, message)));
+        }
+        return warnings;
+    }
+}
 
 /// <summary>
 /// An accepted train result: what the weights record (Architecture), applied parameters, best.pt metrics, epochs completed and
@@ -47,29 +67,32 @@ internal static partial class WorkerResults
         try
         {
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16, FileOptions.Asynchronous);
-            if (stream.Length > MaxResultBytes) throw new WorkerProtocolException("result_invalid", "output/result.json слишком большой.");
+            if (stream.Length > MaxResultBytes) throw new WorkerProtocolException("result_invalid", "output/result.json is too large.");
             return await JsonDocument.ParseAsync(stream, new JsonDocumentOptions { MaxDepth = 64 }, cancellationToken).ConfigureAwait(false);
         }
         catch (JsonException)
         {
-            throw new WorkerProtocolException("result_invalid", "output/result.json не является корректным JSON.");
+            throw new WorkerProtocolException("result_invalid", "output/result.json is not valid JSON.");
         }
     }
 
     /// <summary>Protocol version and operation of the result; anything else belongs to another run.</summary>
     internal static void CheckEnvelope(JsonElement root, string operationId, string operation, int protocolVersion)
     {
-        if (root.ValueKind != JsonValueKind.Object) throw new WorkerProtocolException("result_invalid", "result.json должен быть JSON-объектом.");
+        if (root.ValueKind != JsonValueKind.Object) throw new WorkerProtocolException("result_invalid", "result.json must be a JSON object.");
         if (!root.TryGetProperty("protocolVersion", out var version) || !version.TryGetInt32(out var number) || number != protocolVersion)
-            throw new WorkerProtocolException("protocol_version", "result.json: неподдерживаемая или отсутствующая версия протокола.");
+            throw new WorkerProtocolException("protocol_version", "result.json: unsupported or missing protocol version.");
         if (WorkerEventParser.String(root, "operationId") != operationId)
-            throw new WorkerProtocolException("result_operation_mismatch", "result.json относится к другой операции.");
+            throw new WorkerProtocolException("result_operation_mismatch", "result.json belongs to another operation.");
         if (WorkerEventParser.String(root, "operation") != operation)
-            throw new WorkerProtocolException("result_invalid", $"result.json: операция не {operation}.");
+            throw new WorkerProtocolException("result_invalid", $"result.json: the operation is not {operation}.");
     }
 
-    /// <summary>The worker's own failure (status failed with error.code and error.message); null for any other document.</summary>
-    internal static (string Code, string Message)? ReadFailure(JsonElement root, string operationId, string operation, int protocolVersion)
+    /// <summary>
+    /// The worker's own failure (status failed with error.code and error.message, optional error.reason and error.args); null for any
+    /// other document. Text — what the UI shows for it (<see cref="WorkerEventParser.Text"/>).
+    /// </summary>
+    internal static (string Code, string Message, CodedText Text)? ReadFailure(JsonElement root, string operationId, string operation, int protocolVersion)
     {
         try
         {
@@ -86,45 +109,46 @@ internal static partial class WorkerResults
         if (code is null || message is null) return null;
         var cleaned = CodePattern().Replace(code, "");
         cleaned = cleaned.Length == 0 ? "unknown" : cleaned[..Math.Min(60, cleaned.Length)];
-        return (cleaned, message.Length <= 2000 ? message : message[..2000]);
+        message = message.Length <= 2000 ? message : message[..2000];
+        return (cleaned, message, WorkerEventParser.Text(error, cleaned, message));
     }
 
     /// <summary>A successful train result with every file and the history verified.</summary>
     internal static async Task<WorkerTrainResult> ParseTrainAsync(JsonElement root, string outputDirectory, CancellationToken cancellationToken)
     {
-        if (WorkerEventParser.String(root, "status") != "succeeded") throw Invalid("result.json: статус не означает успех.");
+        if (WorkerEventParser.String(root, "status") != "succeeded") throw Invalid("result.json: the status does not mean success.");
         if (!root.TryGetProperty("effectiveParams", out var effective) || effective.ValueKind != JsonValueKind.Object
             || WorkerEventParser.String(effective, "architecture") is null || WorkerEventParser.String(effective, "device") is null)
-            throw Invalid("result.effectiveParams отсутствует или без architecture/device.");
+            throw Invalid("result.effectiveParams is missing or has no architecture/device.");
         var outputRoot = Path.GetFullPath(outputDirectory);
         if (!root.TryGetProperty("artifacts", out var artifactsValue) || artifactsValue.ValueKind != JsonValueKind.Array || artifactsValue.GetArrayLength() == 0)
-            throw Invalid("result.artifacts должен содержать хотя бы одну запись.");
+            throw Invalid("result.artifacts must contain at least one entry.");
         var artifacts = new List<WorkerFile>();
         foreach (var entry in artifactsValue.EnumerateArray())
         {
             var kind = entry.ValueKind == JsonValueKind.Object ? WorkerEventParser.String(entry, "kind") : null;
-            if (kind is not ("weights_pt" or "onnx")) throw Invalid("Артефакт должен иметь kind weights_pt или onnx.");
-            if (artifacts.Any(item => item.Kind == kind)) throw Invalid($"Артефакт {kind} указан дважды.");
-            var file = await VerifyFileAsync(outputRoot, entry, kind, "Артефакт", cancellationToken).ConfigureAwait(false);
+            if (kind is not ("weights_pt" or "onnx")) throw Invalid("An artifact must have kind weights_pt or onnx.");
+            if (artifacts.Any(item => item.Kind == kind)) throw Invalid($"Artifact {kind} is listed twice.");
+            var file = await VerifyFileAsync(outputRoot, entry, kind, "Artifact", cancellationToken).ConfigureAwait(false);
             if (!file.Name.EndsWith(kind == "onnx" ? ".onnx" : ".pt", StringComparison.OrdinalIgnoreCase))
-                throw Invalid($"Артефакт {file.Name}: расширение не соответствует {kind}.");
+                throw Invalid($"Artifact {file.Name}: the extension does not match {kind}.");
             artifacts.Add(file);
         }
-        if (!artifacts.Any(item => item.Kind == "weights_pt")) throw Invalid("В результате нет весов weights_pt.");
+        if (!artifacts.Any(item => item.Kind == "weights_pt")) throw Invalid("The result has no weights_pt weights.");
         var reports = new List<WorkerFile>();
         if (root.TryGetProperty("reports", out var reportsValue) && reportsValue.ValueKind != JsonValueKind.Null)
         {
-            if (reportsValue.ValueKind != JsonValueKind.Array) throw Invalid("result.reports должен быть массивом.");
+            if (reportsValue.ValueKind != JsonValueKind.Array) throw Invalid("result.reports must be an array.");
             foreach (var entry in reportsValue.EnumerateArray())
             {
                 var kind = entry.ValueKind == JsonValueKind.Object ? WorkerEventParser.String(entry, "kind") : null;
-                if (kind is not ("plot" or "log")) throw Invalid("Отчётный файл должен иметь kind plot или log.");
-                var file = await VerifyFileAsync(outputRoot, entry, kind, "Отчётный файл", cancellationToken).ConfigureAwait(false);
+                if (kind is not ("plot" or "log")) throw Invalid("A report file must have kind plot or log.");
+                var file = await VerifyFileAsync(outputRoot, entry, kind, "Report file", cancellationToken).ConfigureAwait(false);
                 var extension = Path.GetExtension(file.Name).ToLowerInvariant();
                 if (kind == "plot" ? extension is not (".png" or ".jpg" or ".jpeg") : extension is not (".log" or ".txt"))
-                    throw Invalid($"Отчётный файл {file.Name}: неподходящее имя для {kind}.");
+                    throw Invalid($"Report file {file.Name}: an unsuitable name for {kind}.");
                 if (reports.Any(item => item.Kind == kind && (kind == "log" || string.Equals(item.Name, file.Name, StringComparison.OrdinalIgnoreCase))))
-                    throw Invalid(kind == "log" ? "В результате больше одного лога обучения." : $"Картинка {file.Name} указана дважды.");
+                    throw Invalid(kind == "log" ? "The result has more than one training log." : $"Image {file.Name} is listed twice.");
                 reports.Add(file);
             }
         }
@@ -139,17 +163,7 @@ internal static partial class WorkerResults
         }
         var epochsCompleted = root.TryGetProperty("epochsCompleted", out var completed) && completed.TryGetInt32(out var count) && count >= 0 ? count : history.Count;
         var stoppedEarly = root.TryGetProperty("stoppedEarly", out var stopped) && stopped.ValueKind == JsonValueKind.True;
-        var warnings = new List<WorkerWarning>();
-        if (root.TryGetProperty("warnings", out var warningsValue) && warningsValue.ValueKind == JsonValueKind.Array)
-        {
-            foreach (var warning in warningsValue.EnumerateArray())
-            {
-                if (warning.ValueKind != JsonValueKind.Object) continue;
-                var code = WorkerEventParser.String(warning, "code") ?? "";
-                var message = WorkerEventParser.String(warning, "message") ?? "";
-                warnings.Add(new WorkerWarning(code.Length <= 100 ? code : code[..100], message.Length <= 2000 ? message : message[..2000]));
-            }
-        }
+        var warnings = WorkerWarning.ReadAll(root);
         return new WorkerTrainResult(
             root.TryGetProperty("architecture", out var architecture) && architecture.ValueKind == JsonValueKind.Object ? architecture.Clone() : Empty(),
             effective.Clone(),
@@ -170,7 +184,7 @@ internal static partial class WorkerResults
         foreach (var record in records)
         {
             if (record.ValueKind != JsonValueKind.Object || !record.TryGetProperty("epoch", out var epochValue) || !epochValue.TryGetInt32(out var epoch) || epoch <= previous)
-                throw Invalid("История эпох: эпохи должны быть целыми и строго возрастать.");
+                throw Invalid("Epoch history: epochs must be integers and strictly increasing.");
             previous = epoch;
             history.Add(WorkerEventParser.ReadEpoch(record, epoch, "result_invalid"));
         }
@@ -180,8 +194,8 @@ internal static partial class WorkerResults
     private static async Task<IReadOnlyList<WorkerEpoch>> ReadHistoryFileAsync(string outputRoot, JsonElement entry, CancellationToken cancellationToken)
     {
         if (!entry.TryGetProperty("count", out var countValue) || !countValue.TryGetInt32(out var count) || count < 0)
-            throw Invalid("historyFile требует неотрицательный count.");
-        var file = await VerifyFileAsync(outputRoot, entry, "history", "История эпох", cancellationToken, allowEmpty: count == 0).ConfigureAwait(false);
+            throw Invalid("historyFile requires a non-negative count.");
+        var file = await VerifyFileAsync(outputRoot, entry, "history", "Epoch history", cancellationToken, allowEmpty: count == 0).ConfigureAwait(false);
         var records = new List<JsonElement>();
         foreach (var line in await File.ReadAllLinesAsync(file.AbsolutePath, Encoding.UTF8, cancellationToken).ConfigureAwait(false))
         {
@@ -193,11 +207,11 @@ internal static partial class WorkerResults
             }
             catch (JsonException)
             {
-                throw Invalid("history.jsonl содержит строку не в формате JSON.");
+                throw Invalid("history.jsonl contains a line that is not JSON.");
             }
         }
         var history = ReadHistory(records);
-        if (history.Count != count) throw Invalid("history.jsonl: число эпох не совпадает с result.json.");
+        if (history.Count != count) throw Invalid("history.jsonl: the number of epochs does not match result.json.");
         return history;
     }
 
@@ -205,16 +219,16 @@ internal static partial class WorkerResults
     private static async Task<WorkerFile> VerifyFileAsync(string outputRoot, JsonElement entry, string kind, string label, CancellationToken cancellationToken,
         bool allowEmpty = false)
     {
-        var relative = WorkerEventParser.String(entry, "path") ?? throw Invalid($"{label} без относительного path.");
+        var relative = WorkerEventParser.String(entry, "path") ?? throw Invalid($"{label} without a relative path.");
         var sha256 = WorkerEventParser.String(entry, "sha256");
         if (sha256 is null || !Sha256Pattern().IsMatch(sha256) || !entry.TryGetProperty("sizeBytes", out var sizeValue) || !sizeValue.TryGetInt64(out var size))
-            throw Invalid($"{label} {relative} без sha256 или sizeBytes.");
+            throw Invalid($"{label} {relative} without sha256 or sizeBytes.");
         var segments = relative.Split('/');
         if (segments.Any(segment => !SegmentPattern().IsMatch(segment) || segment is "." or ".."))
-            throw Invalid($"Недопустимый путь файла результата: {relative}.");
+            throw Invalid($"Invalid result file path: {relative}.");
         var absolute = Path.GetFullPath(Path.Combine([outputRoot, .. segments]));
         if (!absolute.StartsWith(outputRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
-            throw Invalid($"Путь файла результата выходит за пределы output: {relative}.");
+            throw Invalid($"The result file path leaves output: {relative}.");
         // Every folder between the output root and the file must be a real folder: a link could lead outside.
         var current = outputRoot;
         foreach (var segment in segments)
@@ -222,19 +236,19 @@ internal static partial class WorkerResults
             current = Path.Combine(current, segment);
             var info = new FileInfo(current);
             var attributes = info.Exists || Directory.Exists(current) ? File.GetAttributes(current) : (FileAttributes?)null;
-            if (attributes is null) throw new WorkerProtocolException("artifact_missing", $"{label} не найден: {relative}.");
-            if ((attributes.Value & FileAttributes.ReparsePoint) != 0) throw Invalid($"{label} {relative} — ссылка, а не файл.");
+            if (attributes is null) throw new WorkerProtocolException("artifact_missing", $"{label} is not found: {relative}.");
+            if ((attributes.Value & FileAttributes.ReparsePoint) != 0) throw Invalid($"{label} {relative} is a link, not a file.");
         }
         var fileInfo = new FileInfo(absolute);
         if (!fileInfo.Exists || (!allowEmpty && fileInfo.Length == 0))
-            throw new WorkerProtocolException("artifact_missing", $"{label} не является непустым файлом: {relative}.");
+            throw new WorkerProtocolException("artifact_missing", $"{label} is not a non-empty file: {relative}.");
         string actual;
         await using (var stream = new FileStream(absolute, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.Asynchronous | FileOptions.SequentialScan))
         {
             actual = Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, cancellationToken).ConfigureAwait(false));
         }
         if (actual != sha256 || fileInfo.Length != size)
-            throw new WorkerProtocolException("artifact_integrity", $"SHA-256 или размер файла {relative} не совпадает с result.json.");
+            throw new WorkerProtocolException("artifact_integrity", $"SHA-256 or size of file {relative} does not match result.json.");
         return new WorkerFile(kind, string.Join('/', segments), absolute, size, actual);
     }
 

@@ -3,6 +3,7 @@ using MautVision.Core.Interfaces;
 using MautVision.Core.Interfaces.Jobs;
 using MautVision.Core.Interfaces.Projects;
 using MautVision.Core.Interfaces.Projects.Datasets;
+using MautVision.Desktop.Controllers.Jobs;
 using MautVision.Desktop.Controllers.Projects.Datasets.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Datasets.ResponseDto;
 using MautVision.Desktop.Resources;
@@ -13,7 +14,7 @@ namespace MautVision.Desktop.Controllers.Projects.Datasets;
 /// <summary>
 /// Datasets of an opened project: versions, plans, samples (resource URLs of their files), deletion and the operations build,
 /// integrity check and ZIP export, which start as jobs and report through job.changed. The export destination is chosen in a
-/// native «Сохранить как» dialog; the page gets only a selection token.
+/// native "Save as" dialog; the page gets only a selection token.
 /// </summary>
 internal sealed class DatasetsController(IProjectsManager projects, IJobsManager jobs, ResourceHandles resources, FileSelections selections, NativeDialogs dialogs)
 {
@@ -66,7 +67,7 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         ArgumentException.ThrowIfNullOrWhiteSpace(request.OperationId);
         var datasets = await Datasets(request.ProjectId, cancellationToken);
         var input = await datasets.PrepareBuildAsync(request.PlanId, request.PlanHash, request.OperationId, cancellationToken);
-        var job = await jobs.EnqueueAsync<IDatasetBuildJob, DatasetBuildInput>(input, request.ProjectId, request.OperationId, input.Specification.Name,
+        var job = await jobs.EnqueueAsync<IDatasetBuildJob, DatasetBuildInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.Specification.Name),
             cancellationToken);
         return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken));
     }
@@ -76,12 +77,12 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         ArgumentException.ThrowIfNullOrWhiteSpace(request.OperationId);
         var datasets = await Datasets(request.ProjectId, cancellationToken);
         var input = await datasets.PrepareVerifyAsync(request.VersionId, request.OperationId, cancellationToken);
-        var job = await jobs.EnqueueAsync<IDatasetVerifyJob, DatasetVerifyInput>(input, request.ProjectId, request.OperationId, input.VersionName,
+        var job = await jobs.EnqueueAsync<IDatasetVerifyJob, DatasetVerifyInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.VersionName),
             cancellationToken);
         return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken));
     }
 
-    /// <summary>«Сохранить как» with «&lt;name&gt;.zip»; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
+    /// <summary>"Save as" with "&lt;name&gt;.zip"; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
     public async Task<DatasetExportSelectionResponseDto> SelectExportDestinationAsync(SelectDatasetExportRequestDto request, CancellationToken cancellationToken)
     {
         var version = await (await Datasets(request.ProjectId, cancellationToken)).GetAsync(request.VersionId, cancellationToken);
@@ -98,7 +99,7 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         if (selection is not { Kind: FileSelectionKind.SaveFile, Paths.Count: 1 })
             throw new CoreException("datasets.export_selection_expired", "The export destination is unknown, expired or belongs to another operation.");
         var input = await datasets.PrepareExportAsync(request.VersionId, selection.Paths[0], request.OperationId, cancellationToken);
-        var job = await jobs.EnqueueAsync<IDatasetExportJob, DatasetExportInput>(input, request.ProjectId, request.OperationId, input.VersionName,
+        var job = await jobs.EnqueueAsync<IDatasetExportJob, DatasetExportInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.VersionName),
             cancellationToken);
         return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken));
     }
@@ -139,7 +140,7 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         return new DatasetDeletionResultResponseDto(result.VersionId, result.Samples, result.Operations, result.CleanupPending);
     }
 
-    /// <summary>«&lt;name&gt;.zip» with characters a file name cannot hold replaced; an empty result becomes «dataset.zip».</summary>
+    /// <summary>"&lt;name&gt;.zip" with characters a file name cannot hold replaced; an empty result becomes "dataset.zip".</summary>
     internal static string DefaultFileName(string name)
     {
         var invalid = Path.GetInvalidFileNameChars();

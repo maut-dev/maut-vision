@@ -50,7 +50,7 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
         var training = await Training(request.ProjectId, cancellationToken);
         var input = await training.PrepareRunAsync(new TrainingRunRequest(request.DatasetVersionId, request.Parameters, request.PresetName), request.OperationId,
             cancellationToken);
-        var job = await jobs.EnqueueAsync<ITrainingRunJob, TrainingRunInput>(input, request.ProjectId, request.OperationId, input.Dataset.Name,
+        var job = await jobs.EnqueueAsync<ITrainingRunJob, TrainingRunInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.Dataset.Name),
             cancellationToken);
         return TrainingResponseMapper.Map(await training.GetRunAsync(job.Id, cancellationToken));
     }
@@ -109,7 +109,7 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
         return new ModelVersionDeletionResponseDto(result.VersionId, result.Number, result.Evaluations, result.CleanupPending);
     }
 
-    /// <summary>«Сохранить как» with «model-vN.zip»; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
+    /// <summary>"Save as" with "model-vN.zip"; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
     public async Task<ModelExportSelectionResponseDto> SelectExportDestinationAsync(SelectModelExportRequestDto request, CancellationToken cancellationToken)
     {
         var version = await (await Training(request.ProjectId, cancellationToken)).GetVersionAsync(request.VersionId, cancellationToken);

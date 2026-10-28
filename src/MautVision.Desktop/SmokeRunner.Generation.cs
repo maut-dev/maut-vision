@@ -176,7 +176,7 @@ internal static partial class SmokeRunner
             assert(runs.ok && runs.data.total >= 1 && runs.data.items[0].job.id === runId && runs.data.items[0].producedCount === 3
               && runs.data.items[0].outputGroupId === groupId, 'generation.listRuns returns the run with its group');
             const draft = await request('generation.getRepeatDraft', {projectId, runId});
-            assert(draft.ok && draft.data.recipe.name === 'Пресет smoke · повтор' && draft.data.seed === 5 && draft.data.requestedCount === 3, 'generation.getRepeatDraft fills the form for a repeat');
+            assert(draft.ok && draft.data.recipe.name === 'Пресет smoke' && draft.data.seed === 5 && draft.data.requestedCount === 3, 'generation.getRepeatDraft fills the form for a repeat');
             const removed = await request('generation.deleteRun', {projectId, runId});
             assert(removed.ok && removed.data.runId === runId, 'generation.deleteRun deletes a finished run');
             const kept = await request('images.getGroup', {projectId, groupId});

@@ -104,7 +104,8 @@ internal sealed class ClassesController(
         if (!binding.Available)
             throw new CoreException("classes.variant_unavailable", $"Class variant {binding.Id} is archived or its class or project variant is.");
         var workspace = await project.Classes.GetWorkspaceAsync(cancellationToken);
-        var label = $"{workspace.Classes.FirstOrDefault(item => item.Id == binding.ClassId)?.Name} · {workspace.Variants.FirstOrDefault(item => item.Id == binding.VariantId)?.Name}";
+        var label = JobLabels.ClassVariant(workspace.Classes.FirstOrDefault(item => item.Id == binding.ClassId)?.Name,
+            workspace.Variants.FirstOrDefault(item => item.Id == binding.VariantId)?.Name);
         var job = await jobs.EnqueueAsync<IImportClassAssetsJob, ImportClassAssetsInput>(new ImportClassAssetsInput(binding.Id, paths),
             project.Id, request.OperationId, label, cancellationToken);
         return JobResponseMapper.Map(job);

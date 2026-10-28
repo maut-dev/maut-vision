@@ -1,15 +1,15 @@
 namespace MautVision.Core.Interfaces.Projects.Catalog;
 
 /// <summary>
-/// Варианты проекта. Работают только у открытого проекта (<see cref="Projects.IProjectsManager.OpenAsync"/>), иначе
-/// CoreException <c>variants.project_not_open</c>. Изменения сверяют ревизию объекта (<c>variants.revision_conflict</c>)
-/// и сообщаются событием <see cref="Projects.IProjectsManager.CatalogChanged"/>.
-/// Ошибки данных: <c>variants.name_invalid</c>, <c>variants.description_invalid</c>, <c>variants.name_duplicate</c>,
+/// Project variants. Work only for an open project (<see cref="Projects.IProjectsManager.OpenAsync"/>), otherwise
+/// CoreException <c>variants.project_not_open</c>. Changes check the object revision (<c>variants.revision_conflict</c>)
+/// and are reported by the event <see cref="Projects.IProjectsManager.CatalogChanged"/>.
+/// Data errors: <c>variants.name_invalid</c>, <c>variants.description_invalid</c>, <c>variants.name_duplicate</c>,
 /// <c>variants.not_found</c>.
 /// </summary>
 public interface IVariantsManager
 {
-    /// <summary>Все варианты, включая архивные, в порядке SortOrder.</summary>
+    /// <summary>All variants, including archived ones, in SortOrder.</summary>
     Task<IReadOnlyList<ProjectVariant>> ListAsync(CancellationToken cancellationToken = default);
 
     Task<ProjectVariant> CreateAsync(string name, string description, CancellationToken cancellationToken = default);
@@ -17,15 +17,15 @@ public interface IVariantsManager
     Task<ProjectVariant> UpdateAsync(Guid variantId, string name, string description, long expectedRevision,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Архив действует только на сам вариант; привязки с ним становятся недоступными, но не меняются.</summary>
+    /// <summary>Archiving affects only the variant itself; bindings with it become unavailable but do not change.</summary>
     Task<ProjectVariant> SetArchivedAsync(Guid variantId, bool archived, long expectedRevision, CancellationToken cancellationToken = default);
 
-    /// <summary>Состав удаления: привязки во всех классах и их изображения, блокирующие причины и ревизия состава.</summary>
+    /// <summary>What a deletion removes: bindings in all classes and their images, blocking reasons and the content revision.</summary>
     Task<DeletionReview> ReviewDeletionAsync(Guid variantId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Удаляет вариант, его привязки и изображения, если состав совпадает с reviewRevision
-    /// (иначе <c>variants.deletion_revision_conflict</c>) и нет блокирующих причин (<c>variants.deletion_blocked</c>).
+    /// Deletes the variant, its bindings and images if the content matches reviewRevision
+    /// (otherwise <c>variants.deletion_revision_conflict</c>) and there are no blocking reasons (<c>variants.deletion_blocked</c>).
     /// </summary>
     Task<DeletionResult> DeleteAsync(Guid variantId, string reviewRevision, CancellationToken cancellationToken = default);
 }

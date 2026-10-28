@@ -1,0 +1,82 @@
+{
+  "amp_disabled": "AMP is off: mixed precision gives NaN on this GPU, training ran in fp32",
+  "architecture_mismatch": {
+    "base_weights": "Base weights: {{claimed}} is declared, but the weights hold '{{yamlFile}}' (scale '{{scale}}', task '{{task}}'). Training did not start.",
+    "best_pt": "best.pt: {{claimed}} is declared, but the weights hold '{{yamlFile}}' (scale '{{scale}}', task '{{task}}'). Training did not start.",
+    "version_weights": "Version weights: {{claimed}} is declared, but the weights hold '{{yamlFile}}' (scale '{{scale}}', task '{{task}}'). Training did not start."
+  },
+  "batch_reduced": "Ultralytics reduced the batch from {{requested}} to {{actual}} for lack of memory; lr0 {{lr0}} was computed for the original batch",
+  "capture_unavailable": {
+    "monitor_changed": "Monitor {{monitor}} changed after the screenshot: it is now {{actualWidth}}×{{actualHeight}} at ({{actualX}}, {{actualY}}), but the region was chosen on {{width}}×{{height}} at ({{x}}, {{y}}). Take the screenshot again.",
+    "monitor_missing": "Monitor {{monitor}} does not exist: 0..{{last}} are available",
+    "mss_missing": "Screen capture is unavailable: mss is not installed ({{error}})",
+    "open_failed": "Screen capture could not be opened: {{error}}"
+  },
+  "dataset_invalid": {
+    "key_missing": "data.yaml: the key '{{key}}' is missing",
+    "names_invalid": "data.yaml: 'names' must be a non-empty list of class names",
+    "nc_mismatch": "data.yaml: nc={{nc}}, but there are {{names}} class names",
+    "split_empty": "The split '{{key}}' has no images",
+    "split_missing": "The dataset has no '{{value}}' (key '{{key}}' in data.yaml)",
+    "split_outside": "data.yaml: '{{key}}' points outside the dataset",
+    "split_path_type": "data.yaml: '{{key}}' must be a path or a list of paths",
+    "test_split_missing": "The dataset has no test split",
+    "validation_split_empty": "The chosen validation split '{{key}}' has no images",
+    "yaml_missing": "input/dataset has no data.yaml",
+    "yaml_not_mapping": "data.yaml must be a mapping",
+    "yaml_unreadable": "data.yaml cannot be read: {{error}}"
+  },
+  "device_unavailable": {
+    "gpu_missing": "GPU {{index}} is requested, but {{count}} are visible",
+    "no_cuda": "GPU {{index}} is requested, but CUDA is unavailable"
+  },
+  "evaluation_failed": "The evaluation failed: {{error}}",
+  "input_path_invalid": "The path '{{path}}' goes outside the job folder",
+  "internal_error": {
+    "png_encode": "The screenshot could not be encoded to PNG",
+    "unexpected": "Internal error of the worker: {{error}}"
+  },
+  "live_time_limit": "The screen check stopped at its limit of {{seconds}} s",
+  "model_load_failed": {
+    "load_error": "The weights '{{file}}' could not be loaded: {{error}}",
+    "not_pt": "Weights must be a .pt file, got '{{file}}'"
+  },
+  "model_not_found": "There is no weights file '{{file}}' in input/model",
+  "no_weights_produced": "Training did not save best.pt: no epoch was completed",
+  "onnx_export_failed": {
+    "export_error": "ONNX was not exported: {{error}}",
+    "no_file": "The ONNX export finished without a file"
+  },
+  "operation_not_implemented": "The operation '{{operation}}' is in the protocol, but this version of the worker does not implement it",
+  "out_of_memory": {
+    "evaluate": "The device ran out of memory: reduce batch. {{error}}",
+    "predict": "The device ran out of memory. {{error}}",
+    "train": "The device ran out of memory: reduce batch or imgsz. {{error}}"
+  },
+  "prediction_failed": "The model run failed: {{error}}",
+  "protocol_unsupported": "Protocol version {{received}} is not supported, the worker understands {{supported}}",
+  "region_invalid": {
+    "outside_image": "The region {{width}}×{{height}} at ({{x}}, {{y}}) goes beyond the image {{frameWidth}}×{{frameHeight}}",
+    "outside_monitor": "The region {{width}}×{{height}} at ({{x}}, {{y}}) goes beyond the monitor {{frameWidth}}×{{frameHeight}}",
+    "outside_video_frame": "The region {{width}}×{{height}} at ({{x}}, {{y}}) goes beyond the video frame {{frameWidth}}×{{frameHeight}}"
+  },
+  "reports_failed": "Training plots and log were not saved: {{error}}",
+  "request_invalid": {
+    "class_out_of_range": "The classes filter has an index outside the dataset class map",
+    "compile_unavailable": "torch.compile is unavailable in the pinned Windows build without Triton",
+    "not_object": "request.json must be a JSON object",
+    "profile_unavailable": "Profiling requires TensorRT/ONNXRuntime and disabled external integrations",
+    "validation": "The request did not pass validation: {{summary}}"
+  },
+  "request_not_found": "The job folder has no request.json",
+  "request_unreadable": "request.json cannot be read as JSON: {{error}}",
+  "source_invalid": {
+    "image_format": "The file is not recognized as an image (PNG, JPEG, WebP)",
+    "image_unreadable": "The image could not be read: {{error}}",
+    "missing": "There is no source file of the check",
+    "video_empty": "Not a single frame was read from the video",
+    "video_unopened": "The video did not open: OpenCV does not support the format or the file is damaged"
+  },
+  "training_failed": "Training failed: {{error}}",
+  "video_fps_unknown": "The video does not report its frame rate: frame times are computed for 30 fps"
+}

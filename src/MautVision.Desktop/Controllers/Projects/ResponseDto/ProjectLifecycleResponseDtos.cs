@@ -2,18 +2,18 @@ using MautVision.Desktop.Controllers.Jobs.ResponseDto;
 
 namespace MautVision.Desktop.Controllers.Projects.ResponseDto;
 
-/// <summary>Библиотека: все проекты и последний открытый (null, если его нет или он удалён).</summary>
+/// <summary>Library: all projects and the last opened one (null if there is none or it is deleted).</summary>
 public sealed record ProjectLibraryResponseDto(ProjectResponseDto[] Items, string? LastProjectId);
 
-/// <summary>Место сохранения экспорта; null — окно закрыто без выбора.</summary>
+/// <summary>Export save location; null — the window was closed without a choice.</summary>
 public sealed record ProjectExportSelectionResponseDto(string? SelectionToken, string? FileName);
 
-/// <summary>Выбранный архив; null — окно закрыто без выбора.</summary>
+/// <summary>The chosen archive; null — the window was closed without a choice.</summary>
 public sealed record ProjectArchiveSelectionResponseDto(string? SelectionToken, string? FileName, long? ByteSize);
 
 /// <summary>
-/// Импорт: Status — running | succeeded | failed | cancelled; счётчики файлов и байтов распаковки (Total — 0 до проверки архива);
-/// ProjectId и ProjectName — добавленный проект; Error — код и текст отказа. Sequence растёт с каждым снимком.
+/// Import: Status — running | succeeded | failed | cancelled; counters of unpacked files and bytes (Total — 0 until the archive is checked);
+/// ProjectId and ProjectName — the added project; Error — refusal code and text. Sequence grows with every snapshot.
 /// </summary>
 public sealed record ProjectImportResponseDto(
     Guid Id,
@@ -32,14 +32,14 @@ public sealed record ProjectImportResponseDto(
     DateTimeOffset? FinishedAt,
     long Sequence);
 
-/// <summary>Идущая работа проекта: задача (Kind — её вид, JobId, Label) или живая проверка (Kind checks.live).</summary>
-public sealed record ProjectActivityResponseDto(string Kind, Guid? JobId, string? Label);
+/// <summary>Running work of the project: a job (Kind — its kind, JobId, Label) or a live check (Kind checks.live).</summary>
+public sealed record ProjectActivityResponseDto(string Kind, Guid? JobId, CodedTextDto? Label);
 
-/// <summary>Activities — что удаление отменит; TransferActive — идёт экспорт, удаление откажет.</summary>
+/// <summary>Activities — what the deletion cancels; TransferActive — an export is running, the deletion would be refused.</summary>
 public sealed record ProjectDeletionReviewResponseDto(string ProjectId, string Name, long Revision, ProjectActivityResponseDto[] Activities, bool TransferActive);
 
-/// <summary>CleanupPending — часть файлов занята, очистка повторится при следующем запуске.</summary>
+/// <summary>CleanupPending — some files are locked, the cleanup is repeated on the next start.</summary>
 public sealed record ProjectDeletionResponseDto(string ProjectId, bool CleanupPending);
 
-/// <summary>Событие project.removed.</summary>
+/// <summary>The project.removed event.</summary>
 public sealed record ProjectRemovedEventDto(string ProjectId);

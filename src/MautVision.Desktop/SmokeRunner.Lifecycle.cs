@@ -171,7 +171,7 @@ internal static partial class SmokeRunner
             'projects.selectExportDestination returns a token and the file name, never the path');
           const operationId = 'project-export-smoke';
           const started = await request('projects.startExport', {projectId, operationId, selectionToken: destination.data.selectionToken});
-          assert(started.ok && started.data.kind === 'projects.export' && started.data.label === project.name,
+          assert(started.ok && started.data.kind === 'projects.export' && started.data.label?.code === null && started.data.label?.text === project.name,
             'projects.startExport queues projects.export labelled with the project name');
           const repeated = await request('projects.startExport', {projectId, operationId, selectionToken: destination.data.selectionToken});
           assert(repeated.ok && repeated.data.id === started.data.id, 'A repeated start of the same operation returns the same export');
@@ -198,7 +198,7 @@ internal static partial class SmokeRunner
           const chosen = await request('projects.selectImportArchive', {});
           assert(chosen.ok && chosen.data.fileName === 'Проект smoke.zip' && chosen.data.byteSize === archiveBytes,
             'projects.selectImportArchive returns a token, the name and the size of the archive');
-          const importStart = await request('projects.startImport', {operationId: 'project-import-smoke', selectionToken: chosen.data.selectionToken});
+          const importStart = await request('projects.startImport', {operationId: 'project-import-smoke', selectionToken: chosen.data.selectionToken, copyLabel: 'импорт'});
           assert(importStart.ok && importStart.data.status === 'running' && importStart.data.fileName === 'Проект smoke.zip',
             'projects.startImport answers at once with a running snapshot');
           const imported = await until(() => events.find(event => event.event === 'projectImport.changed' && event.data.id === importStart.data.id
