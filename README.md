@@ -91,9 +91,11 @@ Maut Vision is built to stay fast on large libraries:
 ## Installation
 
 > [!IMPORTANT]
-> **Download:** [MautVision-Setup-1.0.0.exe](DOWNLOAD_URL) <!-- DOWNLOAD_URL: replace with the release link before publishing -->
+> **Download:** [MautVision-Setup-1.0.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.0.0/MautVision-Setup-1.0.0.exe) (1.83 GB)
 >
-> Releases are temporarily distributed through a download link; a website and GitHub releases will follow.
+> All versions and release notes: [GitHub Releases](https://github.com/maut-dev/maut-vision/releases).
+>
+> SHA-256: `8f72bf8ac1b06f8f891cea2eab1c9675bedb55fb70cbb6a3b2461a72403d66d7`
 
 **Verify the download.** Compare the SHA-256 of the installer with the hash published next to the download link:
 
