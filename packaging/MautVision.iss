@@ -39,7 +39,7 @@ AppSupportURL=https://github.com/maut-dev/maut-vision/issues
 AppUpdatesURL=https://github.com/maut-dev/maut-vision/releases
 VersionInfoVersion={#AppVersion}
 VersionInfoProductName=Maut Vision
-VersionInfoDescription=Установка Maut Vision
+VersionInfoDescription=Maut Vision Setup
 ; Per-user: %LOCALAPPDATA%\Programs\MautVision without administrator rights; the folder can be changed.
 DefaultDirName={autopf}\{#AppFolder}
 PrivilegesRequired=lowest
@@ -54,6 +54,8 @@ SetupIconFile=..\src\MautVision.Desktop\Assets\maut-vision.ico
 UninstallDisplayIcon={app}\{#AppExe}
 UninstallDisplayName={#AppTitle}
 LicenseFile=..\LICENSE
+; The wizard speaks the language of Windows (English or Russian); the choice is asked only when neither matches.
+ShowLanguageDialog=auto
 OutputBaseFilename={#OutputName}
 ; The running application is closed through Restart Manager: it exits at WM_QUERYENDSESSION instead of hiding in the tray. AppMutex is not
 ; used for Setup: its check comes before Restart Manager and would stop a silent update over a running application. The uninstaller
@@ -71,7 +73,20 @@ LZMAUseSeparateProcess=yes
 #endif
 
 [Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+
+[CustomMessages]
+english.InstallingWebView2=Installing Microsoft Edge WebView2 Runtime…
+russian.InstallingWebView2=Установка Microsoft Edge WebView2 Runtime…
+english.AppDirTooLong=The installation folder path is too long (%1 characters, up to %2 allowed): the files of the training environment will not fit into the Windows path length limit. Select a folder with a shorter path.
+russian.AppDirTooLong=Путь к папке установки слишком длинный (%1 символов, допустимо до %2): файлы среды обучения не поместятся в ограничение Windows на длину пути. Выберите папку с более коротким путём.
+english.AppRunning=Maut Vision is running. Close it: the icon in the notification area → “Exit”, then press OK.
+russian.AppRunning=Maut Vision запущен. Закройте его: значок в области уведомлений → «Выйти», затем нажмите OK.
+english.DeleteDataQuestion=Delete projects and data?%n%nThe folder %1 contains projects, images, datasets, models and downloaded weights. Without deletion they stay and open after a new installation.
+russian.DeleteDataQuestion=Удалить проекты и данные?%n%nПапка %1 содержит проекты, изображения, датасеты, модели и загруженные веса. Без удаления они останутся и откроются после повторной установки.
+english.DeleteDataFailed=Some files in %1 could not be deleted. Delete the folder manually.
+russian.DeleteDataFailed=Часть файлов в %1 удалить не удалось. Удалите папку вручную.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -96,7 +111,7 @@ Name: "{autoprograms}\{#AppTitle}"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\{#AppTitle}"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Run]
-Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "Установка Microsoft Edge WebView2 Runtime…"; Flags: waituntilterminated; Check: NeedsWebView2
+Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; Parameters: "/silent /install"; StatusMsg: "{cm:InstallingWebView2}"; Flags: waituntilterminated; Check: NeedsWebView2
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppTitle}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
@@ -109,7 +124,7 @@ const
 function AppDirTooLongMessage(Directory: String): String;
 begin
   if Length(Directory) > MaxAppDirLength then
-    Result := Format('Путь к папке установки слишком длинный (%d символов, допустимо до %d): файлы среды обучения не поместятся в ограничение Windows на длину пути. Выберите папку с более коротким путём.', [Length(Directory), MaxAppDirLength])
+    Result := FmtMessage(CustomMessage('AppDirTooLong'), [IntToStr(Length(Directory)), IntToStr(MaxAppDirLength)])
   else
     Result := '';
 end;
@@ -160,8 +175,7 @@ begin
   Result := True;
   while CheckForMutexes(RunningMutexes) do
   begin
-    if SuppressibleMsgBox('Maut Vision запущен. Закройте его: значок в области уведомлений → «Выйти», затем нажмите OK.',
-      mbError, MB_OKCANCEL, IDCANCEL) <> IDOK then
+    if SuppressibleMsgBox(CustomMessage('AppRunning'), mbError, MB_OKCANCEL, IDCANCEL) <> IDOK then
     begin
       Result := False;
       Exit;
@@ -179,10 +193,9 @@ begin
   DataDir := ExpandConstant('{localappdata}\MautVision');
   if UninstallSilent or not DirExists(DataDir) then
     Exit;
-  if MsgBox('Удалить проекты и данные?' + #13#10#13#10 + 'Папка ' + DataDir + ' содержит проекты, изображения, датасеты, модели и загруженные веса. '
-    + 'Без удаления они останутся и откроются после повторной установки.', mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
+  if MsgBox(FmtMessage(CustomMessage('DeleteDataQuestion'), [DataDir]), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
   begin
     if not DelTree(DataDir, True, True, True) then
-      MsgBox('Часть файлов в ' + DataDir + ' удалить не удалось. Удалите папку вручную.', mbError, MB_OK);
+      MsgBox(FmtMessage(CustomMessage('DeleteDataFailed'), [DataDir]), mbError, MB_OK);
   end;
 end;
