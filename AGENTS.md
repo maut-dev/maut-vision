@@ -33,7 +33,7 @@ Run the [checks](docs/Code/review-and-testing.md) that match the change: at leas
 Follow the [Git rules](docs/Code/git.md):
 
 - `master` holds releases, `dev` holds linear development; work branches are `<type>/<topic>` (`feature/…`, `fix/…`, `docs/…`,
-  `refactor/…`), release and hotfix branches are `release/x.y.z` and `hotfix/x.y.z`.
+  `refactor/…`), release and hotfix branches are `release/x.y.z` and `hotfix/x.y.z`. Every change goes into `dev`; `master` receives only release merges of `dev`.
 - Commits are Conventional Commits `type(scope): description` with scopes `Core/<Block>`, `Desktop/<Block>`, `UI/<Block>`, `Python`,
   `Docs`, `Build`, `Repo`.
 - Never commit secrets, working data, downloaded models, dependencies or build output. Publishing, force-pushing and rewriting shared

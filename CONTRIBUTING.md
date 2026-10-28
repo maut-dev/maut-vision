@@ -52,11 +52,11 @@ cd python; python -I -m unittest discover -s tests -t .   # worker unit tests
 
 | Branch | Purpose |
 |---|---|
-| `master` | releases only, each commit tagged `vX.Y.Z` |
+| `master` | releases only; it receives nothing but merges of `dev`, each tagged `vX.Y.Z` |
 | `dev` | linear development; the default target of pull requests |
 | `feature/<topic>`, `fix/<topic>`, `docs/<topic>`, `refactor/<topic>`, `perf/<topic>`, `test/<topic>`, `build/<topic>` | work branches from `dev` |
 | `release/x.y.z` | release preparation from `dev` |
-| `hotfix/x.y.z` | urgent fix of a release from `master` |
+| `hotfix/x.y.z` | urgent PATCH release; starts from `dev`, like any other change |
 
 Recommended GitHub settings: protect `master` and `dev` (pull requests required, no force-push, linear history on `dev`), allow squash and
 rebase merges for work branches, delete head branches after merge.
@@ -96,22 +96,26 @@ Versions follow [Semantic Versioning](https://semver.org/) `MAJOR.MINOR.PATCH`; 
 3. Move the `[Unreleased]` entries of `CHANGELOG.md` to `[1.1.0] - YYYY-MM-DD` and update the comparison links.
 4. Run the checks, rebuild the Python worker if its sources changed (`python/scripts/build-worker.ps1`) and build the installer:
    `.\build-installer.ps1`. The script prints the installer SHA-256.
-5. Merge into `master` without fast-forward and tag it:
+5. Merge the release branch into `dev`, then `dev` into `master` without fast-forward, and tag the merge:
 
    ```powershell
-   git switch master
-   git merge --no-ff release/1.1.0 -m "chore(Repo): release 1.1.0"
-   git tag -a v1.1.0 -m "Maut Vision 1.1.0"
    git switch dev
-   git merge --ff-only master     # or rebase dev on master if dev moved on
-   git push origin master dev v1.1.0
+   git merge --ff-only release/1.1.0
+   git switch master
+   git merge --no-ff dev -m "chore(Repo): release 1.1.0"
+   git tag -a v1.1.0 -m "Maut Vision 1.1.0"
+   git push origin dev master v1.1.0
    ```
 
 6. Publish the installer, its SHA-256 and the changelog section as a GitHub release (or at the download location), then delete the release
    branch.
 
-**Hotfix.** Branch `hotfix/1.0.1` from `master`, fix, bump the PATCH version and the changelog, merge into `master` with `--no-ff`, tag
-`v1.0.1`, then bring the fix into `dev` (merge `master` into `dev` or cherry-pick) and delete the branch.
+**Changes always flow `dev` → `master`.** Nothing is merged or committed into `master` directly — not features, not fixes, not
+documentation. A change reaches `master` only with the next release merge of `dev`, so `dev` always contains everything in `master`
+(`git log dev..master` is empty).
+
+**Hotfix.** Branch `hotfix/1.0.1` from `dev`, fix, bump the PATCH version and the changelog, merge into `dev`, then release `dev` into
+`master` as above and tag `v1.0.1`. Delete the branch afterwards.
 
 ## License
 
