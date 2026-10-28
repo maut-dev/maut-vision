@@ -7,6 +7,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Localization**: the interface language setting «Язык интерфейса» / "Interface language" in the header («Как в системе», «Русский»,
+  «English»), kept in `host-settings.json` and applied without a restart; by default the language of Windows (Russian for `ru-*`,
+  otherwise English). The library, base models, project dialogs, navigation and shared components are translated; project sections
+  follow in the next steps.
+- **Localization**: i18next catalogs in `ui/src/locales` with typed keys and Russian and English plural forms; `npm run check-locales`
+  (part of `npm run typecheck`) compares the languages and requires a text for every error code of the host.
+- **Host**: the loading window, tray, exit question, native file dialogs and startup failures in English and Russian (`Strings.resx`);
+  the tray is relabelled when the language changes; `--language system|ru|en` for one run.
+- **Installer**: English and Russian wizard chosen by the language of Windows.
+
+### Changed
+
+- **Errors**: bridge responses carry `{ code, details }` without a text; error texts, deletion blockers, plan warnings, skip reasons and
+  hardware reasons are built by the UI from codes in the current language. Job errors stored by earlier versions keep their message as
+  a fallback for unknown codes.
+- **Formatting**: numbers, sizes and dates follow the interface language through `ui/src/lib/format.ts`.
+
 ## [1.0.0] - 2026-10-27
 
 First public release.

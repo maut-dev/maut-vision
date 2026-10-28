@@ -25,7 +25,7 @@ Work directory/
     projects/.import-<guid>/    unfinished import; removed after the library is shown
     projects/.deleted-<id>-<guid>/   a deleted project whose files were locked
     last-project.json           the last opened project
-    host-settings.json          host facts: the tray notification was shown
+    host-settings.json          host facts: the tray notification was shown, the interface language
     BaseModels/weights/<fileName>
     training/presets.json       training parameter presets shared by projects
     logs/                       application log
@@ -97,7 +97,8 @@ next to the download link.
 ```
 
 - **Installation.** Per user without administrator rights into `{autopf}\MautVision` (`%LOCALAPPDATA%\Programs\MautVision`); the folder
-  can be changed. Russian language, the AGPL-3.0 licence page, a Start menu shortcut, an optional desktop shortcut, launch after
+  can be changed. English and Russian wizard chosen by the language of Windows (a choice is asked only when neither matches), the
+  AGPL-3.0 licence page, a Start menu shortcut, an optional desktop shortcut, launch after
   installation. No code signing and no auto-update: a new version is installed over the old one.
 - **Update.** Folders the version replaces as a whole (`python`, `web`, `catalog`, `tools\ffmpeg`, `runtimes`) are removed first so that
   files of the previous version do not remain. A running application is closed by Restart Manager (`CloseApplications=yes`, without

@@ -84,7 +84,8 @@ subject. Incompatible changes use `!` and a `BREAKING CHANGE:` footer. See [docs
 4. A maintainer reviews and merges with squash or rebase so that `dev` stays linear.
 
 Code style: [docs/Code/style.md](docs/Code/style.md). C# and TypeScript/TSX use 4 spaces; C# and TypeScript DTOs change together. The
-application UI is in Russian for now; English localization is planned, so keep user-facing texts in one place per area.
+new user-facing texts go to the UI catalogs (Russian and English), Core and Desktop send codes and values: see
+[docs/UI/localization.md](docs/UI/localization.md).
 
 ## Releasing
 

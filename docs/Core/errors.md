@@ -1,10 +1,10 @@
 # Errors
 
 An error the user must hear about has a stable code. The code is part of the contract between Core, Desktop, UI and Python; the
-message text may change, the code may not.
+text belongs to the UI catalogs and may change, the code may not.
 
 ```text
-Core: exception with a code and details → Desktop: code + text for the user → UI: shows it and reacts by code
+Core: exception with a code and details → Desktop: { code, details } → UI: text of the code in the current language, reaction by code
 Python: result.error.code → Core: a Core code
 ```
 
@@ -35,15 +35,25 @@ identifiers, names, limits. Absolute paths, stack traces and file contents never
 
 ## Desktop and UI
 
-Desktop turns an exception into a response `{ code, message, details? }`. The user-facing text is chosen by code in Desktop, next to
-the controller of the area; the UI shows it as is. The UI reacts to the code, not to the text: for example, on a state conflict it
-requests fresh data.
+Desktop turns an exception into a response `{ code, details }` and adds no text. The UI chooses the text by code from its catalogs
+([localization](../UI/localization.md)), substitutes the details (`{{datasetWidth}}`) and reacts to the code, not to the text: for
+example, on a state conflict it requests fresh data. A code without a text in the catalogs shows the generic text.
 
-An unexpected exception gives `internal_error` with a generic text. The full exception, the method and the requestId are written to
-the [log](../Code/logging.md); the stack never goes into the response or the UI.
+```ts
+catch (cause) {
+    setError(errorMessage(cause));   // errorText(cause.code, cause.details) for a BridgeError
+}
+```
+
+Every code Core can throw has a text in `ui/src/locales/<language>/errors.json`; `npm run check-locales` finds the codes in the C#
+sources and fails when one has no text.
+
+An unexpected exception gives `bridge.internal_error`. The full exception, the method and the requestId are written to the
+[log](../Code/logging.md); the stack never goes into the response or the UI.
 
 ## Long operations and Python
 
-A job error is not thrown from the enqueue request: the job ends with status failed and a stored error `{ code, message, details }`,
-which the UI receives in snapshots and events. Worker error codes (`dataset_invalid`, `out_of_memory`, `architecture_mismatch`) are
+A job error is not thrown from the enqueue request: the job ends with status failed and a stored error `{ code, message }`, which the
+UI receives in snapshots and events and translates by code; the stored message is for the log and is shown only for a code the catalogs
+do not know. A training run or check that failed in the worker also carries the worker's own message for its `*.worker_<code>` codes. Worker error codes (`dataset_invalid`, `out_of_memory`, `architecture_mismatch`) are
 translated by Core into its own codes; raw stderr is never shown to the user and stays in the job log.

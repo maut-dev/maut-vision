@@ -28,7 +28,8 @@ Core → Python worker (training, checks) · ffmpeg (video frames)
 
 - [Navigation](UI/navigation.md), [project library](UI/library.md), [viewer, annotation and gallery](UI/images.md),
   [backgrounds](UI/backgrounds.md), [generation](UI/generation.md), [datasets](UI/datasets.md), [training](UI/training.md),
-  [models](UI/models.md), [checks](UI/checks.md), [overview](UI/overview.md), [analytics](UI/analytics.md)
+  [models](UI/models.md), [checks](UI/checks.md), [overview](UI/overview.md), [analytics](UI/analytics.md),
+  [localization](UI/localization.md)
 
 ## Code
 

@@ -30,5 +30,6 @@ measurement that justifies the change.
 PowerShell scripts with non-ASCII text are saved as UTF-8 with BOM for Windows PowerShell 5.1. Startup scripts are checked in that
 shell; the .NET APIs they use must exist in its runtime.
 
-The application UI and its messages are in Russian for now; user-facing texts are chosen in Desktop by error code and in the UI
-components. Identifiers, new code comments, commit messages and the main documentation are in English.
+User-facing texts belong to the UI catalogs in Russian and English ([localization](../UI/localization.md)): Core and Desktop send
+codes and values, the host keeps only its window texts in `Strings.resx`. Identifiers, new code comments, commit messages and the main
+documentation are in English.

@@ -5,7 +5,7 @@ Checks confirm behaviour and responsibility boundaries. Their scope matches the 
 ```powershell
 .\start.ps1 -NoLaunch
 .\smoke.ps1 -SkipBuild
-npm --prefix ui run typecheck
+npm --prefix ui run typecheck        # also check-locales: catalogs and error codes
 cd python; python -I -m unittest discover -s tests -t .
 ```
 
