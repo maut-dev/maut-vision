@@ -48,14 +48,13 @@ export interface DatasetBuildResultDto {
 
 /**
  * Проблема целостности: sampleId и split — кадр (null у manifest.json и data.yaml); role — «Описание датасета» (manifest, dataYaml),
- * «Изображение» (image), «Разметка» (label); code — datasets.file_missing | datasets.file_changed | datasets.file_unreadable; message — текст.
+ * «Изображение» (image), «Разметка» (label); code — datasets.file_missing | datasets.file_changed | datasets.file_unreadable; the text is errorText(code).
  */
 export interface DatasetIntegrityIssueDto {
     sampleId: string | null;
     split: DatasetSplit | null;
     role: "manifest" | "dataYaml" | "image" | "label";
     code: string;
-    message: string;
 }
 
 /**
@@ -108,7 +107,7 @@ export function isDatasetBuildResultDto(value: unknown): value is DatasetBuildRe
 
 function isIssue(value: unknown): value is DatasetIntegrityIssueDto {
     return isRecord(value) && (value.sampleId === null || isId(value.sampleId)) && (value.split === null || isDatasetSplit(value.split))
-        && ["manifest", "dataYaml", "image", "label"].includes(value.role as string) && typeof value.code === "string" && typeof value.message === "string";
+        && ["manifest", "dataYaml", "image", "label"].includes(value.role as string) && typeof value.code === "string";
 }
 
 export function isDatasetVerifyResultDto(value: unknown): value is DatasetVerifyResultDto {

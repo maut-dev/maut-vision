@@ -2,6 +2,7 @@ import { backgroundsWord } from "@/api/projects/backgrounds/background-import-ru
 import type { BackgroundOriginKind, BackgroundResponseDto } from "@/api/projects/backgrounds/response-dto/background-response-dto";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import { formatRadius } from "./blur-form";
+import { locale } from "@/lib/format";
 
 export const originLabels: Record<BackgroundOriginKind, string> = {
     "uploaded": "Готовое изображение",
@@ -9,7 +10,7 @@ export const originLabels: Record<BackgroundOriginKind, string> = {
     "video-frame": "Кадр видео",
 };
 
-const number = (value: number) => value.toLocaleString("ru-RU");
+const number = (value: number) => value.toLocaleString(locale());
 
 /** «N фонов · W × H[ · В архиве]». */
 export function setSummary(set: BackgroundSetResponseDto): string {
@@ -31,7 +32,7 @@ export function backgroundMeta(item: BackgroundResponseDto): string {
 /** Строки сведений просмотрщика. */
 export function backgroundDetails(item: BackgroundResponseDto): string[] {
     const { origin } = item;
-    const lines = [`Источник: ${originLabels[origin.kind]} · ${(item.byteSize / 1024).toLocaleString("ru-RU", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} КБ`];
+    const lines = [`Источник: ${originLabels[origin.kind]} · ${(item.byteSize / 1024).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} КБ`];
     if (origin.kind === "video-frame" && origin.timestampMs !== null) {
         lines.push(`${origin.videoName ?? origin.sourceName} · ${(origin.timestampMs / 1000).toFixed(3)} с${origin.frameIndex !== null ? ` · кадр ${origin.frameIndex}` : ""}`);
     }

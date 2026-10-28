@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { errorMessage } from "@/lib/format";
 import { useReturnFocus } from "./catalog-dialogs";
+import { blockerText } from "@/lib/errors";
 
 export interface DeletionTarget {
     kind: CatalogTargetKind;
@@ -108,7 +109,7 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
                                 <AlertDescription>
                                     <p>Удаление недоступно. Сначала завершите задачи или измените зависимости:</p>
                                     <ul className="mt-2 list-disc space-y-1 pl-5">
-                                        {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blocker.message}</li>)}
+                                        {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText("catalog", blocker)}</li>)}
                                     </ul>
                                 </AlertDescription>
                             </Alert>

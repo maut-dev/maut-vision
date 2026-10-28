@@ -26,7 +26,7 @@ public sealed record DatasetCompositionDto(DatasetSplitCountsDto Images, int Wit
 public sealed record DatasetPlanSkipsDto(int Unreviewed, int PartialGeneration, int WithoutTargets, int InvalidGeometry, int Total);
 
 /// <summary>Предупреждение плана: код, число (кадров или объектов) и готовый текст.</summary>
-public sealed record DatasetPlanWarningDto(string Code, int Count, string Message);
+public sealed record DatasetPlanWarningDto(string Code, int Count);
 
 /// <summary>
 /// План («Проверить перед сборкой»): Counts — Train/Validation/Test, Skipped — пропущенные по причинам, Warnings, SufficientSamples;
@@ -127,7 +127,7 @@ public sealed record DatasetOperationDeletionResponseDto(Guid OperationId);
 /// <summary>Выбор «Сохранить как»: Token — для startExport, FileName — выбранное имя файла; оба null, если окно закрыто.</summary>
 public sealed record DatasetExportSelectionResponseDto(string? Token, string? FileName);
 
-/// <summary>Состав удаления: образцов, записей истории; непустой Blockers — удаление недоступно (строки — Message).</summary>
+/// <summary>Состав удаления: образцов, записей истории; непустой Blockers — удаление недоступно (строки диалога строит страница по кодам).</summary>
 public sealed record DatasetDeletionReviewResponseDto(Guid VersionId, string Name, long Samples, long Operations, DeletionBlockerResponseDto[] Blockers,
     string Revision);
 
@@ -138,7 +138,7 @@ public sealed record DatasetDeletionResultResponseDto(Guid VersionId, long Sampl
 public sealed record DatasetBuildResultDto(Guid VersionId, int Total, int Produced, int Linked, int Copied, int Converted, DatasetSplitCountsDto Counts);
 
 /// <summary>Проблема целостности: образец и часть (null для manifest.json и data.yaml), Role — manifest | dataYaml | image | label, код и текст.</summary>
-public sealed record DatasetIntegrityIssueDto(Guid? SampleId, string? Split, string Role, string Code, string Message);
+public sealed record DatasetIntegrityIssueDto(Guid? SampleId, string? Split, string Role, string Code);
 
 /// <summary>
 /// Итог проверки целостности (job.result): «Проверено файлов: CheckedFiles из TotalFiles», IssueCount — «Обнаруженные проблемы (n)»,

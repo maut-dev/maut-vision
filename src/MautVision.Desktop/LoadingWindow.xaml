@@ -7,7 +7,7 @@
     <StackPanel Margin="40" VerticalAlignment="Center">
         <Image Source="Assets/logo-full.png" Width="200" Height="200" Margin="0,0,0,8"
                RenderOptions.BitmapScalingMode="HighQuality" />
-        <TextBlock Text="Подготовка рабочего пространства…" FontFamily="Segoe UI" FontSize="14"
+        <TextBlock x:Name="Message" FontFamily="Segoe UI" FontSize="14"
                    Foreground="#a1a1aa" HorizontalAlignment="Center" />
     </StackPanel>
 </Window>

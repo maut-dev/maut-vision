@@ -1,5 +1,6 @@
 using System.IO;
 using MautVision.Core.Interfaces.Python;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop;
 
@@ -8,13 +9,15 @@ namespace MautVision.Desktop;
 /// <param name="PythonSource">Folder of the worker sources (repository python/) for the interpreter (--python-source).</param>
 /// <param name="WorkerExecutable">A ready worker executable (--worker-executable): a separate build or the fake worker of the smoke.</param>
 /// <param name="BaseModelCatalog">Smoke only (--base-model-catalog with --smoke-report): a catalogue that matches its seeded weights.</param>
+/// <param name="Language">The interface language of this run (--language system|ru|en) instead of the stored one, not saved; a smoke run
+/// without the option is Russian, so its text checks do not depend on the machine.</param>
 public sealed record LaunchOptions(string WorkDirectory, string? SmokeReport, bool ExitWhenReady = false, string? Python = null, string? PythonSource = null,
-    string? WorkerExecutable = null, string? BaseModelCatalog = null)
+    string? WorkerExecutable = null, string? BaseModelCatalog = null, string? Language = null)
 {
     public static LaunchOptions Parse(string[] args)
     {
         var workDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MautVision");
-        string? report = null, python = null, source = null, worker = null, catalog = null;
+        string? report = null, python = null, source = null, worker = null, catalog = null, language = null;
         var exitWhenReady = false;
         for (var index = 0; index < args.Length; index++)
         {
@@ -24,7 +27,7 @@ public sealed record LaunchOptions(string WorkDirectory, string? SmokeReport, bo
                 continue;
             }
             if (index + 1 >= args.Length)
-                throw new ArgumentException("Ожидалось значение параметра запуска.");
+                throw new ArgumentException(Strings.LaunchValueExpected);
             switch (args[index])
             {
                 case "--work-directory": workDirectory = args[++index]; break;
@@ -33,14 +36,16 @@ public sealed record LaunchOptions(string WorkDirectory, string? SmokeReport, bo
                 case "--python-source": source = args[++index]; break;
                 case "--worker-executable": worker = args[++index]; break;
                 case "--base-model-catalog": catalog = args[++index]; break;
-                default: throw new ArgumentException("Неизвестный параметр запуска.");
+                case "--language": language = args[++index]; break;
+                default: throw new ArgumentException(Strings.LaunchUnknownParameter);
             }
         }
-        if ((python is null) != (source is null)) throw new ArgumentException("--python и --python-source задаются вместе.");
-        if (catalog is not null && report is null) throw new ArgumentException("--base-model-catalog допускается только в smoke-проверке.");
+        if ((python is null) != (source is null)) throw new ArgumentException(Strings.LaunchPythonPair);
+        if (catalog is not null && report is null) throw new ArgumentException(Strings.LaunchCatalogSmokeOnly);
+        if (language is not null && !HostLanguage.IsSetting(language)) throw new ArgumentException(Strings.LaunchLanguageInvalid);
         return new LaunchOptions(Path.GetFullPath(workDirectory), report is null ? null : Path.GetFullPath(report), exitWhenReady,
             python is null ? null : Path.GetFullPath(python), source is null ? null : Path.GetFullPath(source), worker is null ? null : Path.GetFullPath(worker),
-            catalog is null ? null : Path.GetFullPath(catalog));
+            catalog is null ? null : Path.GetFullPath(catalog), language ?? (report is null ? null : HostLanguage.Russian));
     }
 
     /// <summary>

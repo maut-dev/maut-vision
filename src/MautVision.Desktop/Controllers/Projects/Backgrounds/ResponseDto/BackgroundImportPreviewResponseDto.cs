@@ -8,7 +8,7 @@ public sealed record BackgroundBlurResponseDto(double MinRadius, double MaxRadiu
 /// <summary>
 /// Пример будущего фона. SourceIndex — номер файла в выборе (у видео — номер кадра от начала), TimestampMs — отметка кадра видео.
 /// Пропуск: Reason — код (backgrounds.wrong_size, backgrounds.crop_out_of_bounds, backgrounds.image_unreadable, backgrounds.similar,
-/// backgrounds.duplicate, video.frame_unavailable), Message — текст («Размер a×b, нужен W×H» и др.), ImageUrl — null.
+/// backgrounds.duplicate, video.frame_unavailable; the page builds «Размер a×b, нужен W×H» and others from it), ImageUrl — null.
 /// Иначе ImageUrl — PNG будущего фона ровно размера набора, Crop и BlurRadius — как у будущего фона.
 /// </summary>
 public sealed record BackgroundSampleResponseDto(
@@ -16,7 +16,6 @@ public sealed record BackgroundSampleResponseDto(
     string SourceName,
     long? TimestampMs,
     string? Reason,
-    string? Message,
     int? ActualWidth,
     int? ActualHeight,
     BackgroundCropAreaDto? Crop,

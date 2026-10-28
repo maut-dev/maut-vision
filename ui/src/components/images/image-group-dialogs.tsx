@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { locale } from "@/lib/format";
 
 export const splitHintLabels: Record<ImageSplitHint, string> = {
     unassigned: "Без назначения",
@@ -94,7 +95,7 @@ export function MoveImagesDialog({ count, targets, busy, error, close, move }: {
         <GuardedDialog busy={busy} close={close} testId="move-images-dialog">
             <DialogHeader>
                 <DialogTitle>Переместить изображения</DialogTitle>
-                <DialogDescription>Выбранные изображения ({count.toLocaleString("ru-RU")}) переместятся в конец выбранной группы вместе с разметкой.</DialogDescription>
+                <DialogDescription>Выбранные изображения ({count.toLocaleString(locale())}) переместятся в конец выбранной группы вместе с разметкой.</DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={submit}>
                 {targets.length ? (

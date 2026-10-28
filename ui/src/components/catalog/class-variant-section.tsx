@@ -12,12 +12,14 @@ import { Button } from "@/components/ui/button";
 import { isJobActive, type AssetImport } from "@/lib/use-asset-imports";
 import { useClassAssets } from "@/lib/use-class-assets";
 import { VariantColorInput } from "./variant-color-input";
+import { errorText, jobErrorText } from "@/lib/errors";
+import { locale } from "@/lib/format";
 
 /** 1 изображение, 2 изображения, 5 изображений. */
 export function imagesLabel(count: number): string {
     const tens = count % 100, units = count % 10;
     const word = tens >= 11 && tens <= 14 ? "изображений" : units === 1 ? "изображение" : units >= 2 && units <= 4 ? "изображения" : "изображений";
-    return `${count.toLocaleString("ru-RU")} ${word}`;
+    return `${count.toLocaleString(locale())} ${word}`;
 }
 
 export interface ClassVariantActions {
@@ -64,7 +66,7 @@ export function ClassVariantSection({ projectId, binding, className, variantName
                     <Badge variant="outline" data-testid="asset-count">{imagesLabel(binding.assetCount)}</Badge>
                     {binding.opaqueAssetCount > 0 && (
                         <Badge variant="outline" className="border-amber-500/50 text-amber-300" title="Для генерации нужен альфа-канал: PNG с прозрачным фоном.">
-                            Без прозрачности: {binding.opaqueAssetCount.toLocaleString("ru-RU")}
+                            Без прозрачности: {binding.opaqueAssetCount.toLocaleString(locale())}
                         </Badge>
                     )}
                     {!binding.available && <Badge variant="outline">В архиве</Badge>}
@@ -132,7 +134,7 @@ function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: 
                     <span className="flex items-center gap-2">
                         <Loader2 className="size-4 animate-spin" aria-hidden />
                         {job.status === "queued" ? "Импорт в очереди…" : "Импорт изображений"}
-                        {job.total !== null && <span className="tabular-nums text-muted-foreground">{(job.processed ?? 0).toLocaleString("ru-RU")} из {job.total.toLocaleString("ru-RU")}</span>}
+                        {job.total !== null && <span className="tabular-nums text-muted-foreground">{(job.processed ?? 0).toLocaleString(locale())} из {job.total.toLocaleString(locale())}</span>}
                     </span>
                     <Button variant="outline" size="sm" disabled={job.cancelRequested} onClick={cancel}>
                         {job.cancelRequested ? "Отмена…" : "Отменить"}
@@ -160,14 +162,14 @@ function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: 
             <AlertDescription>
                 {result && (
                     <p className="tabular-nums">
-                        Добавлено: {result.added.toLocaleString("ru-RU")} · Пропущено одинаковых: {result.duplicates.toLocaleString("ru-RU")} · Отклонено: {result.rejected.toLocaleString("ru-RU")}
+                        Добавлено: {result.added.toLocaleString(locale())} · Пропущено одинаковых: {result.duplicates.toLocaleString(locale())} · Отклонено: {result.rejected.toLocaleString(locale())}
                     </p>
                 )}
-                {job.status !== "succeeded" && job.status !== "cancelled" && job.error && <p>{job.error.message}</p>}
+                {job.status !== "succeeded" && job.status !== "cancelled" && job.error && <p>{jobErrorText(job.error)}</p>}
                 {!!result?.rejectedFiles.length && (
                     <ul className="mt-1 max-h-32 list-disc space-y-0.5 overflow-y-auto pl-5 text-xs">
-                        {result.rejectedFiles.map((file, index) => <li key={`${file.name}-${index}`} className="break-words">{file.name} — {file.message}</li>)}
-                        {result.rejected > result.rejectedFiles.length && <li>и ещё {(result.rejected - result.rejectedFiles.length).toLocaleString("ru-RU")}</li>}
+                        {result.rejectedFiles.map((file, index) => <li key={`${file.name}-${index}`} className="break-words">{file.name} — {errorText(file.reason)}</li>)}
+                        {result.rejected > result.rejectedFiles.length && <li>и ещё {(result.rejected - result.rejectedFiles.length).toLocaleString(locale())}</li>}
                     </ul>
                 )}
                 <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>Скрыть</Button>
@@ -293,7 +295,7 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                         renew: assets.renew,
                         metadata: (
                             <p>
-                                {viewedAsset.format.toUpperCase()} · {Math.ceil(viewedAsset.byteSize / 1024).toLocaleString("ru-RU")} КБ · {viewedAsset.hasAlpha ? "с прозрачностью" : "без прозрачности"}
+                                {viewedAsset.format.toUpperCase()} · {Math.ceil(viewedAsset.byteSize / 1024).toLocaleString(locale())} КБ · {viewedAsset.hasAlpha ? "с прозрачностью" : "без прозрачности"}
                             </p>
                         ),
                     }}

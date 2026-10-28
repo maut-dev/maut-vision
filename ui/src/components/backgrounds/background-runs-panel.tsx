@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { blurSummary } from "@/lib/backgrounds/background-text";
 import { isJobActive } from "@/lib/use-asset-imports";
 import type { BackgroundRunsState } from "@/lib/use-background-runs";
+import { backgroundReasonText } from "@/lib/errors";
+import { locale } from "@/lib/format";
 
 /**
  * «Подготовка фонов» — история только этого набора: ход «обработано P из T», итог (добавлено из цели, повторы, похожие,
@@ -65,7 +67,7 @@ function RunRow({ job, cancel }: { job: JobResponseDto; cancel: () => void }) {
                     <ul className="mt-1 max-h-24 list-disc space-y-0.5 overflow-y-auto pl-5">
                         {result.issues.map((issue, index) => (
                             <li key={`${issue.sourceIndex}-${index}`} className="break-words">
-                                {issue.name}{issue.timestampMs !== null && ` · ${(issue.timestampMs / 1000).toLocaleString("ru-RU", { maximumFractionDigits: 3 })} с`} · {issue.message}
+                                {issue.name}{issue.timestampMs !== null && ` · ${(issue.timestampMs / 1000).toLocaleString(locale(), { maximumFractionDigits: 3 })} с`} · {backgroundReasonText(issue.reason, issue.width, issue.height, result.targetSize)}
                             </li>
                         ))}
                         {skipped > result.issues.length && <li>и ещё {count(skipped - result.issues.length)}</li>}

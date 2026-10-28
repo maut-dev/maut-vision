@@ -7,7 +7,7 @@
         WindowStartupLocation="CenterScreen" Background="#09090b">
   <Grid>
     <wv:WebView2 x:Name="Browser" DefaultBackgroundColor="#09090b" />
-    <TextBlock x:Name="StartupMessage" Text="Подготовка Maut Vision…" Foreground="#a1a1aa"
+    <TextBlock x:Name="StartupMessage" Foreground="#a1a1aa"
                FontFamily="Segoe UI" HorizontalAlignment="Center" VerticalAlignment="Center"
                TextWrapping="Wrap" MaxWidth="500" Margin="32" />
   </Grid>

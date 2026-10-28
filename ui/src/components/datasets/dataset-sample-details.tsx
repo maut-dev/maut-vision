@@ -1,5 +1,6 @@
 import type { DatasetSampleResponseDto, DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { boxPixels, centerBox, classLabel, splitLabel, variantName } from "@/lib/datasets/dataset-view";
+import { locale } from "@/lib/format";
 
 /**
  * Сведения образца в просмотрщике: часть, размер и вес файла, исходное изображение и версия
@@ -15,7 +16,7 @@ export function DatasetSampleDetails({ sample, version }: { sample: DatasetSampl
     return (
         <div className="space-y-2" data-testid="dataset-sample-details">
             <p>
-                Датасет: {version.name} · {splitLabel(sample.split)} · {width} × {height} · {(sample.byteSize / 1024).toLocaleString("ru-RU", { maximumFractionDigits: 1 })} КБ
+                Датасет: {version.name} · {splitLabel(sample.split)} · {width} × {height} · {(sample.byteSize / 1024).toLocaleString(locale(), { maximumFractionDigits: 1 })} КБ
                 · {sample.format === "png" ? "PNG" : "JPEG"}
             </p>
             <p className="break-all">

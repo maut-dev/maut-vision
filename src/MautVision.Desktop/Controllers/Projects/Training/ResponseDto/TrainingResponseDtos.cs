@@ -14,8 +14,8 @@ public sealed record GpuResponseDto(int Index, string Name, long MemoryTotalMb, 
 /// <summary>DriverAvailable = false — драйвера нет: только «Процессор» и ручной ввод устройства.</summary>
 public sealed record GpuInventoryResponseDto(bool DriverAvailable, GpuResponseDto[] Gpus, DateTimeOffset CheckedAt);
 
-/// <summary>Mode — packaged | interpreter; Code и Message — почему среда недоступна (null, если доступна).</summary>
-public sealed record TrainingRuntimeResponseDto(bool Configured, bool Available, string? Mode, string? Code, string? Message);
+/// <summary>Mode — packaged | interpreter; Code — почему среда недоступна (null, если доступна).</summary>
+public sealed record TrainingRuntimeResponseDto(bool Configured, bool Available, string? Mode, string? Code);
 
 /// <summary>Датасет запуска и версии: версия, название на момент запуска, hash manifest, классы 0..n−1, кадры по частям.</summary>
 public sealed record TrainingDatasetDto(Guid VersionId, string Name, string ManifestHash, DatasetClassEntryDto[] Classes, DatasetSplitCountsDto Counts);
@@ -23,8 +23,8 @@ public sealed record TrainingDatasetDto(Guid VersionId, string Name, string Mani
 /// <summary>Ход: стадия worker, «Эпоха X из Y», «Пакет a из b», живые метрики последней эпохи (потери и качество).</summary>
 public sealed record TrainingRunProgressDto(string? Stage, int? Epoch, int? Epochs, int? Batch, int? Batches, Dictionary<string, double> Metrics);
 
-/// <summary>Ошибка: для training.worker_* — сообщение самого worker, для остальных кодов — текст приложения.</summary>
-public sealed record TrainingRunErrorDto(string Code, string Message);
+/// <summary>Error of a run: Code — what the page translates; WorkerMessage — the worker's own message for its training.worker_* codes, null otherwise.</summary>
+public sealed record TrainingRunErrorDto(string Code, string? WorkerMessage);
 
 /// <summary>
 /// Запуск: State — queued «Ожидает видеокарту» | preparing «Подготовка» | training «Обучение» | cancelling «Отмена…» | succeeded «Готово» |
@@ -94,7 +94,7 @@ public sealed record ModelVersionResponseDto(
 
 /// <summary>
 /// Состав удаления версии: Evaluations — её оценок на датасетах (удаляются вместе с ней), Bytes — размер файлов; непустой Blockers —
-/// удаление недоступно (training.version_working, checks.evaluation_active, checks.live_active, training.export_active; строки — Message).
+/// удаление недоступно (training.version_working, checks.evaluation_active, checks.live_active, training.export_active; строки строит страница по кодам).
 /// </summary>
 public sealed record ModelVersionDeletionReviewResponseDto(Guid VersionId, int Number, bool IsWorking, int Evaluations, long Bytes,
     Catalog.ResponseDto.DeletionBlockerResponseDto[] Blockers);

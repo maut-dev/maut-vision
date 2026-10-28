@@ -4,6 +4,7 @@ import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/respons
 import type { GenerationRecipeResponseDto } from "@/api/projects/generation/response-dto/generation-recipe-response-dto";
 import { Button } from "@/components/ui/button";
 import { RecipeDetails } from "./recipe-details";
+import { locale } from "@/lib/format";
 
 /**
  * Карточка пресета: название с отметкой «Архив», описание, детали, «Сгенерировать N изображений», «Изменить», «В архив» /
@@ -37,7 +38,7 @@ export function RecipeCard({ recipe, workspace, sets, count, canStart, editing, 
             <RecipeDetails recipe={recipe} workspace={workspace} sets={sets} />
             <div className="flex flex-wrap items-center gap-2">
                 <Button className="h-auto min-h-9 max-w-full min-w-0 whitespace-normal" disabled={busy || !canStart || archived} data-testid="recipe-start" onClick={start}>
-                    <WandSparkles />Сгенерировать {count.toLocaleString("ru-RU")} изображений
+                    <WandSparkles />Сгенерировать {count.toLocaleString(locale())} изображений
                 </Button>
                 <Button size="sm" variant="ghost" disabled={busy || archived || editing} aria-label={`Изменить пресет: ${recipe.name}`} data-testid="recipe-edit" onClick={edit}>
                     <Pencil />Изменить

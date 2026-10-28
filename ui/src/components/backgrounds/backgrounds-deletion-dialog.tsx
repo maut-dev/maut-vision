@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundDeletionResultResponseDto, BackgroundDeletionReviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-deletion-response-dto";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
+import { locale } from "@/lib/format";
 
 /** Весь набор (itemIds не задан) или выбранные фоны одного набора (до 400). */
 export interface BackgroundsDeletionTarget {
@@ -30,6 +31,7 @@ export function BackgroundsDeletionDialog({ projectId, target, close, deleted }:
 
     return (
         <ReviewDeletionDialog
+            area="backgrounds"
             testId="backgrounds-deletion-dialog"
             title={selection ? "Удалить фоны навсегда?" : "Удалить набор фонов навсегда?"}
             description={target.name}
@@ -41,7 +43,7 @@ export function BackgroundsDeletionDialog({ projectId, target, close, deleted }:
             blockersTitle={<p>Завершите задачи или измените зависимости перед удалением:</p>}
             renderReview={current => (
                 <>
-                    <p data-testid="backgrounds-deletion-count">Будет удалено фонов: <span className="tabular-nums">{current.items.toLocaleString("ru-RU")}</span>.</p>
+                    <p data-testid="backgrounds-deletion-count">Будет удалено фонов: <span className="tabular-nums">{current.items.toLocaleString(locale())}</span>.</p>
                     <p className="text-muted-foreground">
                         Исходные файлы и подготовленные изображения будут удалены с компьютера. Это действие нельзя отменить.
                         {!selection && " История подготовки этого набора также будет удалена."} Готовые датасеты и модели сохранят свои материалы.

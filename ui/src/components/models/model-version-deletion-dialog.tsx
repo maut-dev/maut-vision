@@ -38,6 +38,7 @@ export function ModelVersionDeletionDialog({ projectId, versionId, number, close
 
     return (
         <ReviewDeletionDialog<ModelVersionDeletionReviewResponseDto, ModelVersionDeletionResponseDto>
+            area="training"
             title={`Удалить версию ${number}?`}
             description="Веса, картинки обучения и проверки версии на датасетах удалятся навсегда. Запуск обучения в истории останется."
             testId="model-version-deletion-dialog"

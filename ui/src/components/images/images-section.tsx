@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigationGuard } from "@/components/unsaved-changes";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { draftOf, type AnnotationDraft } from "@/lib/annotation/draft";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import { useCatalog } from "@/lib/use-catalog";
 import { useImageGallery, type GalleryFilter } from "@/lib/use-image-gallery";
 import { useImageGroups } from "@/lib/use-image-groups";
@@ -222,7 +222,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
             gallery.removeImages(result.images.map(item => item.id));
             selection.clear();
             setMoving(false);
-            setNotice({ tone: "info", text: `Перемещено в «${target.name}»: ${result.images.length.toLocaleString("ru-RU")}.` });
+            setNotice({ tone: "info", text: `Перемещено в «${target.name}»: ${result.images.length.toLocaleString(locale())}.` });
         }, setDialogError);
     }
 
@@ -382,7 +382,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                                     <h2 className="min-w-0 font-medium break-words" data-testid="image-group-title">{group.name}{group.archivedAt ? " · Архив" : ""}</h2>
                                     <span className="text-xs text-muted-foreground tabular-nums" data-testid="image-group-count">
-                                        Кадров: {activeCount.toLocaleString("ru-RU")}{group.archivedImageCount ? ` · в архиве: ${group.archivedImageCount.toLocaleString("ru-RU")}` : ""}
+                                        Кадров: {activeCount.toLocaleString(locale())}{group.archivedImageCount ? ` · в архиве: ${group.archivedImageCount.toLocaleString(locale())}` : ""}
                                     </span>
                                     <span className="text-xs text-muted-foreground">{group.origin === "generated" ? "Генерация" : "Исходные изображения"} · {splitHintLabels[group.splitHint]}</span>
                                 </div>

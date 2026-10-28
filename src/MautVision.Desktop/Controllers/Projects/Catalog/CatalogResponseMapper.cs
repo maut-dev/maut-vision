@@ -72,7 +72,7 @@ internal static class CatalogResponseMapper
         review.Classes,
         review.ClassVariants,
         review.Assets,
-        review.Blockers.Select(blocker => new DeletionBlockerResponseDto(blocker.Code, blocker.Count, CatalogErrorMessages.For(blocker))).ToArray(),
+        review.Blockers.Select(blocker => DeletionBlockerResponseDto.From(blocker)).ToArray(),
         review.Revision);
 
     internal static DeletionResultResponseDto Map(DeletionResult result) => new(result.Classes, result.ClassVariants, result.Assets, result.CleanupPending);

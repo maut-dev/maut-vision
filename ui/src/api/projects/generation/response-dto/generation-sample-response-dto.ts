@@ -33,14 +33,13 @@ export interface GenerationSamplesResponseDto {
 
 /**
  * «Настроить повтор»: recipe — настройки запуска для формы «Новый пресет» (имя с « · повтор»), seed и requestedCount — в
- * «Параметры запуска», notice — уведомление над формой, sourceRunId — запуск-источник.
+ * «Параметры запуска», sourceRunId — запуск-источник.
  */
 export interface GenerationRepeatDraftResponseDto {
     recipe: GenerationRecipeFormDto;
     seed: number;
     requestedCount: number;
     sourceRunId: string;
-    notice: string;
 }
 
 function isSampleObject(value: unknown): value is GenerationSampleObjectDto {
@@ -58,5 +57,5 @@ export function isGenerationSamplesResponseDto(value: unknown): value is Generat
 
 export function isGenerationRepeatDraftResponseDto(value: unknown): value is GenerationRepeatDraftResponseDto {
     return isRecord(value) && isGenerationRecipeFormDto(value.recipe) && isCount(value.seed) && isCount(value.requestedCount)
-        && isId(value.sourceRunId) && typeof value.notice === "string";
+        && isId(value.sourceRunId);
 }

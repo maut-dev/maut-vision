@@ -9,7 +9,6 @@ export const importClassAssetsJobKind = "classes.import_assets";
 export interface ImportRejectedFileDto {
     name: string;
     reason: string;
-    message: string;
 }
 
 /**
@@ -25,7 +24,7 @@ export interface ImportClassAssetsResultDto {
 }
 
 function isImportRejectedFileDto(value: unknown): value is ImportRejectedFileDto {
-    return isRecord(value) && typeof value.name === "string" && typeof value.reason === "string" && typeof value.message === "string";
+    return isRecord(value) && typeof value.name === "string" && typeof value.reason === "string";
 }
 
 export function isImportClassAssetsResultDto(value: unknown): value is ImportClassAssetsResultDto {

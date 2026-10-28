@@ -3,6 +3,7 @@ import type { TrainingPresetResponseDto } from "@/api/projects/training/response
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { locale } from "@/lib/format";
 
 /**
  * «Пресет параметров»: выбор заполняет форму; «Сохранить как пресет…» открывает поле имени (то же
@@ -24,7 +25,7 @@ export function TrainingPresetBar({ presets, presetId, changed, busy, canSave, a
     const [confirmDelete, setConfirmDelete] = useState(false);
     const selected = presets.find(item => item.id === presetId);
     const trimmed = name?.trim() ?? "";
-    const overwritten = presets.find(item => item.name.toLocaleLowerCase("ru-RU") === trimmed.toLocaleLowerCase("ru-RU"));
+    const overwritten = presets.find(item => item.name.toLocaleLowerCase(locale()) === trimmed.toLocaleLowerCase(locale()));
 
     async function submit() {
         if (!trimmed || !canSave || busy) return;

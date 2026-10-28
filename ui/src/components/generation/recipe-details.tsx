@@ -2,6 +2,7 @@ import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/respon
 import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/response-dto/catalog-workspace-response-dto";
 import type { GenerationRecipeFormDto } from "@/api/projects/generation/request-dto/generation-recipe-form-dto";
 import { backgroundsLabel, toPercent } from "@/lib/generation/recipe-form";
+import { locale } from "@/lib/format";
 
 /**
  * Детали пресета или снимка запуска: «Размер кадра», «Масштаб объекта», «Объектов на кадр», «Пустые кадры», «Варианты и
@@ -18,9 +19,9 @@ export function RecipeDetails({ recipe, workspace, sets }: {
         <div className="space-y-3 text-sm" data-testid="recipe-details">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
                 <div><dt className="text-muted-foreground">Размер кадра</dt><dd className="tabular-nums">{recipe.width} × {recipe.height} px</dd></div>
-                <div><dt className="text-muted-foreground">Масштаб объекта</dt><dd className="tabular-nums">{recipe.scale.toLocaleString("ru-RU")}</dd></div>
+                <div><dt className="text-muted-foreground">Масштаб объекта</dt><dd className="tabular-nums">{recipe.scale.toLocaleString(locale())}</dd></div>
                 <div><dt className="text-muted-foreground">Объектов на кадр</dt><dd className="tabular-nums">{recipe.objectsPerImage}</dd></div>
-                <div><dt className="text-muted-foreground">Пустые кадры</dt><dd className="tabular-nums">{toPercent(recipe.emptyProbability).toLocaleString("ru-RU")}%</dd></div>
+                <div><dt className="text-muted-foreground">Пустые кадры</dt><dd className="tabular-nums">{toPercent(recipe.emptyProbability).toLocaleString(locale())}%</dd></div>
             </dl>
             <p className="text-xs text-muted-foreground">Максимальная доля кадра; исходники не увеличиваются.</p>
             <div>
@@ -34,7 +35,7 @@ export function RecipeDetails({ recipe, workspace, sets }: {
                         });
                         return (
                             <li className="break-words" key={weight.variantId}>
-                                {variant?.name ?? "Вариант удалён"}{variant?.archivedAt ? " (архив)" : ""} — <span className="tabular-nums">{weight.percentage.toLocaleString("ru-RU")}%</span>
+                                {variant?.name ?? "Вариант удалён"}{variant?.archivedAt ? " (архив)" : ""} — <span className="tabular-nums">{weight.percentage.toLocaleString(locale())}%</span>
                                 {classes.length > 0 && ` · ${Array.from(new Set(classes)).join(", ")}`}
                             </li>
                         );

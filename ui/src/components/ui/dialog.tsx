@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslation } from "react-i18next"
 import { cn } from "@/lib/utils"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
@@ -71,7 +72,7 @@ function DialogContent({
                         className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                     >
                         <XIcon />
-                        <span className="sr-only">Закрыть</span>
+                        <span className="sr-only"><CloseText /></span>
                     </DialogPrimitive.Close>
                 )}
             </DialogPrimitive.Content>
@@ -109,7 +110,7 @@ function DialogFooter({
             {children}
             {showCloseButton && (
                 <DialogPrimitive.Close asChild>
-                    <Button variant="outline">Закрыть</Button>
+                    <Button variant="outline"><CloseText /></Button>
                 </DialogPrimitive.Close>
             )}
         </div>
@@ -153,4 +154,9 @@ export {
     DialogPortal,
     DialogTitle,
     DialogTrigger,
+}
+
+function CloseText() {
+    const { t } = useTranslation()
+    return t("dialog.close")
 }

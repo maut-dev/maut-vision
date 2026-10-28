@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { emptyDatasetForm, formFromSpecification, specificationKey, toSpecification, type DatasetFormValues } from "@/lib/datasets/dataset-form";
 import { matchesSearch, operationTitles } from "@/lib/datasets/dataset-view";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import { useCatalog } from "@/lib/use-catalog";
 import { operationPageLimit, useDatasetOperations, type DatasetOperationsState } from "@/lib/use-dataset-operations";
 import { useDatasetVersions } from "@/lib/use-dataset-versions";
@@ -364,7 +364,7 @@ function OperationList({ kind, state, versionOf, busy, cancel, repeat, remove, o
                 );
             })}
             {state.total > state.operations.length && (
-                <p className="text-xs text-muted-foreground">Показаны последние {Math.max(operationPageLimit, state.operations.length)} из {state.total.toLocaleString("ru-RU")}.</p>
+                <p className="text-xs text-muted-foreground">Показаны последние {Math.max(operationPageLimit, state.operations.length)} из {state.total.toLocaleString(locale())}.</p>
             )}
             {state.loading && !state.operations.length && <p role="status" className="text-sm text-muted-foreground">Загрузка…</p>}
             {!state.loading && !state.error && !state.operations.length && <Empty testId={`dataset-operations-${kind}-empty`}>{emptyTexts[kind]}</Empty>}

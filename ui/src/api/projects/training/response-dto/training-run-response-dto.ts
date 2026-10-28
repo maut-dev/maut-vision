@@ -31,10 +31,10 @@ export interface TrainingRunProgressDto {
     metrics: Record<string, number>;
 }
 
-/** Ошибка запуска: для training.worker_* — сообщение самого worker, для остальных кодов — текст приложения. */
+/** Error of a run: code — what the UI translates; workerMessage — the worker's own message for its training.worker_* codes, null otherwise. */
 export interface TrainingRunErrorDto {
     code: string;
-    message: string;
+    workerMessage: string | null;
 }
 
 /**
@@ -127,7 +127,8 @@ export function isTrainingRunResponseDto(value: unknown): value is TrainingRunRe
         && isRecord(progress) && (progress.stage === null || typeof progress.stage === "string") && isNullableCount(progress.epoch)
         && isNullableCount(progress.epochs) && isNullableCount(progress.batch) && isNullableCount(progress.batches) && isNumbers(progress.metrics)
         && isCount(value.epochCount) && isCount(value.logCount) && (value.environment === null || isRecord(value.environment))
-        && (value.error === null || (isRecord(value.error) && typeof value.error.code === "string" && typeof value.error.message === "string"))
+        && (value.error === null || (isRecord(value.error) && typeof value.error.code === "string"
+            && (value.error.workerMessage === null || typeof value.error.workerMessage === "string")))
         && (value.resultVersionId === null || isId(value.resultVersionId)) && isCount(value.revision);
 }
 

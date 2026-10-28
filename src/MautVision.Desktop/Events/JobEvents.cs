@@ -8,20 +8,18 @@ internal sealed class JobEvents : IDisposable
 {
     private readonly IJobsManager jobs;
     private readonly Action<string, object> publish;
-    private readonly Func<string, string> messageFor;
     private int disposed;
 
-    internal JobEvents(IJobsManager jobs, Action<string, object> publish, Func<string, string> messageFor)
+    internal JobEvents(IJobsManager jobs, Action<string, object> publish)
     {
         this.jobs = jobs;
         this.publish = publish;
-        this.messageFor = messageFor;
         jobs.JobChanged += OnJobChanged;
     }
 
     private void OnJobChanged(object? sender, JobChangedEventArgs args)
     {
-        if (Volatile.Read(ref disposed) == 0) publish("job.changed", JobResponseMapper.Map(args.Job, messageFor));
+        if (Volatile.Read(ref disposed) == 0) publish("job.changed", JobResponseMapper.Map(args.Job));
     }
 
     public void Dispose()

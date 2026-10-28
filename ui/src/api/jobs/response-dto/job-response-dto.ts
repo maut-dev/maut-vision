@@ -2,9 +2,10 @@ import { isRecord } from "../../transport/envelopes";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "interrupted" | "blocked";
 
+/** code — what the UI translates; message — the stored text for the log, shown only for a code the catalogs do not know; may be null. */
 export interface JobErrorDto {
     code: string;
-    message: string;
+    message: string | null;
 }
 
 export interface JobResponseDto {
@@ -47,7 +48,7 @@ const isDate = (value: unknown) => typeof value === "string" && Number.isFinite(
 const isCounter = (value: unknown) => value === null || (Number.isSafeInteger(value) && (value as number) >= 0);
 
 function isJobErrorDto(value: unknown): value is JobErrorDto {
-    return isRecord(value) && typeof value.code === "string" && typeof value.message === "string";
+    return isRecord(value) && typeof value.code === "string" && (value.message === null || typeof value.message === "string");
 }
 
 export function isJobResponseDto(value: unknown): value is JobResponseDto {

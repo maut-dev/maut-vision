@@ -7,6 +7,7 @@ import type { GpuInventoryResponseDto } from "@/api/projects/training/response-d
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import { deviceOptions, type TrainingDeviceOption } from "@/api/projects/training/training-parameters";
 import type { FramePosition } from "@/lib/backgrounds/crop-frame";
+import { locale } from "@/lib/format";
 
 /** Метрики качества версии: больше — лучше, от 0 до 1. */
 export const qualityMetrics = ["mAP50", "mAP50_95", "precision", "recall"] as const;
@@ -117,7 +118,7 @@ export function parseStep(text: string): number | null {
 export function stepEstimate(durationMs: number, stepMs: number): string {
     if (stepMs >= durationMs) return "Шаг больше длительности видео: будет проверен только первый кадр.";
     const frames = Math.floor((durationMs - 1) / stepMs) + 1;
-    return `Будет проверено около ${frames.toLocaleString("ru-RU")} кадров.`;
+    return `Будет проверено около ${frames.toLocaleString(locale())} кадров.`;
 }
 
 /**

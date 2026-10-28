@@ -4,6 +4,7 @@ import type { AnnotationDraft } from "@/lib/annotation/draft";
 import { roiColor } from "@/lib/variant-color";
 import type { AnnotationPalette } from "./annotation-palette";
 import type { ViewerOverlay } from "@/components/viewer/image-viewer";
+import { locale } from "@/lib/format";
 
 export function sourceLabel(image: ImageResponseDto): string {
     const lineage = image.lineage;
@@ -42,7 +43,7 @@ export function ImageDetails({ image, annotation, revision, palette }: {
     };
     return (
         <div className="space-y-1 text-xs text-muted-foreground" data-testid="image-details">
-            <p className="break-words">{image.displayName} · {image.width} × {image.height} px · {Math.ceil(image.byteSize / 1024).toLocaleString("ru-RU")} КБ</p>
+            <p className="break-words">{image.displayName} · {image.width} × {image.height} px · {Math.ceil(image.byteSize / 1024).toLocaleString(locale())} КБ</p>
             <p className="break-words">Источник: {sourceLabel(image)}</p>
             {annotation ? (
                 <>

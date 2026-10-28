@@ -1,11 +1,11 @@
 import { isRecord } from "../../../transport/envelopes";
 import { isCount, isId } from "../../catalog/catalog-guards";
-import type { DeletionBlockerResponseDto } from "../../catalog/response-dto/deletion-review-response-dto";
+import { isDeletionBlockerResponseDto, type DeletionBlockerResponseDto } from "../../catalog/response-dto/deletion-review-response-dto";
 
 /**
  * Состав удаления навсегда: весь набор (wholeSet — «Удалить набор фонов навсегда?») или выбранные фоны («Удалить фоны
  * навсегда?»). items — «Будет удалено фонов: N.»; непустой blockers — «Завершите задачи или измените зависимости перед
- * удалением:» + строки message (backgrounds.import_active — подготовка в этот набор; пресеты генерации).
+ * удалением:» + строки blockerText (backgrounds.import_active — подготовка в этот набор; пресеты генерации).
  * revision передаётся в удаление; при изменении состава — backgrounds.deletion_revision_conflict.
  */
 export interface BackgroundDeletionReviewResponseDto {
@@ -25,14 +25,9 @@ export interface BackgroundDeletionResultResponseDto {
     cleanupPending: boolean;
 }
 
-function isBlocker(value: unknown): value is DeletionBlockerResponseDto {
-    return isRecord(value) && typeof value.code === "string" && value.code.length > 0 && isCount(value.count)
-        && typeof value.message === "string" && value.message.length > 0;
-}
-
 export function isBackgroundDeletionReviewResponseDto(value: unknown): value is BackgroundDeletionReviewResponseDto {
     return isRecord(value) && isId(value.setId) && typeof value.setName === "string" && typeof value.wholeSet === "boolean"
-        && isCount(value.items) && Array.isArray(value.blockers) && value.blockers.every(isBlocker)
+        && isCount(value.items) && Array.isArray(value.blockers) && value.blockers.every(isDeletionBlockerResponseDto)
         && typeof value.revision === "string" && value.revision.length > 0;
 }
 

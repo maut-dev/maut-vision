@@ -2,7 +2,7 @@ import { isRecord } from "../../transport/envelopes";
 
 export type HardwareStatus = "available" | "collecting" | "unavailable";
 
-/** status collecting — первый замер нагрузки; reason — текст вместо значения. */
+/** status collecting — первый замер нагрузки; reason — hardware.* code of why there is no value (errorText gives the text). */
 export interface CpuSampleDto {
     model: string | null;
     physicalCores: number | null;
@@ -41,7 +41,7 @@ export interface GpuSampleDto {
 
 /**
  * Снимок «Ваш компьютер» по запросу (hardware.sample). ram — null, если Windows его не сообщила; gpuStatus — available или
- * unavailable с gpuReason; gpuSource — nvml или nvidia-smi; gpuSampledAt — время чтения видеокарт.
+ * unavailable с кодом gpuReason; gpuSource — nvml или nvidia-smi; gpuSampledAt — время чтения видеокарт.
  */
 export interface HardwareSampleResponseDto {
     timestamp: string;

@@ -10,6 +10,7 @@ using MautVision.Desktop.Controllers.Jobs;
 using MautVision.Desktop.Controllers.Projects.Checks.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Checks.ResponseDto;
 using MautVision.Desktop.Resources;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop.Controllers.Projects.Checks;
 
@@ -19,7 +20,7 @@ namespace MautVision.Desktop.Controllers.Projects.Checks;
 /// stay in the host behind selection tokens; previews and screenshots are transient resources, never bytes in a message.
 /// </summary>
 internal sealed class ChecksController(IProjectsManager projects, IJobsManager jobs, IScreenManager screen, ResourceHandles resources, FileSelections selections,
-    NativeDialogs dialogs, IMediaManager media, Func<string, string> messageFor)
+    NativeDialogs dialogs, IMediaManager media)
 {
     internal const int DefaultPreviewSide = 1600;
 
@@ -34,7 +35,7 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
             ChecksResponseMapper.ParseSplit(request.Split), request.Device, request.Batch ?? 16), request.OperationId, cancellationToken);
         var job = await jobs.EnqueueAsync<IModelEvaluationJob, ModelEvaluationInput>(input, request.ProjectId, request.OperationId,
             $"{JobLabels.Version(input.VersionNumber)} · {input.Dataset.Name}", cancellationToken);
-        return ChecksResponseMapper.Map(await checks.GetEvaluationAsync(job.Id, cancellationToken), messageFor);
+        return ChecksResponseMapper.Map(await checks.GetEvaluationAsync(job.Id, cancellationToken));
     }
 
     public async Task<ModelEvaluationResponseDto> CancelEvaluationAsync(CancelModelEvaluationRequestDto request, CancellationToken cancellationToken)
@@ -42,28 +43,28 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
         var checks = await Checks(request.ProjectId, cancellationToken);
         await checks.GetEvaluationAsync(request.EvaluationId, cancellationToken);
         await jobs.CancelAsync(request.ProjectId, request.EvaluationId, cancellationToken);
-        return ChecksResponseMapper.Map(await checks.GetEvaluationAsync(request.EvaluationId, cancellationToken), messageFor);
+        return ChecksResponseMapper.Map(await checks.GetEvaluationAsync(request.EvaluationId, cancellationToken));
     }
 
     public async Task<ModelEvaluationResponseDto> GetEvaluationAsync(GetModelEvaluationRequestDto request, CancellationToken cancellationToken)
-        => ChecksResponseMapper.Map(await (await Checks(request.ProjectId, cancellationToken)).GetEvaluationAsync(request.EvaluationId, cancellationToken), messageFor);
+        => ChecksResponseMapper.Map(await (await Checks(request.ProjectId, cancellationToken)).GetEvaluationAsync(request.EvaluationId, cancellationToken));
 
     public async Task<ModelEvaluationPageResponseDto> ListEvaluationsAsync(ListModelEvaluationsRequestDto request, CancellationToken cancellationToken)
     {
         var filter = new ModelEvaluationFilter(request.VersionId, request.DatasetVersionId, request.Split is null ? null : ChecksResponseMapper.ParseSplit(request.Split));
         var page = await (await Checks(request.ProjectId, cancellationToken)).ListEvaluationsAsync(filter, request.Limit ?? 50, request.Before, cancellationToken);
-        return new ModelEvaluationPageResponseDto(page.Items.Select(item => ChecksResponseMapper.Map(item, messageFor)).ToArray(), page.Total);
+        return new ModelEvaluationPageResponseDto(page.Items.Select(item => ChecksResponseMapper.Map(item)).ToArray(), page.Total);
     }
 
     public async Task<ModelEvaluationResponseDto[]> ListLatestEvaluationsAsync(ListLatestModelEvaluationsRequestDto request, CancellationToken cancellationToken)
         => (await (await Checks(request.ProjectId, cancellationToken)).ListLatestEvaluationsAsync(request.DatasetVersionId,
             request.Split is null ? null : ChecksResponseMapper.ParseSplit(request.Split), cancellationToken))
-            .Select(item => ChecksResponseMapper.Map(item, messageFor)).ToArray();
+            .Select(item => ChecksResponseMapper.Map(item)).ToArray();
 
     public async Task<CheckFileSelectionResponseDto> SelectImageAsync(SelectCheckImageRequestDto request, CancellationToken cancellationToken)
     {
         await Checks(request.ProjectId, cancellationToken);
-        var path = await dialogs.PickImageFile("Изображение для проверки", cancellationToken);
+        var path = await dialogs.PickImageFile(Strings.DialogCheckImage, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new CheckFileSelectionResponseDto(null, null, null);
         var stamp = FileStamp.Of(path);
         return new CheckFileSelectionResponseDto(selections.Register([path], FileSelectionKind.Files, null, [stamp]), Path.GetFileName(path), stamp.Length);
@@ -73,7 +74,7 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
     public async Task<CheckVideoSelectionResponseDto> SelectVideoAsync(SelectCheckVideoRequestDto request, CancellationToken cancellationToken)
     {
         var project = await projects.GetAsync(request.ProjectId, cancellationToken);
-        var path = await dialogs.PickVideo("Видео для проверки", cancellationToken);
+        var path = await dialogs.PickVideo(Strings.DialogCheckVideo, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new CheckVideoSelectionResponseDto(null, null, null, null, null, null, null, null);
         var video = await media.ProbeVideoAsync(path, cancellationToken);
         var stamp = FileStamp.Of(path);
@@ -168,7 +169,7 @@ internal sealed class ChecksController(IProjectsManager projects, IJobsManager j
     {
         var preview = check.Preview is null ? null : checks.GetPreview(check.Id);
         var url = preview is null ? null : resources.IssueTransient(projectId, preview.Content, preview.ContentType);
-        return ChecksResponseMapper.Map(check with { Preview = preview?.Info ?? check.Preview }, url, messageFor);
+        return ChecksResponseMapper.Map(check with { Preview = preview?.Info ?? check.Preview }, url);
     }
 
     private async Task<CheckVideoFrameResponseDto> FrameAsync(IProject project, string path, long timestampMs, int maxSide, CancellationToken cancellationToken)

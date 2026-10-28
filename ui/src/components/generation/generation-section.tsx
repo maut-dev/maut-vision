@@ -9,7 +9,7 @@ import { createPalette } from "@/components/images/annotation-palette";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import {
     emptyForm,
     formFieldError,
@@ -177,7 +177,7 @@ export function GenerationSection({ project, openImages }: { project: ProjectRes
                 projectId, recipeId: recipe.id, recipeRevision: recipe.revision, seed: launch.seed, count: launch.count, operationId: crypto.randomUUID(),
             });
             runs.apply(run);
-            setNotice({ tone: "info", text: `Запуск «${recipe.name}» поставлен в очередь: ${run.requestedCount.toLocaleString("ru-RU")} изображений.`, showRuns: true });
+            setNotice({ tone: "info", text: `Запуск «${recipe.name}» поставлен в очередь: ${run.requestedCount.toLocaleString(locale())} изображений.`, showRuns: true });
         });
     }
 
@@ -312,7 +312,7 @@ export function GenerationSection({ project, openImages }: { project: ProjectRes
                     />
                 ))}
                 {runs.total > runs.runs.length && (
-                    <p className="text-xs text-muted-foreground">Показаны последние {Math.max(runPageLimit, runs.runs.length)} запусков из {runs.total.toLocaleString("ru-RU")}.</p>
+                    <p className="text-xs text-muted-foreground">Показаны последние {Math.max(runPageLimit, runs.runs.length)} запусков из {runs.total.toLocaleString(locale())}.</p>
                 )}
                 {runs.loading && !runs.runs.length && <p role="status" className="text-sm text-muted-foreground">Загрузка запусков…</p>}
                 {!runs.loading && !runs.error && !runs.runs.length && <Empty testId="runs-empty">Выберите пресет и создайте изображения. Здесь появится история запусков.</Empty>}

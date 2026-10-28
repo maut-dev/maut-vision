@@ -20,6 +20,7 @@ import {
     splitLabel,
 } from "@/lib/datasets/dataset-view";
 import { formatDate, megabytes } from "@/lib/format";
+import { errorText } from "@/lib/errors";
 
 /**
  * Карточка операции во вкладках «Сборка», «Проверки», «Экспорты»: состояние, датасет, дата, «Собрано изображений / Проверено
@@ -115,7 +116,7 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
                     <ul className="max-h-40 space-y-1 overflow-auto" aria-label="Проблемы целостности">
                         {verify.issues.map((issue, index) => (
                             <li key={`${issue.role}:${issue.sampleId}:${index}`} className="break-words">
-                                {issueRoleLabels[issue.role]}{issue.sampleId && ` · кадр ${issue.sampleId}`}{issue.split && ` · ${splitLabel(issue.split)}`} · {issue.message}
+                                {issueRoleLabels[issue.role]}{issue.sampleId && ` · кадр ${issue.sampleId}`}{issue.split && ` · ${splitLabel(issue.split)}`} · {errorText(issue.code)}
                             </li>
                         ))}
                     </ul>

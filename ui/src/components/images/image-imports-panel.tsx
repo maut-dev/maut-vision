@@ -3,6 +3,7 @@ import { parseImportImagesResult } from "@/api/projects/images/response-dto/impo
 import { count, JobRunRow } from "@/components/jobs/job-run";
 import { Button } from "@/components/ui/button";
 import type { ImageImportsState } from "@/lib/use-image-imports";
+import { errorText } from "@/lib/errors";
 
 /** История импорта этой группы: состояние, итог, ошибки по файлам, прогресс и отмена идущего импорта. */
 export function ImageImportsPanel({ imports }: { imports: ImageImportsState }) {
@@ -41,7 +42,7 @@ function ImportRow({ job, cancel }: { job: JobResponseDto; cancel: () => void })
                 <details>
                     <summary className="cursor-pointer text-muted-foreground">Ошибки по файлам ({count(result.rejected)})</summary>
                     <ul className="mt-1 max-h-24 list-disc space-y-0.5 overflow-y-auto pl-5">
-                        {result.rejectedFiles.map((file, index) => <li key={`${file.name}-${index}`} className="break-words">{file.name} — {file.message}</li>)}
+                        {result.rejectedFiles.map((file, index) => <li key={`${file.name}-${index}`} className="break-words">{file.name} — {errorText(file.reason)}</li>)}
                         {result.rejected > result.rejectedFiles.length && <li>и ещё {count(result.rejected - result.rejectedFiles.length)}</li>}
                     </ul>
                 </details>

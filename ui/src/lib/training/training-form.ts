@@ -8,6 +8,7 @@ import {
     tunedDefaults,
     type TrainingParameterDefinition,
 } from "@/api/projects/training/training-parameters";
+import { locale } from "@/lib/format";
 
 /**
  * Форма «Новый запуск обучения»: поля ввода (числа, списки, устройство вручную) хранят текст как его набрал пользователь,
@@ -112,5 +113,5 @@ export function choiceFromKey(key: string): TrainingParameterValue {
 
 /** Число в подписи: русская запятая, до digits знаков. */
 export function formatParameterNumber(value: number, digits = 6): string {
-    return value.toLocaleString("ru-RU", { maximumFractionDigits: digits, useGrouping: false });
+    return value.toLocaleString(locale(), { maximumFractionDigits: digits, useGrouping: false });
 }

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { defaultRegion, type FramePosition } from "@/lib/backgrounds/crop-frame";
 import { defaultCheckParameters, formatTime, needsRegion, parseCheckParameters, toRegion, type CheckParameterValues } from "@/lib/checks/check-view";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import { useLiveCheck } from "@/lib/use-live-check";
 import { CheckParameterFields, Field } from "./check-parameter-fields";
 import { CheckStatus, ClassSummary, DetectionChips, DetectionOverlay, previewDetections } from "./check-results";
@@ -163,8 +163,8 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                 <div className="space-y-4 border-t pt-4" data-testid="check-screen-result" data-check-id={check.id}>
                     <CheckStatus check={check} testPrefix="check-screen" />
                     <p className="text-xs tabular-nums text-muted-foreground" data-testid="check-screen-stats">
-                        Кадров {check.progress.framesProcessed.toLocaleString("ru-RU")} · с обнаружениями {check.summary.framesWithDetections.toLocaleString("ru-RU")}
-                        {check.progress.fps !== null ? ` · ${check.progress.fps.toLocaleString("ru-RU", { maximumFractionDigits: 1 })} к/с` : ""}
+                        Кадров {check.progress.framesProcessed.toLocaleString(locale())} · с обнаружениями {check.summary.framesWithDetections.toLocaleString(locale())}
+                        {check.progress.fps !== null ? ` · ${check.progress.fps.toLocaleString(locale(), { maximumFractionDigits: 1 })} к/с` : ""}
                         {` · ${formatTime(check.progress.elapsedMs)} от начала`}
                     </p>
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">

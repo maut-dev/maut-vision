@@ -6,7 +6,7 @@ import { ResourceImage } from "@/components/resource-image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImageViewer } from "@/components/viewer/image-viewer";
-import { formatDate } from "@/lib/format";
+import { formatDate, locale } from "@/lib/format";
 import {
     deviceLabel,
     fileKindLabels,
@@ -146,7 +146,7 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
                         <Row label="скорость (lr0)">{sourced(effective, "lr0")}</Row>
                         <Row label="разогрев, эпох">{sourced(effective, "warmupEpochs")}</Row>
                         <Row label="классов">{version.classes.length}</Row>
-                        <Row label="устройство">{deviceLabel(parameters.device)} · AMP {parameterText(effective.amp ?? parameters.amp).toLocaleLowerCase("ru-RU")}</Row>
+                        <Row label="устройство">{deviceLabel(parameters.device)} · AMP {parameterText(effective.amp ?? parameters.amp).toLocaleLowerCase(locale())}</Row>
                         <Row label="создана">{formatDate(version.createdAt)}</Row>
                     </dl>
                     <div className="space-y-1 text-xs">

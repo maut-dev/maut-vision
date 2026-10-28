@@ -14,15 +14,17 @@ import type {
     DatasetVersionResponseDto,
 } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import type { Box } from "@/lib/annotation/geometry";
+import { jobErrorText } from "@/lib/errors";
+import { locale } from "@/lib/format";
 
 export const datasetSplits: readonly DatasetSplit[] = ["train", "val", "test"];
 
-export const count = (value: number) => value.toLocaleString("ru-RU");
+export const count = (value: number) => value.toLocaleString(locale());
 
 /** Поиск по списку датасетов: название и описание без учёта регистра. */
 export function matchesSearch(version: DatasetVersionResponseDto, query: string): boolean {
-    const needle = query.trim().toLocaleLowerCase("ru-RU");
-    return !needle || version.name.toLocaleLowerCase("ru-RU").includes(needle) || version.description.toLocaleLowerCase("ru-RU").includes(needle);
+    const needle = query.trim().toLocaleLowerCase(locale());
+    return !needle || version.name.toLocaleLowerCase(locale()).includes(needle) || version.description.toLocaleLowerCase(locale()).includes(needle);
 }
 
 /** Причины пропуска плана с ненулевыми счётчиками: «не проверены: 3» и т. д. */
@@ -86,7 +88,7 @@ export function sampleOverlays(sample: DatasetSampleResponseDto, version: Datase
 }
 
 export function boxPixels(box: Box, width: number, height: number): string {
-    const number = (value: number) => Number(value.toFixed(2)).toLocaleString("ru-RU");
+    const number = (value: number) => Number(value.toFixed(2)).toLocaleString(locale());
     return `x ${number(box.x * width)}, y ${number(box.y * height)}, ширина ${number(box.width * width)}, высота ${number(box.height * height)} px`;
 }
 
@@ -141,7 +143,7 @@ export const issueRoleLabels: Record<DatasetIntegrityIssueDto["role"], string> =
 export function operationEndText(operation: DatasetOperationResponseDto): string | null {
     const { job } = operation;
     if (isOperationActive(job) || job.status === "succeeded") return null;
-    if (job.error) return job.error.message;
+    if (job.error) return jobErrorText(job.error);
     if (job.status === "cancelled") return operation.kind === "build" ? "Сборка отменена. Исходные изображения не изменены." : "Операция отменена. Для нового запуска нажмите «Повторить».";
     if (job.status === "interrupted") return "Операция прервана. Создайте новый запуск.";
     return null;

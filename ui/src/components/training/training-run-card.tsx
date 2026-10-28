@@ -3,7 +3,7 @@ import type { TrainingRunResponseDto } from "@/api/projects/training/response-dt
 import { isActiveTrainingRun, trainingRunStateLabels } from "@/api/projects/training/training-parameters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/format";
+import { formatDate, locale } from "@/lib/format";
 import { deviceLabel, formatMetric, formatNumber, parameterText, runError, runPercent } from "@/lib/training/run-view";
 
 /**
@@ -36,7 +36,7 @@ export function TrainingRunCard({ run, version, versionDeleted, busy, openRun, o
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground" data-testid="training-run-card-parameters">
                         {formatDate(run.job.createdAt)} · {parameterText(parameters.epochs)} эпох · batch {parameterText(parameters.batch)} · {deviceLabel(parameters.device)}
-                        {" "}· seed {parameterText(parameters.seed)} · AMP {parameterText(parameters.amp).toLocaleLowerCase("ru-RU")} · {parameterText(parameters.optimizer)}
+                        {" "}· seed {parameterText(parameters.seed)} · AMP {parameterText(parameters.amp).toLocaleLowerCase(locale())} · {parameterText(parameters.optimizer)}
                         {typeof parameters.lr0 === "number" && ` · lr0 ${formatNumber(parameters.lr0, 6)}`}
                         {run.presetName && ` · пресет «${run.presetName}»`}
                     </p>

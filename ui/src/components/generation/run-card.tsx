@@ -4,7 +4,7 @@ import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/respons
 import type { GenerationRunResponseDto } from "@/api/projects/generation/response-dto/generation-run-response-dto";
 import { jobStatusLabels } from "@/components/jobs/job-run";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/format";
+import { formatDate, locale } from "@/lib/format";
 import { isRunActive, runErrorText, runProgress, runSummary } from "@/lib/generation/run-state";
 import { RecipeDetails } from "./recipe-details";
 
@@ -71,7 +71,7 @@ export function RunCard({ run, workspace, sets, busy, openImages, cancel, repeat
             <details className="rounded-md border px-3 py-2" data-testid="run-settings">
                 <summary className="cursor-pointer text-sm">Настройки этого запуска</summary>
                 <div className="mt-3 space-y-3">
-                    <p className="text-xs tabular-nums">Seed: {run.seed} · количество: {run.requestedCount.toLocaleString("ru-RU")} · версия пресета: {recipe.revision}</p>
+                    <p className="text-xs tabular-nums">Seed: {run.seed} · количество: {run.requestedCount.toLocaleString(locale())} · версия пресета: {recipe.revision}</p>
                     {run.outputGroupName && <p className="text-xs break-words text-muted-foreground">Группа результата: {run.outputGroupName}</p>}
                     <RecipeDetails recipe={recipe} workspace={workspace} sets={sets} />
                     <p className="text-xs text-muted-foreground">Настройки зафиксированы при запуске. Названия и доступность источников показаны по текущему проекту.</p>

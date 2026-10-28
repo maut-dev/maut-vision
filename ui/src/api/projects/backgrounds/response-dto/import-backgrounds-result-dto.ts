@@ -17,7 +17,6 @@ export interface BackgroundImportIssueDto {
     sourceIndex: number;
     name: string;
     reason: string;
-    message: string;
     width: number | null;
     height: number | null;
     timestampMs: number | null;
@@ -46,7 +45,7 @@ const isCountOrNull = (value: unknown) => value === null || isCount(value);
 
 function isIssue(value: unknown): value is BackgroundImportIssueDto {
     return isRecord(value) && isCount(value.sourceIndex) && typeof value.name === "string" && typeof value.reason === "string"
-        && typeof value.message === "string" && isCountOrNull(value.width) && isCountOrNull(value.height) && isCountOrNull(value.timestampMs);
+        && isCountOrNull(value.width) && isCountOrNull(value.height) && isCountOrNull(value.timestampMs);
 }
 
 export function isImportBackgroundsResultDto(value: unknown): value is ImportBackgroundsResultDto {

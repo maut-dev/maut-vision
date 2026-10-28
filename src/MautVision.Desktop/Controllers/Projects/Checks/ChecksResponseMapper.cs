@@ -12,9 +12,9 @@ internal static class ChecksResponseMapper
     /// <summary>Detections of one frame in an event: the most confident ones; the journal and snapshots carry all.</summary>
     internal const int EventDetections = 100;
 
-    internal static ModelEvaluationResponseDto Map(ModelEvaluation evaluation, Func<string, string> messageFor) => new(
+    internal static ModelEvaluationResponseDto Map(ModelEvaluation evaluation) => new(
         evaluation.Id,
-        JobResponseMapper.Map(evaluation.Job, messageFor),
+        JobResponseMapper.Map(evaluation.Job),
         StateKey(evaluation.State),
         evaluation.VersionId,
         evaluation.VersionNumber,
@@ -26,10 +26,10 @@ internal static class ChecksResponseMapper
         new Dictionary<string, double>(evaluation.Metrics),
         evaluation.ClassMetrics.Select(item => new EvaluationClassMetricsDto(item.Index, item.ClassId, item.Name, new Dictionary<string, double>(item.Metrics))).ToArray(),
         evaluation.Environment,
-        evaluation.Error is { } error ? new CheckErrorDto(error.Code, ChecksErrorMessages.Message(error.Code, error.Message, messageFor)) : null,
+        evaluation.Error is { } error ? new CheckErrorDto(error.Code, WorkerErrors.OwnMessage("checks", error.Code, error.Message)) : null,
         evaluation.Revision);
 
-    internal static LiveCheckResponseDto Map(LiveCheck check, string? previewUrl, Func<string, string> messageFor, int detectionLimit = int.MaxValue) => new(
+    internal static LiveCheckResponseDto Map(LiveCheck check, string? previewUrl, int detectionLimit = int.MaxValue) => new(
         check.Id,
         check.Mode switch { LiveCheckMode.Image => "image", LiveCheckMode.Video => "video", _ => "screen" },
         check.State switch
@@ -57,7 +57,7 @@ internal static class ChecksResponseMapper
         Map(check.Journal),
         check.RecentFrames.Select(frame => Map(frame, int.MaxValue)).ToArray(),
         check.Warnings.Select(warning => new LiveCheckWarningDto(warning.Code, warning.Message)).ToArray(),
-        check.Error is { } error ? new CheckErrorDto(error.Code, ChecksErrorMessages.Message(error.Code, error.Message, messageFor)) : null,
+        check.Error is { } error ? new CheckErrorDto(error.Code, WorkerErrors.OwnMessage("checks", error.Code, error.Message)) : null,
         check.StopReason switch
         {
             null => null,

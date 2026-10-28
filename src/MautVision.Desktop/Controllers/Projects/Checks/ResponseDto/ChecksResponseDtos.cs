@@ -8,8 +8,8 @@ namespace MautVision.Desktop.Controllers.Projects.Checks.ResponseDto;
 /// <summary>Метрики класса (выход Index): precision, recall, mAP50, mAP50_95.</summary>
 public sealed record EvaluationClassMetricsDto(int Index, Guid? ClassId, string Name, Dictionary<string, double> Metrics);
 
-/// <summary>Ошибка: для checks.worker_* — сообщение самого worker, для остальных кодов — текст приложения.</summary>
-public sealed record CheckErrorDto(string Code, string Message);
+/// <summary>Error of a check: Code — what the page translates; WorkerMessage — the worker's own message for its checks.worker_* codes, null otherwise.</summary>
+public sealed record CheckErrorDto(string Code, string? WorkerMessage);
 
 /// <summary>
 /// Оценка на датасете: State — queued «Ожидает видеокарту» | preparing «Подготовка» | running «Идёт проверка» | cancelling «Остановка…» |

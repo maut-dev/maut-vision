@@ -11,7 +11,7 @@ import { defaultRegion, type FramePosition } from "@/lib/backgrounds/crop-frame"
 import {
     defaultCheckParameters, formatTime, needsRegion, parseCheckParameters, parseStep, stepEstimate, toRegion, type CheckParameterValues,
 } from "@/lib/checks/check-view";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import { useLiveCheck } from "@/lib/use-live-check";
 import { CheckParameterFields, Field } from "./check-parameter-fields";
 import { CheckStatus, ClassSummary, DetectionChips, DetectionOverlay, previewDetections } from "./check-results";
@@ -156,8 +156,8 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                             <div className="h-full bg-brand transition-[width]" style={{ width: `${share * 100}%` }} />
                         </div>
                         <p className="text-xs tabular-nums text-muted-foreground" data-testid="check-video-progress">
-                            {formatTime(progress.positionMs)} из {formatTime(progress.durationMs ?? check.source.durationMs)} · проверено кадров {progress.framesProcessed.toLocaleString("ru-RU")}
-                            {progress.framesTotal ? ` из ~${progress.framesTotal.toLocaleString("ru-RU")}` : ""} · с обнаружениями {check.summary.framesWithDetections.toLocaleString("ru-RU")}
+                            {formatTime(progress.positionMs)} из {formatTime(progress.durationMs ?? check.source.durationMs)} · проверено кадров {progress.framesProcessed.toLocaleString(locale())}
+                            {progress.framesTotal ? ` из ~${progress.framesTotal.toLocaleString(locale())}` : ""} · с обнаружениями {check.summary.framesWithDetections.toLocaleString(locale())}
                         </p>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
@@ -200,7 +200,7 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                             <p className="text-sm text-muted-foreground">Кадров с обнаружениями пока нет.</p>
                         )}
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                            <span data-testid="check-video-journal-count">Показано {Math.min(shown, rows.length).toLocaleString("ru-RU")} из {check.journal.kept.toLocaleString("ru-RU")}</span>
+                            <span data-testid="check-video-journal-count">Показано {Math.min(shown, rows.length).toLocaleString(locale())} из {check.journal.kept.toLocaleString(locale())}</span>
                             {rows.length > shown && <Button variant="ghost" size="xs" onClick={() => setShown(value => value + journalPageRows)}>Показать ещё</Button>}
                             {rows.length <= shown && (session.journal[0]?.ordinal ?? 0) > check.journal.firstOrdinal && (
                                 <Button variant="ghost" size="xs" disabled={session.loadingOlder} data-testid="check-video-older"
@@ -209,7 +209,7 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                         </div>
                         {check.journal.truncated && (
                             <p className="text-xs text-muted-foreground" data-testid="check-video-truncated">
-                                Журнал хранит первые {check.journal.kept.toLocaleString("ru-RU")} кадров с обнаружениями из {check.journal.total.toLocaleString("ru-RU")};
+                                Журнал хранит первые {check.journal.kept.toLocaleString(locale())} кадров с обнаружениями из {check.journal.total.toLocaleString(locale())};
                                 итог по классам — по всем кадрам.
                             </p>
                         )}

@@ -15,6 +15,7 @@ import {
 import type { GenerationRecipeFormDto, GenerationVariantWeightDto } from "@/api/projects/generation/request-dto/generation-recipe-form-dto";
 import type { GenerationRecipeResponseDto } from "@/api/projects/generation/response-dto/generation-recipe-response-dto";
 import type { GenerationRepeatDraftResponseDto } from "@/api/projects/generation/response-dto/generation-sample-response-dto";
+import { locale } from "@/lib/format";
 
 /** Режим формы: новый пресет, изменение сохранённого или повтор запуска (настройки снимка до «Редактировать варианты…»). */
 export type RecipeFormMode =
@@ -64,9 +65,12 @@ export function formForEdit(recipe: GenerationRecipeResponseDto): RecipeFormValu
     return fromRecipe(recipe, { kind: "edit", recipe });
 }
 
+/** The notice above the form of «Настроить повтор» (the previous text without the removed thread count). */
+const repeatNotice = "Настройки сохранённого запуска перенесены в форму. Сохраните новый пресет и запустите его.";
+
 /** «Настроить повтор»: настройки снимка запуска; доли и привязки — из снимка, пока пользователь не перейдёт к текущим источникам. */
 export function formForRepeat(draft: GenerationRepeatDraftResponseDto): RecipeFormValues {
-    return fromRecipe(draft.recipe, { kind: "repeat", sourceRunId: draft.sourceRunId, notice: draft.notice, snapshot: draft.recipe });
+    return fromRecipe(draft.recipe, { kind: "repeat", sourceRunId: draft.sourceRunId, notice: repeatNotice, snapshot: draft.recipe });
 }
 
 /** «Редактировать варианты по текущим источникам»: повтор становится обычным новым пресетом с теми же значениями. */
@@ -185,7 +189,7 @@ export function classesLabel(count: number): string {
 
 /** «N фонов» с русским склонением. */
 export function backgroundsLabel(count: number): string {
-    return `${count.toLocaleString("ru-RU")} ${backgroundsWord(count)}`;
+    return `${count.toLocaleString(locale())} ${backgroundsWord(count)}`;
 }
 
 /** Ключ настроек формы и seed: пример кадра устарел, если ключ изменился. */

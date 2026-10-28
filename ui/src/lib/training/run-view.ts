@@ -3,11 +3,13 @@ import type { TrainingParameterValue } from "@/api/projects/training/request-dto
 import type { ModelVersionFileDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import type { TrainingRunResponseDto, TrainingRunState } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { trainingParameter } from "@/api/projects/training/training-parameters";
+import { jobErrorText, workerErrorText } from "@/lib/errors";
+import { locale } from "@/lib/format";
 
-export const count = (value: number) => value.toLocaleString("ru-RU");
+export const count = (value: number) => value.toLocaleString(locale());
 
 export function formatNumber(value: number, digits = 4): string {
-    return value.toLocaleString("ru-RU", { maximumFractionDigits: digits });
+    return value.toLocaleString(locale(), { maximumFractionDigits: digits });
 }
 
 /** Метрика паспорта версии: три знака, «—» без значения. */
@@ -64,8 +66,8 @@ export function runPercent(run: TrainingRunResponseDto): number | null {
 /** Ошибка запуска для карточки и паспорта: текст host, для прерванного без кода — подсказка. */
 export function runError(run: TrainingRunResponseDto): string | null {
     if (run.state === "cancelled") return null;
-    if (run.error) return run.error.message;
-    if (run.job.error) return run.job.error.message;
+    if (run.error) return workerErrorText(run.error);
+    if (run.job.error) return jobErrorText(run.job.error);
     if (run.state === "interrupted") return "Запуск прерван. Запустите обучение заново.";
     if (run.state === "failed") return "Обучение завершилось ошибкой. Проверьте журнал, датасет и параметры перед повторным запуском.";
     return null;

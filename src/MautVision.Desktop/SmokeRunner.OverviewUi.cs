@@ -18,13 +18,13 @@ internal static partial class SmokeRunner
     private static async Task CheckOverviewUiAsync(CoreWebView2 web, string projectId, JsonNode report, CancellationToken token)
     {
         var checks = report["checks"]!.AsArray();
-        var missing = HardwareMessages.All["hardware.gpu_not_found"];
+        const string missing = "NVIDIA GPU не обнаружена. Для других производителей телеметрия пока недоступна.";
         var steps = new (string Body, Action Prepare)[]
         {
             (OverviewUiScript, () => HardwareController.SmokeOverride = null),
             (OverviewUiMissingGpuScript, () => HardwareController.SmokeOverride = sample => sample with
             {
-                Gpus = [], GpuStatus = "unavailable", GpuReason = missing, GpuSource = null,
+                Gpus = [], GpuStatus = "unavailable", GpuReason = "hardware.gpu_not_found", GpuSource = null,
             }),
             (OverviewUiFailedSampleScript, () => HardwareController.SmokeOverride = _ => throw new InvalidOperationException("Smoke: the sample fails.")),
             (OverviewUiJobsScript, () => HardwareController.SmokeOverride = null),
@@ -147,7 +147,7 @@ internal static partial class SmokeRunner
               'Every GPU shows its name, load, memory, temperature and driver: ' + text('[data-testid="overview-gpus"]'));
             await wait(() => $('[data-load-line="gpu-' + sample.gpus[0].index + '"]'), 'GPU load line');
           } else {
-            assert(text('[data-testid="overview-gpu-reason"]') === sample.gpuReason, 'Without a GPU the reason of the host is shown: ' + sample.gpuReason);
+            assert(text('[data-testid="overview-gpu-reason"]') === mautLocale.errorText(sample.gpuReason), 'Without a GPU the reason of the host is shown: ' + sample.gpuReason);
           }
           assert($('[data-load-line="cpu"]') && text('[data-testid="overview-load-chart"] figcaption').startsWith('Нагрузка за 2 минуты'),
             'The mini chart draws the CPU and GPU load of the last minutes');

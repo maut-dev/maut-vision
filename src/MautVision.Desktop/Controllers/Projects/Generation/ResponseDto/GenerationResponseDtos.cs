@@ -49,7 +49,7 @@ public sealed record GenerationRecipeDeletionResponseDto(Guid RecipeId);
 public sealed record GenerationRunDeletionResponseDto(Guid RunId);
 
 /// <summary>«Настроить повтор»: настройки для формы нового пресета (имя « · повтор»), seed и количество запуска, уведомление для формы.</summary>
-public sealed record GenerationRepeatDraftResponseDto(GenerationRecipeFormDto Recipe, uint Seed, int RequestedCount, Guid SourceRunId, string Notice);
+public sealed record GenerationRepeatDraftResponseDto(GenerationRecipeFormDto Recipe, uint Seed, int RequestedCount, Guid SourceRunId);
 
 /// <summary>Объект кадра: класс, привязка (её цвет рамки берётся из каталога) и рамка в долях кадра.</summary>
 public sealed record GenerationSampleObjectDto(Guid ClassId, Guid ClassVariantId, ImageBoxResponseDto Box);

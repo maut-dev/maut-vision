@@ -52,8 +52,8 @@ export class NativeBridge {
     request<TRequest, TResponse>(method: string, payload: TRequest, validate: (value: unknown) => value is TResponse, signal?: AbortSignal,
         timeoutMs: number | null = 10_000): Promise<TResponse> {
         const webview = this.webview;
-        if (!webview || this.disposed) return Promise.reject(new BridgeError("bridge.unavailable", "Откройте интерфейс в приложении Maut Vision."));
-        if (signal?.aborted) return Promise.reject(new BridgeError("bridge.aborted", "Запрос отменён."));
+        if (!webview || this.disposed) return Promise.reject(new BridgeError("bridge.unavailable"));
+        if (signal?.aborted) return Promise.reject(new BridgeError("bridge.aborted"));
         return new Promise<TResponse>((resolve, reject) => {
             const requestId = crypto.randomUUID();
             const fail = (error: Error) => {
@@ -64,12 +64,12 @@ export class NativeBridge {
                 entry.reject(error);
             };
             const timer = timeoutMs === null ? undefined : window.setTimeout(() => fail(new BridgeError("bridge.timeout",
-                `Приложение не ответило за ${Math.round(timeoutMs / 1000)} секунд. Повторите запрос.`)), timeoutMs);
-            const abort = () => fail(new BridgeError("bridge.aborted", "Запрос отменён."));
+                { count: String(Math.round(timeoutMs / 1000)) })), timeoutMs);
+            const abort = () => fail(new BridgeError("bridge.aborted"));
             this.pending.set(requestId, {
                 resolve: value => {
                     if (validate(value)) resolve(value);
-                    else reject(new BridgeError("bridge.invalid_response", "Формат ответа приложения не соответствует запросу."));
+                    else reject(new BridgeError("bridge.invalid_response"));
                 },
                 reject,
                 cleanup: () => {
@@ -82,7 +82,7 @@ export class NativeBridge {
                 const request: RequestEnvelope<TRequest> = { requestId, method, payload };
                 webview.postMessage(request);
             } catch {
-                fail(new BridgeError("bridge.send_failed", "Не удалось отправить запрос приложению."));
+                fail(new BridgeError("bridge.send_failed"));
             }
         });
     }
@@ -104,11 +104,11 @@ export class NativeBridge {
         this.pending.delete(data.requestId);
         entry.cleanup();
         if (typeof data.ok !== "boolean") {
-            entry.reject(new BridgeError("bridge.invalid_response", "Приложение вернуло некорректный ответ."));
+            entry.reject(new BridgeError("bridge.invalid_response"));
         } else if (!data.ok) {
-            if (isRecord(data.error) && typeof data.error.code === "string" && typeof data.error.message === "string") {
-                entry.reject(new BridgeError(data.error.code, data.error.message, errorDetails(data.error.details)));
-            } else entry.reject(new BridgeError("bridge.invalid_response", "Приложение вернуло некорректную ошибку."));
+            if (isRecord(data.error) && typeof data.error.code === "string") {
+                entry.reject(new BridgeError(data.error.code, errorDetails(data.error.details)));
+            } else entry.reject(new BridgeError("bridge.invalid_response"));
         } else entry.resolve(data.data);
     };
 
@@ -118,7 +118,7 @@ export class NativeBridge {
         this.webview?.removeEventListener("message", this.onMessage);
         for (const entry of this.pending.values()) {
             entry.cleanup();
-            entry.reject(new BridgeError("bridge.closed", "Соединение с приложением закрыто."));
+            entry.reject(new BridgeError("bridge.closed"));
         }
         this.pending.clear();
         this.subscribers.clear();

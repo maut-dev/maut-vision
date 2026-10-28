@@ -14,6 +14,7 @@ import { useModelExport, type ModelExportState } from "@/lib/use-model-export";
 import { useModelVersions } from "@/lib/use-model-versions";
 import { ModelVersionCard } from "./model-version-card";
 import { ModelVersionDeletionDialog } from "./model-version-deletion-dialog";
+import { jobErrorText } from "@/lib/errors";
 
 /**
  * Раздел «Модели»: все версии моделей проекта (новые сверху) с метриками, рабочей версией, выгрузкой ZIP, удалением и паспортом.
@@ -200,7 +201,7 @@ function ExportPlate({ state, versionId, dismiss }: { state: ModelExportState | 
             )}
             {!running && job.status !== "succeeded" && (
                 <p className="text-destructive" data-testid="model-export-error">
-                    {job.status === "cancelled" ? "Выгрузка отменена." : job.error?.message ?? "Не удалось выгрузить версию."}
+                    {job.status === "cancelled" ? "Выгрузка отменена." : (job.error ? jobErrorText(job.error) : "Не удалось выгрузить версию.")}
                 </p>
             )}
             {!running && <Button variant="ghost" size="xs" onClick={dismiss}>Скрыть</Button>}

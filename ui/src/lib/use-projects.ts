@@ -2,14 +2,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { subscribeProjectChanged, subscribeProjectRemoved } from "@/api/events/subscriptions";
 import { projectsApi } from "@/api/projects/projects-api";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
-import { errorMessage } from "./format";
+import { i18n } from "@/i18n";
+import { compareText, errorMessage } from "./format";
 
 function upsertProject(items: readonly ProjectResponseDto[], project: ProjectResponseDto): ProjectResponseDto[] {
     const current = items.find(item => item.id === project.id);
     // An older response must not overwrite a newer revision that already arrived as an event.
     if (current && current.revision > project.revision) return [...items];
     return [...items.filter(item => item.id !== project.id), project]
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.name.localeCompare(b.name, "ru"));
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || compareText(a.name, b.name));
 }
 
 /**
@@ -45,7 +46,7 @@ export function useProjects() {
             setLastProjectId(result.lastProjectId);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить проекты. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("library.loadFailed")));
         } finally {
             if (mounted.current) setLoading(false);
         }

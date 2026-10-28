@@ -1,5 +1,6 @@
 import { blurError, blurSliderMax, defaultBlur, maxBlurRadius, maxBlurSeed } from "@/api/projects/backgrounds/background-import-rules";
 import type { BackgroundBlurRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
+import { locale } from "@/lib/format";
 
 /** Поля «Размывать фоны» как их ввёл пользователь. */
 export interface BlurFields {
@@ -48,5 +49,5 @@ export function sliderRange(fields: BlurFields): [number, number] {
 
 /** «1,5» — радиус до сотых. */
 export function formatRadius(value: number): string {
-    return value.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+    return value.toLocaleString(locale(), { maximumFractionDigits: 2 });
 }

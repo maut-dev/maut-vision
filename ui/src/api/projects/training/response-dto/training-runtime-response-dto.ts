@@ -30,13 +30,12 @@ export interface GpuInventoryResponseDto {
     checkedAt: string;
 }
 
-/** Среда Python worker: mode — packaged | interpreter; code / message — почему недоступна (training.runtime_*), null — доступна. */
+/** Среда Python worker: mode — packaged | interpreter; code — почему недоступна (training.runtime_*), null — доступна. */
 export interface TrainingRuntimeResponseDto {
     configured: boolean;
     available: boolean;
     mode: "packaged" | "interpreter" | null;
     code: string | null;
-    message: string | null;
 }
 
 export function isTrainingParameters(value: unknown): value is TrainingParameters {
@@ -66,5 +65,5 @@ export function isGpuInventoryResponseDto(value: unknown): value is GpuInventory
 export function isTrainingRuntimeResponseDto(value: unknown): value is TrainingRuntimeResponseDto {
     return isRecord(value) && typeof value.configured === "boolean" && typeof value.available === "boolean"
         && (value.mode === null || value.mode === "packaged" || value.mode === "interpreter")
-        && (value.code === null || typeof value.code === "string") && (value.message === null || typeof value.message === "string");
+        && (value.code === null || typeof value.code === "string");
 }

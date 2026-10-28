@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -34,6 +35,7 @@ const Context = createContext<UnsavedChangesContext>({ register: () => {}, guard
  * успешного сохранения или явного отказа; ошибка сохранения остаётся в диалоге.
  */
 export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
+    const { t } = useTranslation();
     const registration = useRef<{ current: UnsavedRegistration } | null>(null);
     const [pending, setPending] = useState<{ intent: () => void }>();
     const [busy, setBusy] = useState(false);
@@ -86,7 +88,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
             setPending(undefined);
             intent();
         } catch (cause) {
-            setError(errorMessage(cause, "Не удалось сохранить разметку."));
+            setError(errorMessage(cause, t("unsaved.saveFailed")));
         } finally {
             setBusy(false);
         }
@@ -98,19 +100,19 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
             <AlertDialog open={!!pending} onOpenChange={open => { if (!open && !busy) setPending(undefined); }}>
                 <AlertDialogContent data-testid="unsaved-guard" onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Уйти без сохранения?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("unsaved.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Изменения разметки этого изображения ещё не сохранены. Сохраните их перед следующим действием или явно отбросьте.
+                            {t("unsaved.text")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="min-h-6" aria-live="polite">
                         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                     </div>
                     <AlertDialogFooter className="sm:flex-wrap">
-                        <AlertDialogCancel disabled={busy}>Продолжить разметку</AlertDialogCancel>
-                        <Button variant="outline" disabled={busy} data-testid="unsaved-leave" onClick={leave}>Уйти без сохранения</Button>
+                        <AlertDialogCancel disabled={busy}>{t("unsaved.continue")}</AlertDialogCancel>
+                        <Button variant="outline" disabled={busy} data-testid="unsaved-leave" onClick={leave}>{t("unsaved.leave")}</Button>
                         <Button disabled={busy} data-testid="unsaved-save" onClick={() => void saveAndContinue()}>
-                            {busy ? "Сохранение…" : "Сохранить и продолжить"}
+                            {busy ? t("common.saving") : t("unsaved.save")}
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>

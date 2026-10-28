@@ -4,6 +4,8 @@ import { liveCheckStateLabels } from "@/api/projects/checks/response-dto/live-ch
 import type { ResourceUrl } from "@/api/resources/resource-url";
 import { Badge } from "@/components/ui/badge";
 import { classColor, formatConfidence } from "@/lib/checks/check-view";
+import { workerErrorText } from "@/lib/errors";
+import { locale } from "@/lib/format";
 
 const stopReasons: Record<NonNullable<LiveCheckResponseDto["stopReason"]>, string> = {
     user: "остановлена кнопкой",
@@ -25,7 +27,7 @@ export function CheckStatus({ check, testPrefix }: { check: LiveCheckResponseDto
                     {check.stopReason && check.state !== "failed" ? ` · ${stopReasons[check.stopReason]}` : ""}
                 </span>
             </p>
-            {check.error && <p role="alert" className="text-destructive" data-testid={`${testPrefix}-error`}>{check.error.message}</p>}
+            {check.error && <p role="alert" className="text-destructive" data-testid={`${testPrefix}-error`}>{workerErrorText(check.error)}</p>}
             {check.warnings.map(warning => (
                 <p key={warning.code} className="text-xs text-muted-foreground" data-testid={`${testPrefix}-warning`}>⚠ {warning.message}</p>
             ))}
@@ -102,8 +104,8 @@ export function ClassSummary({ check, testId }: { check: LiveCheckResponseDto; t
                                     {item.name}
                                 </span>
                             </td>
-                            <td className="px-3 py-2 text-right tabular-nums">{item.frames.toLocaleString("ru-RU")}</td>
-                            <td className="px-3 py-2 text-right tabular-nums">{item.detections.toLocaleString("ru-RU")}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{item.frames.toLocaleString(locale())}</td>
+                            <td className="px-3 py-2 text-right tabular-nums">{item.detections.toLocaleString(locale())}</td>
                             <td className="px-3 py-2 text-right tabular-nums">{formatConfidence(item.maxConfidence)}</td>
                         </tr>
                     ))}

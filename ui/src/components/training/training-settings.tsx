@@ -12,11 +12,12 @@ import type { ProjectResponseDto } from "@/api/projects/response-dto/project-res
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatDate } from "@/lib/format";
+import { formatDate, locale } from "@/lib/format";
 import { formFromParameters, formTunedDefaults, parseTrainingForm, sameParameters, type TrainingForm } from "@/lib/training/training-form";
 import { count } from "@/lib/training/run-view";
 import { TrainingParameterField, TrainingParameterGroups, type ParameterFieldContext } from "./training-parameter-fields";
 import { TrainingPresetBar } from "./training-preset-bar";
+import { errorText } from "@/lib/errors";
 
 const mainKeys = ["epochs", "batch", "lr0", "device"] as const;
 const advancedKeys = ["warmupEpochs", "seed"] as const;
@@ -120,7 +121,7 @@ export function TrainingSettings({ project, datasets, datasetsLoading, presets, 
                 <Alert variant="destructive" data-testid="training-runtime-problem" data-code={runtimeProblem.code ?? undefined}>
                     <AlertDescription>
                         <p className="font-medium text-foreground">Среда обучения недоступна</p>
-                        <p>{runtimeProblem.message ?? "Python worker не настроен."}</p>
+                        <p>{runtimeProblem.code ? errorText(runtimeProblem.code) : "Python worker не настроен."}</p>
                     </AlertDescription>
                 </Alert>
             )}
@@ -134,7 +135,7 @@ export function TrainingSettings({ project, datasets, datasetsLoading, presets, 
                         </SelectTrigger>
                         <SelectContent>
                             {available.map(item => (
-                                <SelectItem key={item.id} value={item.id}>{item.name} · {new Date(item.createdAt).toLocaleDateString("ru-RU")}</SelectItem>
+                                <SelectItem key={item.id} value={item.id}>{item.name} · {new Date(item.createdAt).toLocaleDateString(locale())}</SelectItem>
                             ))}
                         </SelectContent>
                     </Select>

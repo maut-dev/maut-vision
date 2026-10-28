@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageDeletionResultResponseDto, ImageDeletionReviewResponseDto } from "@/api/projects/images/response-dto/image-deletion-response-dto";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
+import { locale } from "@/lib/format";
 
 /** Вся группа (imageIds не задан) или выбранные изображения одной группы (до 400). */
 export interface ImagesDeletionTarget {
@@ -30,6 +31,7 @@ export function ImagesDeletionDialog({ projectId, target, close, deleted }: {
 
     return (
         <ReviewDeletionDialog
+            area="images"
             testId="images-deletion-dialog"
             title={selection ? "Удалить изображения навсегда?" : "Удалить группу изображений навсегда?"}
             description={<>
@@ -44,7 +46,7 @@ export function ImagesDeletionDialog({ projectId, target, close, deleted }: {
             blockersNote={<p className="mt-2">Завершите задачи или измените указанные зависимости и проверьте снова.</p>}
             renderReview={current => (
                 <>
-                    <p data-testid="images-deletion-count">Изображений к удалению: {current.images.toLocaleString("ru-RU")}</p>
+                    <p data-testid="images-deletion-count">Изображений к удалению: {current.images.toLocaleString(locale())}</p>
                     <p className="text-muted-foreground">Готовые датасеты и модели сохранят собственные копии. Материалы других групп сохранятся.</p>
                 </>
             )}

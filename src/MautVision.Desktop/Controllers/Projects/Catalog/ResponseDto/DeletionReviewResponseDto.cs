@@ -1,7 +1,14 @@
 namespace MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 
-/// <summary>Причина, по которой удаление недоступно: Code — стабильный код, Message — строка списка в диалоге.</summary>
-public sealed record DeletionBlockerResponseDto(string Code, int Count, string Message);
+/// <summary>
+/// Why deletion is unavailable: Code — the stable code, Count — how many, Examples — names that illustrate it (at most a few). The page
+/// builds the line of the dialog from them.
+/// </summary>
+public sealed record DeletionBlockerResponseDto(string Code, int Count, string[] Examples)
+{
+    internal static DeletionBlockerResponseDto From(MautVision.Core.Interfaces.Projects.Catalog.DeletionBlocker blocker)
+        => new(blocker.Code, blocker.Count, blocker.Examples.ToArray());
+}
 
 /// <summary>
 /// Состав удаления. TargetKind: variant, class, classVariant, asset. TargetName — название цели (у изображения пусто).

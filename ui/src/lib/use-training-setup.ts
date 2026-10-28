@@ -6,6 +6,7 @@ import type {
     TrainingRuntimeResponseDto,
 } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import { trainingApi } from "@/api/projects/training/training-api";
+import { locale } from "@/lib/format";
 
 /**
  * Что нужно вкладке «Настройки» помимо проекта: пресеты (общие для всех проектов; listPresets и trainingPresets.changed), среда
@@ -23,7 +24,7 @@ export function useTrainingSetup() {
         const own = ++presetRead.current;
         try {
             const list = await trainingApi.listPresets();
-            if (mounted.current && own === presetRead.current) setPresets([...list].sort((left, right) => left.name.localeCompare(right.name, "ru")));
+            if (mounted.current && own === presetRead.current) setPresets([...list].sort((left, right) => left.name.localeCompare(right.name, locale())));
         } catch {
             // Пресеты необязательны: форма работает и без них.
         }

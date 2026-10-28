@@ -16,6 +16,8 @@ import type { ProjectChangedEventDto } from "./event-dto/project-changed-event-d
 import type { ProjectImportChangedEventDto } from "./event-dto/project-import-changed-event-dto";
 import type { ProjectOpenedEventDto } from "./event-dto/project-opened-event-dto";
 import { isProjectRemovedDto, type ProjectRemovedEventDto } from "./event-dto/project-removed-event-dto";
+import type { LanguageChangedEventDto } from "./event-dto/language-changed-event-dto";
+import { isLanguageResponseDto } from "../settings/response-dto/language-response-dto";
 import {
     isTrainingChangedDto, isTrainingPresetsChangedDto, type TrainingChangedEventDto, type TrainingPresetsChangedEventDto,
 } from "./event-dto/training-changed-event-dto";
@@ -155,5 +157,13 @@ export function subscribeChecksChanged(listener: (event: ChecksChangedEventDto) 
     return nativeBridge.subscribe(event => {
         if (event.event !== "checks.changed" || !isChecksChangedDto(event.data)) return;
         listener({ kind: "event", event: "checks.changed", data: event.data });
+    });
+}
+
+/** The interface language changed (this page or the host): switch the catalogs. */
+export function subscribeLanguageChanged(listener: (event: LanguageChangedEventDto) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event !== "settings.languageChanged" || !isLanguageResponseDto(event.data)) return;
+        listener({ kind: "event", event: "settings.languageChanged", data: event.data });
     });
 }

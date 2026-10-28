@@ -2,6 +2,7 @@ import { Hammer, Loader2 } from "lucide-react";
 import type { DatasetPlanResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { Button } from "@/components/ui/button";
 import { classOrderText, count, skipReasons } from "@/lib/datasets/dataset-view";
+import { planWarningText } from "@/lib/errors";
 
 /**
  * Карточка плана «Проверить перед сборкой»: «Train · Validation · Test · пропущено N» с причинами пропуска, кадр и порядок
@@ -36,7 +37,7 @@ export function DatasetPlanCard({ plan, stale, busy, building, build }: {
             {plan.warnings.map(warning => (
                 <p key={warning.code} role="status" data-warning={warning.code}
                     className={`text-xs ${warning.code === "datasets.split_collision" ? "text-destructive" : "text-amber-700 dark:text-amber-400"}`}>
-                    {warning.message}
+                    {planWarningText(warning)}
                 </p>
             ))}
             {stale && <p className="text-xs text-muted-foreground" data-testid="dataset-plan-stale">Настройки формы изменились после проверки. Нажмите «Проверить перед сборкой» ещё раз.</p>}

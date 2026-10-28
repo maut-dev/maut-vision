@@ -6,6 +6,7 @@ using MautVision.Core.Interfaces.Projects.Datasets;
 using MautVision.Desktop.Controllers.Projects.Datasets.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Datasets.ResponseDto;
 using MautVision.Desktop.Resources;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop.Controllers.Projects.Datasets;
 
@@ -14,8 +15,7 @@ namespace MautVision.Desktop.Controllers.Projects.Datasets;
 /// integrity check and ZIP export, which start as jobs and report through job.changed. The export destination is chosen in a
 /// native «Сохранить как» dialog; the page gets only a selection token.
 /// </summary>
-internal sealed class DatasetsController(IProjectsManager projects, IJobsManager jobs, ResourceHandles resources, FileSelections selections, NativeDialogs dialogs,
-    Func<string, string> messageFor)
+internal sealed class DatasetsController(IProjectsManager projects, IJobsManager jobs, ResourceHandles resources, FileSelections selections, NativeDialogs dialogs)
 {
     public async Task<DatasetVersionResponseDto[]> ListAsync(ListDatasetsRequestDto request, CancellationToken cancellationToken)
     {
@@ -68,7 +68,7 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         var input = await datasets.PrepareBuildAsync(request.PlanId, request.PlanHash, request.OperationId, cancellationToken);
         var job = await jobs.EnqueueAsync<IDatasetBuildJob, DatasetBuildInput>(input, request.ProjectId, request.OperationId, input.Specification.Name,
             cancellationToken);
-        return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken), messageFor);
+        return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken));
     }
 
     public async Task<DatasetOperationResponseDto> StartVerifyAsync(StartDatasetVerifyRequestDto request, CancellationToken cancellationToken)
@@ -78,14 +78,14 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         var input = await datasets.PrepareVerifyAsync(request.VersionId, request.OperationId, cancellationToken);
         var job = await jobs.EnqueueAsync<IDatasetVerifyJob, DatasetVerifyInput>(input, request.ProjectId, request.OperationId, input.VersionName,
             cancellationToken);
-        return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken), messageFor);
+        return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken));
     }
 
     /// <summary>«Сохранить как» with «&lt;name&gt;.zip»; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
     public async Task<DatasetExportSelectionResponseDto> SelectExportDestinationAsync(SelectDatasetExportRequestDto request, CancellationToken cancellationToken)
     {
         var version = await (await Datasets(request.ProjectId, cancellationToken)).GetAsync(request.VersionId, cancellationToken);
-        var path = await dialogs.PickSaveFile("Экспорт датасета в ZIP", DefaultFileName(version.Name), "ZIP-архив", cancellationToken);
+        var path = await dialogs.PickSaveFile(Strings.DialogExportDataset, DefaultFileName(version.Name), Strings.FilterZip, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new DatasetExportSelectionResponseDto(null, null);
         return new DatasetExportSelectionResponseDto(selections.Register([path], FileSelectionKind.SaveFile), Path.GetFileName(path));
     }
@@ -100,19 +100,18 @@ internal sealed class DatasetsController(IProjectsManager projects, IJobsManager
         var input = await datasets.PrepareExportAsync(request.VersionId, selection.Paths[0], request.OperationId, cancellationToken);
         var job = await jobs.EnqueueAsync<IDatasetExportJob, DatasetExportInput>(input, request.ProjectId, request.OperationId, input.VersionName,
             cancellationToken);
-        return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken), messageFor);
+        return DatasetsResponseMapper.Map(await datasets.GetOperationAsync(job.Id, cancellationToken));
     }
 
     public async Task<DatasetOperationPageResponseDto> ListOperationsAsync(ListDatasetOperationsRequestDto request, CancellationToken cancellationToken)
     {
         var page = await (await Datasets(request.ProjectId, cancellationToken)).ListOperationsAsync(DatasetsResponseMapper.ParseKind(request.Kind),
             request.Limit ?? 50, request.Before, cancellationToken);
-        return new DatasetOperationPageResponseDto(page.Items.Select(item => DatasetsResponseMapper.Map(item, messageFor)).ToArray(), page.Total);
+        return new DatasetOperationPageResponseDto(page.Items.Select(item => DatasetsResponseMapper.Map(item)).ToArray(), page.Total);
     }
 
     public async Task<DatasetOperationResponseDto> GetOperationAsync(GetDatasetOperationRequestDto request, CancellationToken cancellationToken)
-        => DatasetsResponseMapper.Map(await (await Datasets(request.ProjectId, cancellationToken)).GetOperationAsync(request.OperationId, cancellationToken),
-            messageFor);
+        => DatasetsResponseMapper.Map(await (await Datasets(request.ProjectId, cancellationToken)).GetOperationAsync(request.OperationId, cancellationToken));
 
     public async Task<DatasetOperationDeletionResponseDto> DeleteOperationAsync(DeleteDatasetOperationRequestDto request, CancellationToken cancellationToken)
     {

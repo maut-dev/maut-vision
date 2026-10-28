@@ -9,6 +9,7 @@ using MautVision.Desktop.Controllers.Jobs.ResponseDto;
 using MautVision.Desktop.Controllers.Projects.Images.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Images.ResponseDto;
 using MautVision.Desktop.Resources;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop.Controllers.Projects.Images;
 
@@ -22,8 +23,7 @@ internal sealed class ImagesController(
     ResourceHandles resources,
     FileSelections selections,
     NativeDialogs dialogs,
-    IMediaManager media,
-    Func<string, string> messageFor)
+    IMediaManager media)
 {
     public async Task<ImageGroupResponseDto[]> ListGroupsAsync(ListImageGroupsRequestDto request, CancellationToken cancellationToken)
         => (await (await Images(request.ProjectId, cancellationToken)).ListGroupsAsync(cancellationToken)).Select(ImagesResponseMapper.Map).ToArray();
@@ -114,12 +114,12 @@ internal sealed class ImagesController(
 
     public async Task<JobResponseDto[]> ListImportsAsync(ListImageImportsRequestDto request, CancellationToken cancellationToken)
         => (await (await Images(request.ProjectId, cancellationToken)).ListImportsAsync(request.GroupId, request.Limit ?? 50, request.Before, cancellationToken))
-            .Select(job => JobResponseMapper.Map(job, messageFor)).ToArray();
+            .Select(job => JobResponseMapper.Map(job)).ToArray();
 
     /// <summary>Native multi-select dialog; the answer comes when the user closes it. Files are ordered by name, naturally.</summary>
     public async Task<ImageSelectionResponseDto> SelectFilesAsync(SelectImageFilesRequestDto request, CancellationToken cancellationToken)
     {
-        var paths = await dialogs.PickImageFiles("Импорт файлов", cancellationToken);
+        var paths = await dialogs.PickImageFiles(Strings.DialogImportFiles, cancellationToken);
         if (paths is null || paths.Count == 0) return new ImageSelectionResponseDto("files", null, null, null);
         // The dialog returns the focused file first; the import order follows the names instead.
         var ordered = paths.OrderBy(path => Path.GetFileName(path), ImageNameOrder.Instance).ThenBy(path => path, StringComparer.Ordinal).ToArray();
@@ -129,7 +129,7 @@ internal sealed class ImagesController(
     /// <summary>Native folder dialog; the import job reads the folder's files.</summary>
     public async Task<ImageSelectionResponseDto> SelectFolderAsync(SelectImageFolderRequestDto request, CancellationToken cancellationToken)
     {
-        var folder = await dialogs.PickFolder("Импорт из папки", cancellationToken);
+        var folder = await dialogs.PickFolder(Strings.DialogImportFolder, cancellationToken);
         if (string.IsNullOrEmpty(folder)) return new ImageSelectionResponseDto("folder", null, null, null);
         var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(folder));
         return new ImageSelectionResponseDto("folder", selections.Register([folder], FileSelectionKind.Folder), null, name.Length > 0 ? name : folder);
@@ -141,7 +141,7 @@ internal sealed class ImagesController(
     /// </summary>
     public async Task<VideoSelectionResponseDto> SelectVideoAsync(SelectImageVideoRequestDto request, CancellationToken cancellationToken)
     {
-        var path = await dialogs.PickVideo("Кадры из видео", cancellationToken);
+        var path = await dialogs.PickVideo(Strings.DialogVideoFrames, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new VideoSelectionResponseDto(null, null, null, null, null, null);
         var video = await media.ProbeVideoAsync(path, cancellationToken);
         var token = selections.Register([path], FileSelectionKind.Video, video);
@@ -176,7 +176,7 @@ internal sealed class ImagesController(
         };
         var job = await jobs.EnqueueAsync<IImportImagesJob, ImportImagesInput>(new ImportImagesInput(group.Id, sources, request.SkipDuplicates),
             request.ProjectId, request.OperationId, group.Name, cancellationToken);
-        return JobResponseMapper.Map(job, messageFor);
+        return JobResponseMapper.Map(job);
     }
 
     private async Task<IImagesManager> Images(string projectId, CancellationToken cancellationToken)

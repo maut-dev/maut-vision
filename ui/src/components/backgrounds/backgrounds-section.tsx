@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { backgroundDetails, setSummary, sizeMismatchText } from "@/lib/backgrounds/background-text";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import { useBackgroundBlur } from "@/lib/use-background-blur";
 import { useBackgroundGallery } from "@/lib/use-background-gallery";
 import { useBackgroundRuns } from "@/lib/use-background-runs";
@@ -275,7 +275,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
                                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                                     <h2 className="min-w-0 font-medium break-words" data-testid="background-set-title">{set.name}</h2>
                                     <span className="text-xs text-muted-foreground tabular-nums" data-testid="background-set-count">
-                                        {setSummary(set)}{set.removedCount ? ` · убрано: ${set.removedCount.toLocaleString("ru-RU")}` : ""}
+                                        {setSummary(set)}{set.removedCount ? ` · убрано: ${set.removedCount.toLocaleString(locale())}` : ""}
                                     </span>
                                 </div>
                                 {set.description && <p className="max-w-prose text-xs text-muted-foreground break-words">{set.description}</p>}

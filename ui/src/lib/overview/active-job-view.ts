@@ -1,5 +1,6 @@
 import type { ActiveJobResponseDto } from "@/api/jobs/response-dto/active-jobs-page-response-dto";
 import { formatBytes } from "@/lib/training/run-view";
+import { locale } from "@/lib/format";
 
 /** Раздел проекта, куда ведёт «Открыть» у задачи; training.run открывает свой запуск, checks.evaluate — режим «Датасет». */
 export type JobSection = "images" | "backgrounds" | "classes" | "generation" | "datasets" | "training" | "models" | "checks";
@@ -26,7 +27,7 @@ export const activeJobKinds: Readonly<Record<string, ActiveJobKind>> = {
     "projects.export": { label: "Экспорт проекта", section: null, unit: "файлов" },
 };
 
-const count = (value: number) => value.toLocaleString("ru-RU");
+const count = (value: number) => value.toLocaleString(locale());
 
 /** «Сборка датасета · Датасет 1»; неизвестный вид — как есть. */
 export function activeJobTitle(item: ActiveJobResponseDto): string {

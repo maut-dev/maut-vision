@@ -38,6 +38,10 @@ using MautVision.Desktop.Controllers.Projects.ResponseDto;
 using MautVision.Desktop.Controllers.System;
 using MautVision.Desktop.Controllers.System.RequestDto;
 using MautVision.Desktop.Controllers.System.ResponseDto;
+using MautVision.Desktop.Controllers.Settings;
+using MautVision.Desktop.Controllers.Settings.RequestDto;
+using MautVision.Desktop.Controllers.Settings.ResponseDto;
+using MautVision.Desktop.Host;
 using MautVision.Desktop.Resources;
 using MautVision.Desktop.Transport;
 using Microsoft.Extensions.Logging;
@@ -52,12 +56,13 @@ internal static class ControllerRegistration
     /// <param name="selections">Files and folders chosen in native dialogs behind tokens of the current page.</param>
     /// <param name="dialogs">Native file and folder dialogs of the main window.</param>
     /// <param name="webViewProcessIds">IDs of the WebView2 processes of the window, for the memory of the application.</param>
+    /// <param name="language">The interface language setting (settings.getLanguage, settings.setLanguage).</param>
     /// <returns>The projects controller: a new page resets its order of opens.</returns>
     internal static ProjectsController Register(BridgeTransport transport, ICore core, ILoggerFactory loggers, ResourceHandles resources, Action uiReady, CloseGuard closeGuard,
-        FileSelections selections, NativeDialogs dialogs, Func<IReadOnlyList<int>> webViewProcessIds)
+        FileSelections selections, NativeDialogs dialogs, Func<IReadOnlyList<int>> webViewProcessIds, HostLanguage language)
     {
         ArgumentNullException.ThrowIfNull(resources);
-        var projects = new ProjectsController(core.Projects, core.Jobs, selections, dialogs, resources, transport.MessageFor);
+        var projects = new ProjectsController(core.Projects, core.Jobs, selections, dialogs, resources);
         var baseModels = new BaseModelsController(core.BaseModels, loggers.CreateLogger<BaseModelsController>());
         var system = new SystemController(loggers.CreateLogger(SystemController.UiLogCategory), loggers.CreateLogger<SystemController>(), uiReady);
         transport.Register<ListProjectsRequestDto, ProjectLibraryResponseDto>("projects.list", projects.ListAsync);
@@ -74,25 +79,22 @@ internal static class ControllerRegistration
         transport.Register<CancelProjectImportRequestDto, ProjectImportResponseDto>("projects.cancelImport", projects.CancelImportAsync);
         transport.Register<ReviewProjectDeletionRequestDto, ProjectDeletionReviewResponseDto>("projects.reviewDeletion", projects.ReviewDeletionAsync);
         transport.Register<DeleteProjectRequestDto, ProjectDeletionResponseDto>("projects.delete", projects.DeleteAsync);
-        transport.AddErrorMessages(ProjectErrorMessages.All);
         transport.Register<ListBaseModelsRequestDto, BaseModelResponseDto[]>("baseModels.list", baseModels.ListAsync);
         transport.Register<InstallBaseModelRequestDto, BaseModelResponseDto>("baseModels.install", baseModels.InstallAsync);
         transport.Register<CancelBaseModelInstallationRequestDto, BaseModelResponseDto>("baseModels.cancelInstallation", baseModels.CancelInstallationAsync);
         transport.Register<DeleteBaseModelRequestDto, BaseModelResponseDto>("baseModels.delete", baseModels.DeleteAsync);
-        transport.AddErrorMessages(BaseModelErrorMessages.All);
-        var jobs = new JobsController(core.Jobs, transport.MessageFor);
+        var jobs = new JobsController(core.Jobs);
         transport.Register<ListJobsRequestDto, JobResponseDto[]>("jobs.list", jobs.ListAsync);
         transport.Register<GetJobRequestDto, JobResponseDto>("jobs.get", jobs.GetAsync);
         transport.Register<CancelJobRequestDto, JobResponseDto>("jobs.cancel", jobs.CancelAsync);
         transport.Register<ListActiveJobsRequestDto, ActiveJobsPageResponseDto>("jobs.listActive", jobs.ListActiveAsync);
-        transport.AddErrorMessages(JobErrorMessages.All);
         var variants = new VariantsController(core.Projects);
         transport.Register<CreateVariantRequestDto, VariantResponseDto>("variants.create", variants.CreateAsync);
         transport.Register<UpdateVariantRequestDto, VariantResponseDto>("variants.update", variants.UpdateAsync);
         transport.Register<SetVariantArchivedRequestDto, VariantResponseDto>("variants.setArchived", variants.SetArchivedAsync);
         transport.Register<ReviewVariantDeletionRequestDto, DeletionReviewResponseDto>("variants.reviewDeletion", variants.ReviewDeletionAsync);
         transport.Register<DeleteVariantRequestDto, DeletionResultResponseDto>("variants.delete", variants.DeleteAsync);
-        var classes = new ClassesController(core.Projects, core.Jobs, resources, selections, dialogs, transport.MessageFor);
+        var classes = new ClassesController(core.Projects, core.Jobs, resources, selections, dialogs);
         transport.Register<GetCatalogWorkspaceRequestDto, CatalogWorkspaceResponseDto>("classes.getWorkspace", classes.GetWorkspaceAsync);
         transport.Register<CreateClassRequestDto, ClassResponseDto>("classes.create", classes.CreateAsync);
         transport.Register<UpdateClassRequestDto, ClassResponseDto>("classes.update", classes.UpdateAsync);
@@ -110,8 +112,7 @@ internal static class ControllerRegistration
         transport.Register<DeleteClassAssetRequestDto, DeletionResultResponseDto>("classes.deleteAsset", classes.DeleteAssetAsync);
         transport.Register<SelectClassAssetFilesRequestDto, ClassAssetFileSelectionResponseDto>("classes.selectAssetFiles", classes.SelectAssetFilesAsync);
         transport.Register<ImportClassAssetsRequestDto, JobResponseDto>("classes.importAssets", classes.ImportAssetsAsync);
-        transport.AddErrorMessages(CatalogErrorMessages.All);
-        var images = new ImagesController(core.Projects, core.Jobs, resources, selections, dialogs, core.Media, transport.MessageFor);
+        var images = new ImagesController(core.Projects, core.Jobs, resources, selections, dialogs, core.Media);
         transport.Register<ListImageGroupsRequestDto, ImageGroupResponseDto[]>("images.listGroups", images.ListGroupsAsync);
         transport.Register<GetImageGroupRequestDto, ImageGroupResponseDto>("images.getGroup", images.GetGroupAsync);
         transport.Register<CreateImageGroupRequestDto, ImageGroupResponseDto>("images.createGroup", images.CreateGroupAsync);
@@ -133,9 +134,7 @@ internal static class ControllerRegistration
         transport.Register<SelectImageFolderRequestDto, ImageSelectionResponseDto>("images.selectFolder", images.SelectFolderAsync);
         transport.Register<SelectImageVideoRequestDto, VideoSelectionResponseDto>("images.selectVideo", images.SelectVideoAsync);
         transport.Register<ImportImagesRequestDto, JobResponseDto>("images.import", images.ImportAsync);
-        transport.AddErrorMessages(ImageErrorMessages.All);
-        transport.AddErrorMessages(VideoErrorMessages.All);
-        var backgrounds = new BackgroundsController(core.Projects, core.Jobs, resources, selections, dialogs, core.Media, transport.MessageFor);
+        var backgrounds = new BackgroundsController(core.Projects, core.Jobs, resources, selections, dialogs, core.Media);
         transport.Register<ListBackgroundSetsRequestDto, BackgroundSetResponseDto[]>("backgrounds.listSets", backgrounds.ListSetsAsync);
         transport.Register<GetBackgroundSetRequestDto, BackgroundSetResponseDto>("backgrounds.getSet", backgrounds.GetSetAsync);
         transport.Register<CreateBackgroundSetRequestDto, BackgroundSetResponseDto>("backgrounds.createSet", backgrounds.CreateSetAsync);
@@ -155,8 +154,7 @@ internal static class ControllerRegistration
         transport.Register<PreviewBackgroundVideoFrameRequestDto, BackgroundSourcePreviewResponseDto>("backgrounds.previewVideoFrame", backgrounds.PreviewVideoFrameAsync);
         transport.Register<ImportBackgroundsRequestDto, BackgroundImportPreviewResponseDto>("backgrounds.previewImport", backgrounds.PreviewImportAsync);
         transport.Register<ImportBackgroundsRequestDto, JobResponseDto>("backgrounds.import", backgrounds.ImportAsync);
-        transport.AddErrorMessages(BackgroundErrorMessages.All);
-        var generation = new GenerationController(core.Projects, core.Jobs, resources, transport.MessageFor);
+        var generation = new GenerationController(core.Projects, core.Jobs, resources);
         transport.Register<ListGenerationRecipesRequestDto, GenerationRecipeResponseDto[]>("generation.listRecipes", generation.ListRecipesAsync);
         transport.Register<GetGenerationRecipeRequestDto, GenerationRecipeResponseDto>("generation.getRecipe", generation.GetRecipeAsync);
         transport.Register<CreateGenerationRecipeRequestDto, GenerationRecipeResponseDto>("generation.createRecipe", generation.CreateRecipeAsync);
@@ -169,8 +167,7 @@ internal static class ControllerRegistration
         transport.Register<StartGenerationRunRequestDto, GenerationRunResponseDto>("generation.start", generation.StartAsync);
         transport.Register<DeleteGenerationRunRequestDto, GenerationRunDeletionResponseDto>("generation.deleteRun", generation.DeleteRunAsync);
         transport.Register<GetGenerationRepeatDraftRequestDto, GenerationRepeatDraftResponseDto>("generation.getRepeatDraft", generation.GetRepeatDraftAsync);
-        transport.AddErrorMessages(GenerationErrorMessages.All);
-        var datasets = new DatasetsController(core.Projects, core.Jobs, resources, selections, dialogs, transport.MessageFor);
+        var datasets = new DatasetsController(core.Projects, core.Jobs, resources, selections, dialogs);
         transport.Register<ListDatasetsRequestDto, DatasetVersionResponseDto[]>("datasets.list", datasets.ListAsync);
         transport.Register<GetDatasetRequestDto, DatasetVersionResponseDto>("datasets.get", datasets.GetAsync);
         transport.Register<GetDatasetPassportRequestDto, DatasetVersionResponseDto>("datasets.getPassport", datasets.GetPassportAsync);
@@ -189,9 +186,7 @@ internal static class ControllerRegistration
         transport.Register<GetDatasetSampleRequestDto, DatasetSampleResponseDto>("datasets.getSample", datasets.GetSampleAsync);
         transport.Register<ReviewDatasetDeletionRequestDto, DatasetDeletionReviewResponseDto>("datasets.reviewDeletion", datasets.ReviewDeletionAsync);
         transport.Register<DeleteDatasetRequestDto, DatasetDeletionResultResponseDto>("datasets.delete", datasets.DeleteAsync);
-        transport.AddErrorMessages(DatasetErrorMessages.All);
-        var training = new TrainingController(core.Projects, core.Jobs, core.TrainingPresets, core.Hardware, core.Python, resources, selections, dialogs,
-            transport.MessageFor);
+        var training = new TrainingController(core.Projects, core.Jobs, core.TrainingPresets, core.Hardware, core.Python, resources, selections, dialogs);
         transport.Register<ListTrainingPresetsRequestDto, TrainingPresetResponseDto[]>("training.listPresets", training.ListPresetsAsync);
         transport.Register<SaveTrainingPresetRequestDto, TrainingPresetResponseDto>("training.savePreset", training.SavePresetAsync);
         transport.Register<DeleteTrainingPresetRequestDto, TrainingPresetDeletionResponseDto>("training.deletePreset", training.DeletePresetAsync);
@@ -212,8 +207,7 @@ internal static class ControllerRegistration
         transport.Register<DeleteModelVersionRequestDto, ModelVersionDeletionResponseDto>("training.deleteModelVersion", training.DeleteVersionAsync);
         transport.Register<SelectModelExportRequestDto, ModelExportSelectionResponseDto>("training.selectModelExportDestination", training.SelectExportDestinationAsync);
         transport.Register<StartModelExportRequestDto, JobResponseDto>("training.startModelExport", training.StartExportAsync);
-        transport.AddErrorMessages(TrainingErrorMessages.All);
-        var checks = new ChecksController(core.Projects, core.Jobs, core.Screen, resources, selections, dialogs, core.Media, transport.MessageFor);
+        var checks = new ChecksController(core.Projects, core.Jobs, core.Screen, resources, selections, dialogs, core.Media);
         transport.Register<StartModelEvaluationRequestDto, ModelEvaluationResponseDto>("checks.startEvaluation", checks.StartEvaluationAsync);
         transport.Register<CancelModelEvaluationRequestDto, ModelEvaluationResponseDto>("checks.cancelEvaluation", checks.CancelEvaluationAsync);
         transport.Register<GetModelEvaluationRequestDto, ModelEvaluationResponseDto>("checks.getEvaluation", checks.GetEvaluationAsync);
@@ -231,17 +225,18 @@ internal static class ControllerRegistration
         transport.Register<GetCheckRequestDto, LiveCheckResponseDto>("checks.get", checks.GetAsync);
         transport.Register<ListChecksRequestDto, LiveCheckResponseDto[]>("checks.list", checks.ListAsync);
         transport.Register<ListCheckJournalRequestDto, LiveCheckJournalPageResponseDto>("checks.listJournal", checks.ListJournalAsync);
-        transport.AddErrorMessages(ChecksErrorMessages.All);
-        var overview = new OverviewController(core.Projects, core.Jobs, transport.MessageFor);
+        var overview = new OverviewController(core.Projects, core.Jobs);
         transport.Register<GetOverviewRequestDto, OverviewResponseDto>("overview.get", overview.GetAsync);
-        var hardware = new HardwareController(core.Hardware, core.Python, webViewProcessIds, transport.MessageFor);
+        var hardware = new HardwareController(core.Hardware, core.Python, webViewProcessIds);
         transport.Register<SampleHardwareRequestDto, HardwareSampleResponseDto>("hardware.sample", hardware.SampleAsync);
-        transport.AddErrorMessages(HardwareMessages.All);
         transport.Register<PingRequestDto, PingResponseDto>("system.ping", system.PingAsync);
         transport.Register<LogRequestDto, LogResponseDto>("system.log", system.LogAsync);
         transport.Register<ReadyRequestDto, ReadyResponseDto>("system.ready", system.ReadyAsync);
         transport.Register<CloseDecisionRequestDto, CloseResponseDto>("system.closeDecision", closeGuard.DecideAsync);
         transport.Register<CloseRequestDto, CloseResponseDto>("system.close", closeGuard.CloseAsync);
+        var settings = new SettingsController(language);
+        transport.Register<GetLanguageRequestDto, LanguageResponseDto>("settings.getLanguage", settings.GetLanguageAsync);
+        transport.Register<SetLanguageRequestDto, LanguageResponseDto>("settings.setLanguage", settings.SetLanguageAsync);
         return projects;
     }
 }

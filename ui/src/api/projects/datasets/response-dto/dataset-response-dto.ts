@@ -70,7 +70,6 @@ export interface DatasetPlanSkipsDto {
 export interface DatasetPlanWarningDto {
     code: string;
     count: number;
-    message: string;
 }
 
 /**
@@ -178,7 +177,7 @@ export interface DatasetExportSelectionResponseDto {
     fileName: string | null;
 }
 
-/** Состав удаления: образцов, записей истории; непустой blockers — удаление недоступно (строки — message). */
+/** Состав удаления: образцов, записей истории; непустой blockers — удаление недоступно (строки — blockerText). */
 export interface DatasetDeletionReviewResponseDto {
     versionId: string;
     name: string;
@@ -233,7 +232,7 @@ export function isDatasetPlanResponseDto(value: unknown): value is DatasetPlanRe
         && Array.isArray(value.classes) && value.classes.every(isClassEntry) && isDatasetSplitCountsDto(value.counts) && isCompositionDto(value.composition)
         && isRecord(value.skipped) && isCount(value.skipped.unreviewed) && isCount(value.skipped.partialGeneration) && isCount(value.skipped.withoutTargets)
         && isCount(value.skipped.invalidGeometry) && isCount(value.skipped.total)
-        && Array.isArray(value.warnings) && value.warnings.every(item => isRecord(item) && isText(item.code) && isCount(item.count) && isText(item.message))
+        && Array.isArray(value.warnings) && value.warnings.every(item => isRecord(item) && isText(item.code) && isCount(item.count))
         && typeof value.sufficientSamples === "boolean" && typeof value.buildable === "boolean" && isText(value.hash) && value.hash.length > 0
         && isDate(value.createdAt);
 }

@@ -1,0 +1,15 @@
+import "i18next";
+import type common from "@/locales/ru/common.json";
+import type errors from "@/locales/ru/errors.json";
+
+// Keys are typed by the Russian catalogs: a missing key fails the typecheck; scripts/check-locales.ts keeps English in step.
+declare module "i18next" {
+    interface CustomTypeOptions {
+        defaultNS: "common";
+        resources: {
+            common: typeof common;
+            errors: typeof errors;
+        };
+        returnNull: false;
+    }
+}

@@ -23,6 +23,7 @@ import {
 import type { GenerationSamplesState } from "@/lib/use-generation-samples";
 import { GenerationSamples } from "./generation-samples";
 import { RecipeDetails } from "./recipe-details";
+import { locale } from "@/lib/format";
 
 /** Ошибка поля от host (generation.invalid_recipe → details.field) или проверки до отправки. */
 export interface RecipeFieldError {
@@ -168,7 +169,7 @@ export function RecipeFormPanel({ values, setValues, workspace, sets, input, pal
                         </div>
                         <p className={`text-sm tabular-nums ${totalValid ? "text-muted-foreground" : "text-destructive"}`} aria-live="polite" data-testid="weights-total"
                             data-invalid={!totalValid || undefined}>
-                            Всего: {total.toLocaleString("ru-RU")}% из 100%
+                            Всего: {total.toLocaleString(locale())}% из 100%
                         </p>
                         {errorOf("variantWeights", "classVariantIds") && <p className="text-xs text-destructive" role="alert" data-testid="weights-error">{errorOf("variantWeights", "classVariantIds")}</p>}
                     </>

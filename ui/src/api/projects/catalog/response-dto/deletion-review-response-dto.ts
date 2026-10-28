@@ -5,11 +5,14 @@ export type CatalogTargetKind = "variant" | "class" | "classVariant" | "asset";
 
 const kinds: readonly string[] = ["variant", "class", "classVariant", "asset"] satisfies CatalogTargetKind[];
 
-/** Причина, по которой удаление недоступно; message — строка списка в диалоге. code: jobs.active, images.annotations, generation.preset_reference. */
+/**
+ * Why deletion is unavailable: code (jobs.active, images.annotations, generation.preset_reference…), count and examples — names that
+ * illustrate it. The line of the dialog is built by blockerText (lib/errors.ts).
+ */
 export interface DeletionBlockerResponseDto {
     code: string;
     count: number;
-    message: string;
+    examples: string[];
 }
 
 /**
@@ -30,7 +33,7 @@ export interface DeletionReviewResponseDto {
 
 export function isDeletionBlockerResponseDto(value: unknown): value is DeletionBlockerResponseDto {
     return isRecord(value) && typeof value.code === "string" && value.code.length > 0 && isCount(value.count)
-        && typeof value.message === "string" && value.message.length > 0;
+        && Array.isArray(value.examples) && value.examples.every(item => typeof item === "string");
 }
 
 export function isDeletionReviewResponseDto(value: unknown): value is DeletionReviewResponseDto {

@@ -13,7 +13,7 @@ export type ResponseEnvelope<T> = {
     kind: "response";
     requestId: string;
     ok: false;
-    error: { code: string; message: string; details?: Readonly<Record<string, string>> | null };
+    error: { code: string; details?: Readonly<Record<string, string>> | null };
 };
 
 export interface EventEnvelope<T> {

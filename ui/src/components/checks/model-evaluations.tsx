@@ -11,10 +11,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
     bestOf, evaluationProblem, isEvaluationActive, preferredSplit, qualityMetricHelp, qualityMetricLabels, qualityMetrics, seriesColor, splitLabels,
 } from "@/lib/checks/check-view";
-import { errorMessage, formatDate } from "@/lib/format";
+import { errorMessage, formatDate, locale } from "@/lib/format";
 import { formatMetric } from "@/lib/training/run-view";
 import type { ModelEvaluationsState } from "@/lib/use-model-evaluations";
 import { DeviceSelect, Field } from "./check-parameter-fields";
+import { workerErrorText } from "@/lib/errors";
 
 const pairKey = (datasetId: string, split: EvaluationSplit) => `${datasetId}|${split}`;
 
@@ -120,7 +121,7 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                         <Select value={dataset?.id ?? ""} disabled={!usable.length} onValueChange={next => { if (next) { setDatasetId(next); setSplit(undefined); } }}>
                             <SelectTrigger aria-label="Датасет проверки" className="w-full" data-testid="evaluation-dataset"><SelectValue placeholder="Нет датасетов" /></SelectTrigger>
                             <SelectContent>
-                                {usable.map(item => <SelectItem key={item.id} value={item.id}>{item.name} · {new Date(item.createdAt).toLocaleDateString("ru-RU")}</SelectItem>)}
+                                {usable.map(item => <SelectItem key={item.id} value={item.id}>{item.name} · {new Date(item.createdAt).toLocaleDateString(locale())}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </Field>
@@ -149,7 +150,7 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                     ) : !validBatch ? (
                         <p className="text-destructive">Размер батча — целое число от 1 до 1024.</p>
                     ) : dataset ? (
-                        <p className="text-muted-foreground">{dataset.counts[part].toLocaleString("ru-RU")} кадров в части {splitLabels[part]}. Размер входа берётся из версии.</p>
+                        <p className="text-muted-foreground">{dataset.counts[part].toLocaleString(locale())} кадров в части {splitLabels[part]}. Размер входа берётся из версии.</p>
                     ) : null}
                 </div>
                 {error && <Alert variant="destructive" data-testid="evaluation-error"><AlertDescription>{error}</AlertDescription></Alert>}
@@ -284,7 +285,7 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
                 </td>
                 <td className="px-3 py-2">
                     {datasetLabel(item.dataset.versionId, item.dataset.name)} · {splitLabels[item.split]}
-                    {item.imageCount !== null && <span className="text-xs text-muted-foreground"> · {item.imageCount.toLocaleString("ru-RU")} кадров</span>}
+                    {item.imageCount !== null && <span className="text-xs text-muted-foreground"> · {item.imageCount.toLocaleString(locale())} кадров</span>}
                 </td>
                 <td className={`px-3 py-2 ${item.state === "failed" ? "text-destructive" : ""}`} data-testid="evaluation-row-state">{evaluationStateLabels[item.state]}</td>
                 {qualityMetrics.map(key => <td key={key} className="px-3 py-2 text-right tabular-nums">{formatMetric(item.metrics[key])}</td>)}
@@ -301,7 +302,7 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
             </tr>
             {item.error && (item.state === "failed" || item.state === "interrupted") && (
                 <tr className="border-b last:border-b-0">
-                    <td colSpan={columns} className="px-3 pb-2 text-xs text-destructive" data-testid="evaluation-row-error">{item.error.message}</td>
+                    <td colSpan={columns} className="px-3 pb-2 text-xs text-destructive" data-testid="evaluation-row-error">{workerErrorText(item.error)}</td>
                 </tr>
             )}
             {expanded && (

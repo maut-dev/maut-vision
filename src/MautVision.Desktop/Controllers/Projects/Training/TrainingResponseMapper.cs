@@ -20,9 +20,9 @@ internal static class TrainingResponseMapper
         => new(inventory.DriverAvailable, inventory.Gpus.Select(gpu => new GpuResponseDto(gpu.Index, gpu.Name, gpu.MemoryTotalMb, gpu.DriverVersion)).ToArray(),
             inventory.CheckedAt);
 
-    internal static TrainingRunResponseDto Map(TrainingRun run, Func<string, string> messageFor) => new(
+    internal static TrainingRunResponseDto Map(TrainingRun run) => new(
         run.Id,
-        JobResponseMapper.Map(run.Job, messageFor),
+        JobResponseMapper.Map(run.Job),
         StateKey(run.State),
         Map(run.Dataset),
         run.Architecture,
@@ -36,7 +36,7 @@ internal static class TrainingResponseMapper
         run.EpochCount,
         run.LogCount,
         run.Environment,
-        run.Error is { } error ? new TrainingRunErrorDto(error.Code, TrainingErrorMessages.RunMessage(error.Code, error.Message, messageFor)) : null,
+        run.Error is { } error ? new TrainingRunErrorDto(error.Code, WorkerErrors.OwnMessage("training", error.Code, error.Message)) : null,
         run.ResultVersionId,
         run.Revision);
 

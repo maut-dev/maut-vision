@@ -18,7 +18,6 @@ public sealed class BridgeTransport(ILogger<BridgeTransport> logger) : IDisposab
         MaxDepth = 12
     };
     private readonly Dictionary<string, Func<JsonElement, CancellationToken, Task<object>>> routes = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, string> errorMessages = new(StringComparer.Ordinal);
     private int disposed;
 
     public event Action<string>? EventReady;
@@ -33,7 +32,7 @@ public sealed class BridgeTransport(ILogger<BridgeTransport> logger) : IDisposab
             ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
             if (Encoding.UTF8.GetByteCount(message) > 32_768)
             {
-                return Fail(method, requestId, new("bridge.invalid_request", "Сообщение слишком большое."), null);
+                return Fail(method, requestId, new("bridge.invalid_request"), null, "The message is too large.");
             }
             using var document = JsonDocument.Parse(message, new JsonDocumentOptions { MaxDepth = 12 });
             RejectDuplicateProperties(document.RootElement);
@@ -51,14 +50,14 @@ public sealed class BridgeTransport(ILogger<BridgeTransport> logger) : IDisposab
             }
             if (!routes.TryGetValue(request.Method, out var route))
             {
-                return Fail(method, requestId, new("bridge.method_unavailable", "Команда не поддерживается."), null);
+                return Fail(method, requestId, new("bridge.method_unavailable"), null, "The method is not registered.");
             }
             var data = await route(request.Payload, cancellationToken).ConfigureAwait(false);
             return new(method, requestId, JsonSerializer.Serialize(new SuccessEnvelope(requestId, data), Json));
         }
         catch (Exception error)
         {
-            return Fail(method, requestId, BridgeErrors.From(error, cancellationToken, errorMessages), error);
+            return Fail(method, requestId, BridgeErrors.From(error, cancellationToken), error, error.Message);
         }
     }
 
@@ -74,15 +73,6 @@ public sealed class BridgeTransport(ILogger<BridgeTransport> logger) : IDisposab
         routes.Add(method, async (payload, token) => await handler(payload.Deserialize<TRequest>(Json) ?? throw new JsonException(), token).ConfigureAwait(false));
     }
 
-    /// <summary>Registers user-facing texts for Core error codes of one API area.</summary>
-    internal void AddErrorMessages(IReadOnlyDictionary<string, string> messages)
-    {
-        foreach (var (code, message) in messages) errorMessages.Add(code, message);
-    }
-
-    /// <summary>User-facing text for a Core error code of any registered area, e.g. the error saved in a job.</summary>
-    internal string MessageFor(string code) => BridgeErrors.MessageFor(code, errorMessages);
-
     internal void PublishEvent(string name, object data)
     {
         if (Volatile.Read(ref disposed) != 0) return;
@@ -97,11 +87,11 @@ public sealed class BridgeTransport(ILogger<BridgeTransport> logger) : IDisposab
     }
 
     /// <summary>Logs the failure with the method and requestId; the full exception only for errors, never the payload.</summary>
-    private BridgeResponse Fail(string method, string requestId, BridgeError error, Exception? exception)
+    private BridgeResponse Fail(string method, string requestId, BridgeError error, Exception? exception, string reason)
     {
         var level = BridgeErrors.LogLevelFor(error.Code);
         logger.Log(level, level >= LogLevel.Error ? exception : null, "Bridge request {Method} {RequestId} failed with {Code}: {Reason}",
-            method, requestId, error.Code, Shorten(exception?.Message ?? error.Message));
+            method, requestId, error.Code, Shorten(reason));
         return new(method, requestId, JsonSerializer.Serialize(new FailureEnvelope(requestId, error), Json));
     }
 

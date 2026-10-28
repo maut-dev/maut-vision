@@ -1,3 +1,4 @@
 namespace MautVision.Desktop.Controllers.BaseModels.ResponseDto;
 
-public sealed record BaseModelErrorDto(string Code, string Message);
+/// <summary>Why the installation failed: a base_models.* code; the page shows its text.</summary>
+public sealed record BaseModelErrorDto(string Code);

@@ -3,10 +3,14 @@ using MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 
 namespace MautVision.Desktop.Controllers.Jobs.ResponseDto;
 
-public sealed record JobErrorDto(string Code, string Message);
+/// <summary>
+/// The error of a job: Code — what the page translates; Message — the stored text for the log, shown only for a code the page does not know
+/// (an older stored code); null when nothing was stored.
+/// </summary>
+public sealed record JobErrorDto(string Code, string? Message);
 
-/// <summary>Rejected file of an import: name without folders, reason code and its user text.</summary>
-public sealed record ImportRejectedFileDto(string Name, string Reason, string Message);
+/// <summary>Rejected file of an import: name without folders and the reason code.</summary>
+public sealed record ImportRejectedFileDto(string Name, string Reason);
 
 /// <summary>Result of classes.import_assets: RejectedFiles holds at most the first 50 rejected files.</summary>
 public sealed record ImportClassAssetsResultDto(int Total, int Added, int Duplicates, int Rejected, ImportRejectedFileDto[] RejectedFiles);
@@ -19,10 +23,10 @@ public sealed record ImportImagesResultDto(int Total, int Added, int Duplicates,
 
 /// <summary>
 /// Skipped source of a background run: SourceIndex — its place among the run's sources (for a video — the frame number),
-/// Name — file or video name, Reason — code, Message — its text («Размер a×b, нужен W×H» and others), Width/Height — size of the
-/// file or frame for wrong_size and crop_out_of_bounds, TimestampMs — the frame of a video.
+/// Name — file or video name, Reason — code (the page builds «Размер a×b, нужен W×H» and others from it and the target size), Width/Height —
+/// size of the file or frame for wrong_size and crop_out_of_bounds, TimestampMs — the frame of a video.
 /// </summary>
-public sealed record BackgroundImportIssueDto(int SourceIndex, string Name, string Reason, string Message, int? Width, int? Height, long? TimestampMs);
+public sealed record BackgroundImportIssueDto(int SourceIndex, string Name, string Reason, int? Width, int? Height, long? TimestampMs);
 
 /// <summary>
 /// Result of backgrounds.import: Total — sources (files or video frames), Processed — decided so far («обработано / всего»), Added,

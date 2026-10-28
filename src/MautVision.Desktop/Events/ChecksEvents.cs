@@ -16,19 +16,17 @@ internal sealed class ChecksEvents : IDisposable
     private readonly IProjectsManager projects;
     private readonly ResourceHandles resources;
     private readonly Action<string, object> publish;
-    private readonly Func<string, string> messageFor;
     private readonly ILogger logger;
     private readonly Lock gate = new();
     private readonly Dictionary<Guid, (long Number, string Url)> previews = new();
     private readonly Dictionary<Guid, string> running = new();
     private int disposed;
 
-    internal ChecksEvents(IProjectsManager projects, ResourceHandles resources, Action<string, object> publish, Func<string, string> messageFor, ILogger logger)
+    internal ChecksEvents(IProjectsManager projects, ResourceHandles resources, Action<string, object> publish, ILogger logger)
     {
         this.projects = projects;
         this.resources = resources;
         this.publish = publish;
-        this.messageFor = messageFor;
         this.logger = logger;
         projects.ChecksChanged += OnChecksChanged;
     }
@@ -82,7 +80,7 @@ internal sealed class ChecksEvents : IDisposable
                     }
                 }
             }
-            check = ChecksResponseMapper.Map(snapshot with { Preview = args.Preview?.Info }, url, messageFor, ChecksResponseMapper.EventDetections);
+            check = ChecksResponseMapper.Map(snapshot with { Preview = args.Preview?.Info }, url, ChecksResponseMapper.EventDetections);
         }
         publish("checks.changed", ChecksResponseMapper.Map(args, check));
     }

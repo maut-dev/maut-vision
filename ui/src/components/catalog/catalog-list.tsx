@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { locale } from "@/lib/format";
 
 /** Названный объект списка каталога: вариант проекта или класс. */
 export interface CatalogEntry {
@@ -15,8 +16,8 @@ export interface CatalogEntry {
 
 /** Подстрока без учёта регистра; архивные — только при «Показать архив». */
 export function filterEntries<T extends CatalogEntry>(items: readonly T[], search: string, showArchive: boolean): T[] {
-    const query = search.trim().toLocaleLowerCase("ru");
-    return items.filter(item => (showArchive || !item.archivedAt) && item.name.toLocaleLowerCase("ru").includes(query));
+    const query = search.trim().toLocaleLowerCase(locale());
+    return items.filter(item => (showArchive || !item.archivedAt) && item.name.toLocaleLowerCase(locale()).includes(query));
 }
 
 export function CatalogToolbar({ searchLabel, search, setSearch, showArchive, setShowArchive, addLabel, addDisabled, add }: {

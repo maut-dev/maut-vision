@@ -120,7 +120,7 @@ internal static partial class SmokeRunner
           try {
             const invalid = await request('datasets.plan', {projectId, specification: {...specification, valRatio: 0}, operationId: 'datasets-smoke-invalid'});
             assert(!invalid.ok && invalid.error.code === 'datasets.split_invalid' && invalid.error.details?.field === 'ratios'
-              && invalid.error.message.startsWith('Проверьте доли'), 'datasets.plan names a wrong field with a Russian text');
+              && mautLocale.errorText(invalid.error.code, invalid.error.details).startsWith('Проверьте доли'), 'datasets.plan names a wrong field with a Russian text');
             const badSeed = await request('datasets.plan', {projectId, specification: {...specification, seed: -1}, operationId: 'datasets-smoke-seed'});
             assert(!badSeed.ok && badSeed.error.code === 'datasets.seed_invalid', 'A seed outside uint32 returns datasets.seed_invalid');
             const planned = await request('datasets.plan', {projectId, specification, operationId: 'datasets-smoke-plan'});
@@ -128,7 +128,7 @@ internal static partial class SmokeRunner
             assert(planned.ok && plan.counts.total === 12 && plan.counts.test === 0 && plan.skipped.total === 0 && plan.classes[0].index === 0
               && plan.classes[0].classId === classId && plan.specification.name === 'Датасет smoke' && plan.buildable && typeof plan.hash === 'string',
               'datasets.plan returns counts, classes and the hash');
-            assert(plan.warnings.every(warning => typeof warning.message === 'string' && warning.message.length > 0), 'Plan warnings come with texts');
+            assert(plan.warnings.every(warning => mautLocale.planWarningText(warning).length > 0), 'Plan warnings have texts by code');
             const again = await request('datasets.getPlan', {projectId, planId: plan.id});
             assert(again.ok && again.data.hash === plan.hash, 'datasets.getPlan returns the plan');
 
@@ -184,7 +184,7 @@ internal static partial class SmokeRunner
             const archived = await request('datasets.setArchived', {projectId, versionId, archived: true, revision: renamed.data.revision});
             const blockedVerify = await request('datasets.startVerify', {projectId, versionId, operationId: 'datasets-smoke-archived'});
             assert(archived.ok && archived.data.archivedAt && !blockedVerify.ok && blockedVerify.error.code === 'datasets.archived'
-              && blockedVerify.error.message.startsWith('Датасет в архиве'), 'An archived version cannot be checked');
+              && mautLocale.errorText(blockedVerify.error.code, blockedVerify.error.details).startsWith('Датасет в архиве'), 'An archived version cannot be checked');
             const review = await request('datasets.reviewDeletion', {projectId, versionId});
             assert(review.ok && review.data.samples === 12 && review.data.blockers.length === 0, 'datasets.reviewDeletion counts the samples');
             const deleted = await request('datasets.delete', {projectId, versionId, revision: review.data.revision});

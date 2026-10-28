@@ -4,6 +4,7 @@ import type { TrainingEpochDto } from "@/api/projects/training/response-dto/trai
 import { trainingMetricLabels } from "@/api/projects/training/training-parameters";
 import { qualityMetricLabels, qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
 import { deviceLabel, formatMetric, formatNumber } from "@/lib/training/run-view";
+import { locale } from "@/lib/format";
 
 /** Версий в сравнении по умолчанию: три последние. */
 export const defaultSelectionSize = 3;
@@ -98,7 +99,7 @@ export function analyticsRows(datasets: readonly DatasetVersionResponseDto[]): A
         },
         { key: "dataset", label: "Датасет обучения", help: metricHelp.dataset, text: datasetName },
         { key: "split", label: "Кадров train / val", text: version => `${version.dataset.counts.train} / ${version.dataset.counts.val}` },
-        { key: "date", label: "Дата", text: version => new Date(version.createdAt).toLocaleString("ru-RU") },
+        { key: "date", label: "Дата", text: version => new Date(version.createdAt).toLocaleString(locale()) },
         {
             key: "batch",
             label: "Batch",

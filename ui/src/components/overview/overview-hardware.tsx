@@ -3,13 +3,15 @@ import type { GpuSampleDto, HardwareSampleResponseDto } from "@/api/hardware/res
 import { seriesColor } from "@/lib/checks/check-view";
 import { appendLoad, loadSegments, loadWindowMs, type LoadPoint } from "@/lib/overview/load-history";
 import { useHardwareSample } from "@/lib/use-hardware-sample";
+import { locale } from "@/lib/format";
+import { errorText } from "@/lib/errors";
 
-const gigabytes = (bytes: number) => `${(bytes / 1024 ** 3).toLocaleString("ru-RU", { maximumFractionDigits: 2 })} ГБ`;
+const gigabytes = (bytes: number) => `${(bytes / 1024 ** 3).toLocaleString(locale(), { maximumFractionDigits: 2 })} ГБ`;
 
 const percent = (value: number | null | undefined) =>
-    typeof value === "number" ? `${value.toLocaleString("ru-RU", { maximumFractionDigits: 1 })}%` : "Недоступно";
+    typeof value === "number" ? `${value.toLocaleString(locale(), { maximumFractionDigits: 1 })}%` : "Недоступно";
 
-const time = (value: string) => new Date(value).toLocaleTimeString("ru-RU");
+const time = (value: string) => new Date(value).toLocaleTimeString(locale());
 
 /** Цвет линии мини-графика: CPU — первая серия, видеокарта i — следующая за ней. */
 const gpuColor = (index: number) => seriesColor(index + 2);
@@ -55,7 +57,7 @@ function HardwareSample({ sample, history }: { sample: HardwareSampleResponseDto
                         {cpu.physicalCores !== null && `${cpu.physicalCores} ядер · `}{cpu.logicalThreads} потоков
                     </p>
                 </div>
-                <Usage label="CPU · система" value={cpu.utilizationPercent} detail={cpu.status === "available" ? undefined : cpu.reason ?? undefined} testId="overview-cpu-load" />
+                <Usage label="CPU · система" value={cpu.utilizationPercent} detail={cpu.status === "available" || !cpu.reason ? undefined : errorText(cpu.reason)} testId="overview-cpu-load" />
             </div>
             <div className="space-y-2 border-t pt-4">
                 {ram ? (
@@ -75,7 +77,7 @@ function HardwareSample({ sample, history }: { sample: HardwareSampleResponseDto
                 {sample.gpuStatus === "unavailable" || !sample.gpus.length ? (
                     <div>
                         <h3 className="text-sm font-medium">GPU</h3>
-                        <p className="mt-2 text-xs text-muted-foreground" data-testid="overview-gpu-reason">{sample.gpuReason ?? "Недоступно"}</p>
+                        <p className="mt-2 text-xs text-muted-foreground" data-testid="overview-gpu-reason">{sample.gpuReason ? errorText(sample.gpuReason) : "Недоступно"}</p>
                     </div>
                 ) : sample.gpus.map(gpu => <Gpu key={gpu.index} gpu={gpu} />)}
             </div>
@@ -97,7 +99,7 @@ function Gpu({ gpu }: { gpu: GpuSampleDto }) {
                 detail={gpu.memoryTotalBytes !== null && gpu.memoryUsedBytes !== null ? `${gigabytes(gpu.memoryUsedBytes)} занято из ${gigabytes(gpu.memoryTotalBytes)}` : undefined}
             />
             <p className="text-xs text-muted-foreground" data-testid="overview-gpu-details">
-                Температура {gpu.temperatureC === null ? "Недоступно" : `${gpu.temperatureC.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} °C`}
+                Температура {gpu.temperatureC === null ? "Недоступно" : `${gpu.temperatureC.toLocaleString(locale(), { maximumFractionDigits: 0 })} °C`}
                 {" · "}Драйвер {gpu.driverVersion ?? "Недоступно"}
             </p>
         </div>

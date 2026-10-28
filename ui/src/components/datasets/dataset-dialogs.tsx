@@ -79,6 +79,7 @@ export function DatasetDeletionDialog({ projectId, version, close, deleted }: {
         [projectId, version.id]);
     return (
         <ReviewDeletionDialog
+                area="datasets"
             title="Удалить датасет навсегда?"
             description={<>{version.name}. Копии изображений, разметка и история проверок и экспорта этой версии будут удалены. Исходные изображения и паспорта обученных моделей сохранятся. Повторная проверка этого датасета станет недоступна. Восстановить удалённое в приложении нельзя.</>}
             testId="dataset-deletion-dialog"

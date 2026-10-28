@@ -95,7 +95,8 @@ export function isProjectImportResponseDto(value: unknown): value is ProjectImpo
         && typeof value.status === "string" && importStatuses.includes(value.status) && typeof value.cancelRequested === "boolean"
         && isCount(value.processedFiles) && isCount(value.totalFiles) && isCount(value.processedBytes) && isCount(value.totalBytes)
         && isOptionalText(value.projectId) && isOptionalText(value.projectName)
-        && (value.error === null || (isRecord(value.error) && typeof value.error.code === "string" && typeof value.error.message === "string"))
+        && (value.error === null || (isRecord(value.error) && typeof value.error.code === "string"
+            && (value.error.message === null || typeof value.error.message === "string")))
         && isDate(value.startedAt) && (value.finishedAt === null || isDate(value.finishedAt)) && isCount(value.sequence);
 }
 

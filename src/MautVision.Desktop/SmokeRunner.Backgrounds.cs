@@ -86,7 +86,7 @@ internal static partial class SmokeRunner
             && ['succeeded', 'failed', 'cancelled'].includes(event.data.status)), 'job ' + id);
           try {
             const badName = await request('backgrounds.createSet', {projectId, name: ' ', description: ''});
-            assert(!badName.ok && badName.error.code === 'backgrounds.name_invalid' && badName.error.message.startsWith('Введите'),
+            assert(!badName.ok && badName.error.code === 'backgrounds.name_invalid' && mautLocale.errorText(badName.error.code, badName.error.details).startsWith('Введите'),
               'backgrounds.name_invalid has a Russian text');
             const set = await request('backgrounds.createSet', {projectId, name: '  Улица  ', description: ''});
             assert(set.ok && set.data.name === 'Улица' && set.data.targetSize.width === width && set.data.targetSize.height === height
@@ -116,7 +116,7 @@ internal static partial class SmokeRunner
             const preview = await request('backgrounds.previewImport', crop);
             const samples = preview.data?.samples ?? [];
             assert(preview.ok && samples.length === 3 && preview.data.blur.seed === 7 && samples[0].crop.left === 20 && samples[0].imageUrl
-              && samples[1].reason === 'backgrounds.wrong_size' && samples[1].message === `Размер ${width / 2}×${height / 2}, нужен ${width}×${height}`
+              && samples[1].reason === 'backgrounds.wrong_size' && mautLocale.backgroundReasonText(samples[1].reason, samples[1].actualWidth, samples[1].actualHeight, preview.data.targetSize) === `Размер ${width / 2}×${height / 2}, нужен ${width}×${height}`
               && samples[1].imageUrl === null && samples[2].imageUrl, 'backgrounds.previewImport returns samples with reasons in Russian');
             const sampleImage = await load(samples[0].imageUrl);
             assert(sampleImage.naturalWidth === width && sampleImage.naturalHeight === height, 'A sample is a PNG of exactly the set size');
@@ -132,7 +132,7 @@ internal static partial class SmokeRunner
             const summary = done.data.result;
             assert(done.data.status === 'succeeded' && summary.total === 3 && summary.processed === 3 && summary.added === 2 && summary.rejected === 1
               && summary.blur.seed === 7 && summary.targetSize.width === width && summary.issues[0].reason === 'backgrounds.wrong_size'
-              && summary.issues[0].message.startsWith('Размер '), 'The run result with skip reasons arrives in job.changed');
+              && mautLocale.backgroundReasonText(summary.issues[0].reason, summary.issues[0].width, summary.issues[0].height, summary.targetSize).startsWith('Размер '), 'The run result with skip reasons arrives in job.changed');
             await wait(() => events.some(event => event.event === 'backgrounds.changed' && event.data.itemsChangedIn.includes(set.data.id)), 'itemsChangedIn');
             assert(true, 'backgrounds.changed reports the set whose backgrounds changed');
             const page = await request('backgrounds.list', {projectId, setId: set.data.id});
@@ -163,7 +163,7 @@ internal static partial class SmokeRunner
             const videoRun = {projectId, setId: set.data.id, selectionToken: video.data.selectionToken, operationId: 'backgrounds-smoke-video',
               region: {left: 100, top: 50}, startMs: 0, intervalMs: 1000, count: 3, skipSimilar: true};
             const tooMany = await request('backgrounds.import', {...videoRun, count: 6});
-            assert(!tooMany.ok && tooMany.error.code === 'backgrounds.count_invalid' && tooMany.error.message.startsWith('Количество'),
+            assert(!tooMany.ok && tooMany.error.code === 'backgrounds.count_invalid' && mautLocale.errorText(tooMany.error.code, tooMany.error.details).startsWith('Количество'),
               'More backgrounds than frames returns backgrounds.count_invalid');
             const outside = await request('backgrounds.previewImport', {...videoRun, region: {left: 640, top: 0}});
             assert(!outside.ok && outside.error.code === 'backgrounds.region_invalid', 'A region outside the video returns backgrounds.region_invalid');
@@ -181,7 +181,7 @@ internal static partial class SmokeRunner
             const deleted = await request('backgrounds.deleteSet', {projectId, setId: set.data.id, reviewRevision: review.data.revision});
             assert(deleted.ok && deleted.data.setDeleted, 'backgrounds.deleteSet deletes the set');
             const gone = await request('backgrounds.getSet', {projectId, setId: set.data.id});
-            assert(!gone.ok && gone.error.code === 'backgrounds.set_not_found' && gone.error.message.includes('удалён'),
+            assert(!gone.ok && gone.error.code === 'backgrounds.set_not_found' && mautLocale.errorText(gone.error.code, gone.error.details).includes('удалён'),
               'A deleted set returns backgrounds.set_not_found');
             return {checks};
           } finally {

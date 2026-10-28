@@ -29,10 +29,10 @@ export interface EvaluationClassMetricsDto {
     metrics: Record<string, number>;
 }
 
-/** Ошибка: для checks.worker_* — сообщение самого worker, для остальных кодов — текст приложения. */
+/** Error of a check: code — what the UI translates; workerMessage — the worker's own message for its checks.worker_* codes, null otherwise. */
 export interface CheckErrorDto {
     code: string;
-    message: string;
+    workerMessage: string | null;
 }
 
 /**
@@ -67,7 +67,8 @@ const states: readonly string[] = ["queued", "preparing", "running", "cancelling
 const isNumbers = (value: unknown) => isRecord(value) && Object.values(value).every(item => typeof item === "number");
 
 export function isCheckErrorDto(value: unknown): value is CheckErrorDto {
-    return isRecord(value) && typeof value.code === "string" && value.code.length > 0 && typeof value.message === "string";
+    return isRecord(value) && typeof value.code === "string" && value.code.length > 0
+        && (value.workerMessage === null || typeof value.workerMessage === "string");
 }
 
 export function isModelEvaluationResponseDto(value: unknown): value is ModelEvaluationResponseDto {

@@ -88,7 +88,7 @@ internal static partial class SmokeRunner
         const sample = await request('hardware.sample', {});
         assert(sample.ok && typeof sample.data.timestamp === 'string' && Array.isArray(sample.data.gpus)
           && ['available', 'unavailable'].includes(sample.data.gpuStatus) && (sample.data.gpuStatus === 'available') === (sample.data.gpus.length > 0)
-          && (sample.data.gpuStatus === 'available' || typeof sample.data.gpuReason === 'string'), 'hardware.sample answers with the GPUs or the reason in Russian');
+          && (sample.data.gpuStatus === 'available' || typeof sample.data.gpuReason === 'string'), 'hardware.sample answers with the GPUs or the reason code');
         assert(sample.data.ram && sample.data.ram.totalBytes > 0 && sample.data.ram.usedBytes <= sample.data.ram.totalBytes, 'hardware.sample reports the RAM of the system');
         const memory = sample.data.application;
         assert(memory.hostBytes > 0 && memory.webViewProcesses > 0 && memory.webViewBytes > 0

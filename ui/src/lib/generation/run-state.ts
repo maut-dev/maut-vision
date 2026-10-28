@@ -1,6 +1,7 @@
 import type { JobResponseDto } from "@/api/jobs/response-dto/job-response-dto";
 import { generationRunSummary, generationTexts } from "@/api/projects/generation/generation-rules";
 import { parseGenerationRunResult, type GenerationRunResponseDto, type GenerationRunResultDto } from "@/api/projects/generation/response-dto/generation-run-response-dto";
+import { jobErrorText } from "@/lib/errors";
 
 /** Запуск ещё идёт: в очереди, выполняется или ожидает ресурсов — его можно отменить, но не удалить. */
 export function isRunActive(job: JobResponseDto): boolean {
@@ -36,7 +37,7 @@ export function runSummary(run: GenerationRunResponseDto): string {
 export function runErrorText(run: GenerationRunResponseDto): string | null {
     const { job } = run;
     if (isRunActive(job) || job.status === "succeeded") return null;
-    const message = job.error?.message
+    const message = (job.error ? jobErrorText(job.error) : null)
         ?? (job.status === "cancelled" ? generationTexts.cancelled : job.status === "interrupted" ? generationTexts.interrupted : null);
     if (!message) return null;
     const produced = runProgress(run).producedCount;

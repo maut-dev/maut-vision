@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Fragment, useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 const gap = 12;
@@ -81,8 +82,12 @@ export function VirtualGrid<T>({ items, keyOf, minTileWidth, tileHeight, hasMore
             data-loaded={items.length}
         >
             <div className="relative" style={{ height: Math.max(0, rows * rowHeight - gap) }}>{tiles}</div>
-            {hasMore && <p role="status" className="py-3 text-center text-xs text-muted-foreground">{loading ? loadingText : "Прокрутите, чтобы загрузить ещё"}</p>}
+            {hasMore && <p role="status" className="py-3 text-center text-xs text-muted-foreground">{loading ? loadingText : <ScrollMoreText />}</p>}
         </div>
     );
 }
 
+function ScrollMoreText() {
+    const { t } = useTranslation();
+    return t("grid.scrollMore");
+}

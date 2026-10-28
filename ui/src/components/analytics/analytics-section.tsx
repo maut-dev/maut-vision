@@ -14,6 +14,7 @@ import { useGpuInventory } from "@/lib/use-gpu-inventory";
 import { useModelEvaluations } from "@/lib/use-model-evaluations";
 import { useModelVersions } from "@/lib/use-model-versions";
 import { AnalyticsCurves, type EpochHistory } from "./analytics-curves";
+import { locale } from "@/lib/format";
 
 /**
  * Раздел «Аналитика»: сравнение выбранных версий модели — «Метрики и параметры», «Кривые обучения по эпохам» и «Проверки на
@@ -129,7 +130,7 @@ export function AnalyticsSection({ project, openTraining, openPassport }: {
                                 <span className="inline-block size-2 rounded-full" style={{ background: seriesColor(version.number) }} />
                                 Версия {version.number}
                                 {version.isWorking && <Badge variant="secondary">рабочая</Badge>}
-                                <span className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleDateString("ru-RU")}</span>
+                                <span className="text-xs text-muted-foreground">{new Date(version.createdAt).toLocaleDateString(locale())}</span>
                             </label>
                         ))}
                     </div>

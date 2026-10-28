@@ -14,7 +14,7 @@ export interface BackgroundBlurResponseDto {
 /**
  * Пример будущего фона. sourceIndex — index файла выбора (у видео — номер кадра от начала), timestampMs — отметка кадра видео.
  * Пропуск: reason — код (backgrounds.wrong_size, backgrounds.crop_out_of_bounds, backgrounds.image_unreadable,
- * backgrounds.similar, backgrounds.duplicate, video.frame_unavailable), message — текст («Размер a×b, нужен W×H» и др.),
+ * backgrounds.similar, backgrounds.duplicate, video.frame_unavailable; the text is backgroundReasonText,
  * imageUrl — null. Иначе imageUrl — PNG будущего фона ровно размера набора (временный URL).
  */
 export interface BackgroundSampleResponseDto {
@@ -22,7 +22,6 @@ export interface BackgroundSampleResponseDto {
     sourceName: string;
     timestampMs: number | null;
     reason: string | null;
-    message: string | null;
     actualWidth: number | null;
     actualHeight: number | null;
     crop: BackgroundCropAreaDto | null;
@@ -46,7 +45,7 @@ export function isBackgroundBlurResponseDto(value: unknown): value is Background
 
 function isSample(value: unknown): value is BackgroundSampleResponseDto {
     return isRecord(value) && isCount(value.sourceIndex) && typeof value.sourceName === "string" && isCountOrNull(value.timestampMs)
-        && (value.reason === null || typeof value.reason === "string") && (value.message === null || typeof value.message === "string")
+        && (value.reason === null || typeof value.reason === "string")
         && isCountOrNull(value.actualWidth) && isCountOrNull(value.actualHeight) && (value.crop === null || isBackgroundCropAreaDto(value.crop))
         && (value.blurRadius === null || isRadius(value.blurRadius)) && (value.imageUrl === null || isResourceUrl(value.imageUrl));
 }

@@ -7,7 +7,7 @@ import { trainingApi } from "@/api/projects/training/training-api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDate } from "@/lib/format";
+import { formatDate, locale } from "@/lib/format";
 import { activeJobKinds, activeJobPercent, activeJobState, activeJobTitle, exportedVersionNumber, type JobSection } from "@/lib/overview/active-job-view";
 import { formatMetric } from "@/lib/training/run-view";
 import { useOverview } from "@/lib/use-overview";
@@ -21,7 +21,7 @@ export interface OverviewTarget {
     checksMode?: "dataset";
 }
 
-const count = (value: number) => value.toLocaleString("ru-RU");
+const count = (value: number) => value.toLocaleString(locale());
 
 /**
  * Раздел «Обзор»: настройки проекта, «Данные проекта», «Сейчас выполняется», «Последние модели» и «Ваш компьютер». Данные проекта —

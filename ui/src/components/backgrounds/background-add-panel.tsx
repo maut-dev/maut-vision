@@ -7,7 +7,7 @@ import type { BackgroundFileSelectionResponseDto } from "@/api/projects/backgrou
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, locale } from "@/lib/format";
 import type { BackgroundBlurState } from "@/lib/use-background-blur";
 import { BackgroundBlurSettings } from "./background-blur-settings";
 import { BackgroundVideoImport } from "./background-video-import";
@@ -23,7 +23,7 @@ const modes: readonly { id: ImportMode; title: string; hint: string }[] = [
     { id: "video", title: "Нарезать из видео", hint: "Одна рамка на всё видео, кадр раз в N секунд." },
 ];
 
-const number = (value: number) => value.toLocaleString("ru-RU");
+const number = (value: number) => value.toLocaleString(locale());
 
 /**
  * «Добавить фоны»: способ добавления (радиогруппа), его действие и общее размытие. Панель сворачивается, чтобы

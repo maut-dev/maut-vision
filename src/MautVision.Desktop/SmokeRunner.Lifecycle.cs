@@ -64,7 +64,7 @@ internal static partial class SmokeRunner
         host.CloseWindow();
         await WaitAsync(() => !host.WindowShown(), "the window hides on close", token);
         await WaitVisibilityAsync(web, "hidden", token);
-        if (host.Tray.Notices is not [MainWindow.TrayNotice]) throw new InvalidOperationException("The tray notice was not shown once: " + string.Join("|", host.Tray.Notices));
+        if (host.Tray.Notices is not ["Maut Vision продолжает работать в области уведомлений"]) throw new InvalidOperationException("The tray notice was not shown once: " + string.Join("|", host.Tray.Notices));
         using (var settings = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(root, HostSettings.FileName), token)))
         {
             if (!settings.RootElement.GetProperty("trayNoticeShown").GetBoolean()) throw new InvalidOperationException("The tray notice is not remembered.");
@@ -231,7 +231,7 @@ internal static partial class SmokeRunner
             return state.data.status !== 'running' ? state.data : null;
           }, 'legacy import finished');
           assert(legacy.status === 'failed' && legacy.error.code === 'projects.archive_legacy'
-            && legacy.error.message === 'Архив создан прежней версией Maut Vision и не поддерживается. Экспортируйте проект заново в текущей версии.',
+            && mautLocale.errorText(legacy.error.code, legacy.error.details) === 'Архив создан прежней версией Maut Vision и не поддерживается. Экспортируйте проект заново в текущей версии.',
             'An archive of an early format is refused with its text');
           return {checks};
         } finally {
@@ -247,7 +247,7 @@ internal static partial class SmokeRunner
             'projects.reviewDeletion lists no work of the copy');
           const stale = await request('projects.delete', {projectId: importedId, revision: review.data.revision + 1, cancelJobs: false});
           assert(!stale.ok && stale.error.code === 'projects.deletion_conflict'
-            && stale.error.message === 'Проект изменился после открытия подтверждения. Обновите список проектов и повторите удаление.',
+            && mautLocale.errorText(stale.error.code, stale.error.details) === 'Проект изменился после открытия подтверждения. Обновите список проектов и повторите удаление.',
             'A stale revision refuses the deletion with its text');
           const deleted = await request('projects.delete', {projectId: importedId, revision: review.data.revision, cancelJobs: false});
           assert(deleted.ok && deleted.data.projectId === importedId && typeof deleted.data.cleanupPending === 'boolean', 'projects.delete deletes the copy');

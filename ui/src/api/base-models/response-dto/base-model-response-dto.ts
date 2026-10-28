@@ -2,9 +2,9 @@ import { isRecord } from "../../transport/envelopes";
 
 export type BaseModelStatus = "not_installed" | "installing" | "installed" | "failed";
 
+/** Why the installation failed: a base_models.* code (lib/errors.ts gives its text). */
 export interface BaseModelErrorDto {
     code: string;
-    message: string;
 }
 
 export interface BaseModelResponseDto {
@@ -23,7 +23,7 @@ export interface BaseModelResponseDto {
 const statuses: readonly string[] = ["not_installed", "installing", "installed", "failed"] satisfies BaseModelStatus[];
 
 function isBaseModelErrorDto(value: unknown): value is BaseModelErrorDto {
-    return isRecord(value) && typeof value.code === "string" && typeof value.message === "string";
+    return isRecord(value) && typeof value.code === "string";
 }
 
 export function isBaseModelResponseDto(value: unknown): value is BaseModelResponseDto {
