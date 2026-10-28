@@ -81,10 +81,32 @@ ready model.
 <job folder>/
     request.json        protocol, operation, operationId, inputs, parameters
     input/              read-only for the worker
-    output/result.json  status, error {code, message, details}, artifacts
+    output/result.json  status, error {code, message, details, reason, args}, warnings, artifacts
     output/artifacts/
     logs/               worker stderr
 ```
+
+## Errors and warnings
+
+A refusal (`error` of result.json) and a warning (`warnings` of result.json and the `warning` event) carry the protocol `code`, an
+optional `reason` and `args` — string values of the message — and the English `message` for the logs. These fields are an optional
+extension of protocol 1: a host that does not know them reads `code` and `message` as before. The message is the text of
+`worker/protocol/messages.py` for the key `<code>` or `<code>.<reason>`; a code has either reasons for all its messages or none.
+
+```python
+raise WorkerError(ErrorCode.DEVICE_UNAVAILABLE, "gpu_missing", {"index": 1, "count": 0})
+ctx.warn("onnx_export_failed", "export_error", {"error": "RuntimeError: …"})
+```
+
+```json
+{"code": "device_unavailable", "reason": "gpu_missing", "args": {"index": "1", "count": "0"},
+ "message": "GPU 1 is requested, but 0 are visible", "details": {}}
+```
+
+Core passes this to the UI as `worker.<code>.<reason>` with the args and the message as the fallback (`CodedText`); the UI shows the text of
+`ui/src/locales/<language>/worker.json` and the message only for a key it does not know. A new message needs a key in `messages.py` and in
+both catalogs; `npm run check-locales` compares the keys and the placeholders. `details` stay machine data for the host. Everything the
+worker prints to stderr and the console lines of Ultralytics are English or raw and are not translated.
 
 ## Offline and environment
 

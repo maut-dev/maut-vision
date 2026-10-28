@@ -73,8 +73,9 @@ with `jobs.input_invalid` or `jobs.checkpoint_invalid`.
 ## Handler context
 
 - The `CancellationToken` is cancelled by user cancellation; `OperationCanceledException` after it gives `cancelled`.
-- `ReportProgress(percent, text, processed, total)` does not block: reports are merged, saved and broadcast at most every 250 ms. A
-  `null` percent means the amount is unknown.
+- `ReportProgress(percent, message, processed, total)` does not block: reports are merged, saved and broadcast at most every 250 ms. A
+  `null` percent means the amount is unknown. `message` is what the job is doing as a code of the UI catalog `progress` with values
+  (`CodedText.Of("progress.epoch", ("epoch", 3), ("total", 10))`), never a text: the UI shows it in the language of the user.
 - `SaveCheckpointAsync(value)` and `Checkpoint<T>()` — a durable continuation point in JSON: positions and IDs, not data.
 - `SetResult(value)` — the job result (counters, short lists), saved with its last state, also after cancellation and failure, and
   delivered in `JobInfo.Result`. The job kind defines the result shape, e.g. `ImportClassAssetsResult`.
@@ -82,13 +83,26 @@ with `jobs.input_invalid` or `jobs.checkpoint_invalid`.
   and the receipt repeats the step, so the action must be safe to repeat. Receipts are removed when the job finishes.
 - `CoreException` gives `failed` with its code; another exception gives `failed` with `jobs.failed` and a full log record.
 
+## Lines for the user
+
+Core never writes a text the user reads. Progress lines and labels are `CodedText(Code, Args, Text)`: a code `<namespace>.<key>` of the UI
+catalogs with string values, or a text shown as is (a name, a line stored by version 1.0.0). Desktop sends it as `{ code, args, text }`;
+the UI translates it in `lib/coded-text.ts`.
+
+`jobs.progress_text` and `jobs.label` keep the existing columns: a line with a code is stored as the JSON object
+`{"code":"progress.epoch","args":{"epoch":"3","total":"10"}}`, a text as is (`CodedTextJson`). Rows of 1.0.0 hold texts and read back as
+texts, so no schema step is needed.
+
 ## Labels and active jobs
 
-The enqueuer gives a job a label — what it works on: a group, set, preset or dataset name, "Version N". The label is stored in the job and
-comes with every snapshot; lists show it after the job kind.
+The enqueuer gives a job a label — what it works on. A name the user typed (a group, set, preset or dataset) is a text; words around data
+are a code of the UI catalog `jobLabels` with values (`jobLabels.version` with `number`, `jobLabels.version_dataset`,
+`jobLabels.class_variant`), so the UI composes "Версия 3" or "Version 3". The label is stored in the job and comes with every snapshot;
+lists show it after the job kind.
 
 ```csharp
-await core.Jobs.EnqueueAsync<IDatasetBuildJob, DatasetBuildInput>(input, projectId, operationId, label: input.Specification.Name);
+await core.Jobs.EnqueueAsync<IDatasetBuildJob, DatasetBuildInput>(input, projectId, operationId, label: CodedText.Plain(input.Specification.Name));
+await core.Jobs.EnqueueAsync<IModelExportJob, ModelExportInput>(input, projectId, operationId, label: CodedText.Of("jobLabels.version", ("number", 3)));
 var page = await core.Jobs.ListActiveAsync(projectId, limit: 30, after: cursor);   // Items, Total, CountsByKind, NextCursor
 ```
 

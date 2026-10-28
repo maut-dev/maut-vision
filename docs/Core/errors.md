@@ -55,5 +55,7 @@ An unexpected exception gives `bridge.internal_error`. The full exception, the m
 
 A job error is not thrown from the enqueue request: the job ends with status failed and a stored error `{ code, message }`, which the
 UI receives in snapshots and events and translates by code; the stored message is for the log and is shown only for a code the catalogs
-do not know. A training run or check that failed in the worker also carries the worker's own message for its `*.worker_<code>` codes. Worker error codes (`dataset_invalid`, `out_of_memory`, `architecture_mismatch`) are
+do not know. A training run or check that failed in the worker also carries
+`workerMessage` for its `*.worker_<code>` codes: the worker's message key with values and its English message as the fallback
+([worker](../Python/worker.md#errors-and-warnings)). Worker error codes (`dataset_invalid`, `out_of_memory`, `architecture_mismatch`) are
 translated by Core into its own codes; raw stderr is never shown to the user and stays in the job log.

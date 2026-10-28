@@ -5,6 +5,8 @@ the current language. The host has a small catalog of its own for what it shows 
 
 ```text
 Core:     CoreException(code, details)        → Desktop: { code, details }     → UI: errorText(code, details)
+Core:     CodedText(code, args, text)         → Desktop: { code, args, text }  → UI: codedText(value)
+Worker:   error/warning {code, reason, args}  → Core: CodedText worker.<code>.<reason>
 Desktop:  Strings.resx / Strings.ru.resx      — loading window, tray, message boxes, native file dialogs
 Installer: [Languages] english, russian       — wizard texts and CustomMessages
 ```
@@ -18,6 +20,10 @@ Catalogs are JSON files `ui/src/locales/<language>/<namespace>.json`. A key name
 |---|---|---|
 | `common` | the shell: header, navigation, library, project dialogs, shared components, units | with the page |
 | `errors` | texts of error codes and lines built from codes (deletion blockers, plan warnings, skip reasons) | with the page |
+| `progress` | what a job is doing: `progress.epoch` «Эпоха {{epoch}} из {{total}}» | with the page |
+| `trainingLog` | system lines of the training log written by Core | with the page |
+| `jobLabels` | labels of jobs with words around data: «Версия {{number}}», «{{class}} · {{variant}}» | with the page |
+| `worker` | errors and warnings of the Python worker, keys `<code>` or `<code>.<reason>` of `python/worker/protocol/messages.py` | with the page |
 | a section (`images`, `training`…) | texts of one section | with the chunk of the section (`addResourceBundle`) |
 
 ```tsx
@@ -50,11 +56,30 @@ The host sends `{ code, details }` and no text ([errors](../Core/errors.md)). Th
 - `errorText(code, details)` — the text of `errors:<code>` with the details substituted; a code without a text gives the generic text;
 - `errorMessage(error)` — the text of a caught error: a `BridgeError` by its code, an error of the page by its message;
 - `jobErrorText(error)` — a stored job error; its stored message is shown only for a code the catalogs do not know (an older version);
-- `workerErrorText(error)` — a training run or check error: the worker's own message for its `*.worker_<code>` codes, otherwise the code;
+- `workerErrorText(error)` — a training run or check error: for a failure the worker reported itself, the text of its worker code with
+  values (`workerMessage`), otherwise the text of the error code;
 - `blockerText(area, blocker)`, `planWarningText`, `backgroundReasonText` — lines built from a code, a count and examples or sizes.
 
 A code is a nested key: `projects.not_found` is `errors.projects.not_found`. A detail named `section` is a key of `errors.sections`; a
 detail named `count` takes plural forms.
+
+## Lines sent as codes
+
+Besides errors, the host sends every line the user reads as a code with values (`CodedText` of Core): job progress, job labels, system
+lines of the training log, worker errors and warnings. A code `<namespace>.<key>` is the key `<namespace>:<key>`; `args` are strings for its
+placeholders; `text` is shown as is when there is no code (a name the user typed, a line stored by version 1.0.0) or when the catalogs do
+not know the code (the English message of the worker). `lib/coded-text.ts` turns it into text:
+
+```tsx
+codedText(job.progressMessage)          // {code: "progress.epoch", args: {epoch: "3", total: "10"}} → «Эпоха 3 из 10» / "Epoch 3 of 10"
+codedText(job.label)                    // {code: null, text: "Улица"} → «Улица»
+logLineText(entry)                      // a warning → «amp_disabled: AMP отключён…»; a console line of Ultralytics → as is
+```
+
+Data stays data: names the user typed are never translated, the console of Ultralytics and the stages of the worker are a technical log in
+English. Defaults the host would otherwise invent come from the page in its language: the copy suffix of an imported project
+(`copyLabel`: «импорт»), the export file name of a project without a usable name (`fallbackName`), the name of a repeated generation preset
+(`generation.repeatName`). Without them the host uses English.
 
 ## Language
 
@@ -85,10 +110,14 @@ anything else English.
 - Russian plurals have one/few/many, English one/other;
 - every error code the host can send has a text: literals `"<area>.<reason>"` of the C# sources, the `{area}` templates of the catalog,
   worker outcomes under `training.` and `checks.`, and the codes the UI bridge raises;
-- keys of `errors` that look like codes nobody sends are warnings.
+- keys of `errors` that look like codes nobody sends are warnings;
+- every line code the host sends — literals `"progress.<key>"`, `"trainingLog.<key>"`, `"jobLabels.<key>"` of the C# sources — has a text
+  in its namespace; keys nobody sends or uses are warnings;
+- the `worker` namespace has exactly the keys of `python/worker/protocol/messages.py`, with the same placeholders (`{name}` there,
+  `{{name}}` in the catalogs).
 
-The native smoke switches to English, checks that the shell has no Cyrillic outside names the user typed and that a bridge error is shown
-in English, and switches back.
+The native smoke switches to English, checks that the shell has no Cyrillic outside names the user typed, that a bridge error, a job
+progress line, a job label and a system line of the training log are shown in English, and switches back.
 
 ## Glossary
 

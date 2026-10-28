@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Host**: the loading window, tray, exit question, native file dialogs and startup failures in English and Russian (`Strings.resx`);
   the tray is relabelled when the language changes; `--language system|ru|en` for one run.
 - **Installer**: English and Russian wizard chosen by the language of Windows.
+- **Localization**: job progress, job labels, system lines of the training log, worker errors and warnings come from the host as codes
+  with values and are shown in the interface language (catalogs `progress`, `trainingLog`, `jobLabels`, `worker`); `check-locales`
+  requires a text for every such code of the host and for every message of `python/worker/protocol/messages.py`.
 
 ### Changed
 
@@ -25,6 +28,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   hardware reasons are built by the UI from codes in the current language. Job errors stored by earlier versions keep their message as
   a fallback for unknown codes.
 - **Formatting**: numbers, sizes and dates follow the interface language through `ui/src/lib/format.ts`.
+- **Jobs**: `JobInfo.ProgressText` became `ProgressMessage` and `Label` a coded text (`CodedText`: code, args, text); the bridge sends
+  `progressMessage` and `label` as `{ code, args, text }`. They are kept in the existing columns; progress lines and labels stored by
+  1.0.0 are shown as they were.
+- **Training**: the log keeps system lines and worker warnings as codes, console lines of Ultralytics stay raw; model version notes are
+  worker warnings as codes. `workerMessage` of run and check errors is `{ code, args, text }` with the English worker message as the
+  fallback. The README.md of a model ZIP is in English.
+- **Python worker**: errors and warnings carry `reason` and `args` (an optional extension of protocol 1) and English messages from
+  `worker/protocol/messages.py`; all worker messages, comments and logs are in English.
+- **Projects**: the import suffix of a copy and the fallback export file name come from the UI in its language (English without it); a
+  generation repeat draft keeps the preset name, and the UI adds « · повтор» / " · repeat".
+- Core interfaces, Desktop DTOs and log messages are documented and written in English.
 
 ## [1.0.0] - 2026-10-27
 

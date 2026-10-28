@@ -146,7 +146,7 @@ redirected before the libraries are imported.
 {"type":"stage","sequence":2,"ts":"…","stage":"validating"}
 {"type":"batch","sequence":6,"ts":"…","epoch":1,"batch":3,"batches":3}
 {"type":"epoch","sequence":9,"ts":"…","epoch":2,"epochs":2,"losses":{"box_loss":1.44,"cls_loss":7.79,"dfl_loss":1.08},"metrics":{"precision":0.011,"recall":1.0,"mAP50":0.048,"mAP50_95":0.028},"lr":0.000126}
-{"type":"warning","sequence":10,"ts":"…","code":"batch_reduced","message":"…"}
+{"type":"warning","sequence":10,"ts":"…","code":"batch_reduced","args":{"requested":"32","actual":"16","lr0":"0.001"},"message":"…"}
 {"type":"frame","sequence":7,"ts":"…","index":30,"timeMs":3000,"width":256,"height":256,"detections":[{"classIndex":1,"name":"mug","confidence":0.87,"box":{"x":0.1,"y":0.2,"width":0.3,"height":0.4}}],"inferenceMs":9,"previewFile":"previews/frame-30.jpg"}
 {"type":"progress","sequence":8,"ts":"…","framesProcessed":4,"framesTotal":120,"positionMs":3000,"durationMs":120000}
 {"type":"finished","sequence":12,"ts":"…","status":"succeeded","errorCode":null}
@@ -157,7 +157,7 @@ once per second. The final validation of best.pt is not reported as an extra epo
 
 ## result.json
 
-`status` `succeeded|failed`, `error {code, message, details}`, `warnings`, `architecture` (what the weights contain), `effectiveParams`,
+`status` `succeeded|failed`, `error {code, message, details, reason, args}`, `warnings [{code, message, reason, args}]`, `architecture` (what the weights contain), `effectiveParams`,
 `metrics` (validation of best.pt), `epochsCompleted`, `stoppedEarly`, `historyFile` (history.jsonl: path, size, checksum, count),
 `artifacts [{kind, path, sizeBytes, sha256}]` (paths relative to outputRoot), optional `reports [{kind: plot|log, path, sizeBytes,
 sha256}]`, `environment`. An epoch of the history: `losses` — train (box_loss, cls_loss, dfl_loss), `metrics` — quality and validation
@@ -170,7 +170,11 @@ streamed to `output/artifacts/training.log`. The log never goes into the stdout 
 `reports_failed`, not a failure. The font for plot labels is looked up only locally. For a request that failed validation `operationId` is
 taken from the raw JSON if it looks like an identifier, otherwise `null`.
 
-Error codes: `worker/protocol/errors.py`.
+Error codes: `worker/protocol/errors.py`. Messages: `worker/protocol/messages.py` — English texts keyed by `<code>` or `<code>.<reason>`;
+`reason` and `args` (strings) are an optional extension of protocol 1 that lets the UI show the message in its language
+(`ui/src/locales/<language>/worker.json`, checked by `npm run check-locales`). Errors are raised as
+`WorkerError(ErrorCode.X, "reason", {"arg": value}, details)`, warnings as `ctx.warn("code", "reason", {"arg": value})`; see
+[docs/Python/worker.md](../docs/Python/worker.md#errors-and-warnings).
 
 ## Exit codes
 
