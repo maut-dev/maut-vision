@@ -1,0 +1,63 @@
+# Build output
+**/bin/
+**/obj/
+.dev/
+ui/node_modules/
+ui/dist/
+*.user
+
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+release/
+.vs/
+.vscode/
+.idea/
+*.suo
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs
+*.log
+logs/
+
+# Installers and packages
+/installers/
+MautVision-Setup-*.exe
+MautVision-TestSetup.exe
+*.nupkg
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.pfx
+
+# Working data and downloaded model weights
+/projects/
+/DevWorkDirectory/
+/WebView2/
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.pt
+*.pth
+*.onnx
+
+# Operating system files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Local tool settings
+.claude/

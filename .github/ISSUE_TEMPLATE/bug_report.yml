@@ -1,0 +1,61 @@
+name: Bug report
+description: Something does not work as expected
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem. Please search existing issues first.
+        Security problems must be reported privately — see SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Maut Vision version
+      description: The installer name or the first lines of the application log show it.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2 x64"
+    validations:
+      required: true
+  - type: input
+    id: gpu
+    attributes:
+      label: GPU and driver
+      description: Needed for training and check problems.
+      placeholder: "NVIDIA RTX 4070, driver 580.xx / no GPU"
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a project
+        2. Go to …
+        3. Click …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: >-
+        Relevant lines from %LOCALAPPDATA%\MautVision\logs (and the job logs folder for training or checks).
+        Remove personal paths if needed.
+      render: text
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag and drop images here if they help.

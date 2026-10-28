@@ -1,0 +1,1081 @@
+[
+  {
+    "id": "yolo26n",
+    "family": "YOLO26",
+    "variant": "N",
+    "task": "detect",
+    "fileName": "yolo26n.pt",
+    "byteSize": 5544453,
+    "sha256": "9b09cc8bf347f0fc8a5f7657480587f25db09b34bf33b0652110fb03a8ad4fef",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26n"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolo26n-distill",
+    "family": "YOLO26",
+    "variant": "N-DISTILL",
+    "task": "detect",
+    "fileName": "yolo26n-distill.pt",
+    "byteSize": 5580099,
+    "sha256": "923e377d22ac6c7fa61565c26f7b02706a49ca9b5f94435972da94a7033c56b3",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n-distill.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26n-distill",
+      "yolo26n"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolo26n-objv1-150",
+    "family": "YOLO26",
+    "variant": "N-OBJV1-150",
+    "task": "detect",
+    "fileName": "yolo26n-objv1-150.pt",
+    "byteSize": 5975045,
+    "sha256": "fab6114e4c91cac560c849ac732c0756e0575c9195e2a7fedfa4a8d92c6253b3",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26n-objv1-150.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26n-objv1-150",
+      "yolo26n"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolo26s",
+    "family": "YOLO26",
+    "variant": "S",
+    "task": "detect",
+    "fileName": "yolo26s.pt",
+    "byteSize": 20422725,
+    "sha256": "646f8bc3fe0a656803d95c294f7852321748cb29d13466a1af8862e2db384a1b",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26s"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolo26s-distill",
+    "family": "YOLO26",
+    "variant": "S-DISTILL",
+    "task": "detect",
+    "fileName": "yolo26s-distill.pt",
+    "byteSize": 20470111,
+    "sha256": "e16a4ed15a2a8b281153fccbc21e047ea320d00d4023cde8df20eed89cab1b2e",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s-distill.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26s-distill",
+      "yolo26s"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolo26s-objv1-150",
+    "family": "YOLO26",
+    "variant": "S-OBJV1-150",
+    "task": "detect",
+    "fileName": "yolo26s-objv1-150.pt",
+    "byteSize": 20872197,
+    "sha256": "9d879c1bf2f79703d0b6175220fb113c6d8b700d61d30fcf4e37a664911933f0",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26s-objv1-150.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26s-objv1-150",
+      "yolo26s"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolo26m",
+    "family": "YOLO26",
+    "variant": "M",
+    "task": "detect",
+    "fileName": "yolo26m.pt",
+    "byteSize": 44255705,
+    "sha256": "401cea9ab23ad19246ff7744859816bc599f350e93c9dd30367b6f0a0745d0b7",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26m"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolo26m-distill",
+    "family": "YOLO26",
+    "variant": "M-DISTILL",
+    "task": "detect",
+    "fileName": "yolo26m-distill.pt",
+    "byteSize": 44305543,
+    "sha256": "34936f92679157012b560b909fe31c0fac233f43ebf4fd0c1847dcfb5d342706",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m-distill.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26m-distill",
+      "yolo26m"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolo26m-objv1-150",
+    "family": "YOLO26",
+    "variant": "M-OBJV1-150",
+    "task": "detect",
+    "fileName": "yolo26m-objv1-150.pt",
+    "byteSize": 45141337,
+    "sha256": "e16bb4be917b36071d2b6bccb348887db0f3141fc837a3ee945256100fad9065",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26m-objv1-150.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26m-objv1-150",
+      "yolo26m"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolo26l",
+    "family": "YOLO26",
+    "variant": "L",
+    "task": "detect",
+    "fileName": "yolo26l.pt",
+    "byteSize": 53211173,
+    "sha256": "9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26l.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26l"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolo26l-distill",
+    "family": "YOLO26",
+    "variant": "L-DISTILL",
+    "task": "detect",
+    "fileName": "yolo26l-distill.pt",
+    "byteSize": 53282431,
+    "sha256": "b3eb5865771f55383b03e2119e1aa8aac386e1e11c183923b1a58ddfa36fc99f",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26l-distill.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26l-distill",
+      "yolo26l"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolo26l-objv1-150",
+    "family": "YOLO26",
+    "variant": "L-OBJV1-150",
+    "task": "detect",
+    "fileName": "yolo26l-objv1-150.pt",
+    "byteSize": 54105317,
+    "sha256": "9979d8da65b081857af3a049fb3dc40dc66a341e03a99700433400aa9be17800",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26l-objv1-150.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26l-objv1-150",
+      "yolo26l"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolo26x",
+    "family": "YOLO26",
+    "variant": "X",
+    "task": "detect",
+    "fileName": "yolo26x.pt",
+    "byteSize": 118667365,
+    "sha256": "9fdd44a31c504547ffb81d2c6d9e6dac3493c8eaa8b0398d3f43bae6c7003e92",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26x.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26x"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolo26x-distill",
+    "family": "YOLO26",
+    "variant": "X-DISTILL",
+    "task": "detect",
+    "fileName": "yolo26x-distill.pt",
+    "byteSize": 118735359,
+    "sha256": "ee715c8c86ca6009c4ee19add4c65016aeb660a5be6aefe7b993d59c3c277d51",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26x-distill.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26x-distill",
+      "yolo26x"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolo26x-objv1-150",
+    "family": "YOLO26",
+    "variant": "X-OBJV1-150",
+    "task": "detect",
+    "fileName": "yolo26x-objv1-150.pt",
+    "byteSize": 120006117,
+    "sha256": "edb117f1698c6f7b0b2c0a2ca51e2ba6ddb47445cfb930283e04a915ce5d9eed",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo26x-objv1-150.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo26x-objv1-150",
+      "yolo26x"
+    ],
+    "yamlFamilies": [
+      "yolo26"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolo12n",
+    "family": "YOLO12",
+    "variant": "N",
+    "task": "detect",
+    "fileName": "yolo12n.pt",
+    "byteSize": 5595063,
+    "sha256": "419ff3dca37d69bacc93a50fa0c186a1c6f9fe62fae0f108b0872829689e9ca6",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo12n.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo12n"
+    ],
+    "yamlFamilies": [
+      "yolo12"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolo12s",
+    "family": "YOLO12",
+    "variant": "S",
+    "task": "detect",
+    "fileName": "yolo12s.pt",
+    "byteSize": 19006455,
+    "sha256": "e915c2c4286e3f6f8610ef106fa3f94a7b8c19b30eccede5887e22c33ef75f58",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo12s.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo12s"
+    ],
+    "yamlFamilies": [
+      "yolo12"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolo12m",
+    "family": "YOLO12",
+    "variant": "M",
+    "task": "detect",
+    "fileName": "yolo12m.pt",
+    "byteSize": 40904955,
+    "sha256": "4c6d179786eddf6134ee469ae2f4ce04cbe4e9d1a47d6b669d9cd6b9c6c513d8",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo12m.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo12m"
+    ],
+    "yamlFamilies": [
+      "yolo12"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolo12l",
+    "family": "YOLO12",
+    "variant": "L",
+    "task": "detect",
+    "fileName": "yolo12l.pt",
+    "byteSize": 53699086,
+    "sha256": "0babd8dc8f775bb64bb052debdff3d8b9e9b57efa9d7bfa11c84bb82c3fec336",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo12l.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo12l"
+    ],
+    "yamlFamilies": [
+      "yolo12"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolo12x",
+    "family": "YOLO12",
+    "variant": "X",
+    "task": "detect",
+    "fileName": "yolo12x.pt",
+    "byteSize": 119322638,
+    "sha256": "682ce8dadee004dbe964950f1bf3eda451671815a6ed62db80b398916b9b7c6f",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo12x.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo12x"
+    ],
+    "yamlFamilies": [
+      "yolo12"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolo11n",
+    "family": "YOLO11",
+    "variant": "N",
+    "task": "detect",
+    "fileName": "yolo11n.pt",
+    "byteSize": 5613764,
+    "sha256": "0ebbc80d4a7680d14987a577cd21342b65ecfd94632bd9a8da63ae6417644ee1",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo11n.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo11n"
+    ],
+    "yamlFamilies": [
+      "yolo11"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolo11s",
+    "family": "YOLO11",
+    "variant": "S",
+    "task": "detect",
+    "fileName": "yolo11s.pt",
+    "byteSize": 19313732,
+    "sha256": "85a76fe86dd8afe384648546b56a7a78580c7cb7b404fc595f97969322d502d5",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo11s.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo11s"
+    ],
+    "yamlFamilies": [
+      "yolo11"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolo11m",
+    "family": "YOLO11",
+    "variant": "M",
+    "task": "detect",
+    "fileName": "yolo11m.pt",
+    "byteSize": 40684120,
+    "sha256": "d5ffc1a674953a08e11a8d21e022781b1b23a19b730afc309290bd9fb5305b95",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo11m.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo11m"
+    ],
+    "yamlFamilies": [
+      "yolo11"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolo11l",
+    "family": "YOLO11",
+    "variant": "L",
+    "task": "detect",
+    "fileName": "yolo11l.pt",
+    "byteSize": 51387343,
+    "sha256": "9ebd0e09d59811db4b1d61e2bc6730649608b1ac47f8dd01e2da6bca7c20023f",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo11l.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo11l"
+    ],
+    "yamlFamilies": [
+      "yolo11"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolo11x",
+    "family": "YOLO11",
+    "variant": "X",
+    "task": "detect",
+    "fileName": "yolo11x.pt",
+    "byteSize": 114636239,
+    "sha256": "7bc158aa95c0ebfdd87f70f01653c1131b93e92522dbe15c228bcd742e773a24",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolo11x.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo11x"
+    ],
+    "yamlFamilies": [
+      "yolo11"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolov10n",
+    "family": "YOLOv10",
+    "variant": "N",
+    "task": "detect",
+    "fileName": "yolov10n.pt",
+    "byteSize": 5860383,
+    "sha256": "11287ed0735678e7ba1ac2a9b3098c049155b3fde123992e724c1264bcc16b6f",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov10n.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo10n"
+    ],
+    "yamlFamilies": [
+      "yolo10"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolov10s",
+    "family": "YOLOv10",
+    "variant": "S",
+    "task": "detect",
+    "fileName": "yolov10s.pt",
+    "byteSize": 16623111,
+    "sha256": "65fa8332c38a7189597a268897bce6c1026f9499711b9761fb0c2c639b91d4d6",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov10s.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo10s"
+    ],
+    "yamlFamilies": [
+      "yolo10"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolov10m",
+    "family": "YOLOv10",
+    "variant": "M",
+    "task": "detect",
+    "fileName": "yolov10m.pt",
+    "byteSize": 33643667,
+    "sha256": "6dc78f7a88591cec1e8716b8f5c7e3aefa9206684f025d202be34439ccb329a0",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov10m.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo10m"
+    ],
+    "yamlFamilies": [
+      "yolo10"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolov10b",
+    "family": "YOLOv10",
+    "variant": "B",
+    "task": "detect",
+    "fileName": "yolov10b.pt",
+    "byteSize": 41679663,
+    "sha256": "31ef0baecfa8010ebb4b53b0624836f30d73702b04710c23945782dba5d258c2",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov10b.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo10b"
+    ],
+    "yamlFamilies": [
+      "yolo10"
+    ],
+    "scale": "b"
+  },
+  {
+    "id": "yolov10l",
+    "family": "YOLOv10",
+    "variant": "L",
+    "task": "detect",
+    "fileName": "yolov10l.pt",
+    "byteSize": 52425230,
+    "sha256": "d0685e1e597f73aba8e56bc9651b6bb939c5b2f201dff5de0b9ef2a6207ae301",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov10l.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo10l"
+    ],
+    "yamlFamilies": [
+      "yolo10"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolov10x",
+    "family": "YOLOv10",
+    "variant": "X",
+    "task": "detect",
+    "fileName": "yolov10x.pt",
+    "byteSize": 64395854,
+    "sha256": "605982e0b2c2ff070351afc8df3ecb38c54cfd7f133813acb366f454eb79b9a6",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov10x.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo10x"
+    ],
+    "yamlFamilies": [
+      "yolo10"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolov9t",
+    "family": "YOLOv9",
+    "variant": "T",
+    "task": "detect",
+    "fileName": "yolov9t.pt",
+    "byteSize": 4969803,
+    "sha256": "410e3caca789aa8fec19971c05577616cbb963a416bcd0228171b2dff7f718f7",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov9t.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo9t"
+    ],
+    "yamlFamilies": [],
+    "scale": "t"
+  },
+  {
+    "id": "yolov9s",
+    "family": "YOLOv9",
+    "variant": "S",
+    "task": "detect",
+    "fileName": "yolov9s.pt",
+    "byteSize": 15389259,
+    "sha256": "67731fc88bb6782fbb4f32703a2cac052acd65148b65c9e67161fe13536c2ffc",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov9s.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo9s"
+    ],
+    "yamlFamilies": [],
+    "scale": "s"
+  },
+  {
+    "id": "yolov9m",
+    "family": "YOLOv9",
+    "variant": "M",
+    "task": "detect",
+    "fileName": "yolov9m.pt",
+    "byteSize": 40993492,
+    "sha256": "be7ac91362bd81dfa901077706d634e571c1ff7f3886b3aac6a0e97eff2f5440",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov9m.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo9m"
+    ],
+    "yamlFamilies": [],
+    "scale": "m"
+  },
+  {
+    "id": "yolov9c",
+    "family": "YOLOv9",
+    "variant": "C",
+    "task": "detect",
+    "fileName": "yolov9c.pt",
+    "byteSize": 51794840,
+    "sha256": "876eb84f515d40c34a3b111f8fc1077d3aee59d3a243afd1cc5b77d520f237c7",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov9c.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo9c"
+    ],
+    "yamlFamilies": [],
+    "scale": "c"
+  },
+  {
+    "id": "yolov9e",
+    "family": "YOLOv9",
+    "variant": "E",
+    "task": "detect",
+    "fileName": "yolov9e.pt",
+    "byteSize": 117521038,
+    "sha256": "0d2270e0c794bdaa059738d32c1781cdec4857b3931d5503e13ae92e8517e7bd",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov9e.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo9e"
+    ],
+    "yamlFamilies": [],
+    "scale": "e"
+  },
+  {
+    "id": "yolov8n",
+    "family": "YOLOv8",
+    "variant": "N",
+    "task": "detect",
+    "fileName": "yolov8n.pt",
+    "byteSize": 6549796,
+    "sha256": "f59b3d833e2ff32e194b5bb8e08d211dc7c5bdf144b90d2c8412c47ccfc83b36",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8n"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolov8n-oiv7",
+    "family": "YOLOv8",
+    "variant": "N-OIV7",
+    "task": "detect",
+    "fileName": "yolov8n-oiv7.pt",
+    "byteSize": 7226939,
+    "sha256": "3851dfbf39ed2a076b1f39215cc22dba64eb5646f282bf964703785b0bed6a41",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8n-oiv7.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8n-oiv7",
+      "yolo8n"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolov8s",
+    "family": "YOLOv8",
+    "variant": "S",
+    "task": "detect",
+    "fileName": "yolov8s.pt",
+    "byteSize": 22588772,
+    "sha256": "1f47a78bf100391c2a140b7ac73a1caae18c32779be7d310658112f7ac9aa78a",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8s.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8s"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolov8s-oiv7",
+    "family": "YOLOv8",
+    "variant": "S-OIV7",
+    "task": "detect",
+    "fileName": "yolov8s-oiv7.pt",
+    "byteSize": 22986811,
+    "sha256": "4663086e1b8edbc4202a9ec589b03195ed149ef8aa8beeb4b503e0e35ff1731a",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8s-oiv7.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8s-oiv7",
+      "yolo8s"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolov8m",
+    "family": "YOLOv8",
+    "variant": "M",
+    "task": "detect",
+    "fileName": "yolov8m.pt",
+    "byteSize": 52136884,
+    "sha256": "5d4a90cdc7a21786cc59cd19778e9eafff836df9e2da32524737c7ee6efe4fe5",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8m.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8m"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolov8m-oiv7",
+    "family": "YOLOv8",
+    "variant": "M-OIV7",
+    "task": "detect",
+    "fileName": "yolov8m-oiv7.pt",
+    "byteSize": 52732835,
+    "sha256": "21ffa3718c577ac23e708e4c0544c49a20682efa03914d5f816166b54e8fd3fe",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8m-oiv7.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8m-oiv7",
+      "yolo8m"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolov8l",
+    "family": "YOLOv8",
+    "variant": "L",
+    "task": "detect",
+    "fileName": "yolov8l.pt",
+    "byteSize": 87792836,
+    "sha256": "64c9115303f6a25575f82200d1b22ec409fa6bd7d08d0313884fc20d919478cd",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8l.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8l"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolov8l-oiv7",
+    "family": "YOLOv8",
+    "variant": "L-OIV7",
+    "task": "detect",
+    "fileName": "yolov8l-oiv7.pt",
+    "byteSize": 88584203,
+    "sha256": "7cb0716bb760110d75c04586760084d616555c452c9ace7ed4b44980e8762236",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8l-oiv7.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8l-oiv7",
+      "yolo8l"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolov8x",
+    "family": "YOLOv8",
+    "variant": "X",
+    "task": "detect",
+    "fileName": "yolov8x.pt",
+    "byteSize": 136890692,
+    "sha256": "3df4ada6b4dad6d657868f2fdf7faecfb34dcfccf3a25c4b82079064718524c8",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8x.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8x"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolov8x-oiv7",
+    "family": "YOLOv8",
+    "variant": "X-OIV7",
+    "task": "detect",
+    "fileName": "yolov8x-oiv7.pt",
+    "byteSize": 137887307,
+    "sha256": "89acc72b5b4d765a06dcb86c6b34a8b965e63b97c50b04d43fb8634dd27cee5a",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov8x-oiv7.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo8x-oiv7",
+      "yolo8x"
+    ],
+    "yamlFamilies": [
+      "yolo8"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolov5nu",
+    "family": "YOLOv5u",
+    "variant": "NU",
+    "task": "detect",
+    "fileName": "yolov5nu.pt",
+    "byteSize": 5562759,
+    "sha256": "9e9c1be448b0e1b8598975a9abcab9a0fd0e21182eb422cda7f044a0442d0937",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5nu.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo5n",
+      "yolo5nu"
+    ],
+    "yamlFamilies": [
+      "yolo5"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolov5n6u",
+    "family": "YOLOv5u",
+    "variant": "N6U",
+    "task": "detect",
+    "fileName": "yolov5n6u.pt",
+    "byteSize": 9073082,
+    "sha256": "05778389f5e10f5eb3e760c6d501777319bcc67751bdd230067ecee6a825e6dc",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5n6u.pt",
+    "stride": 64,
+    "yamlNames": [
+      "yolo5n6",
+      "yolo5n-p6",
+      "yolo5n6u"
+    ],
+    "yamlFamilies": [
+      "yolo5-p6"
+    ],
+    "scale": "n"
+  },
+  {
+    "id": "yolov5su",
+    "family": "YOLOv5u",
+    "variant": "SU",
+    "task": "detect",
+    "fileName": "yolov5su.pt",
+    "byteSize": 18581255,
+    "sha256": "054272ddbbb3035cea7ff6b97e5becea63d2cc57a4f06a2a8133f4d1a56e74ed",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5su.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo5s",
+      "yolo5su"
+    ],
+    "yamlFamilies": [
+      "yolo5"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolov5s6u",
+    "family": "YOLOv5u",
+    "variant": "S6U",
+    "task": "detect",
+    "fileName": "yolov5s6u.pt",
+    "byteSize": 31053754,
+    "sha256": "694057a713881b0bbd930ff2be4a9855e5521d639d41643ae050559874da73af",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5s6u.pt",
+    "stride": 64,
+    "yamlNames": [
+      "yolo5s6",
+      "yolo5s-p6",
+      "yolo5s6u"
+    ],
+    "yamlFamilies": [
+      "yolo5-p6"
+    ],
+    "scale": "s"
+  },
+  {
+    "id": "yolov5mu",
+    "family": "YOLOv5u",
+    "variant": "MU",
+    "task": "detect",
+    "fileName": "yolov5mu.pt",
+    "byteSize": 50589507,
+    "sha256": "02a430d1cec02dfabdcaf8afa05e3b967c19d3795a42c0ab8ad78bf2e24d016c",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5mu.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo5m",
+      "yolo5mu"
+    ],
+    "yamlFamilies": [
+      "yolo5"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolov5m6u",
+    "family": "YOLOv5u",
+    "variant": "M6U",
+    "task": "detect",
+    "fileName": "yolov5m6u.pt",
+    "byteSize": 83003066,
+    "sha256": "c30fd1128a9c255b614ca3415c637499048387b45d488cd9193a2e0fccc6d780",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5m6u.pt",
+    "stride": 64,
+    "yamlNames": [
+      "yolo5m6",
+      "yolo5m-p6",
+      "yolo5m6u"
+    ],
+    "yamlFamilies": [
+      "yolo5-p6"
+    ],
+    "scale": "m"
+  },
+  {
+    "id": "yolov5lu",
+    "family": "YOLOv5u",
+    "variant": "LU",
+    "task": "detect",
+    "fileName": "yolov5lu.pt",
+    "byteSize": 106913919,
+    "sha256": "4c78fd8b24761480f1e855361df39eaab131512babf2ba73ba6b394bba3c9061",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5lu.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo5l",
+      "yolo5lu"
+    ],
+    "yamlFamilies": [
+      "yolo5"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolov5l6u",
+    "family": "YOLOv5u",
+    "variant": "L6U",
+    "task": "detect",
+    "fileName": "yolov5l6u.pt",
+    "byteSize": 172900538,
+    "sha256": "d59727bad4adf8976c1dc0ae64e92bca57ba1a13ea314f7624d17b0332950e73",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5l6u.pt",
+    "stride": 64,
+    "yamlNames": [
+      "yolo5l6",
+      "yolo5l-p6",
+      "yolo5l6u"
+    ],
+    "yamlFamilies": [
+      "yolo5-p6"
+    ],
+    "scale": "l"
+  },
+  {
+    "id": "yolov5xu",
+    "family": "YOLOv5u",
+    "variant": "XU",
+    "task": "detect",
+    "fileName": "yolov5xu.pt",
+    "byteSize": 195132283,
+    "sha256": "b173a82e928b444456f5d3d3d7cf11197fda04df8f59c114801d837036e25061",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5xu.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo5x",
+      "yolo5xu"
+    ],
+    "yamlFamilies": [
+      "yolo5"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolov5x6u",
+    "family": "YOLOv5u",
+    "variant": "X6U",
+    "task": "detect",
+    "fileName": "yolov5x6u.pt",
+    "byteSize": 311943681,
+    "sha256": "80cbc464a6174a9b9605c250f6278aba5f235b08d7840ffe44a0344f85b3f5e8",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov5x6u.pt",
+    "stride": 64,
+    "yamlNames": [
+      "yolo5x6",
+      "yolo5x-p6",
+      "yolo5x6u"
+    ],
+    "yamlFamilies": [
+      "yolo5-p6"
+    ],
+    "scale": "x"
+  },
+  {
+    "id": "yolov3u",
+    "family": "YOLOv3u",
+    "variant": "Standard",
+    "task": "detect",
+    "fileName": "yolov3u.pt",
+    "byteSize": 207882784,
+    "sha256": "ce802b34ac80ec3724a028eeb22b19229bb45f3ebc5bc2f08c734c305746d327",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov3u.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo3",
+      "yolo3u"
+    ],
+    "yamlFamilies": [],
+    "scale": ""
+  },
+  {
+    "id": "yolov3-sppu",
+    "family": "YOLOv3u",
+    "variant": "SPP",
+    "task": "detect",
+    "fileName": "yolov3-sppu.pt",
+    "byteSize": 209990176,
+    "sha256": "8acba4fd772b65f0559ebe98a94eb4bd0c72cba46dc0997bb4820df57f74f79d",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov3-sppu.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo3-spp",
+      "yolo3-sppu"
+    ],
+    "yamlFamilies": [],
+    "scale": ""
+  },
+  {
+    "id": "yolov3-tinyu",
+    "family": "YOLOv3u",
+    "variant": "Tiny",
+    "task": "detect",
+    "fileName": "yolov3-tinyu.pt",
+    "byteSize": 24440067,
+    "sha256": "def5c43360675b9666fe9a3add6a1be849cea2bec3cf20d32b75b85840ed4887",
+    "url": "https://github.com/ultralytics/assets/releases/download/v8.4.0/yolov3-tinyu.pt",
+    "stride": 32,
+    "yamlNames": [
+      "yolo3-tiny",
+      "yolo3-tinyu"
+    ],
+    "yamlFamilies": [],
+    "scale": ""
+  }
+]

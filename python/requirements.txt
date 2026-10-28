@@ -1,0 +1,32 @@
+# Python training worker — pinned versions (Windows x64, Python 3.14).
+#
+# torch/torchvision are the CUDA 13.0 build from the PyTorch index, not from PyPI:
+#   python -m pip install -r requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cu130
+
+torch==2.14.0+cu130
+torchvision==0.29.0+cu130
+ultralytics==8.4.157
+ultralytics-thop==2.1.6
+
+# protocol
+pydantic==2.13.5
+pydantic_core==2.46.5
+PyYAML==6.0.3
+
+# ONNX export (dynamic + simplify). Without them ultralytics would try to
+# install packages itself, which the worker forbids (YOLO_AUTOINSTALL=false).
+onnx==1.23.0
+onnxslim==0.1.96
+
+# screen capture: the screenshot and live operations (screen checks)
+mss==10.2.0
+
+# ultralytics dependencies whose versions affect behaviour
+numpy==2.5.3
+opencv-python==5.0.0.93
+pillow==12.3.0
+matplotlib==3.11.2
+polars==1.44.2
+psutil==7.2.2
+requests==2.34.2

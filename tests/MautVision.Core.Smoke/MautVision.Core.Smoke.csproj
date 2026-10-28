@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/MautVision.Core/MautVision.Core.csproj" />
+    <!-- Built before the smoke, which starts it as the Python worker of training. -->
+    <ProjectReference Include="../MautVision.FakeWorker/MautVision.FakeWorker.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

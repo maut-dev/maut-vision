@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- WPF is used only to encode the sample JPEGs of the generated library. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- WPF projects do not import System.IO implicitly. -->
+    <Using Include="System.IO" />
+    <ProjectReference Include="../../src/MautVision.Core/MautVision.Core.csproj" />
+  </ItemGroup>
+</Project>

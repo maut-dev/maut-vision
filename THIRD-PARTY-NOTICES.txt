@@ -1,0 +1,82 @@
+﻿Maut Vision — сведения о лицензиях
+=================================
+
+Maut Vision распространяется по GNU Affero General Public License версии 3 (AGPL-3.0), полный текст — в файле LICENSE рядом
+с программой.
+
+Исходный код Maut Vision: https://github.com/maut-dev/maut-vision
+
+По AGPL-3.0 получатель программы вправе получить её исходный код по этому адресу, изменять и распространять его на тех же
+условиях.
+
+В поставку входят сторонние компоненты. Каждый распространяется по своей лицензии; ниже перечислены компоненты и их условия.
+Версии указаны для этой сборки.
+
+
+Desktop (.NET)
+--------------
+
+.NET 10 runtime, WPF, Windows Forms, Microsoft.Extensions.Logging, Microsoft.Data.Sqlite, System.IO.Hashing
+    © .NET Foundation and Contributors. MIT License. https://github.com/dotnet
+
+SQLite (через SQLitePCLRaw / e_sqlite3)
+    Public domain. https://www.sqlite.org/copyright.html
+    SQLitePCLRaw © Eric Sink, Apache License 2.0. https://github.com/ericsink/SQLitePCL.raw
+
+Microsoft Edge WebView2 SDK (Microsoft.Web.WebView2 1.0.4258.31)
+    © Microsoft Corporation. Лицензия SDK: https://www.nuget.org/packages/Microsoft.Web.WebView2/1.0.4258.31/License
+    WebView2 Runtime устанавливается отдельно (Evergreen) по условиям Microsoft:
+    https://developer.microsoft.com/microsoft-edge/webview2/
+
+SkiaSharp 4.153.1 и Skia
+    SkiaSharp © Microsoft Corporation, MIT License. https://github.com/mono/SkiaSharp
+    Skia © Google Inc., BSD 3-Clause License. https://skia.org/
+
+
+Интерфейс (web)
+---------------
+
+React, React DOM — © Meta Platforms, Inc. and affiliates. MIT License. https://github.com/facebook/react
+Radix UI (radix-ui) — © WorkOS. MIT License. https://github.com/radix-ui/primitives
+lucide-react — © Lucide Contributors. ISC License; часть значков © Cole Bemis (Feather), MIT License. https://lucide.dev/license
+class-variance-authority — © Joe Bell. Apache License 2.0. https://github.com/joe-bell/cva
+clsx — © Luke Edwards. MIT License. https://github.com/lukeed/clsx
+tailwind-merge — © Dany Castillo. MIT License. https://github.com/dcastil/tailwind-merge
+Tailwind CSS (стили сборки) — © Tailwind Labs, Inc. MIT License. https://github.com/tailwindlabs/tailwindcss
+
+
+ffmpeg (tools\ffmpeg)
+---------------------
+
+ffmpeg.exe, ffprobe.exe и библиотеки avcodec, avdevice, avfilter, avformat, avutil, swresample, swscale — проект FFmpeg,
+GNU Lesser General Public License версии 3 (LGPL-3.0); сборка BtbN FFmpeg-Builds без GPL и несвободных частей.
+Текст лицензии — tools\ffmpeg\LICENSE.txt, адрес сборки и исходного кода — tools\ffmpeg\VERSION.txt
+(https://github.com/FFmpeg/FFmpeg, https://github.com/BtbN/FFmpeg-Builds). Библиотеки поставляются отдельными DLL и могут
+быть заменены; Maut Vision запускает ffmpeg отдельным процессом и не изменяет его.
+
+
+Python worker (python\maut-training-worker)
+-------------------------------------------
+
+Python 3.14 — © Python Software Foundation. PSF License Agreement. https://docs.python.org/3/license.html
+PyInstaller (загрузчик собранного worker) — GPL-2.0 с исключением для собранных программ (bootloader exception).
+    https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt
+Ultralytics YOLO 8.4 и веса моделей YOLO — © Ultralytics Inc. GNU Affero General Public License версии 3 (AGPL-3.0).
+    https://github.com/ultralytics/ultralytics/blob/main/LICENSE
+PyTorch 2.14 и torchvision 0.29 — © Meta Platforms, Inc. and affiliates и участники. BSD 3-Clause License.
+    https://github.com/pytorch/pytorch/blob/main/LICENSE
+OpenCV 5 (opencv-python) — Apache License 2.0. https://github.com/opencv/opencv/blob/master/LICENSE
+NumPy — BSD 3-Clause License. https://numpy.org/doc/stable/license.html
+Pillow — MIT-CMU (HPND) License. https://github.com/python-pillow/Pillow/blob/main/LICENSE
+matplotlib — Matplotlib License (на основе PSF). https://matplotlib.org/stable/project/license.html
+Polars — MIT License. https://github.com/pola-rs/polars/blob/main/LICENSE
+PyYAML — MIT License. https://github.com/yaml/pyyaml/blob/main/LICENSE
+pydantic — MIT License. https://github.com/pydantic/pydantic/blob/main/LICENSE
+ONNX — Apache License 2.0. https://github.com/onnx/onnx/blob/main/LICENSE
+onnxslim — MIT License. https://github.com/inisis/OnnxSlim/blob/main/LICENSE
+Остальные пакеты Python worker содержат свои лицензии в папках *.dist-info внутри python\maut-training-worker\_internal.
+
+NVIDIA CUDA runtime, cuBLAS, cuDNN и другие библиотеки CUDA (в составе PyTorch, python\maut-training-worker\_internal\torch\lib)
+    © NVIDIA Corporation. Распространяются по условиям NVIDIA:
+    CUDA Toolkit EULA, Attachment A (распространяемые файлы): https://docs.nvidia.com/cuda/eula/index.html
+    cuDNN Software License Agreement: https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html

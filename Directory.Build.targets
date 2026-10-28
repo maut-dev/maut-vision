@@ -1,0 +1,9 @@
+<Project>
+  <!-- libSkiaSharp.pdb (~96 MB) ships next to the native library in the package; it is not needed at run time. -->
+  <Target Name="ExcludeNativeSymbols" AfterTargets="ResolvePackageAssets">
+    <ItemGroup>
+      <NativeCopyLocalItems Remove="@(NativeCopyLocalItems)" Condition="'%(Filename)%(Extension)' == 'libSkiaSharp.pdb'" />
+      <RuntimeTargetsCopyLocalItems Remove="@(RuntimeTargetsCopyLocalItems)" Condition="'%(Filename)%(Extension)' == 'libSkiaSharp.pdb'" />
+    </ItemGroup>
+  </Target>
+</Project>
