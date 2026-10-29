@@ -3,15 +3,17 @@ import { subscribeGenerationChanged } from "@/api/events/subscriptions";
 import { generationApi } from "@/api/projects/generation/generation-api";
 import type { GenerationRecipeResponseDto } from "@/api/projects/generation/response-dto/generation-recipe-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "./generation/locale";
 
 const newestFirst = (left: GenerationRecipeResponseDto, right: GenerationRecipeResponseDto) =>
     right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id);
 
 /**
- * Пресеты генерации открытого проекта (включая архивные): generation.listRecipes при открытии, затем generation.changed —
- * перечитываются только названные пресеты с ревизией новее известной, удалённые (revision null) убираются. Ответ операции
- * применяется сразу; более старая ревизия не заменяет новую.
+ * Generation presets of the open project (archived ones too): generation.listRecipes on opening, then generation.changed —
+ * only the named presets with a revision newer than known are read again, deleted ones (revision null) are removed. The answer of an
+ * operation applies at once; an older revision does not replace a newer one.
  */
 export function useGenerationRecipes(projectId: string) {
     const [recipes, setRecipes] = useState<readonly GenerationRecipeResponseDto[]>([]);
@@ -50,7 +52,7 @@ export function useGenerationRecipes(projectId: string) {
             setRecipes([...list].sort(newestFirst));
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить пресеты генерации. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("generation:loadErrors.recipes")));
         } finally {
             if (mounted.current) setLoading(false);
         }

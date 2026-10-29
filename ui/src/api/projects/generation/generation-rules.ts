@@ -1,39 +1,41 @@
+import { i18n } from "@/i18n";
+import "@/lib/generation/locale";
 import type { CatalogWorkspaceResponseDto } from "../catalog/response-dto/catalog-workspace-response-dto";
 import type { GenerationRunResultDto } from "./response-dto/generation-run-response-dto";
 import type { GenerationRecipeFormDto, GenerationVariantWeightDto } from "./request-dto/generation-recipe-form-dto";
 
-/** Те же пределы, что проверяет host (GenerationManager.Validate и контроллер). */
+/** The same limits the host checks (GenerationManager.Validate and the controller). */
 export const maxRecipeNameLength = 120;
 export const maxRecipeDescriptionLength = 4000;
 export const canvasStep = 32;
 export const maxSeed = 4_294_967_295;
-/** До стольких кадров возвращает previewSamples. */
+/** previewSamples returns up to this many frames. */
 export const maxSamples = 4;
-/** Допуск суммы долей: 100 ± 1e-6. */
+/** Tolerance of the sum of shares: 100 ± 1e-6. */
 export const weightTolerance = 1e-6;
 
-/** Начальные значения формы и запуска: 1 объект, 10 % пустых кадров, масштаб 1, 100 изображений. */
+/** Initial values of the form and the run: 1 object, 10 % empty frames, scale 1, 100 images. */
 export const defaultRecipe = { objectsPerImage: 1, emptyPercent: 10, scale: 1, count: 100 } as const;
 
-/** Поле формы пресета; совпадает с details.field ошибки generation.invalid_recipe. */
+/** A field of the preset form; matches details.field of the error generation.invalid_recipe. */
 export type GenerationRecipeField = "name" | "description" | "canvas" | "backgroundSetIds" | "classVariantIds" | "variantWeights" | "objectsPerImage"
     | "emptyProbability" | "scale";
 
-/** Тексты подсказок и ошибок формы. */
+/** Hints and errors of the form in the current language (read at render time). */
 export const generationTexts = {
-    objectsInvalid: "Объектов на кадр — целое число от 0.",
-    scaleInvalid: "Масштаб объекта — число больше 0.",
-    objectsHint: "0 объектов — только фоны без разметки. Масштаб 1 — объект может занять весь кадр.",
-    emptyHint: "Такая часть кадров останется без объектов — это помогает модели не находить объекты на пустом фоне.",
-    countInvalid: "Укажите целое количество от 1.",
-    seedInvalid: "Дополнительно: seed — целое число от 0 до 4 294 967 295.",
-    variantWithoutAssets: "Добавьте изображения к классам",
-    repeatHint: "Доли, варианты и размер взяты из снимка запуска. Удалённые и архивные источники могут помешать сохранению.",
-    cancelled: "Генерация отменена. Сохранённые результаты доступны, если группа результата сохранилась.",
-    interrupted: "Генерация прервана закрытием приложения. Сохранённые результаты доступны, если группа результата сохранилась.",
-} as const;
+    get objectsInvalid() { return i18n.t("generation:rules.objectsInvalid"); },
+    get scaleInvalid() { return i18n.t("generation:rules.scaleInvalid"); },
+    get objectsHint() { return i18n.t("generation:rules.objectsHint"); },
+    get emptyHint() { return i18n.t("generation:rules.emptyHint"); },
+    get countInvalid() { return i18n.t("generation:rules.countInvalid"); },
+    get seedInvalid() { return i18n.t("generation:rules.seedInvalid"); },
+    get variantWithoutAssets() { return i18n.t("generation:rules.variantWithoutAssets"); },
+    get repeatHint() { return i18n.t("generation:rules.repeatHint"); },
+    get cancelled() { return i18n.t("generation:rules.cancelled"); },
+    get interrupted() { return i18n.t("generation:rules.interrupted"); },
+};
 
-/** «Новый случайный seed»: целое 0–4 294 967 295 из криптографического генератора. */
+/** "New random seed": an integer 0–4 294 967 295 from the cryptographic generator. */
 export function randomSeed(): number {
     const value = new Uint32Array(1);
     crypto.getRandomValues(value);
@@ -41,33 +43,33 @@ export function randomSeed(): number {
 }
 
 /**
- * Привязки, которые может выбрать пресет: доступные (ни привязка, ни класс, ни вариант проекта не в архиве) и с изображениями.
- * Вариант проекта без таких привязок показывается с подсказкой «Добавьте изображения к классам» и долей 0.
+ * Bindings a preset can choose: available ones (neither the binding, nor the class, nor the project variant is archived) with images.
+ * A project variant without such bindings shows the hint "Add images to the classes" and the share 0.
  */
 export function eligibleClassVariants(workspace: CatalogWorkspaceResponseDto) {
     return workspace.classVariants.filter(binding => binding.available && binding.assetCount > 0);
 }
 
-/** classVariantIds пресета: подходящие привязки вариантов с долей больше 0, в порядке каталога (классы, затем варианты). */
+/** classVariantIds of a preset: eligible variant bindings with a share above 0, in catalog order (classes, then variants). */
 export function recipeClassVariantIds(workspace: CatalogWorkspaceResponseDto, weights: readonly GenerationVariantWeightDto[]): string[] {
     const weighted = new Set(weights.filter(weight => weight.percentage > 0).map(weight => weight.variantId));
     return eligibleClassVariants(workspace).filter(binding => weighted.has(binding.variantId)).map(binding => binding.id);
 }
 
-/** «Поровну»: целые доли, сумма 100, первые варианты получают остаток. */
+/** "Evenly": whole shares, the sum is 100, the first variants get the remainder. */
 export function distributeEvenly(variantIds: readonly string[]): GenerationVariantWeightDto[] {
     const count = variantIds.length;
     return variantIds.map((variantId, index) => ({ variantId, percentage: count === 0 ? 0 : Math.floor(100 / count) + (index < 100 % count ? 1 : 0) }));
 }
 
-/** «Всего: X% из 100%». */
+/** "Total: X% of 100%". */
 export function weightsTotal(weights: readonly GenerationVariantWeightDto[]): number {
     return weights.reduce((sum, weight) => sum + weight.percentage, 0);
 }
 
 /**
- * Первое неверное поле формы или null — те же правила, что у host: название 1–120 после обрезки, описание до 4000, размер кратен 32,
- * непустые списки без повторов, доли 0–100 с суммой 100 ± 1e-6, объектов — целое ≥ 0, доля пустых 0..1, масштаб больше 0.
+ * The first wrong field of the form or null — the same rules as the host: a name of 1–120 after trimming, a description up to 4000, a size
+ * divisible by 32, non-empty lists without repeats, shares 0–100 summing to 100 ± 1e-6, objects — an integer ≥ 0, empty share 0..1, scale above 0.
  */
 export function recipeFieldError(form: GenerationRecipeFormDto): GenerationRecipeField | null {
     const name = form.name.trim();
@@ -88,19 +90,19 @@ export function recipeFieldError(form: GenerationRecipeFormDto): GenerationRecip
     return null;
 }
 
-/** «Количество изображений» — целое от 1. */
+/** "Number of images" — an integer from 1. */
 export function isValidCount(count: number): boolean {
     return Number.isSafeInteger(count) && count >= 1;
 }
 
-/** Seed — целое 0–4 294 967 295. */
+/** Seed — an integer 0–4 294 967 295. */
 export function isValidSeed(seed: number): boolean {
     return Number.isSafeInteger(seed) && seed >= 0 && seed <= maxSeed;
 }
 
-/** Итог запуска одной строкой: «P / R изображений · X%» и, если есть, «Кадров с недостающими объектами: N». */
+/** The run result in one line: "P / R images · X%" and, if any, "Frames with missing objects: N". */
 export function generationRunSummary(result: GenerationRunResultDto): string {
     const percent = result.requestedCount === 0 ? 0 : Math.floor(100 * result.producedCount / result.requestedCount);
-    const base = `${result.producedCount} / ${result.requestedCount} изображений · ${percent}%`;
-    return result.missingObjectFrames > 0 ? `${base}. Кадров с недостающими объектами: ${result.missingObjectFrames}` : base;
+    const values = { produced: result.producedCount, requested: result.requestedCount, percent, missing: result.missingObjectFrames };
+    return result.missingObjectFrames > 0 ? i18n.t("generation:rules.summaryMissing", values) : i18n.t("generation:rules.summary", values);
 }

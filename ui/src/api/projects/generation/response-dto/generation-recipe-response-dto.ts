@@ -3,8 +3,8 @@ import { isCount, isDate, isDateOrNull, isId, isRevision } from "../../catalog/c
 import type { GenerationRecipeFormDto, GenerationVariantWeightDto } from "../request-dto/generation-recipe-form-dto";
 
 /**
- * Пресет генерации: настройки формы и revision — для изменения, архива и запуска; archivedAt — «В архиве». Детали карточки
- * («Размер кадра», «Варианты и классы», «Наборы фонов» с отметками удалённых и архивных) UI собирает по каталогу и наборам фонов.
+ * A generation preset: form settings and revision — for changes, the archive and runs; archivedAt — "Archived". Card details
+ * ("Frame size", "Variants and classes", "Background sets" with marks of deleted and archived ones) the UI builds from the catalog and background sets.
  */
 export interface GenerationRecipeResponseDto extends GenerationRecipeFormDto {
     id: string;

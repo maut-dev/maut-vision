@@ -18,7 +18,7 @@ export interface UpdateGenerationRecipeRequestDto {
     projectId: string;
     recipeId: string;
     recipe: GenerationRecipeFormDto;
-    /** Ревизия пресета, которую видел пользователь. */
+    /** The preset revision the user saw. */
     revision: number;
 }
 
@@ -35,7 +35,7 @@ export interface DeleteGenerationRecipeRequestDto {
     revision: number;
 }
 
-/** «Пример кадра»: настройки формы, seed из «Параметров запуска» (0–4 294 967 295), count 1–4 (по умолчанию 4). */
+/** "Sample frame": form settings, the seed from "Run parameters" (0–4 294 967 295), count 1–4 (4 by default). */
 export interface PreviewGenerationSamplesRequestDto {
     projectId: string;
     recipe: GenerationRecipeFormDto;

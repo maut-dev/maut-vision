@@ -1,14 +1,14 @@
-/** Доля варианта проекта, 0–100 %. */
+/** A share of a project variant, 0–100 %. */
 export interface GenerationVariantWeightDto {
     variantId: string;
     percentage: number;
 }
 
 /**
- * Настройки пресета из формы. width/height — размер кадра: вход проекта (или размер повторяемого запуска); backgroundSetIds —
- * наборы фонов в порядке выбора; classVariantIds — привязки, чей вариант проекта имеет долю больше 0 (recipeClassVariantIds);
- * variantWeights — доли всех доступных вариантов проекта (порядок задаёт выбор варианта, сумма 100); objectsPerImage — целое ≥ 0;
- * emptyProbability — доля пустых кадров 0..1 (в форме — проценты); scale — больше 0.
+ * Preset settings from the form. width/height — the frame size: the project input (or the size of the repeated run); backgroundSetIds —
+ * background sets in the order of choice; classVariantIds — bindings whose project variant has a share above 0 (recipeClassVariantIds);
+ * variantWeights — shares of all available project variants (the order follows the choice, the sum is 100); objectsPerImage — an integer ≥ 0;
+ * emptyProbability — the share of empty frames 0..1 (percent in the form); scale — above 0.
  */
 export interface GenerationRecipeFormDto {
     name: string;
