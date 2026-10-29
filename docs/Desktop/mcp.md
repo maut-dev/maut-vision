@@ -182,6 +182,50 @@ create_background_set → import_backgrounds { mode: "crop" } → create_recipe 
   → verify_dataset → export_dataset { destinationPath: "D:\\export\\set.zip" }
 ```
 
+### Training, models, checks and analytics
+
+`TrainingController` and `ChecksController` of the page serve these tools with the registries of the tools and no dialogs; paths come
+as arguments. Job tools (`start_training`, `export_model`, `evaluate_model`) take `operationId` and `waitSeconds` and answer
+`{ jobId, status, job }` with `runId`, `versionId`/`path` or `evaluationId`. Live checks are not jobs: they answer `{ checkId, state,
+finished, check, frames }` and are followed with `get_check`.
+
+| Tool | Class | What it does |
+|---|---|---|
+| `get_training_defaults` | R | every parameter key of Core with its range, description and the Core default (`ITrainingPresetsManager.Defaults`), the devices, the worker runtime, the architecture and imgsz of a project |
+| `list_training_presets`, `save_training_preset`, `delete_training_preset` | R, W, D | presets shared by all projects |
+| `start_training` ⏳ | W | `datasetVersionId`, `parameters` (the inputSchema lists every key of the form), `presetId` (given parameters override it; the preset name goes to the passport only when nothing is overridden); the run ID is the job ID |
+| `list_training_runs`, `get_training_run` | R | runs; a run in full with the epoch history thinned to `maxEpochs` (first, last and best kept) and its plot names |
+| `get_training_log` | R | the last `tail` lines; the whole log is a resource |
+| `list_model_versions`, `get_model_version` | R | versions with metrics; the passport without window URLs |
+| `set_working_version` | W | makes a version working |
+| `export_model` ⏳ | W | ZIP to a `.zip` path or into a folder (`model-vN.zip`); the export rules of `export_dataset` |
+| `delete_model_version` | D | `training.version_in_use` with `details.reason` for the working version and a version in use |
+| `evaluate_model` ⏳ | W | a dataset split `val` or `test` (default), device (the first GPU, else `cpu`), batch |
+| `list_evaluations` | R | evaluations by version, dataset and split, and `latest` — the comparison matrix of the Checks section |
+| `predict_image` | W | an image by `path` or `uploadId`: detections and the picture with boxes as image content after waiting (`waitSeconds` ≤ 120) |
+| `predict_video` ⏳ | W | a video with `stepSeconds` and an input-sized `region` in video pixels |
+| `get_check` | R | a live check by `checkId`: state, summary by class, frames with detections (for a video with `view` arguments of the analyzed crop) |
+| `list_monitors` | R | monitors in physical pixels |
+| `capture_screen` ✋ | R | a screenshot as image content with `scale` (picture pixels per monitor pixel) |
+| `start_screen_check` ⏳✋ | W | `monitor`, `region` in monitor pixels, `fps`, `durationSeconds` ≤ 300 |
+| `stop_check` | W | stops a live check and waits for its end |
+| `compare_model_versions` | R | the "Metrics and parameters" table of Analytics with the best version of each quality row, and the latest evaluation rows of a dataset |
+
+Live checks hold the GPU slot: while training, an evaluation or another check holds it, a start is refused at once with
+`checks.gpu_busy_training`, `checks.gpu_busy_evaluation` or `checks.gpu_busy_prediction`, as in the window. A check started through MCP
+stops with `stop_check`, at its time limit, when the user opens another project (Core), when the page reloads, when its MCP session ends
+(`McpTools.EndSession`, stop reason `session_ended`) and when the server stops. Clients of the 2026-07-28 revision are served per request
+and have no session; their screen checks end at the time limit, which is therefore at most 300 s.
+
+IDs of these tools are `view` targets: `{ trainingPlot: name, runId }` (names from `get_training_run.plots` or the passport) and
+`{ check: checkId }` — the latest analyzed frame of a live check with its boxes.
+
+```text
+get_training_defaults → start_training { datasetVersionId, parameters } → wait_job → get_training_run → view { trainingPlot, runId }
+  → set_working_version → export_model { destinationPath } → evaluate_model { split: "test" } → predict_image { path }
+  → compare_model_versions { versionIds, datasetVersionId }
+```
+
 ## Long operations and progress
 
 A tool that starts a job answers with the job snapshot at once. `wait_job` waits until the job finishes or its timeout (at most 120 s)
@@ -196,7 +240,7 @@ UI renders the inner label in the current language.
 
 ## Confirmations
 
-Deleting a project (and, in later steps, capturing the screen) is confirmed by the user in the window at every access level. The host
+Deleting a project, capturing the screen and starting a screen check are confirmed by the user in the window at every access level. The host
 brings the window to the front (also from the tray) and the page shows who asks, with which tool and what happens; the action text is a
 key of `mcp:confirm.actions` with values. «Разрешить» runs the tool; «Отклонить» gives `mcp.confirmation_denied`; no answer within two
 minutes gives `mcp.confirmation_timeout`. Stopping the server denies open questions.
@@ -236,7 +280,8 @@ and the outcome; every call is also written to the application log. The settings
 
 `maut://projects` and `maut://projects/{projectId}` are JSON snapshots of the library and of a project with its overview.
 `maut://projects/{projectId}/datasets/{versionId}/manifest` is the composition of a dataset version: the version and every sample with
-its split, group, hashes and boxes.
+its split, group, hashes and boxes. `maut://projects/{projectId}/training/runs/{runId}/log` is the whole log of a training run (at most
+20,000 lines) and `maut://projects/{projectId}/models/{versionId}/passport` the passport of a model version, as `get_model_version`.
 
 ## Prompts
 
@@ -245,6 +290,7 @@ user message; `McpTools.CreatePrompts` lists them by area like the tools. `revie
 the unreviewed images of a group: `list_images`, `view` with overlay, `set_annotations` with `reviewed: true`, and a report of what it
 left for the user. `prepare_dataset_from_folder(folder)`, `synthetic_dataset(classesFolder, backgroundsFolder)` and
 `generate_from_video(videoPath)` lead from files on disk to a built dataset through the import, background, generation and dataset tools.
+`train_and_compare(datasetVersionId, projectId?)` trains a version, evaluates it and the working version on the Test split and compares them.
 
 ## Checks
 
@@ -258,3 +304,6 @@ round trip with `view`, deletion blockers and the `review_annotations` prompt. `
 `SmokeRunner.McpGeneration.cs` and `SmokeRunner.McpDatasets.cs` run the chain through MCP: background sets from images (whole, cropped,
 uploaded) and from an ffmpeg clip, a recipe, generation, plan, build, verification, the export ZIP checked on disk, views of a
 background, a generation sample and a dataset sample, the manifest resource, the error paths and the three dataset prompts.
+`SmokeRunner.McpTraining.cs` and `SmokeRunner.McpChecks.cs` run training → version → working → export (the ZIP on disk) → evaluation →
+image check with its picture → video check with frame views → comparison with the fake worker, the screen tools with «Разрешить» and
+«Отклонить», a busy GPU, `stop_check`, a check stopped by the end of its session, the resources and the prompt.
