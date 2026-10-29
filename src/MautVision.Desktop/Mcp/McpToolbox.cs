@@ -39,6 +39,8 @@ internal sealed class McpToolbox(IReadOnlyList<McpToolDefinition> tools, Func<Mc
             }
             var context = new McpToolCall(call, client, sessionKey, progress,
                 (action, values) => confirmations.AskAsync(client, name, action, values, cancellationToken), cancellationToken);
+            // Jobs this call enqueues show the client in the job lists of the window ("AI (Claude Code) · …").
+            using var requester = Controllers.Jobs.JobLabels.RequestedBy(client);
             outcome = new McpCallOutcome(await tool.Handler(context), null);
         }
         catch (Exception error)
