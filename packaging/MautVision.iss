@@ -102,6 +102,8 @@ Type: filesandordirs; Name: "{app}\runtimes"
 [Files]
 ; First in the archive: extracting it does not unpack the large blocks after it.
 Source: "{#WebView2Bootstrapper}"; DestDir: "{tmp}"; DestName: "MicrosoftEdgeWebview2Setup.exe"; Flags: deleteafterinstall; Check: NeedsWebView2
+; The payload holds the stdio MCP proxy maut-vision-mcp.exe next to the application (build-installer.ps1 adds it): Claude Desktop starts it by this
+; path; a running proxy is closed by Restart Manager like the application.
 Source: "{#PublishDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; The worker (≈ 3.6 GB) is its own solid block.
 Source: "{#WorkerDir}\*"; DestDir: "{app}\python\maut-training-worker"; Flags: ignoreversion recursesubdirs createallsubdirs solidbreak
