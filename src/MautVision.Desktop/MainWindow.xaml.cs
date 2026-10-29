@@ -114,6 +114,13 @@ public partial class MainWindow : Window
             ShowInTaskbar = false;
             ShowActivated = false;
         }
+        else if (options.Tray)
+        {
+            // The window exists for WebView2 but stays out of sight; once the library is shown it goes to the tray.
+            WindowState = WindowState.Minimized;
+            ShowInTaskbar = false;
+            ShowActivated = false;
+        }
         Loaded += OnLoaded;
         SourceInitialized += (_, _) => HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(OnWindowMessage);
         Closing += OnClosing;
@@ -270,6 +277,8 @@ public partial class MainWindow : Window
             if (!leftoversStarted)
             {
                 leftoversStarted = true;
+                // Started with --tray and not opened meanwhile: the window goes to the notification area.
+                if (options.Tray && !ShowInTaskbar && !closing) HideToTray();
                 _ = core.Projects.CleanUpLeftoversAsync(lifetime.Token).ContinueWith(task => logger.LogWarning(task.Exception, "Cleanup of leftovers failed."),
                     CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
                 _ = mcp.StartIfEnabledAsync(lifetime.Token).ContinueWith(task => logger.LogWarning(task.Exception, "MCP server start failed."),
@@ -338,6 +347,7 @@ public partial class MainWindow : Window
     internal void ShowFromTray()
     {
         if (closing) return;
+        if (!ShowInTaskbar && options.SmokeReport is null) ShowInTaskbar = true;
         if (!IsVisible) Show();
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Browser.Visibility = Visibility.Visible;

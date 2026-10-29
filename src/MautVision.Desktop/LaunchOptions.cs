@@ -11,19 +11,26 @@ namespace MautVision.Desktop;
 /// <param name="BaseModelCatalog">Smoke only (--base-model-catalog with --smoke-report): a catalogue that matches its seeded weights.</param>
 /// <param name="Language">The interface language of this run (--language system|ru|en) instead of the stored one, not saved; a smoke run
 /// without the option is Russian, so its text checks do not depend on the machine.</param>
+/// <param name="Tray">Starts hidden in the notification area (--tray): the stdio MCP proxy starts the application this way for an AI client.</param>
 public sealed record LaunchOptions(string WorkDirectory, string? SmokeReport, bool ExitWhenReady = false, string? Python = null, string? PythonSource = null,
-    string? WorkerExecutable = null, string? BaseModelCatalog = null, string? Language = null)
+    string? WorkerExecutable = null, string? BaseModelCatalog = null, string? Language = null, bool Tray = false)
 {
     public static LaunchOptions Parse(string[] args)
     {
         var workDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MautVision");
         string? report = null, python = null, source = null, worker = null, catalog = null, language = null;
         var exitWhenReady = false;
+        var tray = false;
         for (var index = 0; index < args.Length; index++)
         {
             if (args[index] == "--exit-when-ready")
             {
                 exitWhenReady = true;
+                continue;
+            }
+            if (args[index] == "--tray")
+            {
+                tray = true;
                 continue;
             }
             if (index + 1 >= args.Length)
@@ -45,7 +52,7 @@ public sealed record LaunchOptions(string WorkDirectory, string? SmokeReport, bo
         if (language is not null && !HostLanguage.IsSetting(language)) throw new ArgumentException(Strings.LaunchLanguageInvalid);
         return new LaunchOptions(Path.GetFullPath(workDirectory), report is null ? null : Path.GetFullPath(report), exitWhenReady,
             python is null ? null : Path.GetFullPath(python), source is null ? null : Path.GetFullPath(source), worker is null ? null : Path.GetFullPath(worker),
-            catalog is null ? null : Path.GetFullPath(catalog), language ?? (report is null ? null : HostLanguage.Russian));
+            catalog is null ? null : Path.GetFullPath(catalog), language ?? (report is null ? null : HostLanguage.Russian), tray && report is null);
     }
 
     /// <summary>

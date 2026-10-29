@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- maut-vision-mcp.exe: the stdio proxy for MCP clients that start a command (Claude Desktop). It forwards to the Streamable HTTP endpoint of the
+       running application and starts the application in the tray when it is closed. The installer puts it next to MautVision.Desktop.exe, where it
+       uses the self-contained runtime of the application (build-installer.ps1 copies only its own files). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>maut-vision-mcp</AssemblyName>
+    <RootNamespace>MautVision.McpProxy</RootNamespace>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <ApplicationIcon>../MautVision.Desktop/Assets/maut-vision.ico</ApplicationIcon>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(_IsPublishing)' == 'true'">
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishSingleFile>false</PublishSingleFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The same SDK version as the server in MautVision.Desktop, so the shared assemblies of the application folder match. -->
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.3.0" />
+  </ItemGroup>
+</Project>
