@@ -1,19 +1,19 @@
 import type { HardwareSampleResponseDto } from "@/api/hardware/response-dto/hardware-sample-response-dto";
 
-/** Окно мини-графика нагрузки. */
+/** The window of the load mini chart. */
 export const loadWindowMs = 120_000;
 
-/** Разрыв линии: замеров не было дольше (окно скрыто, ответ задержался). */
+/** A line break: there were no samples for longer (the window was hidden, an answer was late). */
 export const loadGapMs = 6_000;
 
-/** Точка нагрузки: время замера и проценты CPU и видеокарт по индексу; null — значения нет. */
+/** A load point: the sample time and the percents of the CPU and of the GPUs by index; null when there is no value. */
 export interface LoadPoint {
     at: number;
     cpu: number | null;
     gpus: Readonly<Record<number, number | null>>;
 }
 
-/** Новый замер в конце истории; точки старше окна и повтор того же замера отбрасываются. Историю хранит страница, пока раздел открыт. */
+/** A new sample at the end of the history; points older than the window and a repeat of the same sample are dropped. The page keeps the history while the section is open. */
 export function appendLoad(history: readonly LoadPoint[], sample: HardwareSampleResponseDto): readonly LoadPoint[] {
     const at = Date.parse(sample.timestamp);
     if (history.length && history[history.length - 1].at >= at) return history;
@@ -25,7 +25,7 @@ export function appendLoad(history: readonly LoadPoint[], sample: HardwareSample
     return [...history.filter(item => item.at > at - loadWindowMs), point];
 }
 
-/** Отрезки линии одной серии: соседние точки дальше loadGapMs или без значения разрывают линию. */
+/** Line segments of one series: neighbor points further apart than loadGapMs, or without a value, break the line. */
 export function loadSegments(history: readonly LoadPoint[], read: (point: LoadPoint) => number | null | undefined): { at: number; value: number }[][] {
     const segments: { at: number; value: number }[][] = [];
     let current: { at: number; value: number }[] = [];

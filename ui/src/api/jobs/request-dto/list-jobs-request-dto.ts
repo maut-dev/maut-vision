@@ -1,7 +1,7 @@
 export interface ListJobsRequestDto {
     projectId: string;
-    /** 1–200, по умолчанию 50. */
+    /** 1–200, 50 by default. */
     limit?: number;
-    /** ID последней задачи предыдущей страницы; задачи идут от новых к старым. */
+    /** The ID of the last job of the previous page; jobs go from newest to oldest. */
     before?: string;
 }

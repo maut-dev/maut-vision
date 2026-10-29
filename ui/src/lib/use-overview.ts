@@ -6,12 +6,12 @@ import type { JobResponseDto } from "@/api/jobs/response-dto/job-response-dto";
 import { overviewApi } from "@/api/projects/overview/overview-api";
 import type { OverviewResponseDto } from "@/api/projects/overview/response-dto/overview-response-dto";
 
-/** Пауза, за которую события сливаются в одно чтение обзора. */
+/** The pause over which events merge into one reading of the overview. */
 const refreshDelayMs = 200;
 
 const isActive = (job: JobResponseDto) => job.status === "queued" || job.status === "running";
 
-/** Снимок обзора без активных задач и загруженные страницы активных задач («Показать ещё задачи»). */
+/** The overview snapshot without active jobs, and the loaded pages of active jobs (Show more jobs). */
 export interface OverviewState {
     overview: Omit<OverviewResponseDto, "activeJobs">;
     jobs: readonly ActiveJobResponseDto[];
@@ -20,9 +20,9 @@ export interface OverviewState {
 }
 
 /**
- * Обзор открытого проекта без опроса: overview.get при открытии; datasets.changed и training.changed с версиями — перечитать обзор;
- * job.changed идущей задачи из списка применяется на месте (по sequence), новая или завершённая задача — перечитать. События за
- * 200 мс сливаются, одновременно идёт одно чтение. Перечитывание сохраняет число загруженных страниц задач.
+ * The overview of the open project without polling: overview.get on opening; datasets.changed and training.changed with versions — read the
+ * overview again; job.changed of a running job from the list is applied in place (by sequence), a new or finished job — read again. Events
+ * within 200 ms merge, one reading runs at a time. Reading again keeps the number of loaded job pages.
  */
 export function useOverview(projectId: string) {
     const [state, setState] = useState<OverviewState>();
@@ -55,7 +55,7 @@ export function useOverview(projectId: string) {
                 total = next.total;
             }
             if (!mounted.current) return;
-            // Снимок задачи из события, пришедшего во время чтения, новее ответа.
+            // A job snapshot from an event that came during the reading is newer than the answer.
             setState(current => ({
                 overview,
                 jobs: jobs.map(item => {
@@ -112,7 +112,7 @@ export function useOverview(projectId: string) {
         };
     }, [projectId, read, schedule]);
 
-    /** «Показать ещё задачи»: следующая страница после последней загруженной. */
+    /** Show more jobs: the next page after the last loaded one. */
     const loadMore = useCallback(async () => {
         const cursor = latest.current?.nextCursor;
         if (!cursor) return;

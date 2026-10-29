@@ -1,14 +1,14 @@
 import { isActiveJobsPageResponseDto, type ActiveJobsPageResponseDto } from "../../../jobs/response-dto/active-jobs-page-response-dto";
 import { isRecord } from "../../../transport/envelopes";
 
-/** ready — не в архиве и не повреждённые; archived — в архиве; corrupt — повреждённые вне архива. */
+/** ready — neither archived nor corrupt; archived — in the archive; corrupt — corrupt outside the archive. */
 export interface OverviewDatasetsDto {
     ready: number;
     archived: number;
     corrupt: number;
 }
 
-/** Строка «Последние модели»: runId ведёт к запуску обучения, metrics — ключи версии (mAP50, mAP50_95 и др.). */
+/** A row of the latest models: runId leads to the training run, metrics are the keys of the version (mAP50, mAP50_95 and others). */
 export interface OverviewModelVersionDto {
     id: string;
     number: number;
@@ -20,8 +20,8 @@ export interface OverviewModelVersionDto {
 }
 
 /**
- * Обзор проекта (overview.get): счётчики «Данные проекта», до 5 последних версий моделей (новые первыми) и первая страница
- * активных задач. Обновляется по job.changed, datasets.changed, training.changed и checks.changed.
+ * The project overview (overview.get): the project data counters, up to 5 latest model versions (newest first) and the first page of
+ * active jobs. It is refreshed by job.changed, datasets.changed, training.changed and checks.changed.
  */
 export interface OverviewResponseDto {
     projectId: string;

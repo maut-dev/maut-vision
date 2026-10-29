@@ -15,9 +15,9 @@ export interface JobResponseDto {
     projectId: string;
     operationId: string;
     status: JobStatus;
-    /** 0–100 или null, если объём работы неизвестен. */
+    /** 0–100, or null when the amount of work is unknown. */
     progress: number | null;
-    /** What the job is doing: a code of the catalog progress with values («Эпоха 3 из 10»), a stored text of 1.0.0, or null. */
+    /** What the job is doing: a code of the catalog progress with values ("Epoch 3 of 10"), a stored text of 1.0.0, or null. */
     progressMessage: CodedTextDto | null;
     processed: number | null;
     total: number | null;
@@ -27,19 +27,19 @@ export interface JobResponseDto {
     updatedAt: string;
     startedAt: string | null;
     finishedAt: string | null;
-    /** Растёт с каждым изменением: снимок с меньшим sequence устарел. */
+    /** Grows with every change: a snapshot with a smaller sequence is stale. */
     sequence: number;
     /**
-     * Итог задачи или null; форму задаёт вид задачи. Для classes.import_assets — ImportClassAssetsResultDto
-     * (parseImportClassAssetsResult в api/projects/catalog); для images.import — ImportImagesResultDto
-     * (parseImportImagesResult в api/projects/images); для backgrounds.import — ImportBackgroundsResultDto
-     * (parseImportBackgroundsResult в api/projects/backgrounds); для generation.run — GenerationRunResultDto
-     * (parseGenerationRunResult в api/projects/generation); для datasets.build, datasets.verify, datasets.export — DatasetBuildResultDto,
-     * DatasetVerifyResultDto, DatasetExportResultDto (parseDataset*Result в api/projects/datasets); для training.run —
-     * TrainingRunResultDto (parseTrainingRunResult в api/projects/training).
+     * The outcome of the job or null; its shape depends on the job kind. classes.import_assets — ImportClassAssetsResultDto
+     * (parseImportClassAssetsResult in api/projects/catalog); images.import — ImportImagesResultDto
+     * (parseImportImagesResult in api/projects/images); backgrounds.import — ImportBackgroundsResultDto
+     * (parseImportBackgroundsResult in api/projects/backgrounds); generation.run — GenerationRunResultDto
+     * (parseGenerationRunResult in api/projects/generation); datasets.build, datasets.verify, datasets.export — DatasetBuildResultDto,
+     * DatasetVerifyResultDto, DatasetExportResultDto (parseDataset*Result in api/projects/datasets); training.run —
+     * TrainingRunResultDto (parseTrainingRunResult in api/projects/training).
      */
     result: unknown;
-    /** What the job works on: a name as text (group, set, preset, dataset) or a code of jobLabels («Версия N»); null without one. */
+    /** What the job works on: a name as text (group, set, preset, dataset) or a code of jobLabels ("Version N"); null without one. */
     label: CodedTextDto | null;
 }
 
