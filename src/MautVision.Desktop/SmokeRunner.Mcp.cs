@@ -56,9 +56,30 @@ internal static partial class SmokeRunner
     private static async Task CheckMcpAsync(CoreWebView2 web, string root, string projectId, ICore core, McpService mcp, JsonNode report, CancellationToken token)
     {
         var checks = report["checks"]!.AsArray();
-        var port = FreePort();
-        var enabled = await RunLifecycleScriptAsync(web, McpEnableScript, new { port }, checks, token);
-        var secret = enabled["token"]!.GetValue<string>();
+        // The default port is made unavailable (on some machines Windows already reserves it): the first enable moves to a free port.
+        var defaultBlocker = new TcpListener(IPAddress.Loopback, McpSettings.DefaultPort);
+        try
+        {
+            defaultBlocker.Start();
+        }
+        catch (SocketException)
+        {
+        }
+        int port;
+        string secret;
+        try
+        {
+            var enabled = await RunLifecycleScriptAsync(web, McpEnableScript, new { port = FreePort(), defaultPort = McpSettings.DefaultPort }, checks, token);
+            secret = enabled["token"]!.GetValue<string>();
+            port = enabled["port"]!.GetValue<int>();
+        }
+        finally
+        {
+            defaultBlocker.Stop();
+        }
+        if (port < McpSettings.FallbackPorts.Start.Value || port >= McpSettings.FallbackPorts.End.Value || mcp.Settings.Port != port)
+            throw new InvalidOperationException($"The first enable did not move from the unavailable default port: {port}, settings {mcp.Settings.Port}.");
+        checks.Add($"The first enable with an unavailable default port {McpSettings.DefaultPort} takes the free port {port} of the stable range and saves it");
         if (mcp.Settings.Token != secret || mcp.Status.State != "running") throw new InvalidOperationException("The page and the host disagree about the MCP server.");
         using (var stored = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, Host.HostSettings.FileName))))
         {
@@ -73,8 +94,9 @@ internal static partial class SmokeRunner
         await using var client = await ConnectMcpAsync(endpoint, secret, token);
         var tools = await client.ListToolsAsync(cancellationToken: token);
         var names = tools.Select(tool => tool.Name).Order(StringComparer.Ordinal).ToArray();
-        if (!names.SequenceEqual(McpStepOneTools.Order(StringComparer.Ordinal)))
-            throw new InvalidOperationException("Unexpected MCP tools: " + string.Join(", ", names));
+        // Each area's smoke checks its own tools are listed; here the first set must be complete.
+        if (McpStepOneTools.Except(names).ToArray() is { Length: > 0 } absent)
+            throw new InvalidOperationException("MCP tools missing: " + string.Join(", ", absent));
         foreach (var tool in tools.Select(item => item.ProtocolTool))
         {
             if (tool.InputSchema.GetProperty("type").GetString() != "object" || tool.OutputSchema is not { } output || output.GetProperty("type").GetString() != "object"
@@ -85,7 +107,7 @@ internal static partial class SmokeRunner
         if (byName["get_app_info"].Annotations!.ReadOnlyHint != true || byName["delete_project"].Annotations!.DestructiveHint != true
             || byName["create_project"].Annotations!.ReadOnlyHint != false || byName["create_project"].Annotations!.DestructiveHint != false)
             throw new InvalidOperationException("Tool annotations do not follow the tool classes.");
-        checks.Add($"tools/list returns the {names.Length} tools of the first set with input and output schemas and read-only, destructive and idempotent hints; no tool touches the MCP settings");
+        checks.Add($"tools/list returns {names.Length} tools, the first set included, with input and output schemas and read-only, destructive and idempotent hints; no tool touches the MCP settings");
 
         var project = await core.Projects.GetAsync(projectId, token);
         var info = Ok(await CallAsync(client, "get_app_info", null, token), "get_app_info");
@@ -142,6 +164,7 @@ internal static partial class SmokeRunner
         await CheckMcpFilesAsync(client, mcp, root, checks, token);
         await CheckMcpViewAsync(client, core, root, projectId, checks, token);
         await CheckMcpJobsAsync(web, client, projectId, checks, token);
+        await CheckMcpCatalogAndImagesAsync(client, core, root, projectId, checks, token);
         await CheckMcpLogAsync(web, checks, token);
         await CheckMcpPortAsync(web, mcp, endpoint, secret, checks, token);
     }
@@ -630,7 +653,7 @@ internal static partial class SmokeRunner
     }
 
     private const string McpEnableScript = """
-        const {port} = input;
+        const {port, defaultPort} = input;
         const $ = (selector, scope = document) => scope.querySelector(selector);
         const before = await request('mcp.getState', {});
         assert(before.ok && before.data.enabled === false && before.data.status === 'stopped' && before.data.accessLevel === 'full'
@@ -647,14 +670,18 @@ internal static partial class SmokeRunner
         assert(changed.ok && changed.data.port === port && changed.data.status === 'stopped', 'The port is saved while the server is off');
         const invalid = await request('mcp.update', {port: 80});
         assert(!invalid.ok && invalid.error.code === 'bridge.validation', 'A port below 1024 is refused');
+        const restored = await request('mcp.update', {port: defaultPort});
+        assert(restored.ok && restored.data.port === defaultPort, 'The default port is chosen again before the first enable');
         $('[data-testid="mcp-enabled"]', dialog).click();
         await until(() => $('[data-testid="mcp-status"]', dialog)?.dataset.status === 'running', 'Server running');
         const running = await request('mcp.getState', {});
-        assert(running.data.token && running.data.token.length >= 43 && running.data.endpoint === `http://127.0.0.1:${port}/mcp`
+        const chosen = running.data.port;
+        assert(chosen !== defaultPort && running.data.endpoint === `http://127.0.0.1:${chosen}/mcp`, 'The first enable leaves the unavailable default port');
+        assert(running.data.token && running.data.token.length >= 43
           && $('[data-testid="mcp-status"]', dialog).textContent.includes(running.data.endpoint), 'The switch starts the server on 127.0.0.1 with a generated token');
         await until(() => $('[data-testid="mcp-copy-claudeDesktop"]', dialog), 'Configurations');
         assert($('[data-testid="mcp-copy-claudeCode"]', dialog) && $('[data-testid="mcp-copy-mcpJson"]', dialog) && !dialog.textContent.includes(running.data.token)
           && button.dataset.running === 'true', 'Ready configurations for Claude Code and Claude Desktop are offered with the token masked; the header shows the running server');
-        return {checks, token: running.data.token};
+        return {checks, token: running.data.token, port: chosen};
         """;
 }
