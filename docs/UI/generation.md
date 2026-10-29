@@ -52,4 +52,6 @@ change ([navigation](navigation.md)).
 ## Accessibility
 
 The deletion dialog and the viewer return focus to the opening element (`useReturnFocus`). "Edit" and "configure repeat" move focus to the
-name field; saving or cancelling an edit returns it to the card's "Edit".
+name field; saving or cancelling an edit returns it to the card's "Edit". The card buttons are disabled while an action runs, so the focus
+moves after the render that enables them (`useFocusAfterRender`), not in the next frame: a frame can come before that render, and a
+disabled button does not take the focus.

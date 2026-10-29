@@ -15,6 +15,7 @@ import { errorMessage, formatNumber } from "@/lib/format";
 import { useCatalog } from "@/lib/use-catalog";
 import { operationPageLimit, useDatasetOperations, type DatasetOperationsState } from "@/lib/use-dataset-operations";
 import { useDatasetVersions } from "@/lib/use-dataset-versions";
+import { useFocusAfterRender } from "@/lib/use-focus-after-render";
 import { useGroupReviewCounts } from "@/lib/use-group-review-counts";
 import { useImageGroups } from "@/lib/use-image-groups";
 import { DatasetBuildForm, type DatasetFieldError } from "./dataset-build-form";
@@ -78,8 +79,11 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
         if (!versions.loading && !visible.some(version => version.id === selectedId)) setSelectedId(visible[0]?.id);
     }, [versions.loading, visible, selectedId]);
 
+    const focusAfterRender = useFocusAfterRender(busy);
+
+    /** Focus after the render that enables the target: the buttons of the details are disabled while busy. */
     function focusLater(target: string | (() => HTMLElement | null | undefined)) {
-        requestAnimationFrame(() => (typeof target === "string" ? document.getElementById(target) : target())?.focus());
+        focusAfterRender(typeof target === "string" ? () => document.getElementById(target) : target);
     }
 
     function updateForm(update: (current: DatasetFormValues) => DatasetFormValues) {

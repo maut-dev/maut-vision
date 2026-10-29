@@ -52,4 +52,5 @@ version. "Remove from history" removes only the record of a finished operation.
 ## Accessibility
 
 Dialogs and the viewer return focus to the opening element. "Configure repeat" moves focus to the form name; starting a check or export
-moves it to the operation tab.
+moves it to the operation tab. The focus moves after the render in which the section is no longer busy (`useFocusAfterRender`), so a
+button disabled during the action takes it.

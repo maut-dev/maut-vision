@@ -23,6 +23,7 @@ import {
 } from "@/lib/generation/recipe-form";
 import { useBackgroundSets } from "@/lib/use-background-sets";
 import { useCatalog } from "@/lib/use-catalog";
+import { useFocusAfterRender } from "@/lib/use-focus-after-render";
 import { useGenerationRecipes } from "@/lib/use-generation-recipes";
 import { runPageLimit, useGenerationRuns } from "@/lib/use-generation-runs";
 import { useGenerationSamples } from "@/lib/use-generation-samples";
@@ -84,8 +85,11 @@ export function GenerationSection({ project, openImages }: { project: ProjectRes
         setFieldError(undefined);
     }
 
+    const focusAfterRender = useFocusAfterRender(busy);
+
+    /** Focus after the render that enables the target: the card buttons are disabled while busy and while the recipe is edited. */
     function focusLater(selector: string | (() => HTMLElement | null | undefined)) {
-        requestAnimationFrame(() => (typeof selector === "string" ? document.querySelector<HTMLElement>(selector) : selector())?.focus());
+        focusAfterRender(typeof selector === "string" ? () => document.querySelector<HTMLElement>(selector) : selector);
     }
 
     /** The text of a host error; a revision conflict reads the presets again, a wrong field is highlighted in the form. */
