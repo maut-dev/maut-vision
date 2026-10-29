@@ -12,7 +12,7 @@ import { i18n } from "@/i18n";
 import { codedText } from "@/lib/coded-text";
 import { errorMessage } from "@/lib/format";
 
-/** «Обучение · fake:hang», «Живая проверка»; an unknown kind as is. */
+/** "Training · fake:hang", "Live check"; an unknown kind as is. */
 function activityTitle(kind: string, label: CodedTextDto | null): string {
     const key = `jobs.kinds.${kind}`;
     const name = i18n.exists(key) ? (i18n.t as unknown as (key: string) => string)(key) : kind;
@@ -21,9 +21,9 @@ function activityTitle(kind: string, label: CodedTextDto | null): string {
 }
 
 /**
- * «Удалить проект с компьютера?»: сначала reviewDeletion — идущие задачи и живая проверка (их отменит «Отменить задачи и удалить»)
- * или экспорт (удаление недоступно); затем delete с ревизией просмотра. Отказ (изменилась ревизия, появились задачи) остаётся в окне,
- * «Проверить снова» перечитывает состав. Пока идёт удаление, окно не закрывается.
+ * Delete the project from the computer: first reviewDeletion — running jobs and a live check (Cancel jobs and delete cancels them)
+ * or an export (deletion is unavailable); then delete with the review revision. A refusal (the revision changed, jobs appeared) stays in the
+ * dialog, Check again reads the content again. While the deletion runs, the dialog does not close.
  */
 export function ProjectDeletionDialog({ project, close, deleted }: {
     project: ProjectResponseDto;

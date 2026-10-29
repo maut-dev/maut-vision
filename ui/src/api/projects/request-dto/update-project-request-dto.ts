@@ -2,7 +2,7 @@ import type { InputSizeDto } from "../input-size-dto";
 
 export interface UpdateProjectRequestDto {
     projectId: string;
-    /** Ревизия, которую видел пользователь; при расхождении приходит projects.revision_conflict. */
+    /** The revision the user saw; on a mismatch projects.revision_conflict comes back. */
     revision: number;
     name: string;
     description: string;

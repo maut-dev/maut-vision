@@ -1,5 +1,5 @@
-/** UI показала библиотеку после запуска; host один раз записывает время запуска в журнал. */
+/** The UI showed the library after the start; the host writes the startup time to the log once. */
 export interface ReadyRequestDto {
-    /** Число полученных проектов, не меньше 0. */
+    /** The number of received projects, at least 0. */
     projects: number;
 }

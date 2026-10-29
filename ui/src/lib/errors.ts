@@ -59,7 +59,7 @@ export interface Blocker {
     examples: readonly string[];
 }
 
-/** A line of the blocker list: «Используется в пресетах генерации: Пресет «A» и другие.», «Набор используется: 2.»… */
+/** A line of the blocker list: "Used in generation presets: Preset "A" and others.", "The set is used: 2."… */
 export function blockerText(area: BlockerArea, blocker: Blocker): string {
     const { code, count, examples } = blocker;
     if (area === "training") return errorText(code);
@@ -79,7 +79,7 @@ export function planWarningText(warning: { code: string; count: number }): strin
 }
 
 /**
- * Why a background source was skipped: with the sizes «Размер a×b, нужен W×H» and «Рамка W×H не помещается в кадр a×b», otherwise the
+ * Why a background source was skipped: with the sizes "Size a×b, W×H needed" and "The W×H frame does not fit the a×b frame", otherwise the
  * text of the code (video.frame_unavailable among them).
  */
 export function backgroundReasonText(reason: string, width: number | null, height: number | null, target: { width: number; height: number }): string {

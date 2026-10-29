@@ -36,7 +36,7 @@ export function subscribeProjectChanged(listener: (event: ProjectChangedEventDto
     });
 }
 
-/** Проект удалён (в том числе из другого окна): убрать его из библиотеки. */
+/** A project was deleted (also from another window): remove it from the library. */
 export function subscribeProjectRemoved(listener: (event: ProjectRemovedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
         if (event.event !== "project.removed" || !isProjectRemovedDto(event.data)) return;
@@ -44,7 +44,7 @@ export function subscribeProjectRemoved(listener: (event: ProjectRemovedEventDto
     });
 }
 
-/** Ход и итог импорта проекта; применять снимок, только если sequence больше известного. */
+/** Progress and outcome of a project import; apply a snapshot only when sequence is greater than the known one. */
 export function subscribeProjectImportChanged(listener: (event: ProjectImportChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
         if (event.event !== "projectImport.changed" || !isProjectImportResponseDto(event.data)) return;
@@ -52,7 +52,7 @@ export function subscribeProjectImportChanged(listener: (event: ProjectImportCha
     });
 }
 
-/** Снимок задачи после каждого сохранённого изменения; применять, только если sequence больше известного. */
+/** A job snapshot after each stored change; apply it only when sequence is greater than the known one. */
 export function subscribeJobChanged(listener: (event: JobChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
         if (event.event !== "job.changed" || !isJobResponseDto(event.data)) return;
@@ -68,8 +68,8 @@ export function subscribeBaseModelChanged(listener: (event: BaseModelChangedEven
 }
 
 /**
- * Изменения каталога проекта (варианты, классы, привязки, изображения): что изменилось и новые ревизии.
- * Применять, только если catalogRevision больше известного; изменения изображений — по assetsChangedIn.
+ * Changes of the project catalog (variants, classes, bindings, images): what changed and the new revisions.
+ * Apply them only when catalogRevision is greater than the known one; image changes go by assetsChangedIn.
  */
 export function subscribeCatalogChanged(listener: (event: CatalogChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
@@ -79,8 +79,8 @@ export function subscribeCatalogChanged(listener: (event: CatalogChangedEventDto
 }
 
 /**
- * Изменения групп изображений, изображений и разметки: что изменилось и новые ревизии, без списков. Группу применять, если
- * revision больше известного (null — удалена); для imagesChangedIn перечитать группу и загруженные страницы.
+ * Changes of image groups, images and annotation: what changed and the new revisions, without lists. Apply a group when its
+ * revision is greater than the known one (null — deleted); for imagesChangedIn read the group and the loaded pages again.
  */
 export function subscribeImagesChanged(listener: (event: ImagesChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
@@ -90,8 +90,8 @@ export function subscribeImagesChanged(listener: (event: ImagesChangedEventDto) 
 }
 
 /**
- * Изменения наборов фонов и фонов: что изменилось и новые ревизии, без списков. Набор применять, если revision больше известного
- * (null — удалён); для itemsChangedIn перечитать набор и загруженные страницы.
+ * Changes of background sets and backgrounds: what changed and the new revisions, without lists. Apply a set when its revision is greater
+ * than the known one (null — deleted); for itemsChangedIn read the set and the loaded pages again.
  */
 export function subscribeBackgroundsChanged(listener: (event: BackgroundsChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
@@ -101,8 +101,8 @@ export function subscribeBackgroundsChanged(listener: (event: BackgroundsChanged
 }
 
 /**
- * Изменения генерации: пресеты с ревизиями (null — удалён) и запуски, у которых изменились данные помимо состояния задачи
- * (перечитать getRun). Состояние и прогресс запусков — subscribeJobChanged (kind generation.run).
+ * Changes of generation: presets with revisions (null — deleted) and runs whose data changed besides the job state
+ * (read getRun again). The state and progress of runs come with subscribeJobChanged (kind generation.run).
  */
 export function subscribeGenerationChanged(listener: (event: GenerationChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
@@ -112,8 +112,8 @@ export function subscribeGenerationChanged(listener: (event: GenerationChangedEv
 }
 
 /**
- * Изменения датасетов: версии с ревизиями (null — удалена), без списков; перечитать list / get. Прогресс и итоги сборки,
- * проверки и экспорта — subscribeJobChanged (kind datasets.build / datasets.verify / datasets.export).
+ * Changes of datasets: versions with revisions (null — deleted), without lists; read list / get again. Progress and outcomes of builds,
+ * verifications and exports come with subscribeJobChanged (kind datasets.build / datasets.verify / datasets.export).
  */
 export function subscribeDatasetsChanged(listener: (event: DatasetsChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
@@ -122,7 +122,7 @@ export function subscribeDatasetsChanged(listener: (event: DatasetsChangedEventD
     });
 }
 
-/** Окно закрывается: ответить systemApi.closeDecision за 1 с (см. CloseRequestedEventDto). */
+/** The window is closing: answer systemApi.closeDecision within 1 s (see CloseRequestedEventDto). */
 export function subscribeCloseRequested(listener: (event: CloseRequestedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
         if (event.event !== "app.closeRequested" || !isCloseRequestedDto(event.data)) return;
@@ -131,8 +131,8 @@ export function subscribeCloseRequested(listener: (event: CloseRequestedEventDto
 }
 
 /**
- * Изменения обучения: запуски (ход, эпохи, журнал, итог) и версии моделей с ревизиями, без данных; перечитать getRun /
- * listModelVersions. Состояние и прогресс запусков — subscribeJobChanged (kind training.run).
+ * Changes of training: runs (progress, epochs, log, outcome) and model versions with revisions, without data; read getRun /
+ * listModelVersions again. The state and progress of runs come with subscribeJobChanged (kind training.run).
  */
 export function subscribeTrainingChanged(listener: (event: TrainingChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
@@ -141,7 +141,7 @@ export function subscribeTrainingChanged(listener: (event: TrainingChangedEventD
     });
 }
 
-/** Пресеты обучения сохранены или удалены (в том числе из другого окна): перечитать trainingApi.listPresets. */
+/** Training presets were saved or deleted (also from another window): read trainingApi.listPresets again. */
 export function subscribeTrainingPresetsChanged(listener: (event: TrainingPresetsChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {
         if (event.event !== "trainingPresets.changed" || !isTrainingPresetsChangedDto(event.data)) return;
@@ -150,8 +150,8 @@ export function subscribeTrainingPresetsChanged(listener: (event: TrainingPreset
 }
 
 /**
- * Изменения проверок: оценки на датасетах с ревизиями (перечитать checksApi.getEvaluation) и снимки живой проверки (применять по
- * check.sequence). Состояние и прогресс оценок — также subscribeJobChanged (kind checks.evaluate).
+ * Changes of checks: dataset evaluations with revisions (read checksApi.getEvaluation again) and snapshots of a live check (apply them by
+ * check.sequence). The state and progress of evaluations also come with subscribeJobChanged (kind checks.evaluate).
  */
 export function subscribeChecksChanged(listener: (event: ChecksChangedEventDto) => void): () => void {
     return nativeBridge.subscribe(event => {

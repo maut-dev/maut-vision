@@ -6,7 +6,7 @@ import type { ListBaseModelsRequestDto } from "./request-dto/list-base-models-re
 import { isBaseModelResponseDto } from "./response-dto/base-model-response-dto";
 import { isListBaseModelsResponseDto } from "./response-dto/list-base-models-response-dto";
 
-/** Установка возвращает состояние сразу; прогресс и результат приходят событием baseModel.changed. */
+/** Installing returns the state at once; progress and the outcome come with the baseModel.changed event. */
 export const baseModelsApi = {
     get available(): boolean { return nativeBridge.available; },
     list(signal?: AbortSignal) {

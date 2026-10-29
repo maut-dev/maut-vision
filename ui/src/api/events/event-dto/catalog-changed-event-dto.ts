@@ -1,15 +1,15 @@
 import { isCount, isId, isRevision } from "../../projects/catalog/catalog-guards";
 import { isRecord } from "../../transport/envelopes";
 
-/** Изменённый объект с новой ревизией или удалённый (revision = null). */
+/** A changed object with its new revision, or a deleted one (revision = null). */
 export interface CatalogEntityChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в каталоге проекта. Если catalogRevision больше известного, UI перечитывает снимок
- * classes.getWorkspace; для привязок из assetsChangedIn — и их страницы изображений.
+ * What changed in the catalog of the project. When catalogRevision is greater than the known one, the UI reads the snapshot
+ * classes.getWorkspace again; for the bindings of assetsChangedIn also their image pages.
  */
 export interface CatalogChangedDto {
     projectId: string;

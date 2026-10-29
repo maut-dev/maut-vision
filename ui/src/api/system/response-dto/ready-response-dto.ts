@@ -1,6 +1,6 @@
 import { isRecord } from "../../transport/envelopes";
 
-/** elapsedMilliseconds — время от старта процесса до первой отметки готовности. */
+/** elapsedMilliseconds — the time from the process start to the first readiness mark. */
 export interface ReadyResponseDto {
     elapsedMilliseconds: number;
 }

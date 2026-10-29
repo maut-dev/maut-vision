@@ -1,6 +1,6 @@
 import { isRecord } from "../../transport/envelopes";
 
-/** accepted — false, если host отбросил запись из-за ограничения частоты. */
+/** accepted — false when the host dropped the record because of the rate limit. */
 export interface LogResponseDto {
     accepted: boolean;
 }

@@ -1,15 +1,15 @@
 import { isId, isRevision } from "../../projects/catalog/catalog-guards";
 import { isRecord } from "../../transport/envelopes";
 
-/** Изменённая версия с новой ревизией; revision = null — удалена. */
+/** A changed version with its new revision; revision = null when it was deleted. */
 export interface DatasetEntityChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в датасетах проекта: versions — версии с новыми ревизиями (появилась после сборки, изменены название или архив,
- * проверена целостность) или удалённые: перечитать list / get. Прогресс и итог операций — job.changed.
+ * What changed in the datasets of the project: versions — versions with new revisions (built, renamed, archived or restored, integrity
+ * verified) or deleted ones: read list / get again. Progress and outcomes of operations come with job.changed.
  */
 export interface DatasetsChangedDto {
     projectId: string;

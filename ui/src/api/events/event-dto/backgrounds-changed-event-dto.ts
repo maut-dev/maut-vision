@@ -1,16 +1,16 @@
 import { isId, isRevision } from "../../projects/catalog/catalog-guards";
 import { isRecord } from "../../transport/envelopes";
 
-/** Изменённый набор или фон с новой ревизией; revision = null — удалён. */
+/** A changed set or background with its new revision; revision = null when it was deleted. */
 export interface BackgroundsEntityChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в фонах проекта. sets — наборы с новыми ревизиями или удалённые; items — фоны, изменённые явной операцией
- * («Убрать», «Восстановить», удаление выбранных); itemsChangedIn — наборы, у которых изменился состав или счётчики (подготовка
- * приходит не чаще раза в 500 мс на набор): UI перечитывает их набор и загруженные страницы.
+ * What changed in the backgrounds of the project. sets — sets with new revisions or deleted ones; items — backgrounds changed by an explicit
+ * operation (remove, restore, deleting the chosen ones); itemsChangedIn — sets whose content or counters changed (preparation reports at
+ * most once per 500 ms per set): the UI reads their set and the loaded pages again.
  */
 export interface BackgroundsChangedDto {
     projectId: string;

@@ -13,7 +13,7 @@ declare global {
     }
 }
 
-/** details ошибки: объект строк или null; иное значение отбрасывается. */
+/** The details of an error: an object of strings or null; any other value is dropped. */
 function errorDetails(value: unknown): Readonly<Record<string, string>> | null {
     if (!isRecord(value)) return null;
     return Object.values(value).every(item => typeof item === "string") ? value as Record<string, string> : null;
@@ -46,8 +46,8 @@ export class NativeBridge {
     }
 
     /**
-     * timeoutMs — сколько ждать ответа (по умолчанию 10 с); null — без ограничения, для запросов, которые ждут
-     * пользователя в нативном окне (выбор файлов). Таймаут не отменяет операцию в приложении.
+     * timeoutMs — how long to wait for the answer (10 s by default); null — no limit, for requests that wait for
+     * the user in a native window (choosing files). A timeout does not cancel the operation in the application.
      */
     request<TRequest, TResponse>(method: string, payload: TRequest, validate: (value: unknown) => value is TResponse, signal?: AbortSignal,
         timeoutMs: number | null = 10_000): Promise<TResponse> {

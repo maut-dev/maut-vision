@@ -11,7 +11,7 @@ export function formatNumber(value: number, options?: Intl.NumberFormatOptions):
     return value.toLocaleString(locale(), options);
 }
 
-/** Sizes: «512 Б», «1,5 МБ», «2,25 ГБ» / «1.5 MB». */
+/** Sizes: "512 B", "1.5 MB", "2.25 GB" in the units of the language. */
 export function formatBytes(bytes: number): string {
     if (bytes < 1024) return i18n.t("units.bytes", { value: formatNumber(bytes) });
     if (bytes < 1024 ** 2) return i18n.t("units.kilobytes", { value: formatNumber(bytes / 1024, { maximumFractionDigits: 1 }) });
@@ -23,7 +23,7 @@ export function megabytes(bytes: number): string {
     return i18n.t("units.megabytes", { value: formatNumber(bytes / 1024 / 1024, { maximumFractionDigits: 1 }) });
 }
 
-/** Durations: «1 ч 5 мин», «2 мин 3 с», «45 с» / «1 h 5 min»… */
+/** Durations: "1 h 5 min", "2 min 3 s", "45 s" in the units of the language. */
 export function formatDuration(milliseconds: number): string {
     const seconds = Math.max(0, Math.round(milliseconds / 1000));
     const hours = Math.floor(seconds / 3600);
@@ -34,7 +34,7 @@ export function formatDuration(milliseconds: number): string {
     return i18n.t("units.seconds", { seconds: formatNumber(rest) });
 }
 
-/** «28 октября 2026 г., 14:05» / «October 28, 2026 at 02:05 PM». */
+/** "October 28, 2026 at 02:05 PM", or the same date in the form of the language. */
 export function formatDate(value: string): string {
     return new Date(value).toLocaleString(locale(), {
         day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",

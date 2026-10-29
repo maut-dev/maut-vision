@@ -2,16 +2,16 @@ import type { JobErrorDto, JobResponseDto } from "../../jobs/response-dto/job-re
 import { isCodedTextDto, type CodedTextDto } from "../../coded-text-dto";
 import { isRecord } from "../../transport/envelopes";
 
-/** Вид задачи экспорта проекта. */
+/** The job kind of a project export. */
 export const projectExportJobKind = "projects.export";
 
-/** Место сохранения экспорта; null — окно закрыто без выбора. Путь в UI не приходит. */
+/** Where the export is saved; null when the window was closed without a choice. The path does not reach the UI. */
 export interface ProjectExportSelectionResponseDto {
     selectionToken: string | null;
     fileName: string | null;
 }
 
-/** Выбранный архив; null — окно закрыто без выбора. */
+/** The chosen archive; null when the window was closed without a choice. */
 export interface ProjectArchiveSelectionResponseDto {
     selectionToken: string | null;
     fileName: string | null;
@@ -21,9 +21,9 @@ export interface ProjectArchiveSelectionResponseDto {
 export type ProjectImportStatus = "running" | "succeeded" | "failed" | "cancelled";
 
 /**
- * Импорт проекта: счётчики файлов и байтов распаковки (total — 0 до проверки архива); при успехе projectId и projectName —
- * добавленный проект (при совпадении id — новый, при совпадении имени — с « (импорт)»); error — код и текст отказа.
- * Применять снимок, только если sequence больше известного. Тексты: «Импорт проекта…», «Файлов: N из M.».
+ * A project import: counters of files and unpacked bytes (total is 0 until the archive is checked); on success projectId and projectName —
+ * the added project (a new id when the id matches, the copy suffix when the name matches); error — the code of the refusal.
+ * Apply a snapshot only when sequence is greater than the known one. The banner reads "Importing a project…", "Files: N of M.".
  */
 export interface ProjectImportResponseDto {
     id: string;
@@ -43,7 +43,7 @@ export interface ProjectImportResponseDto {
     sequence: number;
 }
 
-/** Идущая работа проекта: задача (kind — её вид, jobId, label) или живая проверка (kind "checks.live", jobId null). */
+/** Running work of a project: a job (kind — its kind, jobId, label) or a live check (kind "checks.live", jobId null). */
 export interface ProjectActivityResponseDto {
     kind: string;
     jobId: string | null;
@@ -51,7 +51,7 @@ export interface ProjectActivityResponseDto {
     label: CodedTextDto | null;
 }
 
-/** activities — что удаление отменит («Отменить задачи и удалить»); transferActive — идёт экспорт, удаление откажет. */
+/** activities — what the deletion cancels (Cancel jobs and delete); transferActive — an export runs, the deletion is refused. */
 export interface ProjectDeletionReviewResponseDto {
     projectId: string;
     name: string;
@@ -60,13 +60,13 @@ export interface ProjectDeletionReviewResponseDto {
     transferActive: boolean;
 }
 
-/** cleanupPending — «Проект удалён. Часть файлов пока занята; приложение повторит очистку при следующем запуске.» */
+/** cleanupPending — the project is deleted, but some files are still busy; the application repeats the cleanup at the next start. */
 export interface ProjectDeletionResponseDto {
     projectId: string;
     cleanupPending: boolean;
 }
 
-/** Итог projects.export (и после отмены или ошибки — сколько успели); links — пути жёстких ссылок без повторного содержимого. */
+/** The outcome of projects.export (also after a cancel or an error — how much was done); links — paths of hard links without repeated content. */
 export interface ProjectExportResultDto {
     fileName: string;
     files: number;
@@ -124,7 +124,7 @@ function isProjectExportResultDto(value: unknown): value is ProjectExportResultD
         && isCount(value.totalBytes) && isCount(value.links) && isCount(value.archiveBytes) && isCount(value.elapsedMs);
 }
 
-/** Итог задачи projects.export или null, если это другая задача или итога ещё нет. */
+/** The outcome of a projects.export job, or null when it is another job or there is no outcome yet. */
 export function parseProjectExportResult(job: JobResponseDto): ProjectExportResultDto | null {
     return job.kind === projectExportJobKind && isProjectExportResultDto(job.result) ? job.result : null;
 }

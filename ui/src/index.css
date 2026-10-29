@@ -36,9 +36,9 @@
     --secondary: #27272a;
     --muted-foreground: #a1a1aa;
     --border: #27272a;
-    /* Салатовый центр знака Maut Vision; используется точечно: прогресс и активное состояние. */
+    /* The light green center of the Maut Vision mark; used sparingly: progress and the active state. */
     --brand: #cdf91e;
-    /* Серии сравнений и классы проверок моделей: цвет по номеру версии или индексу класса. */
+    /* Comparison series and classes of model checks: a color by the version number or the class index. */
     --series-1: #3987e5;
     --series-2: #d95926;
     --series-3: #199e70;

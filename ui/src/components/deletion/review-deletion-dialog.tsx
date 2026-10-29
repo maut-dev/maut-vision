@@ -12,9 +12,9 @@ export interface DeletionReview {
 }
 
 /**
- * Удаление навсегда в две фазы (изображения, фоны): просмотр состава и блокировок, затем удаление с ревизией просмотра.
- * Ошибка удаления (например, изменился состав) требует «Проверить снова». Пока идёт удаление, окно не закрывается;
- * фокус после закрытия возвращается к открывшему элементу.
+ * Permanent deletion in two phases (images, backgrounds): a review of the content and the blockers, then the deletion with the review revision.
+ * A deletion error (for example, the content changed) requires Check again. While the deletion runs, the dialog does not close;
+ * after closing, focus returns to the element that opened it.
  */
 export function ReviewDeletionDialog<R extends DeletionReview, D>({ area, title, description, testId, review, remove, deleted, close, renderReview, blockersTitle, blockersNote, busyText }: {
     /** Which dialog lists the blockers: the same code reads differently in each. */
@@ -22,14 +22,14 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ area, title,
     title: string;
     description: ReactNode;
     testId: string;
-    /** Чтение состава; меняется — перечитывается. */
+    /** Reads the content; when it changes, the content is read again. */
     review: (signal: AbortSignal) => Promise<R>;
     remove: (review: R) => Promise<D>;
     deleted: (result: D) => void;
     close: () => void;
     renderReview: (review: R) => ReactNode;
     blockersTitle: ReactNode;
-    /** Пояснение после списка блокировок. */
+    /** The explanation after the list of blockers. */
     blockersNote?: ReactNode;
     busyText: string;
 }) {

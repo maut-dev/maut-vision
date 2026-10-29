@@ -12,10 +12,10 @@ export interface BaseModelResponseDto {
     family: string;
     variant: string;
     byteSize: number;
-    /** Шаг входа: ширина и высота входа проекта кратны ему. */
+    /** The input step: the width and height of a project input are multiples of it. */
     stride: number;
     status: BaseModelStatus;
-    /** 0–100 во время установки, иначе 0. */
+    /** 0–100 while installing, otherwise 0. */
     progress: number;
     error: BaseModelErrorDto | null;
 }

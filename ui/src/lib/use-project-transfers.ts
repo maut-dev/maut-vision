@@ -14,7 +14,7 @@ import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 import { isJobActive } from "./use-asset-imports";
 
-/** Экспорт проекта: задача projects.export и итог (после отмены или ошибки — сколько успели). */
+/** A project export: the projects.export job and its outcome (after a cancel or an error, how much was done). */
 export interface ProjectExportTransfer {
     kind: "export";
     projectId: string;
@@ -37,10 +37,10 @@ export const isTransferRunning = (transfer: ProjectTransfer) =>
     transfer.kind === "export" ? isJobActive(transfer.job) : transfer.operation.status === "running";
 
 /**
- * Перенос проектов из библиотеки. Экспорт — «Сохранить как» (закрытое окно ничего не запускает), затем задача projects.export с
- * ходом по job.changed; импорт — выбор архива, затем фоновая операция с ходом по projectImport.changed. Опроса нет: после
- * перезагрузки страницы идущий импорт берётся из listImports, идущий экспорт — из активных задач проектов, хранилище которых
- * подготовлено. imported вызывается, когда на глазах страницы импорт завершился успешно.
+ * Project transfers from the library. Export is Save As (a closed window starts nothing), then the projects.export job with
+ * progress by job.changed; import is the choice of an archive, then a background operation with progress by projectImport.changed. No
+ * polling: after a page reload a running import comes from listImports, a running export from the active jobs of projects whose storage is
+ * prepared. imported is called when an import the page watched finished successfully.
  */
 export function useProjectTransfers(projects: readonly ProjectResponseDto[], loaded: boolean, imported: (projectId: string) => void) {
     const [exports, setExports] = useState<readonly ProjectExportTransfer[]>([]);
@@ -50,7 +50,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
     names.current = new Map(projects.map(project => [project.id, project.name]));
     const onImported = useRef(imported);
     onImported.current = imported;
-    // Импорты, которые страница видела идущими: только их успех открывает проект.
+    // Imports the page saw running: only their success opens the project.
     const watched = useRef(new Set<string>());
     const dismissed = useRef(new Set<string>());
     const seenJobs = useRef(new Map<string, JobResponseDto>());
@@ -59,7 +59,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
 
     const applyJob = useCallback((job: JobResponseDto, start?: { projectName: string; fileName: string | null }) => {
         if (job.kind !== projectExportJobKind) return;
-        // Снимки, пришедшие раньше ответа старта, не теряются: применяется последний по sequence.
+        // Snapshots that came before the start answer are not lost: the latest by sequence applies.
         const known = seenJobs.current.get(job.id);
         const latest = known && known.sequence >= job.sequence ? known : job;
         seenJobs.current.set(job.id, latest);
@@ -67,7 +67,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         setExports(items => {
             const current = items.find(item => item.job.id === job.id);
             if (current && current.job.sequence >= latest.sequence && !start) return items;
-            // Задача, о которой страница не знала (поставлена до перезагрузки), показывается, только пока идёт.
+            // A job the page did not know about (queued before the reload) is shown only while it runs.
             if (!current && !start && !isJobActive(latest)) return items;
             const next: ProjectExportTransfer = {
                 kind: "export",
@@ -90,7 +90,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         if (dismissed.current.has(latest.id)) return;
         setImportState(current => {
             if (current && current.operation.id === latest.id && current.operation.sequence >= latest.sequence) return current;
-            // Одновременно идёт один импорт: завершённый чужой снимок не заменяет идущий.
+            // One import runs at a time: a finished foreign snapshot does not replace the running one.
             if (current && current.operation.id !== latest.id && current.operation.status === "running" && latest.status !== "running") return current;
             return { kind: "import", operation: latest };
         });
@@ -100,10 +100,10 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         mounted.current = true;
         const unsubscribeJobs = subscribeJobChanged(event => applyJob(event.data));
         const unsubscribeImports = subscribeProjectImportChanged(event => applyImport(event.data));
-        // Идущий импорт переживает перезагрузку страницы; завершённые не показываются заново.
+        // A running import survives a page reload; finished ones are not shown again.
         projectsApi.listImports().then(
             items => items.filter(item => item.status === "running").forEach(item => applyImport(item)),
-            () => { /* без списка импорт появится со следующим событием */ });
+            () => { /* without the list, the import appears with the next event */ });
         return () => {
             mounted.current = false;
             unsubscribeJobs();
@@ -111,7 +111,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         };
     }, [applyJob, applyImport]);
 
-    // Идущий экспорт после перезагрузки: задачи видны только у проектов с подготовленным хранилищем, остальные отвечают отказом.
+    // A running export after a reload: jobs are visible only in projects with a prepared storage, the others refuse.
     const reconnected = useRef(false);
     useEffect(() => {
         if (!loaded || reconnected.current) return;
@@ -119,11 +119,11 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         for (const project of projects) {
             jobsApi.listActive({ projectId: project.id, limit: 5 }).then(
                 page => page.items.forEach(item => applyJob(item.job)),
-                () => { /* проект не подготовлен — экспорта в нём нет */ });
+                () => { /* the project is not prepared, so it has no export */ });
         }
     }, [loaded, projects, applyJob]);
 
-    /** «Экспортировать…»: false — окно «Сохранить как» закрыто. */
+    /** Export…: false when the Save As window was closed. */
     const startExport = useCallback(async (project: ProjectResponseDto) => {
         setError(undefined);
         try {
@@ -136,7 +136,7 @@ export function useProjectTransfers(projects: readonly ProjectResponseDto[], loa
         }
     }, [applyJob]);
 
-    /** «Импортировать проект…»: закрытое окно выбора ничего не запускает. */
+    /** Import a project…: a closed picker starts nothing. */
     const startImport = useCallback(async () => {
         setError(undefined);
         try {

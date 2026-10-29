@@ -16,7 +16,7 @@ function transferState(transfer: ProjectTransfer): TransferState {
     return status === "succeeded" || status === "cancelled" ? status : "failed";
 }
 
-/** Заголовок: «Экспорт проекта «X»…», «Импорт проекта…», «Проект «X» импортирован», «Импорт отменён», «Экспорт не выполнен»… */
+/** The title: exporting project "X"…, importing a project…, project "X" imported, import cancelled, export failed… */
 export function transferTitle(transfer: ProjectTransfer): string {
     const state = transferState(transfer);
     const exporting = transfer.kind === "export";
@@ -28,7 +28,7 @@ export function transferTitle(transfer: ProjectTransfer): string {
     return exporting ? i18n.t("transfer.exportFailed") : i18n.t("transfer.importFailed");
 }
 
-/** Ход: «Файлов: N из M.» (до подсчёта — подготовка), итог или текст отказа. */
+/** Progress: "Files: N of M." (before counting, preparation), the outcome or the refusal text. */
 export function transferDetail(transfer: ProjectTransfer): string {
     const state = transferState(transfer);
     if (state === "running") {
@@ -47,7 +47,7 @@ export function transferDetail(transfer: ProjectTransfer): string {
     return transfer.kind === "export" ? i18n.t("transfer.exportInterrupted") : i18n.t("transfer.importInterrupted");
 }
 
-/** Байты: у импорта — распаковано из общего объёма, у экспорта — размер архива после итога. */
+/** Bytes: for an import, unpacked of the total size; for an export, the archive size after the outcome. */
 function transferBytes(transfer: ProjectTransfer): string | null {
     if (transfer.kind === "import") {
         const { processedBytes, totalBytes } = transfer.operation;
@@ -70,7 +70,7 @@ function transferPercent(transfer: ProjectTransfer): number | null {
     return totalBytes ? (processedBytes / totalBytes) * 100 : null;
 }
 
-/** Баннер переноса в библиотеке: ход с «Отменить» или итог со «Скрыть». */
+/** The transfer banner in the library: progress with Cancel or the outcome with Hide. */
 export function ProjectTransferBanner({ transfer, cancel, dismiss }: {
     transfer: ProjectTransfer;
     cancel: () => void;

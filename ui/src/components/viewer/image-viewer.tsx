@@ -13,15 +13,15 @@ export interface ViewerOverlay {
     id: string;
     label: string;
     color: string;
-    /** negative — рамка негатива датасета, пунктиром, как ROI. */
+    /** negative — the box of a dataset negative, dashed like an ROI. */
     kind: "object" | "negative" | "roi";
-    /** Доли 0–1 от левого верхнего угла кадра. */
+    /** Fractions 0–1 from the top left corner of the frame. */
     box: Box;
 }
 
 /**
- * Что показывает просмотрщик. width/height — размер кадра с учётом ориентации; src — URL канала ресурсов. URL
- * действует ограниченное время: при ошибке загрузки просмотрщик один раз просит владельца обновить источник (renew).
+ * What the viewer shows. width/height — the frame size with the orientation applied; src — a URL of the resource channel. A URL
+ * is valid for a limited time: on a load error the viewer asks the owner once to renew the source (renew).
  */
 export interface ViewerSource {
     id: string;
@@ -31,16 +31,16 @@ export interface ViewerSource {
     src: ResourceUrl | null;
     renew?: () => void;
     overlays?: readonly ViewerOverlay[];
-    /** Подробности под кадром: размеры, источник, разметка, переключатели. */
+    /** Details under the frame: sizes, source, annotation, toggles. */
     metadata?: ReactNode;
 }
 
 type LoadState = "loading" | "loaded" | "failed";
 
 /**
- * Общий просмотрщик кадра: «Вписать» без увеличения маленького кадра, x1…x10, перетаскивание, полный экран, рамки
- * поверх кадра с легендой. Esc в полном экране сначала выходит из него, затем закрывает; фокус возвращается к
- * элементу, открывшему просмотр. Переходы «Назад»/«Далее» и подгрузку страниц выполняет владелец.
+ * The shared frame viewer: Fit without enlarging a small frame, x1…x10, dragging, full screen, boxes
+ * over the frame with a legend. Esc in full screen first leaves it, then closes; focus returns to
+ * the element that opened the viewer. Previous/Next and loading pages are done by the owner.
  */
 export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy = false, position }: {
     source: ViewerSource;
@@ -48,7 +48,7 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
     onPrevious?: () => void;
     onNext?: () => void;
     navigationBusy?: boolean;
-    /** «i / n» или «i / n+», если есть ещё страницы. */
+    /** "i / n", or "i / n+" when there are more pages. */
     position?: string;
 }) {
     const { t } = useTranslation();

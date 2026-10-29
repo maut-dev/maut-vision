@@ -11,7 +11,7 @@ import { errorMessage } from "@/lib/format";
 const settings: readonly LanguageSetting[] = ["system", "ru", "en"];
 
 /**
- * «Язык интерфейса» in the header: «Как в системе», «Русский», «English». The host keeps the choice (host-settings.json) and relabels its
+ * The interface language in the header: System, Russian, English. The host keeps the choice (host-settings.json) and relabels its
  * tray; the page switches its catalogs at once, without a reload.
  */
 export function LanguageSelect({ disabled, failed }: { disabled?: boolean; failed: (message: string) => void }) {

@@ -80,9 +80,9 @@ const sections: readonly Section[] = [
 ];
 
 /**
- * Экран — состояние React, адрес страницы не меняется (см. docs/UI/navigation.md). groupId — намерение перехода
- * «Открыть изображения»: раздел изображений открывается с этой группой; versionId — паспорт версии в «Моделях»; runId — запуск во
- * вкладке «Текущий запуск» обучения; checksMode — режим «Датасет» проверок. Переход из боковой панели намерения не несёт.
+ * The screen is React state, the page address does not change (see docs/UI/navigation.md). groupId — the intent of the navigation
+ * Open images: the images section opens with this group; versionId — the version passport in Models; runId — a run in the
+ * Current run tab of training; checksMode — the Dataset mode of checks. A navigation from the sidebar carries no intent.
  */
 type View =
     | { kind: "library" }
@@ -109,7 +109,7 @@ export function App() {
     const [opening, setOpening] = useState<string>();
     const openSequence = useRef(0);
     const guard = useNavigationGuard();
-    // Импортированный проект открывается сам, только если пользователь в библиотеке и ничего в ней не начал.
+    // An imported project opens by itself only when the user is in the library and has not started anything there.
     const transfers = useProjectTransfers(library.projects, !library.loading && !library.error, projectId => {
         if (view.kind === "library" && !editor && !deleteTarget && !archiveTarget && !opening && !busy) void openProject(projectId);
     });
@@ -130,8 +130,8 @@ export function App() {
     }, [library.loading, library.error, library.projects.length]);
 
     /**
-     * Номер перехода растёт и между перезагрузками страницы (от времени): host сравнивает его с последним известным. Побеждает последний
-     * переход — медленное открытие не держит переключение, его ответ (или projects.open_superseded) отбрасывается.
+     * The navigation number grows across page reloads too (it starts from the time): the host compares it with the last known one. The last
+     * navigation wins: a slow opening does not hold a switch, its answer (or projects.open_superseded) is dropped.
      */
     function nextOpenSequence(): number {
         openSequence.current = Math.max(Date.now(), openSequence.current + 1);
@@ -155,7 +155,7 @@ export function App() {
         }
     }
 
-    /** Другой переход отменяет ожидание открытия: его ответ больше не меняет экран. */
+    /** Another navigation cancels waiting for an opening: its answer no longer changes the screen. */
     function supersedeOpen() {
         nextOpenSequence();
         setOpening(undefined);
@@ -206,7 +206,7 @@ export function App() {
         });
     }
 
-    /** Переход между экранами: несохранённая разметка сначала требует решения пользователя. */
+    /** A navigation between screens: unsaved annotation first needs the user's decision. */
     function navigate(next: View) {
         guard(() => {
             supersedeOpen();

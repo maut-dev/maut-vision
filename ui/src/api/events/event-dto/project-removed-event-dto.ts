@@ -1,6 +1,6 @@
 import { isRecord } from "../../transport/envelopes";
 
-/** Проект удалён: убрать его из списка; открытый экран проекта закрывается. */
+/** A project was deleted: remove it from the list; an open screen of the project closes. */
 export interface ProjectRemovedEventDto {
     kind: "event";
     event: "project.removed";

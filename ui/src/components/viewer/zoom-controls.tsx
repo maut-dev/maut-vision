@@ -4,7 +4,7 @@ import { maxZoom } from "@/lib/annotation/zoom";
 import { Button } from "@/components/ui/button";
 import type { ZoomViewport } from "./use-zoom-viewport";
 
-/** «Вписать / сброс», «Уменьшить», выбор «Вписать (NN%)» и x1…x10, «Увеличить». */
+/** Fit / reset, Zoom out, the choice of Fit (NN%) and x1…x10, Zoom in. */
 export function ZoomControls({ zoom }: { zoom: ZoomViewport }) {
     const { t } = useTranslation();
     return (

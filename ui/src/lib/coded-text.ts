@@ -39,7 +39,7 @@ export function workerCode(value: CodedTextDto): string | null {
 }
 
 /**
- * A warning of the worker as the training log and the version passport show it: "code: text" («amp_disabled: AMP отключён…»); a line of
+ * A warning of the worker as the training log and the version passport show it: "code: text" ("amp_disabled: AMP disabled…"); a line of
  * version 1.0.0 already holds "code: text".
  */
 export function workerWarningText(value: CodedTextDto): string {

@@ -7,7 +7,7 @@ import { errorMessage } from "./format";
 
 type Operation = "install" | "cancelInstallation" | "delete";
 
-/** Каталог базовых моделей: начальный список запросом, дальнейшие изменения — событиями baseModel.changed. */
+/** The base model catalog: the initial list by a request, later changes by baseModel.changed events. */
 export function useBaseModels() {
     const [models, setModels] = useState<readonly BaseModelResponseDto[]>([]);
     const [loading, setLoading] = useState(true);

@@ -14,7 +14,7 @@ import { systemApi } from "@/api/system/system-api";
 import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/lib/format";
 
-/** Экран с несохранёнными изменениями: признак, сохранение и явный отказ от изменений. */
+/** A screen with unsaved changes: the flag, saving and explicitly discarding the changes. */
 interface UnsavedRegistration {
     dirty: boolean;
     save: () => Promise<void>;
@@ -29,10 +29,10 @@ interface UnsavedChangesContext {
 const Context = createContext<UnsavedChangesContext>({ register: () => {}, guard: intent => intent() });
 
 /**
- * Одна защита несохранённых изменений для всех переходов: внутри раздела, смена раздела или проекта, перезагрузка страницы
- * (beforeunload) и закрытие окна приложения (app.closeRequested от host: окно закрывается, только если изменений нет,
- * иначе после сохранения или отказа UI просит host закрыть его — system.close). Переход выполняется только после
- * успешного сохранения или явного отказа; ошибка сохранения остаётся в диалоге.
+ * One guard of unsaved changes for every navigation: inside a section, switching the section or the project, reloading the page
+ * (beforeunload) and closing the application window (app.closeRequested from the host: the window closes only when there are no changes,
+ * otherwise after saving or discarding the UI asks the host to close it — system.close). The navigation runs only after
+ * a successful save or an explicit discard; a save error stays in the dialog.
  */
 export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
@@ -121,12 +121,12 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
     );
 }
 
-/** Переход, который при несохранённых изменениях сначала спрашивает пользователя. */
+/** A navigation that first asks the user when there are unsaved changes. */
 export function useNavigationGuard(): (intent: () => void) => void {
     return useContext(Context).guard;
 }
 
-/** Регистрирует экран с несохранёнными изменениями на время его жизни. */
+/** Registers a screen with unsaved changes for its lifetime. */
 export function useUnsavedChanges(dirty: boolean, save: () => Promise<void>, discard: () => void) {
     const { register } = useContext(Context);
     const latest = useRef<UnsavedRegistration>({ dirty, save, discard });

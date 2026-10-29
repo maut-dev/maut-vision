@@ -1,8 +1,8 @@
-/** Ответ на app.closeRequested: allow — окно можно закрыть (нет несохранённых изменений). */
+/** The answer to app.closeRequested: allow — the window may close (there are no unsaved changes). */
 export interface CloseDecisionRequestDto {
     requestId: string;
     allow: boolean;
 }
 
-/** UI сохранила или отбросила изменения после попытки закрыть окно и просит закрыть его. */
+/** The UI saved or discarded the changes after an attempt to close the window and asks to close it. */
 export type CloseRequestDto = Record<string, never>;

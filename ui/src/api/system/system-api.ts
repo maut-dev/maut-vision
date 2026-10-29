@@ -18,11 +18,11 @@ export const systemApi = {
     ready(request: ReadyRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("system.ready", request, isReadyResponseDto, signal);
     },
-    /** Ответ на app.closeRequested: allow — нет несохранённых изменений, окно закроется. */
+    /** The answer to app.closeRequested: allow — there are no unsaved changes, the window closes. */
     closeDecision(request: CloseDecisionRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("system.closeDecision", request, isCloseResponseDto, signal);
     },
-    /** Закрыть окно после того, как пользователь сохранил или отбросил изменения. */
+    /** Close the window after the user saved or discarded the changes. */
     close(signal?: AbortSignal) {
         const request: CloseRequestDto = {};
         return nativeBridge.request("system.close", request, isCloseResponseDto, signal);

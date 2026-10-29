@@ -13,15 +13,15 @@ import { transferKey, type ProjectTransfersState } from "@/lib/use-project-trans
 import type { ProjectsState } from "@/lib/use-projects";
 
 /**
- * Библиотека: последний открытый проект стоит первым с отметкой «Последний открытый»; перенос (экспорт, импорт) — баннеры с ходом и
- * итогом; удаление — диалог владельца (remove). opening — проект, который сейчас открывается: другой можно открыть, не дожидаясь.
+ * The library: the last opened project comes first, marked Last opened; transfers (export, import) are banners with progress and an
+ * outcome; deletion is the dialog of the owner (remove). opening — the project being opened now: another one can open without waiting.
  */
 export function ProjectLibrary({ library, transfers, busy, opening, notice, dismissNotice, create, edit, open, archive, remove, catalog }: {
     library: ProjectsState;
     transfers: ProjectTransfersState;
     busy: boolean;
     opening: string | undefined;
-    /** Сообщение после удаления (часть файлов занята). */
+    /** The message after a deletion (some files are busy). */
     notice: string | undefined;
     dismissNotice: () => void;
     create: () => void;

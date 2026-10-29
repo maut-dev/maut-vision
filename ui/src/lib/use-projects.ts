@@ -14,8 +14,8 @@ function upsertProject(items: readonly ProjectResponseDto[], project: ProjectRes
 }
 
 /**
- * Библиотека проектов: список запросом, создание, импорт и изменения — ответами и событиями project.changed, удаление — project.removed.
- * lastProjectId — последний открытый проект (null, если его нет).
+ * The project library: the list by a request, creation, import and changes by answers and project.changed events, deletion by project.removed.
+ * lastProjectId — the last opened project (null when there is none).
  */
 export function useProjects() {
     const [projects, setProjects] = useState<readonly ProjectResponseDto[]>([]);
@@ -26,7 +26,7 @@ export function useProjects() {
 
     const apply = useCallback((project: ProjectResponseDto) => setProjects(items => upsertProject(items, project)), []);
 
-    /** Открытый проект становится последним (Core запоминает его в OpenAsync). */
+    /** The opened project becomes the last one (Core remembers it in OpenAsync). */
     const opened = useCallback((project: ProjectResponseDto) => {
         apply(project);
         setLastProjectId(project.id);
