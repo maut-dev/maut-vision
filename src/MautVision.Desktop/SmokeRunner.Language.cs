@@ -23,6 +23,7 @@ internal static partial class SmokeRunner
         await WaitForTrayAsync(host, ("Open Maut Vision", "Exit"), token);
         RequireStoredLanguage(root, "en");
         checks.Add("English relabels the tray and is kept in host-settings.json");
+        await CheckProductionSectionsInEnglishAsync(web, projectId, checks, token);
         await RunLifecycleUiStepAsync(web, LanguageRussianScript, new { projectId }, checks, token);
         await WaitForTrayAsync(host, ("Открыть Maut Vision", "Выйти"), token);
         RequireStoredLanguage(root, "ru");

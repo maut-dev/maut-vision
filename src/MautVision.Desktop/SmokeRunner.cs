@@ -1775,7 +1775,8 @@ internal static partial class SmokeRunner
 
     private const string DatasetsUiPlanScript = """
           (await wait(() => enabled($('[data-section="datasets"]')), 'Datasets section enabled')).click();
-          await wait(() => $('[data-testid="datasets-section"]') && $('[data-testid="datasets-empty"]'), 'Datasets opened');
+          await wait(() => $('[data-testid="datasets-section"]') && $('[data-testid="datasets-empty"]')
+            && $('[data-testid="dataset-operations-verify-empty"]'), 'Datasets opened');
           assert(document.body.textContent.includes('Неизменяемые версии готовых кадров и разметки.') && selectedTab() === 'datasets-tab-datasets'
             && text('[data-testid="datasets-empty"]') === 'Соберите датасет во вкладке «Сборка». Исходные изображения сохранятся.'
             && $('[data-testid="dataset-operations-verify-empty"]').textContent.startsWith('Откройте датасет во вкладке «Датасеты»'),
@@ -1802,7 +1803,7 @@ internal static partial class SmokeRunner
             () => [unassignedId, validationId].map(id => groupRow(id)?.textContent).join(' | '));
           const meta = id => $('[data-testid="dataset-group-meta"]', groupRow(id)).textContent;
           assert(meta(unassignedId) === '9 кадров · Исходные изображения · Без назначения · проверено: 100% (9)'
-            && meta(validationId) === '4 кадров · Исходные изображения · Проверка · проверено: 75% (3)',
+            && meta(validationId) === '4 кадра · Исходные изображения · Проверка · проверено: 75% (3)',
             'Groups show the image count, origin, назначение and the share of reviewed images: ' + meta(validationId));
           assert($('[data-testid="dataset-plan"]').disabled && text('[data-testid="dataset-form-hint"]') === 'Укажите название датасета до 120 символов.'
             && text('[data-testid="dataset-validation-hint"]') === 'Для проверки (Validation): 20% — остаток после Train и Test.'
@@ -1880,7 +1881,7 @@ internal static partial class SmokeRunner
           const shown = await wait(() => tilesLoaded(version.counts[split]), 'Sample thumbnails', () => sampleTiles().length + ' tiles');
           assert(text('[data-testid="dataset-sample-count"]') === version.counts[split] + ' из ' + version.counts[split] + ' · Снимки при сборке'
             && shown.every(tile => $$('rect[data-kind="object"]', tile).length === Number(tile.dataset.objects))
-            && shown.some(tile => tile.dataset.objects === '1' && $('[data-testid="dataset-sample-caption"]', tile).textContent === width + ' × ' + height + ' · 1 объектов · 0 негативов'),
+            && shown.some(tile => tile.dataset.objects === '1' && $('[data-testid="dataset-sample-caption"]', tile).textContent === width + ' × ' + height + ' · 1 объект · 0 негативов'),
             'The sample grid shows thumbnails with their boxes and «W × H · n объектов · m негативов»');
 
           const index = shown.findIndex((tile, position) => tile.dataset.objects === '1' && position < shown.length - 1);
