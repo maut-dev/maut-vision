@@ -139,6 +139,49 @@ set_annotations { projectId, imageId, annotationRevision: 1, reviewed: true,
                   boxes: [{ classId, classVariantId, x: 0.25, y: 0.25, width: 0.5, height: 0.5 }] }
 ```
 
+Helpers shared by every area (argument lists, revisions, `operationId`, files of an import, the controllers' registries, deletion
+blockers) live in `Mcp/Tools/McpTools.Arguments.cs`.
+
+### Backgrounds, generation and datasets
+
+The same rule: the controllers of these screens with the registries of the tools. A tool that starts a job takes an optional
+`operationId` (a repeat returns the same job) and `waitSeconds`, and answers `{ jobId, status, job }` plus its area's object (`run`,
+`operation`, `versionId`).
+
+| Tool | Class | What it does |
+|---|---|---|
+| `list_background_sets`, `create_background_set`, `update_background_set` | R, W | sets of the project input size; update renames, archives and restores |
+| `delete_background_set`, `delete_backgrounds` | D | review, blockers (`backgrounds.deletion_blocked`: a running import, recipes that use the set), deletion |
+| `import_backgrounds` ⏳ | W | files, folders and uploads; `mode` `whole` takes files of exactly the set size, `crop` cuts the set size from larger files at `crops[]` or centered (≤ 500 files); `skipSimilar`, `blur` |
+| `import_video_backgrounds` ⏳ | W | `videoPath` or `uploadId`, `startSeconds`, `stepSeconds`, `count` (every available frame by default), `region` (centered by default) |
+| `list_backgrounds` | R | a set page by cursor: id, size, origin, blur radius |
+| `list_recipes`, `get_recipe` | R | recipes with every parameter of the form |
+| `create_recipe`, `update_recipe` | W | the recipe form; omitted sources default like the window (see below); update also archives and restores |
+| `delete_recipe` | D | blocked by an unfinished run (`generation.deletion_blocked`) |
+| `start_generation` ⏳ | W | `count`, `seed` (random by default); `run.outputGroupId` is the image group of the frames |
+| `list_generation_runs` | R | runs with the recipe copy, seed, counts and output group |
+| `list_datasets`, `get_dataset_version` | R | versions; `get_dataset_version` adds the first samples of each split with their boxes |
+| `plan_dataset` | R | "check before build": counts per split and class, skips, warnings with English texts, `buildable`, `hash` |
+| `build_dataset` ⏳ | W | a `planId` (hash optional) or the specification fields to plan and build in one call; the version ID is the job ID |
+| `verify_dataset` ⏳ | W | integrity check |
+| `export_dataset` ⏳ | W | YOLO ZIP to a `.zip` path or into a folder; an existing file is `mcp.destination_exists` unless `overwrite` (full access) |
+| `archive_dataset` | W | archive or restore |
+| `delete_dataset_version` | D | review, blockers, deletion; the passport stays |
+
+Defaults follow the forms of the window. A recipe takes every available binding with images (of `classIds` when given) and even whole
+shares over their project variants; given `variantWeights` choose the bindings of variants with a share. A dataset takes every active
+class, targets — available bindings of the chosen classes, negatives — the others, Train 80 % and Validation 20 %, empty frames included
+and a random seed.
+
+IDs of these tools are `view` targets: `{ background: backgroundId }`, `{ generationSample: recipeId, sampleIndex, seed }` (the frames a
+run with this seed makes) and `{ datasetSample: versionId, split, index }` or `{ datasetSample: versionId, sampleId }`.
+
+```text
+create_background_set → import_backgrounds { mode: "crop" } → create_recipe { backgroundSetIds } → view { generationSample }
+  → start_generation { count } → wait_job → plan_dataset { groupIds: [run.outputGroupId] } → build_dataset { planId }
+  → verify_dataset → export_dataset { destinationPath: "D:\\export\\set.zip" }
+```
+
 ## Long operations and progress
 
 A tool that starts a job answers with the job snapshot at once. `wait_job` waits until the job finishes or its timeout (at most 120 s)
@@ -192,13 +235,16 @@ and the outcome; every call is also written to the application log. The settings
 ## Resources
 
 `maut://projects` and `maut://projects/{projectId}` are JSON snapshots of the library and of a project with its overview.
+`maut://projects/{projectId}/datasets/{versionId}/manifest` is the composition of a dataset version: the version and every sample with
+its split, group, hashes and boxes.
 
 ## Prompts
 
 A prompt is an `McpPromptDefinition` (`Mcp/McpPrompt.cs`): name, title, description, arguments and a function that renders the English
 user message; `McpTools.CreatePrompts` lists them by area like the tools. `review_annotations(projectId, groupId)` walks the AI through
 the unreviewed images of a group: `list_images`, `view` with overlay, `set_annotations` with `reviewed: true`, and a report of what it
-left for the user.
+left for the user. `prepare_dataset_from_folder(folder)`, `synthetic_dataset(classesFolder, backgroundsFolder)` and
+`generate_from_video(videoPath)` lead from files on disk to a built dataset through the import, background, generation and dataset tools.
 
 ## Checks
 
@@ -208,4 +254,7 @@ tools with schemas and annotations, every tool, views with overlay and region, a
 the folder restriction with a junction, upload limits, `wait_job` with progress and timeout, a busy port and switching off.
 `SmokeRunner.McpCatalog.cs` and `SmokeRunner.McpImages.cs` cover the base model, catalog and image tools in a project of their own:
 error codes of the window, imports by path, by upload and from an ffmpeg clip with `wait_job`, the AI job label, the `set_annotations`
-round trip with `view`, deletion blockers and the `review_annotations` prompt.
+round trip with `view`, deletion blockers and the `review_annotations` prompt. `SmokeRunner.McpBackgrounds.cs`,
+`SmokeRunner.McpGeneration.cs` and `SmokeRunner.McpDatasets.cs` run the chain through MCP: background sets from images (whole, cropped,
+uploaded) and from an ffmpeg clip, a recipe, generation, plan, build, verification, the export ZIP checked on disk, views of a
+background, a generation sample and a dataset sample, the manifest resource, the error paths and the three dataset prompts.
