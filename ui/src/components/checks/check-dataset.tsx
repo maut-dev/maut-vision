@@ -4,9 +4,9 @@ import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import { Checkbox } from "@/components/ui/checkbox";
-import { seriesColor } from "@/lib/checks/check-view";
 import { useModelEvaluations } from "@/lib/use-model-evaluations";
 import { ModelEvaluations } from "./model-evaluations";
+import { seriesColor } from "@/lib/series-color";
 
 /** Versions compared by default: the chosen one and the next two. */
 const defaultCompared = 3;

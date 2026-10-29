@@ -5,8 +5,8 @@ import type { TrainingEpochDto } from "@/api/projects/training/response-dto/trai
 import { TrainingEpochChart } from "@/components/training/training-epoch-chart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { curveLabel, curveMetrics, epochValue, isQualityMetric } from "@/lib/analytics/analytics-view";
-import { seriesColor } from "@/lib/checks/check-view";
 import type { EpochPoint, EpochSeries } from "@/lib/training/epoch-chart";
+import { seriesColor } from "@/lib/series-color";
 
 /** The epoch history of a version: undefined while it loads, "failed" when it did not load. */
 export type EpochHistory = readonly TrainingEpochDto[] | "failed" | undefined;

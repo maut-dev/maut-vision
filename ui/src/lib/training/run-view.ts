@@ -14,11 +14,6 @@ export function formatNumber(value: number, digits = 4): string {
     return value.toLocaleString(locale(), { maximumFractionDigits: digits });
 }
 
-/** A metric of the version passport: three digits, "—" without a value. */
-export function formatMetric(value: number | null | undefined): string {
-    return typeof value === "number" && Number.isFinite(value) ? value.toFixed(3) : "—";
-}
-
 /** Sizes in the units of the interface language (lib/format.ts). */
 export function formatBytes(bytes: number): string {
     return formatSize(bytes);

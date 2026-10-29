@@ -4,8 +4,8 @@ import type { TrainingRunResponseDto } from "@/api/projects/training/response-dt
 import { isActiveTrainingRun, trainingRunStateLabels } from "@/api/projects/training/training-parameters";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDate, locale } from "@/lib/format";
-import { deviceLabel, formatMetric, formatNumber, parameterText, runError, runPercent } from "@/lib/training/run-view";
+import { formatDate, formatMetric, locale } from "@/lib/format";
+import { deviceLabel, formatNumber, parameterText, runError, runPercent } from "@/lib/training/run-view";
 
 /**
  * A card of "Training history": state, dataset, parameters, progress, error, "Run passport" (the tab "Current run"), "Version N

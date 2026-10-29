@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { GpuSampleDto, HardwareSampleResponseDto } from "@/api/hardware/response-dto/hardware-sample-response-dto";
-import { seriesColor } from "@/lib/checks/check-view";
 import { appendLoad, loadSegments, loadWindowMs, type LoadPoint } from "@/lib/overview/load-history";
 import { useHardwareSample } from "@/lib/use-hardware-sample";
 import { i18n } from "@/i18n";
 import "@/i18n/sections/overview";
 import { formatClock, formatNumber } from "@/lib/format";
 import { errorText } from "@/lib/errors";
+import { seriesColor } from "@/lib/series-color";
 
 /** Gigabytes with up to two decimals ("15.85 GB"); memory readings stay in GB even below 1 GB. */
 const gigabytes = (bytes: number) => i18n.t("units.gigabytes", { value: formatNumber(bytes / 1024 ** 3, { maximumFractionDigits: 2 }) });

@@ -58,3 +58,8 @@ export function formatClock(value: string | number | Date): string {
 export function compareText(left: string, right: string): number {
     return left.localeCompare(right, locale());
 }
+
+/** A metric of the version passport: three digits, "—" without a value. */
+export function formatMetric(value: number | null | undefined): string {
+    return typeof value === "number" && Number.isFinite(value) ? value.toFixed(3) : "—";
+}

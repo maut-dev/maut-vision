@@ -11,6 +11,7 @@ import "@/i18n/sections/checks";
 import type { FramePosition } from "@/lib/backgrounds/crop-frame";
 import { errorText } from "@/lib/errors";
 import { formatNumber } from "@/lib/format";
+import { seriesColor } from "@/lib/series-color";
 
 /** Quality metrics of a version: higher is better, from 0 to 1. */
 export const qualityMetrics = ["mAP50", "mAP50_95", "precision", "recall"] as const;
@@ -43,11 +44,6 @@ export function bestOf(values: readonly (number | null | undefined)[]): number |
     if (numbers.length < 2) return null;
     const best = Math.max(...numbers);
     return numbers.every(value => value === best) ? null : best;
-}
-
-/** Series color --series-N: a version by its number (unchecking one does not recolor the others), a class by its output index. */
-export function seriesColor(position: number): string {
-    return `var(--series-${((Math.max(1, position) - 1) % 8) + 1})`;
 }
 
 export const classColor = (classIndex: number) => seriesColor(classIndex + 1);

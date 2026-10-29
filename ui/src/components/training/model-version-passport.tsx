@@ -8,13 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { workerWarningText } from "@/lib/coded-text";
-import { formatDate, locale } from "@/lib/format";
+import { formatDate, formatMetric, locale } from "@/lib/format";
 import { i18n } from "@/i18n";
 import {
     deviceLabel,
     fileKindLabels,
     formatBytes,
-    formatMetric,
     formatNumber,
     parameterText,
     plotCaption,

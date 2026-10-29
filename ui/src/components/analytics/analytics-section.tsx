@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { analyticsRows, analyticsTsv, defaultSelectionSize, readSelection, writeSelection } from "@/lib/analytics/analytics-view";
-import { bestOf, seriesColor } from "@/lib/checks/check-view";
+import { bestOf } from "@/lib/checks/check-view";
 import { readEpochHistory } from "@/lib/training/epoch-history";
 import { useDatasetVersions } from "@/lib/use-dataset-versions";
 import { useGpuInventory } from "@/lib/use-gpu-inventory";
@@ -17,6 +17,7 @@ import { useModelVersions } from "@/lib/use-model-versions";
 import { AnalyticsCurves, type EpochHistory } from "./analytics-curves";
 import "@/i18n/sections/analytics";
 import { formatDay } from "@/lib/format";
+import { seriesColor } from "@/lib/series-color";
 
 /**
  * The Analytics section: comparison of the chosen model versions — metrics and parameters, training curves by epoch and dataset checks

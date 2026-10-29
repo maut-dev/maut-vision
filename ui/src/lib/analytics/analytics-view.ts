@@ -5,8 +5,8 @@ import { trainingMetricLabels } from "@/api/projects/training/training-parameter
 import { i18n } from "@/i18n";
 import "@/i18n/sections/analytics";
 import { qualityMetricLabels, qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
-import { deviceLabel, formatMetric, formatNumber } from "@/lib/training/run-view";
-import { formatDateTime } from "@/lib/format";
+import { deviceLabel, formatNumber } from "@/lib/training/run-view";
+import { formatDateTime, formatMetric } from "@/lib/format";
 
 /** Versions compared by default: the latest three. */
 export const defaultSelectionSize = 3;

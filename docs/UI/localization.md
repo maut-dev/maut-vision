@@ -32,7 +32,8 @@ come with the first chunk that needs them (dataset checks share `checks` with an
 `images`). A module of the page (the overview, the catalog) loads before the catalogs initialize; `registerSection` then waits for them.
 A section never registers a namespace itself and never copies a text of another namespace: it imports that namespace or a helper that
 reads it (`setSummary` of backgrounds, `splitHintLabels` of images). Texts shared by several sections (metric names, job kinds) live in
-`common`.
+`common`. A module of the page imports no module that registers another section: a helper the overview needs (`formatMetric`,
+`seriesColor`) lives in a module without texts, otherwise the catalogs of that section join the page chunk and weigh on startup.
 
 ```ts
 // ui/src/i18n/sections/checks.ts

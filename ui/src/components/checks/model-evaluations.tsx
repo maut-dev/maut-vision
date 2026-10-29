@@ -11,10 +11,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import "@/i18n/sections/checks";
 import {
-    bestOf, evaluationProblem, isEvaluationActive, preferredSplit, qualityMetricHelp, qualityMetricLabels, qualityMetrics, seriesColor, splitLabels, versionName,
+    bestOf, evaluationProblem, isEvaluationActive, preferredSplit, qualityMetricHelp, qualityMetricLabels, qualityMetrics, splitLabels, versionName,
 } from "@/lib/checks/check-view";
-import { errorMessage, formatDate, formatDay, formatNumber } from "@/lib/format";
-import { formatMetric } from "@/lib/training/run-view";
+import { errorMessage, formatDate, formatDay, formatMetric, formatNumber } from "@/lib/format";
+import { seriesColor } from "@/lib/series-color";
 import type { ModelEvaluationsState } from "@/lib/use-model-evaluations";
 import { DeviceSelect, Field } from "./check-parameter-fields";
 import { workerErrorText } from "@/lib/errors";

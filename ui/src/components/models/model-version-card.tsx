@@ -3,9 +3,9 @@ import type { ModelVersionResponseDto } from "@/api/projects/training/response-d
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { qualityMetricHelp, qualityMetricLabels, qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMetric } from "@/lib/format";
 import { i18n } from "@/i18n";
-import { formatBytes, formatMetric } from "@/lib/training/run-view";
+import { formatBytes } from "@/lib/training/run-view";
 
 const weightKinds = [["weights_pt", "PT"], ["onnx", "ONNX"]] as const;
 

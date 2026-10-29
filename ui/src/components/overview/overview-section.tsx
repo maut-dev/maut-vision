@@ -9,9 +9,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import "@/i18n/sections/overview";
-import { formatDate, formatNumber } from "@/lib/format";
+import { formatDate, formatMetric, formatNumber } from "@/lib/format";
 import { activeJobKinds, activeJobPercent, activeJobState, activeJobTitle, exportedVersionNumber, type JobSection } from "@/lib/overview/active-job-view";
-import { formatMetric } from "@/lib/training/run-view";
 import { useOverview } from "@/lib/use-overview";
 import { OverviewHardware } from "./overview-hardware";
 
