@@ -7,11 +7,15 @@ using MautVision.Core;
 using MautVision.Core.Interfaces;
 using MautVision.Core.Interfaces.Projects.Transfer;
 using MautVision.Desktop.Controllers;
+using MautVision.Desktop.Controllers.Mcp;
+using MautVision.Desktop.Controllers.Mcp.ResponseDto;
 using MautVision.Desktop.Controllers.Projects;
 using MautVision.Desktop.Controllers.System;
 using MautVision.Desktop.Host;
 using MautVision.Desktop.Events;
 using MautVision.Desktop.Logging;
+using MautVision.Desktop.Mcp;
+using MautVision.Desktop.Mcp.Tools;
 using MautVision.Desktop.Resources;
 using MautVision.Desktop.Transport;
 using Microsoft.Extensions.Logging;
@@ -48,6 +52,7 @@ public partial class MainWindow : Window
     private readonly IAppTray tray;
     private readonly HostSettings hostSettings;
     private readonly HostLanguage language;
+    private readonly McpService mcp;
     // "Exit" (or the end of a smoke run): closing the window ends the application; otherwise it hides the window in the tray.
     private bool exiting;
     private bool leftoversStarted;
@@ -75,8 +80,18 @@ public partial class MainWindow : Window
         logger = loggers.CreateLogger<MainWindow>();
         transport = new BridgeTransport(loggers.CreateLogger<BridgeTransport>());
         closeGuard = new CloseGuard(transport.PublishEvent, OnCloseRequestedByPage);
-        projectsController = ControllerRegistration.Register(transport, core, loggers, resourceHandles, OnUiReady, closeGuard, fileSelections,
-            new NativeDialogs(PickImageFilesAsync, PickFolderAsync, PickVideoAsync, PickSaveFileAsync, PickImageFileAsync, PickArchiveAsync), () => webViewProcessIds, language);
+        var dialogs = new NativeDialogs(PickImageFilesAsync, PickFolderAsync, PickVideoAsync, PickSaveFileAsync, PickImageFileAsync, PickArchiveAsync);
+        var controllers = ControllerRegistration.Register(transport, core, loggers, resourceHandles, OnUiReady, closeGuard, fileSelections, dialogs,
+            () => webViewProcessIds, language);
+        projectsController = controllers.Projects;
+        // The MCP server uses the same Core and controllers as the page; it starts only after the library is shown and only when enabled.
+        mcp = new McpService(hostSettings, options.WorkDirectory, () => new McpToolDependencies(core, controllers.Projects, controllers.Jobs, controllers.Overview,
+            controllers.Hardware, language, mcp!.Paths, mcp.Uploads, options.WorkDirectory, () => mcp.Settings, OpenProjectForMcp), RequestMcpAttention, loggers);
+        ControllerRegistration.RegisterMcp(transport, new McpController(mcp, dialogs));
+        mcp.Changed += OnMcpChanged;
+        mcp.CallLog.Added += OnMcpCall;
+        mcp.Confirmations.Requested += OnMcpConfirmationRequested;
+        mcp.Confirmations.Closed += OnMcpConfirmationClosed;
         resourceServer = new ResourceServer(core, resourceHandles, loggers.CreateLogger<ResourceServer>());
         projectEvents = new ProjectEvents(core.Projects, transport.PublishEvent);
         baseModelEvents = new BaseModelEvents(core.BaseModels, transport.PublishEvent);
@@ -183,7 +198,7 @@ public partial class MainWindow : Window
         if (options.SmokeReport is not null && !smokeStarted)
         {
             smokeStarted = true;
-            var work = SmokeRunner.RunAsync(Browser.CoreWebView2, options.SmokeReport, options.WorkDirectory, core, resourceHandles, fileSelections,
+            var work = SmokeRunner.RunAsync(Browser.CoreWebView2, options.SmokeReport, options.WorkDirectory, core, resourceHandles, fileSelections, mcp,
                 new SmokeCloseProbe(closeGuard, () => SmokeCloseRequests), minimized => WindowState = minimized ? WindowState.Minimized : WindowState.Normal,
                 new SmokeHostProbe((SmokeTray)tray, Close, () => IsVisible, (count, answer) => (SmokeActiveWork, SmokeQuitAnswer) = (count, answer),
                     () => SmokeQuitQuestions.ToArray(), () => Activations),
@@ -256,6 +271,8 @@ public partial class MainWindow : Window
             {
                 leftoversStarted = true;
                 _ = core.Projects.CleanUpLeftoversAsync(lifetime.Token).ContinueWith(task => logger.LogWarning(task.Exception, "Cleanup of leftovers failed."),
+                    CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
+                _ = mcp.StartIfEnabledAsync(lifetime.Token).ContinueWith(task => logger.LogWarning(task.Exception, "MCP server start failed."),
                     CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted, TaskScheduler.Default);
             }
             if (!options.ExitWhenReady || options.SmokeReport is not null) return;
@@ -378,6 +395,28 @@ public partial class MainWindow : Window
             if (!closing) tray.ApplyTexts();
         });
         transport.PublishEvent("settings.languageChanged", Controllers.Settings.SettingsController.Map(language));
+    }
+
+    private void OnMcpChanged() => transport.PublishEvent("mcp.stateChanged", McpController.Map(mcp));
+
+    private void OnMcpCall(McpCallEntry entry) => transport.PublishEvent("mcp.callAdded", McpController.Map(entry));
+
+    private void OnMcpConfirmationRequested(McpConfirmation confirmation) => transport.PublishEvent("mcp.confirmationRequested", McpController.Map(confirmation));
+
+    private void OnMcpConfirmationClosed(Guid id) => transport.PublishEvent("mcp.confirmationClosed", new McpConfirmationClosedEventDto(id));
+
+    /// <summary>A confirmation of an AI client waits for the user: the window comes out of the tray (or a minimized state) to the front.</summary>
+    private void RequestMcpAttention()
+    {
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        _ = Dispatcher.InvokeAsync(ShowFromTray);
+    }
+
+    /// <summary>open_project_in_app: the page opens the project (through its unsaved changes guard) and the window comes to the front.</summary>
+    private void OpenProjectForMcp(string projectId)
+    {
+        RequestMcpAttention();
+        transport.PublishEvent("mcp.openProject", new McpOpenProjectEventDto(projectId));
     }
 
     private bool ConfirmQuit(string question)
@@ -653,6 +692,10 @@ public partial class MainWindow : Window
         tray.OpenRequested -= ShowFromTray;
         tray.QuitRequested -= RequestQuit;
         language.Changed -= OnLanguageChanged;
+        mcp.Changed -= OnMcpChanged;
+        mcp.CallLog.Added -= OnMcpCall;
+        mcp.Confirmations.Requested -= OnMcpConfirmationRequested;
+        mcp.Confirmations.Closed -= OnMcpConfirmationClosed;
         StateChanged -= OnStateChanged;
         if (webEnvironment is not null) webEnvironment.ProcessInfosChanged -= OnProcessInfosChanged;
         transport.EventReady -= OnEvent;
@@ -700,6 +743,15 @@ public partial class MainWindow : Window
         catch (Exception error)
         {
             logger.LogError(error, "Transfers were not cancelled before exit.");
+        }
+        try
+        {
+            // AI clients are cut off before the bridge drains: no new tool calls reach a closing Core.
+            await mcp.DisposeAsync();
+        }
+        catch (Exception error)
+        {
+            logger.LogError(error, "MCP server shutdown failed.");
         }
         try
         {

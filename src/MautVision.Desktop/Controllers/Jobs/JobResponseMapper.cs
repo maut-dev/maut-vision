@@ -96,6 +96,9 @@ internal static class JobResponseMapper
     private static readonly string ImportKind = typeof(IImportClassAssetsJob).GetCustomAttributes(typeof(JobKindAttribute), false)
         .Cast<JobKindAttribute>().Single().Key;
 
+    /// <summary>The status as the UI and MCP clients receive it: queued, running, succeeded, failed, cancelled, interrupted, blocked.</summary>
+    internal static string MapStatus(JobStatus status) => Map(status);
+
     private static string Map(JobStatus status) => status switch
     {
         JobStatus.Queued => "queued",

@@ -32,6 +32,11 @@
     <ProjectReference Include="../MautVision.Core/MautVision.Core.csproj" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+    <!-- The local MCP server (Mcp/): the official C# SDK with its Streamable HTTP transport on Kestrel (Microsoft.AspNetCore.App). Loaded only when
+         the user turns the server on. -->
+    <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.3.0" />
+    <!-- English texts of error codes for MCP answers: the same catalog the UI shows, embedded at build time. -->
+    <EmbeddedResource Include="../../ui/src/locales/en/errors.json" LogicalName="MautVision.Desktop.Mcp.errors.en.json" Link="Mcp/errors.en.json" />
     <Resource Include="Assets/logo-full.png;Assets/maut-vision.ico" />
     <Content Include="../../ui/dist/**/*" Link="web/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="../../catalog/**/*" Link="catalog/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
