@@ -11,6 +11,10 @@ import type backgrounds from "@/locales/ru/backgrounds.json";
 import type checks from "@/locales/ru/checks.json";
 import type overview from "@/locales/ru/overview.json";
 import type analytics from "@/locales/ru/analytics.json";
+import type generation from "@/locales/ru/generation.json";
+import type datasets from "@/locales/ru/datasets.json";
+import type training from "@/locales/ru/training.json";
+import type models from "@/locales/ru/models.json";
 
 // Keys are typed by the Russian catalogs: a missing key fails the typecheck; scripts/check-locales.ts keeps English in step.
 declare module "i18next" {
@@ -29,6 +33,10 @@ declare module "i18next" {
             checks: typeof checks;
             overview: typeof overview;
             analytics: typeof analytics;
+            generation: typeof generation;
+            datasets: typeof datasets;
+            training: typeof training;
+            models: typeof models;
         };
         returnNull: false;
     }

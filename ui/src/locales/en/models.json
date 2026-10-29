@@ -1,0 +1,65 @@
+{
+  "section": {
+    "datasetMissing": "Dataset not found",
+    "datasetArchived": "{{name}} (archived)",
+    "hide": "Hide",
+    "retry": "Retry",
+    "deleted": "Version {{number}} was deleted.",
+    "loading": "Loading versions…",
+    "empty": "No models yet. A model version appears after the first successful training; the first version becomes working automatically.",
+    "toTraining": "To training",
+    "title": "Model versions",
+    "summary_one": "{{count}} version · working — version {{number}}. Each successful training run creates a new version; earlier versions do not change.",
+    "summary_other": "{{count}} versions · working — version {{number}}. Each successful training run creates a new version; earlier versions do not change.",
+    "summaryNoWorking_one": "{{count}} version · working — none. Each successful training run creates a new version; earlier versions do not change.",
+    "summaryNoWorking_other": "{{count}} versions · working — none. Each successful training run creates a new version; earlier versions do not change."
+  },
+  "export": {
+    "running": "Exporting version {{number}} to {{fileName}}…",
+    "progress": "Export progress",
+    "done": "Version {{number}} exported: {{fileName}}",
+    "doneSize": "Version {{number}} exported: {{fileName}} · {{size}}",
+    "cancelled": "The export was cancelled.",
+    "failed": "Could not export the version."
+  },
+  "card": {
+    "epochs": "Epochs {{done}} of {{total}}",
+    "epochsStopped": "Epochs {{done}} of {{total}} (early stop)",
+    "weights": "Weights: {{list}}",
+    "version": "Version {{number}}",
+    "working": "Working",
+    "makeWorking": "Make working",
+    "exportZip": "Export ZIP",
+    "passport": "Passport",
+    "delete": "Delete",
+    "best": "best",
+    "metrics": {
+      "mAP50": "mAP50",
+      "mAP50_95": "mAP50-95",
+      "precision": "Precision (P)",
+      "recall": "Recall (R)"
+    },
+    "metricHelp": {
+      "mAP50": "mAP50 — mean precision over classes at IoU ≥ 0.5: the main YOLO detection metric.",
+      "mAP50_95": "mAP50-95 — the same averaged over IoU thresholds from 0.5 to 0.95: stricter to box accuracy. ultralytics picks the best weights by it.",
+      "precision": "Precision — the share of detections that were correct. Low — the model often sees an object where there is none.",
+      "recall": "Recall — the share of real objects the model found. Low — the model misses a lot."
+    }
+  },
+  "inUse": {
+    "working": "This is the working version: make another one working first.",
+    "evaluation": "This version is being checked on a dataset.",
+    "check": "A live check of this version is running.",
+    "export": "This version is being exported to ZIP."
+  },
+  "deletion": {
+    "refused": "The version cannot be deleted now. {{reason}}",
+    "title": "Delete version {{number}}?",
+    "description": "Weights, training images and checks of the version on datasets will be deleted for good. The training run stays in the history.",
+    "busy": "Deleting…",
+    "blockers": "The version cannot be deleted now:",
+    "files": "Version files: {{size}}",
+    "evaluations": "Dataset checks: {{number}}",
+    "evaluationsDeleted": "Dataset checks: {{number}} — deleted with the version"
+  }
+}
