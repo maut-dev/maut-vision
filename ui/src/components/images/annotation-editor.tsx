@@ -20,7 +20,7 @@ import { i18n } from "@/i18n";
 import { AnnotationCanvas, type AnnotationTool, type Selection } from "./annotation-canvas";
 import type { AnnotationPalette } from "./annotation-palette";
 import { ImageDetails } from "./image-details";
-import "./locale";
+import "@/i18n/sections/images";
 
 const noVariant = "none";
 

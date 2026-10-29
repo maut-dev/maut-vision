@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
+import { qualityMetricHelp, qualityMetricLabels, qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
 import { formatDate } from "@/lib/format";
 import { i18n } from "@/i18n";
 import { formatBytes, formatMetric } from "@/lib/training/run-view";
@@ -67,8 +67,8 @@ export function ModelVersionCard({ version, datasetName, best, busy, setWorking,
                     const value = version.metrics[key];
                     const top = typeof value === "number" && best[key] !== null && value === best[key];
                     return (
-                        <div key={key} className="rounded-md border px-3 py-2" title={t(`card.metricHelp.${key}`)} data-metric={key} data-best={top || undefined}>
-                            <dt className="text-xs text-muted-foreground">{t(`card.metrics.${key}`)}</dt>
+                        <div key={key} className="rounded-md border px-3 py-2" title={qualityMetricHelp[key]} data-metric={key} data-best={top || undefined}>
+                            <dt className="text-xs text-muted-foreground">{qualityMetricLabels[key]}</dt>
                             <dd className={`mt-0.5 tabular-nums ${top ? "font-semibold text-[var(--metric-best)]" : ""}`}>
                                 {formatMetric(value)}
                                 {top && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{t("card.best")}</span>}

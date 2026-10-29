@@ -32,19 +32,7 @@
     "exportZip": "Export ZIP",
     "passport": "Passport",
     "delete": "Delete",
-    "best": "best",
-    "metrics": {
-      "mAP50": "mAP50",
-      "mAP50_95": "mAP50-95",
-      "precision": "Precision (P)",
-      "recall": "Recall (R)"
-    },
-    "metricHelp": {
-      "mAP50": "mAP50 — mean precision over classes at IoU ≥ 0.5: the main YOLO detection metric.",
-      "mAP50_95": "mAP50-95 — the same averaged over IoU thresholds from 0.5 to 0.95: stricter to box accuracy. ultralytics picks the best weights by it.",
-      "precision": "Precision — the share of detections that were correct. Low — the model often sees an object where there is none.",
-      "recall": "Recall — the share of real objects the model found. Low — the model misses a lot."
-    }
+    "best": "best"
   },
   "inUse": {
     "working": "This is the working version: make another one working first.",

@@ -4,7 +4,7 @@ import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundDeletionResultResponseDto, BackgroundDeletionReviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-deletion-response-dto";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 /** The whole set (no itemIds) or selected backgrounds of one set (up to 400). */
 export interface BackgroundsDeletionTarget {

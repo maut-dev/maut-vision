@@ -4,7 +4,7 @@ import type { ModelVersionResponseDto } from "@/api/projects/training/response-d
 import { trainingApi } from "@/api/projects/training/training-api";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./training/locale";
+import "@/i18n/sections/training";
 
 /**
  * Model versions of the open project: listModelVersions on opening and after training.changed with changed versions (a new one

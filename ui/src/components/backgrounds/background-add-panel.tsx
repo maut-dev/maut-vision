@@ -11,7 +11,7 @@ import { errorMessage, formatNumber } from "@/lib/format";
 import type { BackgroundBlurState } from "@/lib/use-background-blur";
 import { BackgroundBlurSettings } from "./background-blur-settings";
 import { BackgroundVideoImport } from "./background-video-import";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 export type ImportMode = "ready" | "images" | "video";
 

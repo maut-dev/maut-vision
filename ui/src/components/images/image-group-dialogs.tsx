@@ -9,17 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { i18n } from "@/i18n";
 import { formatNumber } from "@/lib/format";
-import "./locale";
-
-/** Labels of the purposes in the current language: read during render, so a language change relabels them. */
-export const splitHintLabels: Readonly<Record<ImageSplitHint, string>> = {
-    get unassigned() { return i18n.t("images:splitHint.unassigned"); },
-    get train() { return i18n.t("images:splitHint.train"); },
-    get validation() { return i18n.t("images:splitHint.validation"); },
-    get test() { return i18n.t("images:splitHint.test"); },
-};
+import { splitHintLabels } from "@/lib/images/split-hints";
+import "@/i18n/sections/images";
 
 export interface GroupValues {
     name: string;

@@ -6,7 +6,7 @@ import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dt
 import type { VariantResponseDto } from "@/api/projects/catalog/response-dto/variant-response-dto";
 import { subscribeCatalogChanged } from "@/api/events/subscriptions";
 import { i18n } from "@/i18n";
-import "@/components/catalog/locale";
+import "@/i18n/sections/catalog";
 import { errorMessage } from "./format";
 
 interface Revisioned {

@@ -16,7 +16,7 @@ import { VariantColorInput } from "./variant-color-input";
 import { errorText, jobErrorText } from "@/lib/errors";
 import { i18n } from "@/i18n";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/catalog";
 
 /** "1 image", "2 images" with the plural forms of the language. */
 export function imagesLabel(count: number): string {

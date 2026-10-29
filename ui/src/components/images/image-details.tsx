@@ -7,7 +7,7 @@ import { roiColor } from "@/lib/variant-color";
 import type { AnnotationPalette } from "./annotation-palette";
 import type { ViewerOverlay } from "@/components/viewer/image-viewer";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/images";
 
 export function sourceLabel(image: ImageResponseDto): string {
     const lineage = image.lineage;

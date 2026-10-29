@@ -3,7 +3,7 @@ import { imagesApi } from "@/api/projects/images/images-api";
 import { importImagesJobKind } from "@/api/projects/images/response-dto/import-images-result-dto";
 import type { VideoFrameRange } from "@/api/projects/images/video-frame-range";
 import { i18n } from "@/i18n";
-import "@/components/images/locale";
+import "@/i18n/sections/images";
 import { errorMessage } from "./format";
 import { useJobHistory } from "./use-job-history";
 

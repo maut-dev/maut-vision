@@ -4,7 +4,7 @@ import { trainingApi } from "@/api/projects/training/training-api";
 import { isActiveTrainingRun } from "@/api/projects/training/training-parameters";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./training/locale";
+import "@/i18n/sections/training";
 
 /** Messages in the window "Latest messages" and on a page of "Full history". */
 export const trainingLogWindow = 200;

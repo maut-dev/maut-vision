@@ -1,4 +1,4 @@
-import { trainingText } from "@/lib/training/locale";
+import { trainingText } from "@/i18n/sections/training";
 import type { GpuInventoryResponseDto } from "./response-dto/training-runtime-response-dto";
 import type { TrainingParameters, TrainingParameterValue } from "./request-dto/training-request-dto";
 import type { TrainingRunState } from "./response-dto/training-run-response-dto";

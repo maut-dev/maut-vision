@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { locale } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/catalog";
 
 /** A named entry of a catalog list: a project variant or a class. */
 export interface CatalogEntry {

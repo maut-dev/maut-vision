@@ -5,7 +5,7 @@ import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response
 import { BridgeError } from "@/api/transport/errors";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./datasets/locale";
+import "@/i18n/sections/datasets";
 
 const newestFirst = (left: DatasetVersionResponseDto, right: DatasetVersionResponseDto) =>
     right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id);

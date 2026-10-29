@@ -7,7 +7,7 @@ import { generationRunJobKind, type GenerationRunResponseDto } from "@/api/proje
 import { BridgeError } from "@/api/transport/errors";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./generation/locale";
+import "@/i18n/sections/generation";
 import { isRunActive } from "./generation/run-state";
 
 /** How many last runs the tab "Runs" shows. */

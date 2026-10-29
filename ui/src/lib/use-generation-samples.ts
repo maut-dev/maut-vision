@@ -5,7 +5,7 @@ import type { GenerationRecipeFormDto } from "@/api/projects/generation/request-
 import type { GenerationSampleResponseDto } from "@/api/projects/generation/response-dto/generation-sample-response-dto";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./generation/locale";
+import "@/i18n/sections/generation";
 import { sampleKey } from "./generation/recipe-form";
 
 interface SamplesState {

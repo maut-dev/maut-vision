@@ -17,7 +17,7 @@ import type { GenerationRecipeResponseDto } from "@/api/projects/generation/resp
 import type { GenerationRepeatDraftResponseDto } from "@/api/projects/generation/response-dto/generation-sample-response-dto";
 import { i18n } from "@/i18n";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/generation";
 
 /** The form mode: a new preset, a change of a saved one or a repeat of a run (snapshot settings until "Edit variants…"). */
 export type RecipeFormMode =

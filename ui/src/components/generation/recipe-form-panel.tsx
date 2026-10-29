@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { setSummary } from "@/lib/backgrounds/background-text";
 import {
     backgroundSetOption,
-    backgroundsLabel,
     canvasOf,
     clampPercent,
     classesLabel,
@@ -116,7 +116,7 @@ export function RecipeFormPanel({ values, setValues, workspace, sets, input, pal
                                         onCheckedChange={() => toggleSet(set.id)} />
                                     <span className="min-w-0 break-words" data-testid="set-name">{set.name}</span>
                                     <span className="text-xs text-muted-foreground tabular-nums">
-                                        {[backgroundsLabel(set.itemCount), `${set.targetSize.width} × ${set.targetSize.height}`, ...(set.archivedAt ? [t("form.setArchived")] : [])].join(" · ")}
+                                        {setSummary(set)}
                                     </span>
                                 </label>
                                 {option.reason && <p id={`${id}-set-${set.id}`} className="pl-6 text-xs text-amber-700 dark:text-amber-400" data-testid="set-incompatible">{option.reason}</p>}

@@ -5,7 +5,7 @@ import type { GenerationRecipeResponseDto } from "@/api/projects/generation/resp
 import { BridgeError } from "@/api/transport/errors";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./generation/locale";
+import "@/i18n/sections/generation";
 
 const newestFirst = (left: GenerationRecipeResponseDto, right: GenerationRecipeResponseDto) =>
     right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id);

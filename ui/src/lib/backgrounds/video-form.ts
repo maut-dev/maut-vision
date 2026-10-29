@@ -1,7 +1,7 @@
 import { availableVideoFrames, defaultVideoImport, videoImportError } from "@/api/projects/backgrounds/background-import-rules";
 import type { BackgroundRegionRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 
 /** The "Cut from video" fields in seconds as the user typed them; the request gets milliseconds. */

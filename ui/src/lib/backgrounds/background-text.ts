@@ -1,6 +1,6 @@
 import type { BackgroundOriginKind, BackgroundResponseDto } from "@/api/projects/backgrounds/response-dto/background-response-dto";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 import { formatNumber } from "@/lib/format";
 import { formatRadius } from "./blur-form";

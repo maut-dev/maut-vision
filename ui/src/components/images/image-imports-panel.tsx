@@ -5,7 +5,7 @@ import { count, JobRunRow } from "@/components/jobs/job-run";
 import { Button } from "@/components/ui/button";
 import type { ImageImportsState } from "@/lib/use-image-imports";
 import { errorText } from "@/lib/errors";
-import "./locale";
+import "@/i18n/sections/images";
 
 /** The import history of this group: the state, the result, errors per file, the progress and cancelling a running import. */
 export function ImageImportsPanel({ imports }: { imports: ImageImportsState }) {

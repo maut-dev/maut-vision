@@ -20,7 +20,7 @@ import {
 } from "@/lib/annotation/geometry";
 import { contrastText, roiColor } from "@/lib/variant-color";
 import type { AnnotationPalette } from "./annotation-palette";
-import "./locale";
+import "@/i18n/sections/images";
 
 export type AnnotationTool = "object" | "roi";
 

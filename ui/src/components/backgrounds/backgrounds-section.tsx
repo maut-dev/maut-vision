@@ -26,7 +26,7 @@ import { BackgroundImageCropDialog } from "./background-image-crop-dialog";
 import { BackgroundRunsPanel } from "./background-runs-panel";
 import { BackgroundSetDialog, type BackgroundSetValues } from "./background-set-dialog";
 import { BackgroundsDeletionDialog, type BackgroundsDeletionTarget } from "./backgrounds-deletion-dialog";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 const conflictCodes = /\.(revision_conflict|deletion_revision_conflict)$/;
 

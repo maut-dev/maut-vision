@@ -4,7 +4,7 @@ import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageGroupResponseDto } from "@/api/projects/images/response-dto/image-group-response-dto";
 import { BridgeError } from "@/api/transport/errors";
 import { i18n } from "@/i18n";
-import "@/components/images/locale";
+import "@/i18n/sections/images";
 import { errorMessage } from "./format";
 
 const byCreation = (left: ImageGroupResponseDto, right: ImageGroupResponseDto) =>

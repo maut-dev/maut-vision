@@ -20,6 +20,7 @@ import { useNavigationGuard } from "@/components/unsaved-changes";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { draftOf, type AnnotationDraft } from "@/lib/annotation/draft";
 import { errorMessage, formatNumber } from "@/lib/format";
+import { splitHintLabels } from "@/lib/images/split-hints";
 import { useCatalog } from "@/lib/use-catalog";
 import { useImageGallery, type GalleryFilter } from "@/lib/use-image-gallery";
 import { useImageGroups } from "@/lib/use-image-groups";
@@ -29,11 +30,11 @@ import { AnnotationEditor } from "./annotation-editor";
 import { createPalette } from "./annotation-palette";
 import { annotationOverlays, ImageDetails } from "./image-details";
 import { ImageGallery } from "./image-gallery";
-import { ImageGroupDialog, MoveImagesDialog, splitHintLabels, type GroupValues } from "./image-group-dialogs";
+import { ImageGroupDialog, MoveImagesDialog, type GroupValues } from "./image-group-dialogs";
 import { ImageImportsPanel } from "./image-imports-panel";
 import { ImagesDeletionDialog, type ImagesDeletionTarget } from "./images-deletion-dialog";
 import { VideoFrameImport } from "./video-frame-import";
-import "./locale";
+import "@/i18n/sections/images";
 
 const conflictCodes = /\.(revision_conflict|deletion_revision_conflict)$/;
 

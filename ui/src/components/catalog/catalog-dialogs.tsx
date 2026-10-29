@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import "./locale";
+import "@/i18n/sections/catalog";
 
 /**
  * Returns focus to the element that opened the dialog. Radix returns focus only to its own Trigger, while catalog dialogs open from

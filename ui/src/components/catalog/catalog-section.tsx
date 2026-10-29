@@ -17,7 +17,7 @@ import { CatalogDeletionDialog, type DeletionTarget } from "./catalog-deletion-d
 import { ClassesPage } from "./classes-page";
 import type { ClassVariantActions } from "./class-variant-section";
 import { VariantsPage } from "./variants-page";
-import "./locale";
+import "@/i18n/sections/catalog";
 
 type Editor =
     | { kind: "variant"; entry?: VariantResponseDto }

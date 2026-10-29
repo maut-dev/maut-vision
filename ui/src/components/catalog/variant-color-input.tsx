@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import "./locale";
+import "@/i18n/sections/catalog";
 
 const delayMs = 400;
 

@@ -10,7 +10,7 @@ import { errorMessage } from "@/lib/format";
 import { useReturnFocus } from "./catalog-dialogs";
 import { blockerText } from "@/lib/errors";
 import { i18n } from "@/i18n";
-import "./locale";
+import "@/i18n/sections/catalog";
 
 export interface DeletionTarget {
     kind: CatalogTargetKind;

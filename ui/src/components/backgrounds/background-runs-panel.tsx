@@ -9,7 +9,7 @@ import { isJobActive } from "@/lib/use-asset-imports";
 import type { BackgroundRunsState } from "@/lib/use-background-runs";
 import { backgroundReasonText } from "@/lib/errors";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 /**
  * "Background preparation": the history of this set only: the progress "processed P of T", the result (added of the target,

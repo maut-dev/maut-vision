@@ -16,7 +16,7 @@ import { useModelVersions } from "@/lib/use-model-versions";
 import { ModelVersionCard } from "./model-version-card";
 import { ModelVersionDeletionDialog } from "./model-version-deletion-dialog";
 import { jobErrorText } from "@/lib/errors";
-import "./locale";
+import "@/i18n/sections/models";
 
 /**
  * The section "Models": all model versions of the project (newest first) with metrics, the working version, ZIP export, deletion and the

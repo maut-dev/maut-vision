@@ -42,8 +42,7 @@
     "empty": "Empty frames",
     "sample": "Sample frame",
     "save": "Save recipe",
-    "cancel": "Cancel",
-    "setArchived": "Archived"
+    "cancel": "Cancel"
   },
   "fields": {
     "name": "Name — from 1 to 120 characters.",

@@ -1,7 +1,7 @@
 import type { TrainingEpochDto } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { trainingApi } from "@/api/projects/training/training-api";
 import { i18n } from "@/i18n";
-import "./locale";
+import "@/i18n/sections/training";
 
 /** Epochs per page of listEpochs. */
 const epochPageLimit = 1000;

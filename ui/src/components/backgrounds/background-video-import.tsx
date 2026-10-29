@@ -17,7 +17,7 @@ import type { BackgroundBlurState } from "@/lib/use-background-blur";
 import { Field } from "./background-blur-settings";
 import { BackgroundCropFrame } from "./background-crop-frame";
 import { BackgroundImportSamples } from "./background-import-samples";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 /**
  * "Cut from video": one frame of the set size for the whole video. The video is chosen in the native dialog (without hashing), the

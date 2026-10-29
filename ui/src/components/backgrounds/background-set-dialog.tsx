@@ -7,7 +7,7 @@ import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/co
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 export interface BackgroundSetValues {
     name: string;

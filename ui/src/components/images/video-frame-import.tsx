@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { errorMessage } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/images";
 
 /** Form fields in seconds; the request gets milliseconds. */
 interface Fields {

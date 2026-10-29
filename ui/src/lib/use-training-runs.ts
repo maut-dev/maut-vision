@@ -5,7 +5,7 @@ import { trainingApi } from "@/api/projects/training/training-api";
 import { BridgeError } from "@/api/transport/errors";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./training/locale";
+import "@/i18n/sections/training";
 import { newerRun, withJob } from "./training/run-view";
 
 /** Runs per page of "Training history". */

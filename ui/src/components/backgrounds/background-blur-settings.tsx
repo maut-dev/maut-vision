@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { sliderRange } from "@/lib/backgrounds/blur-form";
 import type { BackgroundBlurState } from "@/lib/use-background-blur";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
     return (

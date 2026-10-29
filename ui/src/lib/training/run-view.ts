@@ -6,7 +6,7 @@ import { trainingParameter } from "@/api/projects/training/training-parameters";
 import { i18n } from "@/i18n";
 import { jobErrorText, workerErrorText } from "@/lib/errors";
 import { formatBytes as formatSize, locale } from "@/lib/format";
-import { trainingText } from "./locale";
+import { trainingText } from "@/i18n/sections/training";
 
 export const count = (value: number) => value.toLocaleString(locale());
 

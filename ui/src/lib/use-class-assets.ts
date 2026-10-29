@@ -3,7 +3,7 @@ import { classesApi } from "@/api/projects/catalog/classes-api";
 import type { ClassAssetResponseDto } from "@/api/projects/catalog/response-dto/class-asset-response-dto";
 import { subscribeCatalogChanged } from "@/api/events/subscriptions";
 import { i18n } from "@/i18n";
-import "@/components/catalog/locale";
+import "@/i18n/sections/catalog";
 import { errorMessage } from "./format";
 
 const pageSize = 60;

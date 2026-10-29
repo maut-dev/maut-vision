@@ -1,6 +1,6 @@
 import { blurError, blurSliderMax, defaultBlur, maxBlurRadius, maxBlurSeed } from "@/api/projects/backgrounds/background-import-rules";
 import type { BackgroundBlurRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 import { formatNumber } from "@/lib/format";
 

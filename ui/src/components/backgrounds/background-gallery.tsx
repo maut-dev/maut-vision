@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { VirtualGrid } from "@/components/virtual-grid";
 import { backgroundMeta } from "@/lib/backgrounds/background-text";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 export interface BackgroundGalleryActions {
     toggle: (item: BackgroundResponseDto, index: number, range: boolean) => void;

@@ -4,7 +4,7 @@ import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageDeletionResultResponseDto, ImageDeletionReviewResponseDto } from "@/api/projects/images/response-dto/image-deletion-response-dto";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/images";
 
 /** The whole group (no imageIds) or selected images of one group (up to 400). */
 export interface ImagesDeletionTarget {

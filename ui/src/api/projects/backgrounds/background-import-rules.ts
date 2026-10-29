@@ -1,4 +1,4 @@
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 import type { InputSizeDto } from "../input-size-dto";
 import type { BackgroundBlurRequestDto, BackgroundRegionRequestDto } from "./request-dto/import-backgrounds-request-dto";

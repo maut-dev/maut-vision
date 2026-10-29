@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import type { ImageGroupResponseDto } from "@/api/projects/images/response-dto/image-group-response-dto";
 import { Checkbox } from "@/components/ui/checkbox";
 import { count } from "@/lib/datasets/dataset-view";
+import { splitHintLabels } from "@/lib/images/split-hints";
 import type { ReviewCount } from "@/lib/use-group-review-counts";
 
 /**
@@ -32,7 +33,7 @@ export function DatasetGroupPicker({ groups, selected, toggle, reviewCount, inva
                             <span className="block break-words">{group.name}</span>
                             <span className="block text-xs text-muted-foreground tabular-nums" data-testid="dataset-group-meta">
                                 {[t("groups.frames", { count: images, value: count(images) }), group.origin === "generated" ? t("groups.generated") : t("groups.manual"),
-                                    t(`groups.splitHints.${group.splitHint}`)].join(" · ")}
+                                    splitHintLabels[group.splitHint]].join(" · ")}
                                 {" · "}<ReviewShare review={review} images={images} />
                                 {group.generationState === "producing" && ` · ${t("groups.producing")}`}
                                 {group.generationState === "partial" && ` · ${t("groups.partial")}`}

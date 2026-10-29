@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { BackgroundSourcePreviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-selection-response-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
 import { nudgeRegion, pointerRegion, type FramePosition } from "@/lib/backgrounds/crop-frame";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
 

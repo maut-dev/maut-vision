@@ -1,5 +1,5 @@
 import { i18n } from "@/i18n";
-import "@/lib/generation/locale";
+import "@/i18n/sections/generation";
 import type { CatalogWorkspaceResponseDto } from "../catalog/response-dto/catalog-workspace-response-dto";
 import type { GenerationRunResultDto } from "./response-dto/generation-run-response-dto";
 import type { GenerationRecipeFormDto, GenerationVariantWeightDto } from "./request-dto/generation-recipe-form-dto";

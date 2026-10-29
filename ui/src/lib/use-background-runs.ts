@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import { importBackgroundsJobKind } from "@/api/projects/backgrounds/response-dto/import-backgrounds-result-dto";
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 import { useJobHistory } from "./use-job-history";
 

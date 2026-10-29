@@ -4,7 +4,7 @@ import type { DatasetSplit } from "@/api/projects/datasets/request-dto/dataset-r
 import type { DatasetSampleResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
-import "./datasets/locale";
+import "@/i18n/sections/datasets";
 
 export const samplePageLimit = 100;
 

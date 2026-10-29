@@ -17,7 +17,7 @@ import type { Box } from "@/lib/annotation/geometry";
 import { i18n } from "@/i18n";
 import { jobErrorText } from "@/lib/errors";
 import { formatDuration, formatNumber, locale } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/datasets";
 
 export const datasetSplits: readonly DatasetSplit[] = ["train", "val", "test"];
 

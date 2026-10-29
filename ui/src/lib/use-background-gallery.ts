@@ -4,7 +4,7 @@ import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundRemovedFilter } from "@/api/projects/backgrounds/request-dto/list-backgrounds-request-dto";
 import type { BackgroundResponseDto } from "@/api/projects/backgrounds/response-dto/background-response-dto";
 import { BridgeError } from "@/api/transport/errors";
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 

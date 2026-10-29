@@ -6,7 +6,7 @@ import { BridgeError } from "@/api/transport/errors";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
 import { i18n } from "@/i18n";
 import { formatBytes } from "@/lib/training/run-view";
-import "./locale";
+import "@/i18n/sections/models";
 
 /** Reasons of the refusal training.version_in_use (details.reason) — the same text as the blocker in the review (read at render time). */
 export const versionInUseReasons: Readonly<Record<string, string>> = {

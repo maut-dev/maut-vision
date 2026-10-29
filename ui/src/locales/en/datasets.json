@@ -221,13 +221,7 @@
     "reviewedCounting": "reviewed: counting…",
     "reviewedLargeHint": "The group is larger than 2000 frames: “Check before building” shows the number of reviewed frames.",
     "reviewedInPlan": "reviewed: in the plan",
-    "reviewed": "reviewed: {{percent}}% ({{number}})",
-    "splitHints": {
-      "unassigned": "Unassigned",
-      "train": "Training",
-      "validation": "Validation",
-      "test": "Test"
-    }
+    "reviewed": "reviewed: {{percent}}% ({{number}})"
   },
   "sample": {
     "variant": "Variant: {{name}}",

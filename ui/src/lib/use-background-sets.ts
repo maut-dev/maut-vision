@@ -3,7 +3,7 @@ import { subscribeBackgroundsChanged, subscribeProjectChanged } from "@/api/even
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import { BridgeError } from "@/api/transport/errors";
-import "@/components/backgrounds/locale";
+import "@/i18n/sections/backgrounds";
 import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 

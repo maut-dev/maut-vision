@@ -24,14 +24,27 @@ Catalogs are JSON files `ui/src/locales/<language>/<namespace>.json`. A key name
 | `trainingLog` | system lines of the training log written by Core | with the page |
 | `jobLabels` | labels of jobs with words around data: «Версия {{number}}», «{{class}} · {{variant}}» | with the page |
 | `worker` | errors and warnings of the Python worker, keys `<code>` or `<code>.<reason>` of `python/worker/protocol/messages.py` | with the page |
-| a section (`images`, `training`…) | texts of one section | with the chunk of the section (`addResourceBundle`) |
+| a section (`images`, `training`…) | texts of one section | with the chunk of the section (`registerSection`) |
 
-A section namespace joins the catalogs through `ui/src/i18n/sections/<namespace>.ts`: every module that reads the namespace imports it
-for its side effect, so the texts come with the first chunk that needs them (dataset checks share `checks` with analytics). A module of
-the page (the overview) loads before the catalogs initialize; the registration waits for them. Texts shared by several sections (metric
-names, job kinds) live in `common`.
+A section namespace has one module `ui/src/i18n/sections/<namespace>.ts` that adds its Russian and English catalogs with
+`registerSection` of `ui/src/i18n/sections.ts`. Every module that reads the namespace imports that module for its side effect, so the texts
+come with the first chunk that needs them (dataset checks share `checks` with analytics; datasets read the purposes of image groups from
+`images`). A module of the page (the overview, the catalog) loads before the catalogs initialize; `registerSection` then waits for them.
+A section never registers a namespace itself and never copies a text of another namespace: it imports that namespace or a helper that
+reads it (`setSummary` of backgrounds, `splitHintLabels` of images). Texts shared by several sections (metric names, job kinds) live in
+`common`.
 
 ```ts
+// ui/src/i18n/sections/checks.ts
+import { registerSection } from "@/i18n/sections";
+import en from "@/locales/en/checks.json";
+import ru from "@/locales/ru/checks.json";
+
+registerSection("checks", { ru, en });
+```
+
+```ts
+// a module of the section
 import "@/i18n/sections/checks";
 const { t } = useTranslation("checks");
 ```
@@ -126,8 +139,10 @@ anything else English.
 - the `worker` namespace has exactly the keys of `python/worker/protocol/messages.py`, with the same placeholders (`{name}` there,
   `{{name}}` in the catalogs).
 
-The native smoke switches to English, checks that the shell has no Cyrillic outside names the user typed, that a bridge error, a job
-progress line, a job label and a system line of the training log are shown in English, and switches back.
+The native smoke switches to English, checks that the shell and every section have no Cyrillic outside data the user gave (names,
+descriptions, file names), that a bridge error, a job progress line, a job label and a system line of the training log are shown in
+English, and switches back. Cyrillic in `ui/src` outside `locales/ru` is limited to data rules: the Russian keyboard layout of the
+annotation shortcuts and the stored 1.0.0 label «Версия N» the overview recognizes.
 
 ## Glossary
 

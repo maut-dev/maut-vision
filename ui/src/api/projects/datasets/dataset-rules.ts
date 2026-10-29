@@ -1,5 +1,5 @@
 import { i18n } from "@/i18n";
-import "@/lib/datasets/locale";
+import "@/i18n/sections/datasets";
 import type { CatalogWorkspaceResponseDto } from "../catalog/response-dto/catalog-workspace-response-dto";
 import type { DatasetSpecificationDto } from "./request-dto/dataset-request-dto";
 

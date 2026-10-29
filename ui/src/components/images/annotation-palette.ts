@@ -3,7 +3,7 @@ import type { ClassResponseDto } from "@/api/projects/catalog/response-dto/class
 import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dto/class-variant-response-dto";
 import { i18n } from "@/i18n";
 import { defaultColor } from "@/lib/variant-color";
-import "./locale";
+import "@/i18n/sections/images";
 
 export interface PaletteBinding {
     binding: ClassVariantResponseDto;

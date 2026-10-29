@@ -18,7 +18,7 @@ import type { BackgroundBlurState } from "@/lib/use-background-blur";
 import { BackgroundBlurSettings } from "./background-blur-settings";
 import { BackgroundCropFrame } from "./background-crop-frame";
 import { BackgroundImportSamples } from "./background-import-samples";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 /** A frame preview is a temporary URL for 10 minutes; showing the file again reuses it while the expiry is far. */
 const previewReuseMs = 5 * 60_000;

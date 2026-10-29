@@ -6,7 +6,7 @@ import type { ImageAnnotationResponseDto } from "@/api/projects/images/response-
 import type { ImageResponseDto, ImageReviewState } from "@/api/projects/images/response-dto/image-response-dto";
 import { BridgeError } from "@/api/transport/errors";
 import { i18n } from "@/i18n";
-import "@/components/images/locale";
+import "@/i18n/sections/images";
 import { errorMessage } from "./format";
 
 export interface GalleryFilter {

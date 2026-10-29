@@ -4,7 +4,7 @@ import { blurSummary } from "@/lib/backgrounds/background-text";
 import { formatRadius } from "@/lib/backgrounds/blur-form";
 import { backgroundReasonText } from "@/lib/errors";
 import { formatNumber } from "@/lib/format";
-import "./locale";
+import "@/i18n/sections/backgrounds";
 
 /**
  * "Samples of future backgrounds": up to 6 PNGs of exactly the set size with the same frames, radii and pixels the run of the same

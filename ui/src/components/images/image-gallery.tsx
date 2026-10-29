@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { VirtualGrid } from "@/components/virtual-grid";
 import { roiColor } from "@/lib/variant-color";
 import type { AnnotationPalette } from "./annotation-palette";
-import "./locale";
+import "@/i18n/sections/images";
 
 export interface GalleryActions {
     toggle: (image: ImageResponseDto, index: number, range: boolean) => void;

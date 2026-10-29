@@ -224,13 +224,7 @@
     "reviewedCounting": "проверено: считаем…",
     "reviewedLargeHint": "Группа крупнее 2000 кадров: число проверенных покажет «Проверить перед сборкой».",
     "reviewedInPlan": "проверено: в плане",
-    "reviewed": "проверено: {{percent}}% ({{number}})",
-    "splitHints": {
-      "unassigned": "Без назначения",
-      "train": "Обучение",
-      "validation": "Проверка",
-      "test": "Тест"
-    }
+    "reviewed": "проверено: {{percent}}% ({{number}})"
   },
   "sample": {
     "variant": "Вариант: {{name}}",
