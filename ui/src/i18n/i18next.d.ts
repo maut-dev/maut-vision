@@ -15,6 +15,7 @@ import type generation from "@/locales/ru/generation.json";
 import type datasets from "@/locales/ru/datasets.json";
 import type training from "@/locales/ru/training.json";
 import type models from "@/locales/ru/models.json";
+import type mcp from "@/locales/ru/mcp.json";
 
 // Keys are typed by the Russian catalogs: a missing key fails the typecheck; scripts/check-locales.ts keeps English in step.
 declare module "i18next" {
@@ -37,6 +38,7 @@ declare module "i18next" {
             datasets: typeof datasets;
             training: typeof training;
             models: typeof models;
+            mcp: typeof mcp;
         };
         returnNull: false;
     }

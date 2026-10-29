@@ -1,0 +1,82 @@
+{
+  "title": "AI assistants (MCP)",
+  "description": "Claude Code, Claude Desktop, Cursor and other MCP clients on this computer can work with your projects as you do: look, create, train and check. Everything the AI does is visible in this window.",
+  "enable": "Turn on the MCP server",
+  "status": {
+    "stopped": "The server is off",
+    "starting": "The server is starting…",
+    "running": "The server is running: {{endpoint}}",
+    "port_busy": "Port {{port}} is used by another program. Choose another port.",
+    "failed": "The server did not start. Details are in the application log."
+  },
+  "port": {
+    "label": "Port",
+    "hint": "The server listens on 127.0.0.1 only — other computers cannot connect.",
+    "invalid": "The port is an integer from 1024 to 65535.",
+    "apply": "Apply"
+  },
+  "access": {
+    "label": "Access level",
+    "read_only": "Read only",
+    "read_write": "Read and change",
+    "full": "Full access",
+    "hint": {
+      "read_only": "The AI looks at projects, images and results but changes nothing.",
+      "read_write": "The AI creates and changes data and starts jobs but deletes nothing.",
+      "full": "The AI can do everything you can. Deleting a whole project is always confirmed in this window."
+    }
+  },
+  "token": {
+    "label": "Access token",
+    "none": "The token appears when the server is turned on for the first time.",
+    "show": "Show the token",
+    "hide": "Hide the token",
+    "copy": "Copy the token",
+    "regenerate": "Create a new token",
+    "regenerateHint": "Connected clients stop working until you update their configuration."
+  },
+  "config": {
+    "title": "Connect a client",
+    "claudeCode": "Claude Code — command",
+    "mcpJson": "Claude Code — .mcp.json file",
+    "claudeDesktop": "Claude Desktop — through the stdio proxy",
+    "proxyMissing": "The stdio proxy comes with the next build; the configuration already names its path.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "copyFailed": "Could not copy to the clipboard."
+  },
+  "folders": {
+    "restrict": "Allow the AI only the chosen folders",
+    "hint": "Without the restriction the AI reads any file your Windows account can read — as a file dialog would.",
+    "add": "Add folder…",
+    "remove": "Remove folder {{path}}",
+    "empty": "No folders are chosen: the AI cannot read files from the disk."
+  },
+  "launch": {
+    "label": "Start the application when the AI asks",
+    "hint": "When the application is closed, the stdio proxy starts it minimized to the notification area."
+  },
+  "privacy": "Images and data the AI looks at are sent to the model provider with the request. The MCP settings change only here — the AI cannot change them.",
+  "log": {
+    "title": "Call log",
+    "hint": "The last 500 calls; they are also written to the application log.",
+    "empty": "No calls yet.",
+    "succeeded": "succeeded",
+    "failed": "error",
+    "more": "Show more",
+    "duration": "{{ms}} ms"
+  },
+  "confirm": {
+    "title": "An AI assistant asks for confirmation",
+    "client": "Client: {{client}}",
+    "tool": "Tool: {{tool}}",
+    "expires": "Without an answer the request is denied in {{seconds}} s.",
+    "allow": "Allow",
+    "deny": "Deny",
+    "unknown": "Action “{{action}}”.",
+    "actions": {
+      "delete_project": "Delete the project “{{name}}” with all its data from this computer. This cannot be undone.",
+      "delete_project_jobs": "Running jobs: {{jobs}} — they will be cancelled."
+    }
+  }
+}

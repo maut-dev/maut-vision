@@ -17,6 +17,13 @@ import type { ProjectImportChangedEventDto } from "./event-dto/project-import-ch
 import type { ProjectOpenedEventDto } from "./event-dto/project-opened-event-dto";
 import { isProjectRemovedDto, type ProjectRemovedEventDto } from "./event-dto/project-removed-event-dto";
 import type { LanguageChangedEventDto } from "./event-dto/language-changed-event-dto";
+import {
+    isMcpConfirmationClosedEventData, isMcpOpenProjectEventData, type McpConfirmationClosedEventData, type McpOpenProjectEventData,
+} from "./event-dto/mcp-event-dto";
+import {
+    isMcpCallResponseDto, isMcpConfirmationResponseDto, isMcpStateResponseDto, type McpCallResponseDto, type McpConfirmationResponseDto,
+    type McpStateResponseDto,
+} from "../mcp/response-dto/mcp-response-dto";
 import { isLanguageResponseDto } from "../settings/response-dto/language-response-dto";
 import {
     isTrainingChangedDto, isTrainingPresetsChangedDto, type TrainingChangedEventDto, type TrainingPresetsChangedEventDto,
@@ -165,5 +172,39 @@ export function subscribeLanguageChanged(listener: (event: LanguageChangedEventD
     return nativeBridge.subscribe(event => {
         if (event.event !== "settings.languageChanged" || !isLanguageResponseDto(event.data)) return;
         listener({ kind: "event", event: "settings.languageChanged", data: event.data });
+    });
+}
+
+/** The MCP settings or the state of the server changed (this page, a start that finished, a busy port). */
+export function subscribeMcpState(listener: (state: McpStateResponseDto) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event === "mcp.stateChanged" && isMcpStateResponseDto(event.data)) listener(event.data);
+    });
+}
+
+/** A tool call of an AI client was recorded in the call log. */
+export function subscribeMcpCall(listener: (call: McpCallResponseDto) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event === "mcp.callAdded" && isMcpCallResponseDto(event.data)) listener(event.data);
+    });
+}
+
+/** An AI client waits for the user's confirmation (deleting a project). */
+export function subscribeMcpConfirmationRequested(listener: (confirmation: McpConfirmationResponseDto) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event === "mcp.confirmationRequested" && isMcpConfirmationResponseDto(event.data)) listener(event.data);
+    });
+}
+
+export function subscribeMcpConfirmationClosed(listener: (closed: McpConfirmationClosedEventData) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event === "mcp.confirmationClosed" && isMcpConfirmationClosedEventData(event.data)) listener(event.data);
+    });
+}
+
+/** An AI client asked to show a project (open_project_in_app). */
+export function subscribeMcpOpenProject(listener: (request: McpOpenProjectEventData) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event === "mcp.openProject" && isMcpOpenProjectEventData(event.data)) listener(event.data);
     });
 }
