@@ -368,7 +368,8 @@
     "upload_name_invalid": "Имя загружаемого файла пустое или недопустимое.",
     "upload_not_found": "Загрузка неизвестна или удалена после завершения сессии.",
     "upload_quota_exceeded": "Сессия уже передала максимум — {{limitMb}} МБ.",
-    "upload_too_large": "Файл больше {{limitMb}} МБ."
+    "upload_too_large": "Файл больше {{limitMb}} МБ.",
+    "destination_exists": "Файл уже существует: {{path}}. Передайте overwrite: true, чтобы заменить его."
   },
   "generic": "Не удалось выполнить действие. Повторите попытку.",
   "bridge": {

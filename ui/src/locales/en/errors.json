@@ -368,7 +368,8 @@
     "upload_name_invalid": "The file name of the upload is empty or invalid.",
     "upload_not_found": "The upload is unknown or was removed when its session ended.",
     "upload_quota_exceeded": "The session has already sent the maximum of {{limitMb}} MB.",
-    "upload_too_large": "The file is larger than {{limitMb}} MB."
+    "upload_too_large": "The file is larger than {{limitMb}} MB.",
+    "destination_exists": "The file already exists: {{path}}. Pass overwrite: true to replace it."
   },
   "generic": "The action could not be completed. Try again.",
   "bridge": {

@@ -111,6 +111,11 @@ internal sealed class McpServerHost : IAsyncDisposable
                             UriTemplate = McpResources.ProjectTemplate, Name = "project", MimeType = "application/json",
                             Description = "Project settings and overview by projectId (JSON).",
                         },
+                        new ResourceTemplate
+                        {
+                            UriTemplate = McpResources.DatasetManifestTemplate, Name = "dataset-manifest", MimeType = "application/json",
+                            Description = "Composition of a dataset version: specification, classes, counts and every sample with its split, group and boxes (JSON).",
+                        },
                     ],
                 });
                 handlers.ReadResourceHandler = async (request, cancellation) =>
