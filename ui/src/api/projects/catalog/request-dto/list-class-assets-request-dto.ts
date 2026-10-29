@@ -1,8 +1,8 @@
 export interface ListClassAssetsRequestDto {
     projectId: string;
     classVariantId: string;
-    /** 1–500, по умолчанию 100. */
+    /** 1–500, 100 by default. */
     limit?: number;
-    /** NextCursor предыдущей страницы. */
+    /** NextCursor of the previous page. */
     after?: string;
 }

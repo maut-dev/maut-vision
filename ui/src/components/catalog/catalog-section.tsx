@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { classesApi } from "@/api/projects/catalog/classes-api";
 import type { ClassResponseDto } from "@/api/projects/catalog/response-dto/class-response-dto";
 import type { DeletionResultResponseDto } from "@/api/projects/catalog/response-dto/deletion-review-response-dto";
@@ -16,6 +17,7 @@ import { CatalogDeletionDialog, type DeletionTarget } from "./catalog-deletion-d
 import { ClassesPage } from "./classes-page";
 import type { ClassVariantActions } from "./class-variant-section";
 import { VariantsPage } from "./variants-page";
+import "./locale";
 
 type Editor =
     | { kind: "variant"; entry?: VariantResponseDto }
@@ -32,19 +34,20 @@ interface ArchiveRequest {
     run: () => Promise<unknown>;
 }
 
-/** Состояние на экране устарело: снимок перечитывается, пользователь узнаёт об этом из сообщения. */
+/** The state on screen is stale: the snapshot is reread, and the message tells the user. */
 const conflictCodes = /\.(revision_conflict|order_revision_conflict)$/;
 const staleCodes = /\.(not_found|archived|variant_archived|class_unavailable|variant_unavailable|project_variant_unavailable|duplicate_variant_binding)$/;
 
 /**
- * Разделы «Варианты» и «Классы» одного проекта: общий снимок каталога, импорт изображений и диалоги.
- * Переход между разделами не перечитывает каталог; поиск и показ архива у каждого раздела свои.
+ * The "Variants" and "Classes" sections of one project: a shared catalog snapshot, image imports and dialogs.
+ * Switching between the sections does not reread the catalog; each section keeps its own search and archive toggle.
  */
 export function CatalogSection({ project, page, openVariants }: {
     project: ProjectResponseDto;
     page: "variants" | "classes";
     openVariants: () => void;
 }) {
+    const { t } = useTranslation("catalog");
     const projectId = project.id;
     const catalog = useCatalog(projectId);
     const importer = useAssetImports(projectId);
@@ -61,13 +64,13 @@ export function CatalogSection({ project, page, openVariants }: {
         const message = errorMessage(cause);
         if (cause instanceof BridgeError && conflictCodes.test(cause.code)) {
             void catalog.refresh();
-            return `${message} Список обновлён.`;
+            return t("section.listUpdated", { message });
         }
         if (cause instanceof BridgeError && staleCodes.test(cause.code)) void catalog.refresh();
         return message;
     }
 
-    /** Синхронная операция каталога: кнопки выключены до ответа, ошибка уходит туда, где её увидят. */
+    /** A synchronous catalog operation: buttons are disabled until the answer, an error goes where it will be seen. */
     async function mutate(action: () => Promise<void>, report: (message: string) => void): Promise<boolean> {
         setBusy(true);
         try {
@@ -113,7 +116,7 @@ export function CatalogSection({ project, page, openVariants }: {
         }, setEditorError);
     }
 
-    /** В архив — после подтверждения, восстановление — сразу. */
+    /** Archiving after a confirmation, restoring at once. */
     function toggleArchive(name: string, archived: boolean, run: (archive: boolean) => Promise<void>) {
         setNotice(undefined);
         if (archived) {
@@ -136,7 +139,7 @@ export function CatalogSection({ project, page, openVariants }: {
     function deleted(result: DeletionResultResponseDto) {
         setDeletion(undefined);
         setNotice(result.cleanupPending
-            ? { tone: "info", text: "Материал удалён. Часть файлов пока занята; приложение повторит очистку при следующем открытии проекта." }
+            ? { tone: "info", text: t("section.cleanupPending") }
             : undefined);
         void catalog.refresh();
     }
@@ -148,7 +151,7 @@ export function CatalogSection({ project, page, openVariants }: {
 
     const bindingActions: ClassVariantActions = {
         setColor: (binding, color) => {
-            // Цвет сохраняется в фоне и не блокирует экран; ошибка показывается сообщением.
+            // The color is saved in the background without blocking the screen; an error is shown as a message.
             classesApi.setVariantColor({ projectId, classVariantId: binding.id, revision: binding.revision, color })
                 .then(catalog.applyClassVariant, cause => showError(describe(cause)));
         },
@@ -163,8 +166,8 @@ export function CatalogSection({ project, page, openVariants }: {
     };
 
     const editorTitle = editor?.kind === "variant"
-        ? editor.entry ? "Изменить вариант" : "Новый вариант проекта"
-        : editor?.kind === "class" && editor.entry ? "Изменить класс" : "Новый класс";
+        ? editor.entry ? t("section.editVariant") : t("section.newVariant")
+        : editor?.kind === "class" && editor.entry ? t("section.editClass") : t("section.newClass");
 
     return (
         <div className="flex min-h-0 flex-1 flex-col gap-4" data-testid={`${page}-section`}>
@@ -172,16 +175,16 @@ export function CatalogSection({ project, page, openVariants }: {
                 <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="catalog-notice">
                     <AlertDescription>
                         <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>Скрыть</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
-            {!workspace && catalog.loading && <p role="status" className="text-sm text-muted-foreground">Загрузка каталога…</p>}
+            {!workspace && catalog.loading && <p role="status" className="text-sm text-muted-foreground">{t("section.loading")}</p>}
             {!workspace && !catalog.loading && catalog.error && (
                 <Alert variant="destructive">
                     <AlertDescription>
                         <p>{catalog.error}</p>
-                        <Button variant="outline" size="sm" className="mt-2" onClick={() => void catalog.refresh()}>Повторить</Button>
+                        <Button variant="outline" size="sm" className="mt-2" onClick={() => void catalog.refresh()}>{t("section.retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -229,8 +232,8 @@ export function CatalogSection({ project, page, openVariants }: {
                 <CatalogEntryDialog
                     title={editorTitle}
                     description={editor.kind === "class"
-                        ? "Класс определяет, какой объект распознаёт модель."
-                        : "Этот вариант можно использовать в любом классе проекта."}
+                        ? t("section.classDescription")
+                        : t("section.variantDescription")}
                     initial={editor.entry}
                     busy={busy}
                     error={editorError}

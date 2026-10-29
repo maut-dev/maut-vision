@@ -2,11 +2,11 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isHexColor, isId, isRevision } from "../catalog-guards";
 
 /**
- * Вариант класса — привязка варианта проекта (variantId) к классу; название и описание берутся у варианта проекта.
- * color — сохранённый цвет или null; displayColor — цвет рамок для показа (сохранённый или по умолчанию).
- * available — ни привязка, ни класс, ни вариант проекта не в архиве: только в такую привязку можно добавлять изображения.
- * opaqueAssetCount — изображения без альфа-канала (генерации нужен альфа-канал);
- * maxAssetWidth/Height — наибольшие стороны изображений для предупреждения о масштабе (0 — изображений нет).
+ * A class variant binds a project variant (variantId) to a class; the name and description come from the project variant.
+ * color is the saved color or null; displayColor is the box color to show (the saved or the default one).
+ * available: neither the binding nor the class nor the project variant is archived; only such a binding accepts images.
+ * opaqueAssetCount counts images without an alpha channel (generation needs an alpha channel);
+ * maxAssetWidth/Height are the largest image sides for the scale warning (0: no images).
  */
 export interface ClassVariantResponseDto {
     id: string;

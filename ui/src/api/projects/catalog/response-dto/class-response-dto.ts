@@ -2,8 +2,8 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isId, isRevision } from "../catalog-guards";
 
 /**
- * Класс — объект распознавания. sortOrder задаёт порядок классов: при сборке датасета выбранные классы получают
- * индексы от 0 без пропусков в этом порядке. Индекс в списке — место среди активных классов.
+ * A class is an object to detect. sortOrder sets the order of classes: in a dataset build the chosen classes get
+ * indices from 0 without gaps in this order. The index in the list is the place among active classes.
  */
 export interface ClassResponseDto {
     id: string;

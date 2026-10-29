@@ -5,6 +5,8 @@ import type { ClassOrderResponseDto, ClassResponseDto } from "@/api/projects/cat
 import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dto/class-variant-response-dto";
 import type { VariantResponseDto } from "@/api/projects/catalog/response-dto/variant-response-dto";
 import { subscribeCatalogChanged } from "@/api/events/subscriptions";
+import { i18n } from "@/i18n";
+import "@/components/catalog/locale";
 import { errorMessage } from "./format";
 
 interface Revisioned {
@@ -12,7 +14,7 @@ interface Revisioned {
     revision: number;
 }
 
-/** Ответ операции не должен затирать более новую ревизию, которая уже пришла снимком. */
+/** The answer of an operation must not overwrite a newer revision that already came with a snapshot. */
 function upsert<T extends Revisioned>(items: readonly T[], item: T, order?: (left: T, right: T) => number): T[] {
     const current = items.find(entry => entry.id === item.id);
     if (current && current.revision > item.revision) return [...items];
@@ -24,10 +26,9 @@ const bySortOrder = (left: { sortOrder: number; id: string }, right: { sortOrder
     left.sortOrder - right.sortOrder || left.id.localeCompare(right.id);
 
 /**
- * Каталог открытого проекта: снимок classes.getWorkspace, затем события catalog.changed.
- * Снимок перечитывается, только если catalogRevision события новее известного; запросы не идут параллельно,
- * пачка событий во время чтения даёт одно повторное чтение. Ответы операций применяются сразу, чтобы экран
- * не ждал события.
+ * The catalog of the open project: the classes.getWorkspace snapshot, then catalog.changed events.
+ * The snapshot is reread only when the catalogRevision of an event is newer than the known one; requests do not run in parallel, and
+ * a burst of events during a read gives one more read. Answers of operations apply at once so the screen does not wait for the event.
  */
 export function useCatalog(projectId: string) {
     const [workspace, setWorkspace] = useState<CatalogWorkspaceResponseDto>();
@@ -56,7 +57,7 @@ export function useCatalog(projectId: string) {
                     }
                     setError(undefined);
                 } catch (cause) {
-                    if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить каталог проекта. Повторите загрузку."));
+                    if (mounted.current) setError(errorMessage(cause, i18n.t("catalog:errors.loadCatalog")));
                 }
             } while (again.current && mounted.current);
         } finally {

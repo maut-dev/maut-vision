@@ -1,8 +1,8 @@
 export interface ImportClassAssetsRequestDto {
     projectId: string;
     classVariantId: string;
-    /** Токен из classes.selectAssetFiles; действует 30 минут и только на этой странице. */
+    /** A token from classes.selectAssetFiles; valid for 30 minutes and on this page only. */
     selectionToken: string;
-    /** Создаётся UI на одно действие; повтор с тем же значением вернёт ту же задачу. */
+    /** Created by the UI for one action; a repeat with the same value returns the same job. */
     operationId: string;
 }

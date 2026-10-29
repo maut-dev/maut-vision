@@ -1,7 +1,7 @@
 import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isId, isRevision } from "../catalog-guards";
 
-/** Вариант проекта: общий способ отображения объектов. archivedAt — null для активного. */
+/** A project variant: a shared way objects look. archivedAt is null for an active one. */
 export interface VariantResponseDto {
     id: string;
     name: string;

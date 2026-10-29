@@ -24,12 +24,12 @@ import { isClassVariantResponseDto } from "./response-dto/class-variant-response
 import { isDeletionResultResponseDto, isDeletionReviewResponseDto } from "./response-dto/deletion-review-response-dto";
 
 /**
- * Классы открытого проекта, их варианты (привязки вариантов проекта) и исходные изображения.
- * Начальное состояние — getWorkspace и listAssets; изменения сообщает событие catalog.changed.
- * Импорт: selectAssetFiles (нативный диалог) → importAssets (задача; прогресс и итог — в job.changed).
- * Ошибки: classes.project_not_open, classes.name_invalid, classes.description_invalid, classes.name_duplicate,
- * classes.not_found, classes.revision_conflict, classes.archived (правка архивного класса),
- * classes.variant_archived (цвет архивного варианта класса), classes.order_revision_conflict, classes.order_invalid,
+ * Classes of the open project, their variants (bindings of project variants) and source images.
+ * The initial state comes from getWorkspace and listAssets; changes come with the catalog.changed event.
+ * Import: selectAssetFiles (a native dialog), then importAssets (a job; progress and result in job.changed).
+ * Errors: classes.project_not_open, classes.name_invalid, classes.description_invalid, classes.name_duplicate,
+ * classes.not_found, classes.revision_conflict, classes.archived (editing an archived class),
+ * classes.variant_archived (the color of an archived class variant), classes.order_revision_conflict, classes.order_invalid,
  * classes.class_unavailable, classes.variant_unavailable, classes.project_variant_unavailable,
  * classes.duplicate_variant_binding, classes.color_invalid, classes.deletion_revision_conflict,
  * classes.deletion_blocked, classes.selection_expired, jobs.project_not_open.
@@ -48,7 +48,7 @@ export const classesApi = {
     setArchived(request: SetClassArchivedRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("classes.setArchived", request, isClassResponseDto, signal);
     },
-    /** Новая полная перестановка всех классов, включая архивные, с classOrderRevision из снимка. */
+    /** A new full order of all classes, archived included, with classOrderRevision from the snapshot. */
     reorder(request: ReorderClassesRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("classes.reorder", request, isClassOrderResponseDto, signal);
     },
@@ -61,7 +61,7 @@ export const classesApi = {
     addVariant(request: AddClassVariantRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("classes.addVariant", request, isClassVariantResponseDto, signal);
     },
-    /** color: "#rrggbb" или null — вернуть цвет по умолчанию. */
+    /** color: "#rrggbb", or null to return to the default color. */
     setVariantColor(request: SetClassVariantColorRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("classes.setVariantColor", request, isClassVariantResponseDto, signal);
     },
@@ -83,12 +83,12 @@ export const classesApi = {
     deleteAsset(request: DeleteClassAssetRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("classes.deleteAsset", request, isDeletionResultResponseDto, signal);
     },
-    /** Показывает нативный диалог выбора PNG/JPEG/WebP/BMP; ответ приходит, когда пользователь закроет диалог. */
+    /** Shows the native dialog for choosing PNG/JPEG/WebP/BMP; the answer comes when the user closes the dialog. */
     selectAssetFiles(signal?: AbortSignal) {
         const request: SelectClassAssetFilesRequestDto = {};
         return nativeBridge.request("classes.selectAssetFiles", request, isClassAssetFileSelectionResponseDto, signal, null);
     },
-    /** Ставит задачу импорта и сразу возвращает её снимок; повтор с тем же operationId вернёт ту же задачу. */
+    /** Starts an import job and returns its snapshot at once; a repeat with the same operationId returns the same job. */
     importAssets(request: ImportClassAssetsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("classes.importAssets", request, isJobResponseDto, signal);
     },

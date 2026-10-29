@@ -1,8 +1,8 @@
 export interface SetClassVariantColorRequestDto {
     projectId: string;
     classVariantId: string;
-    /** Ревизия объекта, которую видел пользователь; при расхождении — *.revision_conflict. */
+    /** The revision of the entry the user saw; a mismatch gives *.revision_conflict. */
     revision: number;
-    /** #rrggbb или null — цвет по умолчанию. */
+    /** #rrggbb, or null for the default color. */
     color: string | null;
 }

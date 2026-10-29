@@ -16,9 +16,9 @@ export interface DeletionBlockerResponseDto {
 }
 
 /**
- * Состав удаления навсегда: счётчики «Классы / Варианты классов / Исходные изображения», блокирующие причины и
- * revision — её передают в удаление; при изменении состава удаление вернёт *.deletion_revision_conflict.
- * targetName — название цели (у изображения пусто).
+ * The review of a permanent deletion: the counters "Classes / Class variants / Source images", blocking reasons and
+ * revision, which goes to the deletion; when the contents change the deletion returns *.deletion_revision_conflict.
+ * targetName is the name of the target (empty for an image).
  */
 export interface DeletionReviewResponseDto {
     targetKind: CatalogTargetKind;
@@ -45,9 +45,9 @@ export function isDeletionReviewResponseDto(value: unknown): value is DeletionRe
 }
 
 /**
- * Итог удаления: строки уже удалены. cleanupPending — файлы ещё удаляются в фоне (их много или часть занята):
- * «Материал удалён. Файлы удаляются в фоне; если приложение закроется раньше, удаление продолжится при следующем
- * открытии проекта.»
+ * The result of a deletion: the rows are already deleted. cleanupPending: files are still being deleted in the background (many of them, or some in use):
+ * "The material is deleted. Files are deleted in the background; if the application closes earlier, deletion continues the next time
+ * the project opens."
  */
 export interface DeletionResultResponseDto {
     classes: number;

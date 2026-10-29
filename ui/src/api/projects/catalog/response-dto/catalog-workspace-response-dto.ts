@@ -5,9 +5,9 @@ import { isClassVariantResponseDto, type ClassVariantResponseDto } from "./class
 import { isVariantResponseDto, type VariantResponseDto } from "./variant-response-dto";
 
 /**
- * Снимок каталога проекта без изображений: варианты и классы в порядке sortOrder (включая архивные), привязки.
- * classOrderRevision передаётся в classes.reorder. catalogRevision растёт с каждым изменением каталога:
- * снимок или событие catalog.changed с меньшим значением устарели.
+ * A snapshot of the project catalog without images: variants and classes in sortOrder (archived included), bindings.
+ * classOrderRevision goes to classes.reorder. catalogRevision grows with every change of the catalog:
+ * a snapshot or a catalog.changed event with a smaller value is stale.
  */
 export interface CatalogWorkspaceResponseDto {
     variants: VariantResponseDto[];

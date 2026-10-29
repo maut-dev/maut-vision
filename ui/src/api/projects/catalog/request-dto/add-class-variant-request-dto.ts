@@ -1,6 +1,6 @@
 export interface AddClassVariantRequestDto {
     projectId: string;
     classId: string;
-    /** ID варианта проекта. */
+    /** The ID of a project variant. */
     variantId: string;
 }

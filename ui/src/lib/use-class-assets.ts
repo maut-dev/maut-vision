@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { classesApi } from "@/api/projects/catalog/classes-api";
 import type { ClassAssetResponseDto } from "@/api/projects/catalog/response-dto/class-asset-response-dto";
 import { subscribeCatalogChanged } from "@/api/events/subscriptions";
+import { i18n } from "@/i18n";
+import "@/components/catalog/locale";
 import { errorMessage } from "./format";
 
 const pageSize = 60;
@@ -15,9 +17,9 @@ interface AssetPages {
 }
 
 /**
- * Изображения одной привязки страницами по курсору. Перечитываются с начала, только когда catalog.changed
- * называет эту привязку в assetsChangedIn или URL миниатюры истёк; уже показанное число строк сохраняется.
- * Ответ устаревшего чтения (после него началось новое) отбрасывается.
+ * Images of one binding in pages by cursor. They are reread from the start only when catalog.changed names this binding in
+ * assetsChangedIn or a thumbnail URL expired; the number of rows already shown is kept.
+ * The answer of a stale read (a newer one started after it) is dropped.
  */
 export function useClassAssets(projectId: string, classVariantId: string) {
     const [state, setState] = useState<AssetPages>({ items: [], nextCursor: null, loading: true });
@@ -37,7 +39,7 @@ export function useClassAssets(projectId: string, classVariantId: string) {
             setState({ items: page.items, nextCursor: page.nextCursor, loading: false });
         } catch (cause) {
             if (mounted.current && current === generation.current) {
-                setState(value => ({ ...value, loading: false, error: errorMessage(cause, "Не удалось загрузить изображения. Повторите загрузку.") }));
+                setState(value => ({ ...value, loading: false, error: errorMessage(cause, i18n.t("catalog:errors.loadAssets")) }));
             }
         }
     }, [projectId, classVariantId]);
@@ -58,7 +60,7 @@ export function useClassAssets(projectId: string, classVariantId: string) {
             });
         } catch (cause) {
             if (mounted.current && current === generation.current) {
-                setState(value => ({ ...value, loading: false, error: errorMessage(cause, "Не удалось загрузить изображения. Повторите загрузку.") }));
+                setState(value => ({ ...value, loading: false, error: errorMessage(cause, i18n.t("catalog:errors.loadAssets")) }));
             }
         }
     }, [projectId, classVariantId, state.nextCursor, state.loading]);
@@ -75,7 +77,7 @@ export function useClassAssets(projectId: string, classVariantId: string) {
         };
     }, [projectId, classVariantId, reload]);
 
-    /** Истёкшие URL миниатюр: одно перечитывание на все изображения, сообщившие об ошибке одновременно. */
+    /** Expired thumbnail URLs: one reread for all images that reported an error at once. */
     const renew = useCallback(() => {
         if (renewing.current) return;
         renewing.current = true;

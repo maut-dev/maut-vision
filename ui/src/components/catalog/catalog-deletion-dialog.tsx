@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { classesApi } from "@/api/projects/catalog/classes-api";
 import type { CatalogTargetKind, DeletionResultResponseDto, DeletionReviewResponseDto } from "@/api/projects/catalog/response-dto/deletion-review-response-dto";
 import { variantsApi } from "@/api/projects/catalog/variants-api";
@@ -8,11 +9,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { errorMessage } from "@/lib/format";
 import { useReturnFocus } from "./catalog-dialogs";
 import { blockerText } from "@/lib/errors";
+import { i18n } from "@/i18n";
+import "./locale";
 
 export interface DeletionTarget {
     kind: CatalogTargetKind;
     id: string;
-    /** Подпись цели в диалоге: у изображения review не присылает названия. */
+    /** The label of the target in the dialog: the review sends no name for an image. */
     name: string;
 }
 
@@ -35,8 +38,8 @@ function remove(projectId: string, target: DeletionTarget, reviewRevision: strin
 }
 
 /**
- * Удаление навсегда: просмотр состава (счётчики и блокировки) → удаление с ревизией этого просмотра.
- * Ошибка удаления (состав изменился, появилась блокировка) требует «Проверить снова».
+ * Permanent deletion: a review of the contents (counters and blockers), then deletion with the revision of that review.
+ * A failed deletion (the contents changed, a blocker appeared) needs "Check again".
  */
 export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
     projectId: string;
@@ -44,6 +47,7 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
     close: () => void;
     deleted: (result: DeletionResultResponseDto) => void;
 }) {
+    const { t } = useTranslation("catalog");
     const [state, setState] = useState<{ review?: DeletionReviewResponseDto; error?: string; loading: boolean }>({ loading: true });
     const [attempt, setAttempt] = useState(0);
     const [busy, setBusy] = useState(false);
@@ -58,7 +62,7 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
             result => setState({ review: result, loading: false }),
             cause => {
                 if (!controller.signal.aborted) {
-                    setState({ loading: false, error: errorMessage(cause, "Не удалось проверить зависимости. Повторите проверку.") });
+                    setState({ loading: false, error: errorMessage(cause, i18n.t("catalog:deletion.reviewFailed")) });
                 }
             });
         return () => controller.abort();
@@ -90,24 +94,24 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
                 onCloseAutoFocus={returnFocus}
             >
                 <DialogHeader>
-                    <DialogTitle>Удалить навсегда?</DialogTitle>
+                    <DialogTitle>{t("deletion.title")}</DialogTitle>
                     <DialogDescription className="break-words">{target.name}</DialogDescription>
                 </DialogHeader>
-                {state.loading && <p role="status" className="text-sm text-muted-foreground">Проверяем материалы и зависимости…</p>}
+                {state.loading && <p role="status" className="text-sm text-muted-foreground">{t("deletion.checking")}</p>}
                 {current && !state.loading && (
                     <div className="space-y-3 text-sm">
                         <dl className="grid grid-cols-[1fr_auto] gap-2" data-testid="deletion-counts">
-                            <dt>Классы</dt><dd className="text-right tabular-nums" data-count="classes">{current.classes}</dd>
-                            <dt>Варианты классов</dt><dd className="text-right tabular-nums" data-count="classVariants">{current.classVariants}</dd>
-                            <dt>Исходные изображения</dt><dd className="text-right tabular-nums" data-count="assets">{current.assets}</dd>
+                            <dt>{t("deletion.classes")}</dt><dd className="text-right tabular-nums" data-count="classes">{current.classes}</dd>
+                            <dt>{t("deletion.classVariants")}</dt><dd className="text-right tabular-nums" data-count="classVariants">{current.classVariants}</dd>
+                            <dt>{t("deletion.assets")}</dt><dd className="text-right tabular-nums" data-count="assets">{current.assets}</dd>
                         </dl>
                         <p className="text-muted-foreground">
-                            Материалы будут удалены с компьютера. Это действие нельзя отменить. Готовые датасеты и модели сохранят свои снимки материалов и карту классов.
+                            {t("deletion.note")}
                         </p>
                         {blocked && (
                             <Alert variant="destructive">
                                 <AlertDescription>
-                                    <p>Удаление недоступно. Сначала завершите задачи или измените зависимости:</p>
+                                    <p>{t("deletion.blocked")}</p>
                                     <ul className="mt-2 list-disc space-y-1 pl-5">
                                         {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText("catalog", blocker)}</li>)}
                                     </ul>
@@ -122,15 +126,15 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
                     )}
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>Отмена</Button>
-                    <Button variant="outline" disabled={busy || state.loading} onClick={() => setAttempt(value => value + 1)}>Проверить снова</Button>
+                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
+                    <Button variant="outline" disabled={busy || state.loading} onClick={() => setAttempt(value => value + 1)}>{t("deletion.checkAgain")}</Button>
                     <Button
                         variant="destructive"
                         data-testid="deletion-confirm"
                         disabled={busy || state.loading || !current || blocked || !!deleteError}
                         onClick={() => void confirm()}
                     >
-                        {busy ? "Удаление…" : "Удалить навсегда"}
+                        {busy ? t("deletion.deleting") : t("deletion.confirm")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

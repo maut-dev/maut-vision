@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, Archive, ArchiveRestore, Loader2, Trash2, Upload } from "lucide-react";
 import type { ClassAssetResponseDto } from "@/api/projects/catalog/response-dto/class-asset-response-dto";
 import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dto/class-variant-response-dto";
@@ -13,13 +14,13 @@ import { isJobActive, type AssetImport } from "@/lib/use-asset-imports";
 import { useClassAssets } from "@/lib/use-class-assets";
 import { VariantColorInput } from "./variant-color-input";
 import { errorText, jobErrorText } from "@/lib/errors";
-import { locale } from "@/lib/format";
+import { i18n } from "@/i18n";
+import { formatNumber } from "@/lib/format";
+import "./locale";
 
-/** 1 изображение, 2 изображения, 5 изображений. */
+/** "1 image", "2 images" with the plural forms of the language. */
 export function imagesLabel(count: number): string {
-    const tens = count % 100, units = count % 10;
-    const word = tens >= 11 && tens <= 14 ? "изображений" : units === 1 ? "изображение" : units >= 2 && units <= 4 ? "изображения" : "изображений";
-    return `${count.toLocaleString(locale())} ${word}`;
+    return i18n.t("catalog:binding.images", { count });
 }
 
 export interface ClassVariantActions {
@@ -32,7 +33,7 @@ export interface ClassVariantActions {
     dismissImport: (binding: ClassVariantResponseDto) => void;
 }
 
-/** Вариант класса: цвет, счётчики, импорт, предупреждения и сетка миниатюр со страничной загрузкой. */
+/** A class variant: the color, counters, import, warnings and a grid of thumbnails loaded by pages. */
 export function ClassVariantSection({ projectId, binding, className, variantName, classArchived, variantArchived, inputSize, busy, importState, actions }: {
     projectId: string;
     binding: ClassVariantResponseDto;
@@ -45,13 +46,14 @@ export function ClassVariantSection({ projectId, binding, className, variantName
     importState?: AssetImport;
     actions: ClassVariantActions;
 }) {
+    const { t } = useTranslation("catalog");
     const label = `${className} / ${variantName}`;
     const archived = !!binding.archivedAt;
     const importing = importState?.selecting || (importState?.job !== undefined && isJobActive(importState.job));
     const oversized = binding.assetCount > 0
         && (binding.maxAssetWidth >= inputSize.width || binding.maxAssetHeight >= inputSize.height);
     return (
-        <section data-class-variant-id={binding.id} aria-label={`Вариант ${variantName}`} className="space-y-3 border-t pt-4">
+        <section data-class-variant-id={binding.id} aria-label={t("binding.label", { name: variantName })} className="space-y-3 border-t pt-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <VariantColorInput
@@ -65,11 +67,11 @@ export function ClassVariantSection({ projectId, binding, className, variantName
                     <h3 className="font-medium break-words">{variantName}</h3>
                     <Badge variant="outline" data-testid="asset-count">{imagesLabel(binding.assetCount)}</Badge>
                     {binding.opaqueAssetCount > 0 && (
-                        <Badge variant="outline" className="border-amber-500/50 text-amber-300" title="Для генерации нужен альфа-канал: PNG с прозрачным фоном.">
-                            Без прозрачности: {binding.opaqueAssetCount.toLocaleString(locale())}
+                        <Badge variant="outline" className="border-amber-500/50 text-amber-300" title={t("binding.noAlphaHint")}>
+                            {t("binding.noAlphaCount", { number: formatNumber(binding.opaqueAssetCount) })}
                         </Badge>
                     )}
-                    {!binding.available && <Badge variant="outline">В архиве</Badge>}
+                    {!binding.available && <Badge variant="outline">{t("list.archived")}</Badge>}
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Button
@@ -77,29 +79,29 @@ export function ClassVariantSection({ projectId, binding, className, variantName
                         size="sm"
                         className="text-destructive hover:text-destructive"
                         disabled={busy}
-                        aria-label={`Удалить вариант класса: ${label}`}
+                        aria-label={t("binding.deleteLabel", { name: label })}
                         onClick={() => actions.remove(binding, label)}
                     >
-                        <Trash2 />Удалить
+                        <Trash2 />{t("list.delete")}
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                         disabled={busy || !binding.available || importing}
-                        aria-label={`Добавить изображения: ${label}`}
+                        aria-label={t("binding.addLabel", { name: label })}
                         onClick={() => actions.startImport(binding)}
                     >
-                        <Upload />Добавить изображения
+                        <Upload />{t("binding.add")}
                     </Button>
                     <Button
                         variant="ghost"
                         size="sm"
                         disabled={busy || classArchived || variantArchived}
-                        aria-label={`${archived ? "Восстановить" : "В архив"}: ${label}`}
-                        title={classArchived || variantArchived ? "Сначала восстановите класс и вариант проекта" : undefined}
+                        aria-label={t(archived ? "list.restoreLabel" : "list.archiveLabel", { name: label })}
+                        title={classArchived || variantArchived ? t("binding.restoreFirst") : undefined}
                         onClick={() => actions.toggleArchive(binding, label)}
                     >
-                        {archived ? <><ArchiveRestore />Восстановить</> : <><Archive />В архив</>}
+                        {archived ? <><ArchiveRestore />{t("list.restore")}</> : <><Archive />{t("list.archive")}</>}
                     </Button>
                 </div>
             </div>
@@ -107,9 +109,9 @@ export function ClassVariantSection({ projectId, binding, className, variantName
             {oversized && (
                 <Alert className="border-amber-500/40" role="status" data-testid="scale-warning">
                     <AlertTriangle className="text-amber-400" />
-                    <AlertTitle>Потребуется изменить масштаб</AlertTitle>
+                    <AlertTitle>{t("binding.scaleTitle")}</AlertTitle>
                     <AlertDescription>
-                        Некоторые изображения не меньше входа модели ({inputSize.width} × {inputSize.height} px). При генерации и разметке их нужно уменьшить. Импорт разрешён.
+                        {t("binding.scaleText", { width: inputSize.width, height: inputSize.height })}
                     </AlertDescription>
                 </Alert>
             )}
@@ -119,9 +121,10 @@ export function ClassVariantSection({ projectId, binding, className, variantName
 }
 
 function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: () => void; dismiss: () => void }) {
+    const { t } = useTranslation("catalog");
     const job = state.job;
     if (state.selecting && !job) {
-        return <p role="status" className="text-sm text-muted-foreground">Выберите файлы в окне выбора…</p>;
+        return <p role="status" className="text-sm text-muted-foreground">{t("import.selecting")}</p>;
     }
     if (!job) {
         return state.error ? <ImportError message={state.error} dismiss={dismiss} /> : null;
@@ -133,17 +136,17 @@ function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: 
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
                         <Loader2 className="size-4 animate-spin" aria-hidden />
-                        {job.status === "queued" ? "Импорт в очереди…" : "Импорт изображений"}
-                        {job.total !== null && <span className="tabular-nums text-muted-foreground">{(job.processed ?? 0).toLocaleString(locale())} из {job.total.toLocaleString(locale())}</span>}
+                        {job.status === "queued" ? t("import.queued") : t("import.running")}
+                        {job.total !== null && <span className="tabular-nums text-muted-foreground">{t("import.progress", { processed: formatNumber(job.processed ?? 0), total: formatNumber(job.total) })}</span>}
                     </span>
                     <Button variant="outline" size="sm" disabled={job.cancelRequested} onClick={cancel}>
-                        {job.cancelRequested ? "Отмена…" : "Отменить"}
+                        {job.cancelRequested ? t("import.cancelling") : t("import.cancel")}
                     </Button>
                 </div>
                 <div
                     className="h-1.5 overflow-hidden rounded-full bg-secondary"
                     role="progressbar"
-                    aria-label="Прогресс импорта"
+                    aria-label={t("import.progressLabel")}
                     aria-valuemin={0}
                     aria-valuemax={100}
                     aria-valuenow={percent ?? undefined}
@@ -155,35 +158,36 @@ function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: 
         );
     }
     const result = parseImportClassAssetsResult(job);
-    const title = job.status === "succeeded" ? "Импорт завершён" : job.status === "cancelled" ? "Импорт отменён" : "Импорт не завершён";
+    const title = job.status === "succeeded" ? t("import.succeeded") : job.status === "cancelled" ? t("import.cancelled") : t("import.failed");
     return (
         <Alert variant={job.status === "succeeded" ? "default" : "destructive"} data-testid="import-result">
             <AlertTitle>{title}</AlertTitle>
             <AlertDescription>
                 {result && (
                     <p className="tabular-nums">
-                        Добавлено: {result.added.toLocaleString(locale())} · Пропущено одинаковых: {result.duplicates.toLocaleString(locale())} · Отклонено: {result.rejected.toLocaleString(locale())}
+                        {t("import.summary", { added: formatNumber(result.added), duplicates: formatNumber(result.duplicates), rejected: formatNumber(result.rejected) })}
                     </p>
                 )}
                 {job.status !== "succeeded" && job.status !== "cancelled" && job.error && <p>{jobErrorText(job.error)}</p>}
                 {!!result?.rejectedFiles.length && (
                     <ul className="mt-1 max-h-32 list-disc space-y-0.5 overflow-y-auto pl-5 text-xs">
                         {result.rejectedFiles.map((file, index) => <li key={`${file.name}-${index}`} className="break-words">{file.name} — {errorText(file.reason)}</li>)}
-                        {result.rejected > result.rejectedFiles.length && <li>и ещё {(result.rejected - result.rejectedFiles.length).toLocaleString(locale())}</li>}
+                        {result.rejected > result.rejectedFiles.length && <li>{t("import.more", { number: formatNumber(result.rejected - result.rejectedFiles.length) })}</li>}
                     </ul>
                 )}
-                <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>Скрыть</Button>
+                <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>{t("section.hide")}</Button>
             </AlertDescription>
         </Alert>
     );
 }
 
 function ImportError({ message, dismiss }: { message: string; dismiss: () => void }) {
+    const { t } = useTranslation("catalog");
     return (
         <Alert variant="destructive">
             <AlertDescription>
                 <p>{message}</p>
-                <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>Скрыть</Button>
+                <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>{t("section.hide")}</Button>
             </AlertDescription>
         </Alert>
     );
@@ -196,6 +200,7 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
     busy: boolean;
     remove: (asset: ClassAssetResponseDto, label: string) => void;
 }) {
+    const { t } = useTranslation("catalog");
     const assets = useClassAssets(projectId, classVariantId);
     const sentinel = useRef<HTMLDivElement>(null);
     const { loadMore } = assets;
@@ -205,7 +210,7 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
     const viewedAsset = viewedIndex >= 0 ? assets.items[viewedIndex] : undefined;
 
     useEffect(() => {
-        // «Далее» в конце загруженного списка подгружает страницу и переходит к её первому изображению.
+        // "Next" at the end of the loaded list loads a page and moves to its first image.
         if (!viewed?.pendingNext || assets.loading) return;
         const following = assets.items[viewedIndex + 1];
         setViewed(following ? { id: following.id } : { id: viewed.id });
@@ -231,11 +236,11 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
     }, [hasMore, loadMore]);
 
     if (!assets.items.length) {
-        if (assets.loading) return <p role="status" className="py-6 text-sm text-muted-foreground">Загрузка изображений…</p>;
+        if (assets.loading) return <p role="status" className="py-6 text-sm text-muted-foreground">{t("assets.loading")}</p>;
         if (assets.error) return <GridError message={assets.error} retry={() => void assets.reload()} />;
         return (
             <p className="py-6 text-sm text-muted-foreground">
-                Добавьте PNG с прозрачным фоном для генерации. Для ручной разметки исходники не обязательны.
+                {t("assets.empty")}
             </p>
         );
     }
@@ -249,7 +254,7 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                             <button
                                 type="button"
                                 className="relative block w-full rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                                aria-label={`Просмотреть изображение: ${label} · ${size}`}
+                                aria-label={t("assets.viewLabel", { name: `${label} · ${size}` })}
                                 onClick={() => setViewed({ id: asset.id })}
                             >
                                 <ResourceImage
@@ -262,9 +267,9 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                                 {!asset.hasAlpha && (
                                     <span
                                         className="absolute top-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[10px] leading-none text-amber-300"
-                                        title="Нет альфа-канала: для генерации нужен PNG с прозрачным фоном."
+                                        title={t("assets.noAlphaHint")}
                                     >
-                                        Без прозрачности
+                                        {t("assets.noAlpha")}
                                     </span>
                                 )}
                             </button>
@@ -274,10 +279,10 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                                 size="sm"
                                 className="w-full text-destructive hover:text-destructive"
                                 disabled={busy}
-                                aria-label={`Удалить изображение: ${label} · ${size}`}
+                                aria-label={t("assets.deleteLabel", { name: `${label} · ${size}` })}
                                 onClick={() => remove(asset, `${label} · ${size}`)}
                             >
-                                <Trash2 />Удалить
+                                <Trash2 />{t("list.delete")}
                             </Button>
                         </figure>
                     );
@@ -295,7 +300,11 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                         renew: assets.renew,
                         metadata: (
                             <p>
-                                {viewedAsset.format.toUpperCase()} · {Math.ceil(viewedAsset.byteSize / 1024).toLocaleString(locale())} КБ · {viewedAsset.hasAlpha ? "с прозрачностью" : "без прозрачности"}
+                                {t("assets.meta", {
+                                    format: viewedAsset.format.toUpperCase(),
+                                    kilobytes: formatNumber(Math.ceil(viewedAsset.byteSize / 1024)),
+                                    alpha: viewedAsset.hasAlpha ? t("assets.withAlpha") : t("assets.withoutAlpha"),
+                                })}
                             </p>
                         ),
                     }}
@@ -309,7 +318,7 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
             {hasMore && (
                 <div ref={sentinel} className="flex justify-center">
                     <Button variant="outline" size="sm" disabled={assets.loading} onClick={() => void loadMore()}>
-                        {assets.loading ? "Загрузка…" : "Показать ещё"}
+                        {assets.loading ? t("assets.loadingMore") : t("assets.more")}
                     </Button>
                 </div>
             )}
@@ -318,11 +327,12 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
 }
 
 function GridError({ message, retry }: { message: string; retry: () => void }) {
+    const { t } = useTranslation("catalog");
     return (
         <Alert variant="destructive">
             <AlertDescription>
                 <p>{message}</p>
-                <Button variant="ghost" size="sm" className="mt-1" onClick={retry}>Повторить</Button>
+                <Button variant="ghost" size="sm" className="mt-1" onClick={retry}>{t("section.retry")}</Button>
             </AlertDescription>
         </Alert>
     );
