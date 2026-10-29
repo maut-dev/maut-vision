@@ -7,13 +7,13 @@ import type { TrainingParameters } from "../request-dto/training-request-dto";
 import { isTrainingParameters } from "./training-runtime-response-dto";
 import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
-/** Вид задачи запуска обучения: её снимки приходят в job.changed. */
+/** The kind of the training run job: its snapshots arrive in job.changed. */
 export const trainingJobKind = "training.run";
 
-/** Состояние запуска; подписи — trainingRunStateLabels (training-parameters.ts). */
+/** The run state; labels — trainingRunStateLabels (training-parameters.ts). */
 export type TrainingRunState = "queued" | "preparing" | "training" | "cancelling" | "succeeded" | "failed" | "cancelled" | "interrupted";
 
-/** Датасет запуска и версии: версия (паспорт — datasetsApi.getPassport), название на момент запуска, классы 0..n−1, кадры по частям. */
+/** The dataset of the run and the version: the version (passport — datasetsApi.getPassport), the name at the time of the run, classes 0..n−1, frames by part. */
 export interface TrainingDatasetDto {
     versionId: string;
     name: string;
@@ -22,7 +22,7 @@ export interface TrainingDatasetDto {
     counts: DatasetSplitCountsDto;
 }
 
-/** Ход: stage — стадия worker (trainingStageLabels); «Эпоха epoch из epochs», «Пакет batch из batches»; metrics — потери и метрики последней эпохи. */
+/** Progress: stage — the worker stage (trainingStageLabels); "Epoch epoch of epochs", "Batch batch of batches"; metrics — losses and metrics of the last epoch. */
 export interface TrainingRunProgressDto {
     stage: string | null;
     epoch: number | null;
@@ -42,11 +42,11 @@ export interface TrainingRunErrorDto {
 }
 
 /**
- * Запуск обучения. job — снимок задачи training.run (job.progress 0–100, job.progressMessage progress.epoch «Эпоха X из Y», job.cancelRequested); state —
- * единое состояние для подписей; parameters — запрошенные (все ключи), effectiveParams — фактические от worker (null, пока не пришли;
- * outputClasses — карта выходов, lr0Source — request | computed | optimizer-auto); environment — python, torch, ultralytics, cuda,
- * deviceName; epochCount и logCount — для «История эпох» и «Журнал обучения»; resultVersionId — версия модели после «Готово»;
- * revision — сравнить с training.changed и перечитать getRun, если она больше.
+ * A training run. job — the snapshot of the job training.run (job.progress 0–100, job.progressMessage progress.epoch, job.cancelRequested); state —
+ * one state for labels; parameters — requested (all keys), effectiveParams — actual from the worker (null until they arrive;
+ * outputClasses — the output map, lr0Source — request | computed | optimizer-auto); environment — python, torch, ultralytics, cuda,
+ * deviceName; epochCount and logCount — for "Epoch history" and "Training log"; resultVersionId — the model version after "Done";
+ * revision — compare with training.changed and read getRun again when it is larger.
  */
 export interface TrainingRunResponseDto {
     id: string;
@@ -73,7 +73,7 @@ export interface TrainingRunPageResponseDto {
     total: number;
 }
 
-/** Эпоха: losses — box_loss, cls_loss, dfl_loss; metrics — precision, recall, mAP50, mAP50_95, valBoxLoss, valClsLoss, valDflLoss (пусто без проверки). */
+/** An epoch: losses — box_loss, cls_loss, dfl_loss; metrics — precision, recall, mAP50, mAP50_95, valBoxLoss, valClsLoss, valDflLoss (empty without a check). */
 export interface TrainingEpochDto {
     epoch: number;
     losses: Record<string, number>;
@@ -82,7 +82,7 @@ export interface TrainingEpochDto {
     fitness: number | null;
 }
 
-/** nextAfter — передать в after для следующей страницы; null — последняя. */
+/** nextAfter — pass as after for the next page; null — the last one. */
 export interface TrainingEpochPageResponseDto {
     items: TrainingEpochDto[];
     total: number;
@@ -99,14 +99,14 @@ export interface TrainingLogEntryDto {
     message: CodedTextDto;
 }
 
-/** total — все записи; nextAfter — sequence для продолжения (у tailLog — последней записи, чтобы дочитывать новые). */
+/** total — all entries; nextAfter — the sequence to continue from (for tailLog — of the last entry, to read new ones). */
 export interface TrainingLogPageResponseDto {
     items: TrainingLogEntryDto[];
     total: number;
     nextAfter: number | null;
 }
 
-/** Итог задачи training.run (job.result): созданная версия модели. */
+/** The result of the job training.run (job.result): the created model version. */
 export interface TrainingRunResultDto {
     versionId: string;
 }
@@ -156,7 +156,7 @@ export function isTrainingLogPageResponseDto(value: unknown): value is TrainingL
         && isCount(value.total) && isNullableCount(value.nextAfter);
 }
 
-/** Итог запуска из снимка задачи; null — задача другого вида или итога ещё нет. */
+/** The run result from a job snapshot; null — a job of another kind or no result yet. */
 export function parseTrainingRunResult(job: JobResponseDto): TrainingRunResultDto | null {
     return job.kind === trainingJobKind && isRecord(job.result) && isId(job.result.versionId) ? { versionId: job.result.versionId } : null;
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import type { TrainingParameters } from "@/api/projects/training/request-dto/training-request-dto";
 import type { TrainingRunResponseDto } from "@/api/projects/training/response-dto/training-run-response-dto";
@@ -25,12 +26,13 @@ interface Notice {
 }
 
 /**
- * Раздел «Обучение»: вкладки «Настройки» (форма запуска), «Текущий запуск» (паспорт выбранного запуска с графиками и журналом,
- * после «Готово» — краткий паспорт версии), «История обучения» (карточки запусков). Без опроса: training.changed, job.changed,
- * trainingPresets.changed, datasets.changed. Все панели остаются смонтированными: форма переживает переключение вкладок. initialRunId —
- * намерение перехода (обучение из обзора): вкладка «Текущий запуск» с этим запуском; запуск не с первой страницы читается getRun.
+ * The section "Training": tabs "Settings" (the run form), "Current run" (the passport of the chosen run with charts and the log, after
+ * "Done" — a short version passport), "Training history" (run cards). No polling: training.changed, job.changed, trainingPresets.changed,
+ * datasets.changed. All panels stay mounted: the form survives tab switches. initialRunId — the intent of a move (training from the
+ * overview): the tab "Current run" with this run; a run beyond the first page is read with getRun.
  */
 export function TrainingSection({ project, initialRunId, openDatasets }: { project: ProjectResponseDto; initialRunId?: string; openDatasets: () => void }) {
+    const { t } = useTranslation("training");
     const projectId = project.id;
     const datasets = useDatasetVersions(projectId);
     const runs = useTrainingRuns(projectId);
@@ -38,7 +40,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
     const setup = useTrainingSetup();
     const [tab, setTab] = useState<TrainingTab>(initialRunId ? "current" : "settings");
     const [selectedRunId, setSelectedRunId] = useState(initialRunId);
-    /** Запуск намерения ещё читается: его может не быть на первой странице истории. */
+    /** The run of the intent is still being read: it may be missing from the first page of the history. */
     const [seeking, setSeeking] = useState(!!initialRunId);
     const sought = useRef(false);
     const [busy, setBusy] = useState(false);
@@ -53,7 +55,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
         }
         if (sought.current) return;
         sought.current = true;
-        // Удалённый запуск не найдётся: вкладка покажет последний запуск.
+        // A deleted run is not found: the tab shows the last run.
         trainingApi.getRun({ projectId, runId: initialRunId }).then(run => runs.apply(run), () => undefined).finally(() => setSeeking(false));
     }, [seeking, runs.loading, runs.runs, runs.apply, initialRunId, projectId]);
 
@@ -62,7 +64,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
         ?? activeRuns.find(run => run.state === "training" || run.state === "preparing") ?? activeRuns[0] ?? runs.runs[0];
     const selectable = [...new Map([...(current ? [current] : []), ...activeRuns].map(run => [run.id, run])).values()];
     const versionOf = (versionId: string | null) => versions.versions.find(version => version.id === versionId);
-    /** Запуск сохраняет resultVersionId и после удаления версии: её нет в списке, прочитанном после конца запуска. */
+    /** A run keeps resultVersionId after its version is deleted: the version is missing from a list read after the run ended. */
     const versionDeleted = (run: TrainingRunResponseDto) => !!run.resultVersionId && versions.loaded && !versionOf(run.resultVersionId)
         && versions.listedAt > Date.parse(run.job.finishedAt ?? run.job.updatedAt);
 
@@ -101,7 +103,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
         const saved = await act(() => trainingApi.savePreset({ name, parameters }));
         if (!saved) return null;
         await setup.refreshPresets();
-        setNotice({ tone: "info", text: `Пресет «${saved.name}» сохранён.` });
+        setNotice({ tone: "info", text: t("section.presetSaved", { name: saved.name }) });
         return saved.id;
     }
 
@@ -110,7 +112,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
         const removed = await act(() => trainingApi.deletePreset({ presetId: preset.id }));
         if (!removed) return false;
         await setup.refreshPresets();
-        setNotice({ tone: "info", text: `Пресет «${preset.name}» удалён.` });
+        setNotice({ tone: "info", text: t("section.presetDeleted", { name: preset.name }) });
         return true;
     }
 
@@ -133,7 +135,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
                 <Alert variant={notice.tone === "error" ? "destructive" : "default"} data-testid="training-notice" data-tone={notice.tone}>
                     <AlertDescription>
                         <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>Скрыть</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -141,7 +143,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
                 <Alert variant="destructive">
                     <AlertDescription>
                         <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void runs.refresh(); void datasets.refresh(); void versions.refresh(); }}>Повторить</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void runs.refresh(); void datasets.refresh(); void versions.refresh(); }}>{t("section.retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -165,9 +167,9 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
             <div id={trainingPanelId("current")} role="tabpanel" aria-labelledby={trainingTabId("current")} hidden={tab !== "current"} className="space-y-4">
                 {selectable.length > 1 && (
                     <label className="block space-y-1">
-                        <span className="block text-xs text-muted-foreground">Текущий запуск</span>
+                        <span className="block text-xs text-muted-foreground">{t("section.currentRun")}</span>
                         <Select value={current?.id} onValueChange={setSelectedRunId}>
-                            <SelectTrigger aria-label="Текущий запуск" className="w-full sm:w-96" data-testid="training-current-select"><SelectValue /></SelectTrigger>
+                            <SelectTrigger aria-label={t("section.currentRun")} className="w-full sm:w-96" data-testid="training-current-select"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 {selectable.map(run => (
                                     <SelectItem key={run.id} value={run.id}>{trainingRunStateLabels[run.state]} · {run.dataset.name} · {formatDate(run.job.createdAt)}</SelectItem>
@@ -177,7 +179,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
                     </label>
                 )}
                 {seeking && !runs.runs.some(run => run.id === initialRunId) ? (
-                    <Empty testId="training-current-empty">Загрузка запуска…</Empty>
+                    <Empty testId="training-current-empty">{t("section.runLoading")}</Empty>
                 ) : current ? (
                     <TrainingRunPassport
                         key={current.id}
@@ -192,12 +194,12 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
                     />
                 ) : (
                     <Empty testId="training-current-empty">
-                        {runs.loading ? "Загрузка запуска…" : "Запустите обучение во вкладке «Настройки». Здесь появятся ход обучения, метрики и журнал."}
+                        {runs.loading ? t("section.runLoading") : t("section.currentEmpty")}
                     </Empty>
                 )}
             </div>
             <div id={trainingPanelId("history")} role="tabpanel" aria-labelledby={trainingTabId("history")} hidden={tab !== "history"} className="space-y-3">
-                <h2 className="font-medium">Запуски обучения</h2>
+                <h2 className="font-medium">{t("section.runs")}</h2>
                 {runs.runs.length > 0 && (
                     <ul className="space-y-3" data-testid="training-history">
                         {runs.runs.map(run => (
@@ -216,12 +218,12 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
                 )}
                 {!runs.runs.length && (
                     <Empty testId="training-history-empty">
-                        {runs.loading ? "Загрузка…" : "Запусков пока нет. Версии модели появятся после первого успешного обучения; первая версия станет рабочей автоматически."}
+                        {runs.loading ? t("section.loading") : t("section.historyEmpty")}
                     </Empty>
                 )}
                 {runs.total > runs.runs.length && (
                     <Button variant="outline" className="w-full" disabled={runs.loadingMore} onClick={() => void runs.loadMore()}>
-                        {runs.loadingMore ? "Загрузка…" : `Ещё запуски (${runs.runs.length} из ${runs.total})`}
+                        {runs.loadingMore ? t("section.loading") : t("section.moreRuns", { shown: runs.runs.length, total: runs.total })}
                     </Button>
                 )}
             </div>

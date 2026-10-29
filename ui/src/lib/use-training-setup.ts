@@ -9,9 +9,9 @@ import { trainingApi } from "@/api/projects/training/training-api";
 import { locale } from "@/lib/format";
 
 /**
- * Что нужно вкладке «Настройки» помимо проекта: пресеты (общие для всех проектов; listPresets и trainingPresets.changed), среда
- * worker (getRuntime — причина недоступности по-русски) и видеокарты (listGpus для поля «Устройство»). Пока ответа нет, значение
- * undefined; ошибка чтения среды или видеокарт не блокирует форму — Core проверит запуск сам.
+ * What the tab "Settings" needs besides the project: presets (shared by all projects; listPresets and trainingPresets.changed), the worker
+ * environment (getRuntime — the code of why it is unavailable) and GPUs (listGpus for the field "Device"). Until an answer arrives the value
+ * is undefined; a failed read of the environment or the GPUs does not block the form — Core checks the run itself.
  */
 export function useTrainingSetup() {
     const [presets, setPresets] = useState<readonly TrainingPresetResponseDto[]>([]);
@@ -26,7 +26,7 @@ export function useTrainingSetup() {
             const list = await trainingApi.listPresets();
             if (mounted.current && own === presetRead.current) setPresets([...list].sort((left, right) => left.name.localeCompare(right.name, locale())));
         } catch {
-            // Пресеты необязательны: форма работает и без них.
+            // Presets are optional: the form works without them.
         }
     }, []);
 

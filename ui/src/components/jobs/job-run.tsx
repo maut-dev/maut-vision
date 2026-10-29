@@ -22,12 +22,12 @@ export const jobStatusLabels: Readonly<Record<JobStatus, string>> = {
 export const count = (value: number) => formatNumber(value);
 
 /**
- * Строка истории длинной операции (импорт изображений, подготовка фонов): состояние, время, итог или «P из T», отмена
- * идущей задачи, полоса прогресса и ошибка задачи. Подробности итога владелец передаёт в children.
+ * A history row of a long operation (image import, background preparation): state, time, the result or "P of T", cancelling
+ * a running job, the progress bar and the job error. The owner passes details of the result in children.
  */
 export function JobRunRow({ job, summary, progressLabel, cancel, children }: {
     job: JobResponseDto;
-    /** Итог или ход своими словами; без него у идущей задачи показывается «P из T». */
+    /** The result or the progress in its own words; without it a running job shows "P of T". */
     summary?: ReactNode;
     progressLabel: string;
     cancel: () => void;

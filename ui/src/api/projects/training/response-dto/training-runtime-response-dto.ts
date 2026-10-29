@@ -2,7 +2,7 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isId } from "../../catalog/catalog-guards";
 import type { TrainingParameters } from "../request-dto/training-request-dto";
 
-/** Пресет параметров: общий для всех проектов. */
+/** A parameter preset: shared by all projects. */
 export interface TrainingPresetResponseDto {
     id: string;
     name: string;
@@ -15,7 +15,7 @@ export interface TrainingPresetDeletionResponseDto {
     presetId: string;
 }
 
-/** Видеокарта по nvidia-smi: device = String(index); память в МиБ. */
+/** A GPU by nvidia-smi: device = String(index); memory in MiB. */
 export interface GpuResponseDto {
     index: number;
     name: string;
@@ -23,14 +23,14 @@ export interface GpuResponseDto {
     driverVersion: string;
 }
 
-/** driverAvailable = false — драйвера нет: «Процессор» и ручной ввод устройства. */
+/** driverAvailable = false — no driver: "Processor" and manual device entry. */
 export interface GpuInventoryResponseDto {
     driverAvailable: boolean;
     gpus: GpuResponseDto[];
     checkedAt: string;
 }
 
-/** Среда Python worker: mode — packaged | interpreter; code — почему недоступна (training.runtime_*), null — доступна. */
+/** The Python worker environment: mode — packaged | interpreter; code — why it is unavailable (training.runtime_*), null — available. */
 export interface TrainingRuntimeResponseDto {
     configured: boolean;
     available: boolean;

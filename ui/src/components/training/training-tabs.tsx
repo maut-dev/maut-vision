@@ -1,19 +1,23 @@
 import type { KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { i18n } from "@/i18n";
 
 export type TrainingTab = "settings" | "current" | "history";
 
+/** Tabs with labels in the current language (read at render time). */
 export const trainingTabs: readonly { id: TrainingTab; label: string }[] = [
-    { id: "settings", label: "Настройки" },
-    { id: "current", label: "Текущий запуск" },
-    { id: "history", label: "История обучения" },
+    { id: "settings", get label() { return i18n.t("training:tabs.settings"); } },
+    { id: "current", get label() { return i18n.t("training:tabs.current"); } },
+    { id: "history", get label() { return i18n.t("training:tabs.history"); } },
 ];
 
 export const trainingTabId = (tab: TrainingTab) => `training-tab-${tab}`;
 export const trainingPanelId = (tab: TrainingTab) => `training-panel-${tab}`;
 
-/** Вкладки раздела «Обучение» по шаблону tablist, как у датасетов: одна точка табуляции, стрелки по кругу, Home и End. */
+/** Tabs of the section "Training" by the tablist pattern, as in datasets: one tab stop, arrows wrap around, Home and End. */
 export function TrainingTabs({ tab, select }: { tab: TrainingTab; select: (tab: TrainingTab) => void }) {
+    const { t } = useTranslation("training");
     function onKeyDown(event: KeyboardEvent, index: number) {
         const last = trainingTabs.length - 1;
         const next = event.key === "ArrowRight" ? (index + 1) % trainingTabs.length
@@ -26,7 +30,7 @@ export function TrainingTabs({ tab, select }: { tab: TrainingTab; select: (tab: 
     }
 
     return (
-        <div role="tablist" aria-label="Обучение" className="flex shrink-0 flex-wrap gap-1 border-b pb-2">
+        <div role="tablist" aria-label={t("tabs.label")} className="flex shrink-0 flex-wrap gap-1 border-b pb-2">
             {trainingTabs.map((item, index) => (
                 <Button
                     key={item.id}

@@ -14,8 +14,8 @@ export interface ModelExportState {
 }
 
 /**
- * «Выгрузить ZIP»: нативное «Сохранить как» с model-vN.zip (закрытое окно ничего не запускает), затем задача training.export —
- * ход и итог по job.changed этой задачи. Снимки задачи, пришедшие раньше ответа старта, не теряются: последний по sequence.
+ * "Export ZIP": the native "Save as" with model-vN.zip (a closed dialog starts nothing), then the job training.export —
+ * progress and result by job.changed of this job. Job snapshots that arrive before the start answer are not lost: the last by sequence.
  */
 export function useModelExport(projectId: string) {
     const [state, setState] = useState<ModelExportState>();
@@ -44,7 +44,7 @@ export function useModelExport(projectId: string) {
         };
     }, [projectId, applyJob]);
 
-    /** true — выгрузка начата, false — окно «Сохранить как» закрыто. */
+    /** true — the export started, false — the "Save as" dialog was closed. */
     const exportVersion = useCallback(async (versionId: string, versionNumber: number): Promise<boolean> => {
         const destination = await trainingApi.selectModelExportDestination({ projectId, versionId });
         if (!destination.token) return false;

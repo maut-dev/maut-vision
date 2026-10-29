@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import type { TrainingEpochDto } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { isResourceUrl, type ResourceUrl } from "@/api/resources/resource-url";
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { workerWarningText } from "@/lib/coded-text";
 import { formatDate, locale } from "@/lib/format";
+import { i18n } from "@/i18n";
 import {
     deviceLabel,
     fileKindLabels,
@@ -20,7 +22,7 @@ import {
 } from "@/lib/training/run-view";
 import { ParameterList } from "./training-parameter-list";
 
-const metricStats = [["mAP50", "mAP50"], ["mAP50_95", "mAP50-95"], ["precision", "точность"], ["recall", "полнота"]] as const;
+const metricStats = ["mAP50", "mAP50_95", "precision", "recall"] as const;
 
 function maxOf(epochs: readonly TrainingEpochDto[], key: string): number | null {
     const values = epochs.map(entry => entry.metrics[key]).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
@@ -46,20 +48,20 @@ function Stat({ label, value, hint, testId }: { label: string; value: ReactNode;
     );
 }
 
-/** «0,0005 (подобрано)» — по источнику фактического значения worker. */
+/** "0.0005 (tuned)" — by the source of the actual value of the worker. */
 function sourced(effective: Record<string, unknown>, key: string): string {
     const value = effective[key];
     const text = typeof value === "number" ? formatNumber(value, 6) : parameterText(value);
     const source = effective[`${key}Source`];
-    if (source === "computed") return `${text} (подобрано)`;
-    if (source === "optimizer-auto") return `${text} (подобрал оптимизатор)`;
+    if (source === "computed") return i18n.t("training:passport.tuned", { value: text });
+    if (source === "optimizer-auto") return i18n.t("training:passport.chosenByOptimizer", { value: text });
     return text;
 }
 
 /**
- * Паспорт версии модели (под запуском в «Обучении» и в разделе «Модели» с выгрузкой, удалением и возвратом к списку): метрики best.pt с лучшими значениями по эпохам, лучшая
- * эпоха и ранняя остановка, параметры (запрошенные и фактические), классы в порядке выходов, замечания worker, файлы с SHA-256 и
- * картинки обучения — открываются в общем просмотрщике с переходами между ними.
+ * The passport of a model version (under a run in "Training" and in "Models" with export, deletion and a way back to the list): metrics
+ * of best.pt with the best values by epoch, the best epoch and early stopping, parameters (requested and actual), classes in the order of
+ * outputs, worker notes, files with SHA-256 and training images — they open in the shared viewer with moves between them.
  */
 export function ModelVersionPassport({ version, epochs, busy, renew, setWorking, exportZip, remove, back }: {
     version: ModelVersionResponseDto;
@@ -67,12 +69,13 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
     busy: boolean;
     renew: () => void;
     setWorking: () => void;
-    /** «Выгрузить ZIP» и «Удалить» — паспорт в разделе «Модели». */
+    /** "Export ZIP" and "Delete" — the passport in "Models". */
     exportZip?: () => void;
     remove?: () => void;
-    /** «← К списку моделей». */
+    /** "← Back to models". */
     back?: () => void;
 }) {
+    const { t } = useTranslation("training");
     const [opened, setOpened] = useState<{ index: number; width: number; height: number }>();
     const parameters = version.parameters;
     const effective = version.effectiveParams;
@@ -92,77 +95,82 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
                 await image.decode();
                 size = { width: image.naturalWidth || size.width, height: image.naturalHeight || size.height };
             } catch {
-                // Размер уточнит просмотрщик; ошибку загрузки он покажет сам.
+                // The viewer refines the size; it shows a loading error itself.
             }
         }
         setOpened({ index, ...size });
     }
 
     return (
-        <section className="space-y-4" data-testid="model-version-passport" data-version-id={version.id} aria-label={`Версия ${version.number}`}>
+        <section className="space-y-4" data-testid="model-version-passport" data-version-id={version.id} aria-label={t("passport.version", { number: version.number })}>
             {back && (
-                <Button variant="link" size="sm" className="h-auto px-0" data-testid="model-version-back" onClick={back}>← К списку моделей</Button>
+                <Button variant="link" size="sm" className="h-auto px-0" data-testid="model-version-back" onClick={back}>{t("passport.back")}</Button>
             )}
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h3 className="flex items-center gap-2 text-lg font-medium">
-                        Версия {version.number}
-                        {version.isWorking && <Badge data-testid="model-version-working">Рабочая</Badge>}
+                        {t("passport.version", { number: version.number })}
+                        {version.isWorking && <Badge data-testid="model-version-working">{t("passport.workingBadge")}</Badge>}
                     </h3>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        Паспорт версии модели · {version.architecture} · {version.input.width} × {version.input.height} · {formatDate(version.createdAt)}
+                        {t("passport.subtitle", { architecture: version.architecture, width: version.input.width, height: version.input.height, date: formatDate(version.createdAt) })}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    {!version.isWorking && <Button variant="outline" size="sm" disabled={busy} data-testid="model-version-set-working" onClick={setWorking}>Сделать рабочей</Button>}
-                    {exportZip && <Button variant="outline" size="sm" disabled={busy} data-testid="model-version-export" onClick={exportZip}>Выгрузить ZIP</Button>}
-                    {remove && <Button variant="ghost" size="sm" disabled={busy} data-testid="model-version-delete" onClick={remove}>Удалить</Button>}
+                    {!version.isWorking && <Button variant="outline" size="sm" disabled={busy} data-testid="model-version-set-working" onClick={setWorking}>{t("passport.makeWorking")}</Button>}
+                    {exportZip && <Button variant="outline" size="sm" disabled={busy} data-testid="model-version-export" onClick={exportZip}>{t("passport.exportZip")}</Button>}
+                    {remove && <Button variant="ghost" size="sm" disabled={busy} data-testid="model-version-delete" onClick={remove}>{t("passport.delete")}</Button>}
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:grid-cols-5" data-testid="model-version-metrics">
-                {metricStats.map(([key, label]) => {
+                {metricStats.map(key => {
                     const top = maxOf(epochs, key);
-                    return <Stat key={key} testId={`model-version-metric-${key}`} label={label} value={formatMetric(version.metrics[key])}
-                        hint={top !== null ? `лучший ${formatMetric(top)}` : "итог best.pt"} />;
+                    return <Stat key={key} testId={`model-version-metric-${key}`} label={t(`passport.metrics.${key}`)} value={formatMetric(version.metrics[key])}
+                        hint={top !== null ? t("passport.best", { value: formatMetric(top) }) : t("passport.bestPt")} />;
                 })}
-                <Stat testId="model-version-best-epoch" label="лучшая эпоха" value={version.bestEpoch ?? "—"}
-                    hint={`пройдено ${version.epochsCompleted} из ${requestedEpochs}${version.stoppedEarly ? " · ранняя остановка" : ""}`} />
+                <Stat testId="model-version-best-epoch" label={t("passport.bestEpoch")} value={version.bestEpoch ?? "—"}
+                    hint={t(version.stoppedEarly ? "passport.epochsDoneStopped" : "passport.epochsDone", { done: version.epochsCompleted, total: requestedEpochs })} />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
                 <div className="space-y-4 rounded-lg border bg-card p-5">
-                    <h4 className="font-medium">Параметры обучения</h4>
+                    <h4 className="font-medium">{t("passport.parameters")}</h4>
                     <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm" data-testid="model-version-parameters">
-                        <Row label="статус">{version.isWorking ? "рабочая версия" : "обучена, не рабочая"}</Row>
-                        <Row label="датасет">{version.dataset.name}</Row>
-                        <Row label="архитектура">{version.architecture}</Row>
-                        <Row label="эпохи">{version.epochsCompleted} из {requestedEpochs}{version.stoppedEarly && " (ранняя остановка)"}</Row>
-                        <Row label="размер картинки">{version.imageSize}</Row>
-                        <Row label="batch">
-                            {parameterText(parameters.batch)}
-                            {typeof effectiveBatch === "number" && effectiveBatch !== parameters.batch && ` (фактически ${effectiveBatch})`}
+                        <Row label={t("passport.rows.status")}>{version.isWorking ? t("passport.statusWorking") : t("passport.statusTrained")}</Row>
+                        <Row label={t("passport.rows.dataset")}>{version.dataset.name}</Row>
+                        <Row label={t("passport.rows.architecture")}>{version.architecture}</Row>
+                        <Row label={t("passport.rows.epochs")}>
+                            {t(version.stoppedEarly ? "passport.epochsOfStopped" : "passport.epochsOf", { done: version.epochsCompleted, total: requestedEpochs })}
                         </Row>
-                        <Row label="оптимизатор">{parameterText(effective.optimizer ?? parameters.optimizer)}</Row>
-                        <Row label="скорость (lr0)">{sourced(effective, "lr0")}</Row>
-                        <Row label="разогрев, эпох">{sourced(effective, "warmupEpochs")}</Row>
-                        <Row label="классов">{version.classes.length}</Row>
-                        <Row label="устройство">{deviceLabel(parameters.device)} · AMP {parameterText(effective.amp ?? parameters.amp).toLocaleLowerCase(locale())}</Row>
-                        <Row label="создана">{formatDate(version.createdAt)}</Row>
+                        <Row label={t("passport.rows.imageSize")}>{version.imageSize}</Row>
+                        <Row label="batch">
+                            {typeof effectiveBatch === "number" && effectiveBatch !== parameters.batch
+                                ? t("passport.actualBatch", { value: parameterText(parameters.batch), actual: effectiveBatch })
+                                : parameterText(parameters.batch)}
+                        </Row>
+                        <Row label={t("passport.rows.optimizer")}>{parameterText(effective.optimizer ?? parameters.optimizer)}</Row>
+                        <Row label={t("passport.rows.lr0")}>{sourced(effective, "lr0")}</Row>
+                        <Row label={t("passport.rows.warmup")}>{sourced(effective, "warmupEpochs")}</Row>
+                        <Row label={t("passport.rows.classes")}>{version.classes.length}</Row>
+                        <Row label={t("passport.rows.device")}>
+                            {t("passport.deviceAmp", { device: deviceLabel(parameters.device), amp: parameterText(effective.amp ?? parameters.amp).toLocaleLowerCase(locale()) })}
+                        </Row>
+                        <Row label={t("passport.rows.created")}>{formatDate(version.createdAt)}</Row>
                     </dl>
                     <div className="space-y-1 text-xs">
-                        <p className="text-muted-foreground">Классы в порядке выходов модели</p>
-                        <div className="max-h-64 overflow-auto rounded-md border" tabIndex={0} aria-label="Карта выходов модели">
+                        <p className="text-muted-foreground">{t("passport.classesOrder")}</p>
+                        <div className="max-h-64 overflow-auto rounded-md border" tabIndex={0} aria-label={t("passport.outputMap")}>
                             <table className="w-full text-left text-xs">
                                 <thead className="sticky top-0 bg-card text-muted-foreground">
-                                    <tr><th className="px-3 py-2">Индекс</th><th className="px-3 py-2">Класс</th><th className="px-3 py-2">Стабильный ID</th></tr>
+                                    <tr><th className="px-3 py-2">{t("passport.index")}</th><th className="px-3 py-2">{t("passport.class")}</th><th className="px-3 py-2">{t("passport.stableId")}</th></tr>
                                 </thead>
                                 <tbody>
                                     {[...version.classes].sort((left, right) => left.index - right.index).map(entry => (
                                         <tr key={entry.index} className="border-t">
                                             <td className="px-3 py-2 tabular-nums">{entry.index}</td>
                                             <td className="px-3 py-2">{entry.name}</td>
-                                            <td className="break-all px-3 py-2 text-muted-foreground">{entry.classId ?? `объединено: ${entry.sourceClassIds.length}`}</td>
+                                            <td className="break-all px-3 py-2 text-muted-foreground">{entry.classId ?? t("passport.merged", { number: entry.sourceClassIds.length })}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -170,21 +178,21 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
                         </div>
                     </div>
                     <details className="border-t pt-3">
-                        <summary className="cursor-pointer text-sm font-medium">Все параметры: запрошенные и фактические</summary>
+                        <summary className="cursor-pointer text-sm font-medium">{t("passport.allParameters")}</summary>
                         <div className="mt-3 space-y-4">
-                            <ParameterList title="Запрошенные" parameters={parameters} />
-                            <ParameterList title="Фактические" parameters={effective} empty="Фактические параметры не сохранены для этой версии." />
+                            <ParameterList title={t("passport.requested")} parameters={parameters} />
+                            <ParameterList title={t("passport.actual")} parameters={effective} empty={t("passport.noActual")} />
                         </div>
                     </details>
                     {version.notes.length > 0 && (
                         <div className="space-y-1 text-xs" data-testid="model-version-notes">
-                            <p className="text-muted-foreground">Замечания обучения</p>
+                            <p className="text-muted-foreground">{t("passport.notes")}</p>
                             {version.notes.map((note, index) => <p key={index} className="whitespace-pre-wrap">{workerWarningText(note)}</p>)}
                         </div>
                     )}
                 </div>
                 <div className="space-y-4 rounded-lg border bg-card p-5">
-                    <h4 className="font-medium">Файлы</h4>
+                    <h4 className="font-medium">{t("passport.files")}</h4>
                     <ul className="space-y-2 text-sm" data-testid="model-version-files">
                         {others.map(file => (
                             <li key={file.name} data-file-kind={file.kind}>
@@ -192,7 +200,7 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
                                 <span className="block truncate font-mono text-[11px] text-muted-foreground" title={file.sha256}>SHA-256 {file.sha256}</span>
                             </li>
                         ))}
-                        <li className="text-xs text-muted-foreground">Картинок обучения: {plots.length}</li>
+                        <li className="text-xs text-muted-foreground">{t("passport.imagesCount", { number: plots.length })}</li>
                     </ul>
                     {environmentRows(version.environment)}
                 </div>
@@ -200,9 +208,9 @@ export function ModelVersionPassport({ version, epochs, busy, renew, setWorking,
 
             <div className="space-y-3 rounded-lg border bg-card p-5">
                 <div>
-                    <h4 className="font-medium">Картинки обучения</h4>
+                    <h4 className="font-medium">{t("passport.images")}</h4>
                     <p className="mt-1 text-xs text-muted-foreground">
-                        {plots.length ? "Картинки ultralytics из папки запуска. Клик открывает полный размер." : "Картинок нет: worker их не прислал."}
+                        {plots.length ? t("passport.imagesHint") : t("passport.noImages")}
                     </p>
                 </div>
                 {plots.length > 0 && (
@@ -244,7 +252,9 @@ function environmentRows(environment: Record<string, unknown>) {
     const rows = (["deviceName", "python", "torch", "ultralytics", "cuda"] as const)
         .filter(key => typeof environment[key] === "string" && environment[key]);
     if (!rows.length) return null;
-    const labels: Record<(typeof rows)[number], string> = { deviceName: "устройство", python: "Python", torch: "torch", ultralytics: "ultralytics", cuda: "CUDA" };
+    const labels: Record<(typeof rows)[number], string> = {
+        deviceName: i18n.t("training:passport.rows.device"), python: "Python", torch: "torch", ultralytics: "ultralytics", cuda: "CUDA",
+    };
     return (
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 border-t pt-3 text-xs" data-testid="model-version-environment">
             {rows.map(key => <Row key={key} label={labels[key]}>{String(environment[key])}</Row>)}

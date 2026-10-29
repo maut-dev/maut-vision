@@ -2,18 +2,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { subscribeTrainingChanged } from "@/api/events/subscriptions";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import { trainingApi } from "@/api/projects/training/training-api";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "./training/locale";
 
 /**
- * Версии моделей открытого проекта: listModelVersions при открытии и после training.changed с изменёнными версиями (появилась
- * новая, сменилась «Рабочая», удалена — revision = null). renew — свежие ссылки на картинки (ссылки канала ресурсов действуют ограниченное время).
+ * Model versions of the open project: listModelVersions on opening and after training.changed with changed versions (a new one
+ * appeared, "Working" changed, one was deleted — revision = null). renew — fresh image links (links of the resource channel live a limited time).
  */
 export function useModelVersions(projectId: string) {
     const [versions, setVersions] = useState<readonly ModelVersionResponseDto[]>([]);
     const [error, setError] = useState<string>();
-    /** Список хотя бы раз прочитан: версия, которой в нём нет, удалена. */
+    /** The list was read at least once: a version missing from it was deleted. */
     const [loaded, setLoaded] = useState(false);
-    /** Время начала последнего прочитанного списка: версия, созданная позже, могла в него не попасть. */
+    /** The start time of the last list read: a version created later may be missing from it. */
     const [listedAt, setListedAt] = useState(0);
     const mounted = useRef(true);
     const read = useRef(0);
@@ -29,7 +31,7 @@ export function useModelVersions(projectId: string) {
             setListedAt(startedAt);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current && own === read.current) setError(errorMessage(cause, "Не удалось загрузить версии модели."));
+            if (mounted.current && own === read.current) setError(errorMessage(cause, i18n.t("training:loadErrors.versions")));
         }
     }, [projectId]);
 
@@ -39,13 +41,13 @@ export function useModelVersions(projectId: string) {
             : [...current, version]);
     }, []);
 
-    /** Ссылки на картинки версии истекли: перечитать её. */
+    /** Image links of the version expired: read it again. */
     const renew = useCallback(async (versionId: string) => {
         try {
             const version = await trainingApi.getModelVersion({ projectId, versionId });
             if (mounted.current) apply(version);
         } catch {
-            // Версия недоступна — список обновит следующее событие.
+            // The version is unavailable — the next event updates the list.
         }
     }, [projectId, apply]);
 
@@ -61,7 +63,7 @@ export function useModelVersions(projectId: string) {
         };
     }, [projectId, refresh]);
 
-    /** «Сделать рабочей». */
+    /** "Make working". */
     const setWorking = useCallback(async (versionId: string) => {
         apply(await trainingApi.setWorkingModelVersion({ projectId, versionId }));
     }, [projectId, apply]);

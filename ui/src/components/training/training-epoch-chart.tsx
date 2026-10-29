@@ -1,4 +1,5 @@
 import { useMemo, useState, type PointerEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { chartDomain, epochTicks, nearestEpoch, seriesEpochs, thinPoints, ticks, type EpochSeries } from "@/lib/training/epoch-chart";
 import { formatNumber } from "@/lib/training/run-view";
 
@@ -7,15 +8,16 @@ const height = 240;
 const pad = { left: 44, right: 12, top: 12, bottom: 26 };
 const plotWidth = width - pad.left - pad.right;
 const plotHeight = height - pad.top - pad.bottom;
-/** Не больше двух точек на пиксель ширины: длинные прогоны прореживаются, подсказка берёт значения из полной серии. */
+/** At most two points per pixel of width: long runs are thinned, the tooltip takes values from the full series. */
 const maxDrawnPoints = plotWidth * 2;
 
 /**
- * Серии по эпохам на одной оси Y (SVG без зависимостей): легенда с переключением серий, перекрестие и
- * подсказка «Эпоха N». unit — ось 0..1 (качество), иначе от нуля до максимума (потери). Окна в 200 эпох нет: весь прогон
- * рисуется целиком, длинные серии прореживаются с сохранением пиков.
+ * Series by epoch on one Y axis (SVG without dependencies): a legend that toggles series, a crosshair and the tooltip "Epoch N".
+ * unit — the axis 0..1 (quality), otherwise from zero to the maximum (losses). There is no 200-epoch window: the whole run is drawn,
+ * long series are thinned keeping the peaks.
  */
 export function TrainingEpochChart({ id, label, series, unit }: { id: string; label: string; series: readonly EpochSeries[]; unit: boolean }) {
+    const { t } = useTranslation("training");
     const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
     const [hover, setHover] = useState<number | null>(null);
     const shown = series.filter(line => !hidden.has(line.key));
@@ -51,7 +53,7 @@ export function TrainingEpochChart({ id, label, series, unit }: { id: string; la
     return (
         <figure className="space-y-2" data-testid="training-epoch-chart" data-chart={id} data-epochs={epochs.length} data-drawn-points={drawnCount}>
             <figcaption className="text-sm font-medium">{label}</figcaption>
-            <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={`Легенда: ${label}`}>
+            <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs" aria-label={t("chart.legend", { label })}>
                 {series.map(line => {
                     const off = hidden.has(line.key);
                     return (
@@ -60,7 +62,7 @@ export function TrainingEpochChart({ id, label, series, unit }: { id: string; la
                                 type="button"
                                 aria-pressed={!off}
                                 data-series={line.key}
-                                title={off ? "Показать серию" : "Скрыть серию"}
+                                title={off ? t("chart.showSeries") : t("chart.hideSeries")}
                                 onClick={() => toggle(line.key)}
                                 className={`flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors hover:bg-muted/60 ${off ? "opacity-40" : ""}`}
                             >
@@ -123,7 +125,7 @@ export function TrainingEpochChart({ id, label, series, unit }: { id: string; la
                 </svg>
                 {hover !== null && (
                     <div className="pointer-events-none absolute right-2 top-2 rounded-md border bg-background/95 px-3 py-2 text-xs shadow" data-testid="training-chart-tooltip">
-                        <p className="mb-1 text-muted-foreground">Эпоха {hover}</p>
+                        <p className="mb-1 text-muted-foreground">{t("chart.epoch", { epoch: hover })}</p>
                         {shown.map(line => {
                             const value = lookup.get(line.key)?.get(hover);
                             return (

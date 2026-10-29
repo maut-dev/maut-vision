@@ -1,9 +1,9 @@
 import { parameterLabel, parameterText } from "@/lib/training/run-view";
 
-/** Ключи, которыми управляет приложение: в списке параметров не показываются. */
+/** Keys the application manages: they are not shown in the parameter list. */
 const managed = new Set(["data", "model", "project", "name", "save_dir", "cfg", "source", "teacher"]);
 
-/** «Запрошенные» / «Фактические»: подпись реестра (или ключ worker) и значение; длинные значения сокращены. */
+/** "Requested" / "Actual": the registry label (or the worker key) and the value; long values are shortened. */
 export function ParameterList({ title, parameters, empty }: { title: string; parameters: Record<string, unknown> | null; empty?: string }) {
     const entries = Object.entries(parameters ?? {}).filter(([key]) => !managed.has(key));
     return (

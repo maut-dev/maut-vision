@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import {
     deviceOptions,
@@ -10,6 +11,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { i18n } from "@/i18n";
 import {
     choiceFromKey,
     choiceKey,
@@ -23,32 +25,32 @@ export interface ParameterFieldContext {
     form: TrainingForm;
     update: (update: (current: TrainingForm) => TrainingForm) => void;
     invalid: ReadonlySet<string>;
-    /** Значения «Авто» полей, которые посчитает worker. */
+    /** Values of "Auto" fields the worker computes. */
     tuned: { lr0: number; warmupEpochs: number; patience: number; workers: number };
     gpus: GpuInventoryResponseDto | null | undefined;
     disabled: boolean;
 }
 
-const lr0ByOptimizer = "Подберёт оптимизатор";
-
 function autoPlaceholder(parameter: TrainingParameterDefinition, context: ParameterFieldContext): string | undefined {
     if (parameter.defaultValue !== null) return undefined;
     const tuned = (context.tuned as Record<string, number>)[parameter.key];
-    return tuned === undefined ? "Авто" : `Авто: ${formatParameterNumber(tuned)}`;
+    return tuned === undefined ? i18n.t("training:parameterChoices.auto") : i18n.t("training:fields.autoValue", { value: formatParameterNumber(tuned) });
 }
 
 /**
- * Поле параметра обучения по реестру: флажок, выбор (с «Авто» у необязательных), «Устройство» из списка видеокарт (без драйвера —
- * «Процессор» и ручной ввод), число или список текстом с фактическим значением «Авто» в подсказке поля, переключатель «Повороты»
- * перед полем градусов. lr0 при оптимизаторе auto недоступно и помечено «Подберёт оптимизатор».
+ * A field of a training parameter by the registry: a checkbox, a choice (with "Auto" for optional ones), "Device" from the GPU list
+ * (without a driver — "Processor" and manual entry), a number or a list as text with the actual "Auto" value in the placeholder, the
+ * "Rotation" switch before the degrees field. lr0 with the auto optimizer is unavailable and marked "Chosen by the optimizer".
  */
 export function TrainingParameterField({ parameter, context }: { parameter: TrainingParameterDefinition; context: ParameterFieldContext }) {
+    const { t } = useTranslation("training");
     const { form, update, invalid, disabled } = context;
+    const lr0ByOptimizer = t("fields.lr0ByOptimizer");
     const value = form[parameter.key];
     const isInvalid = invalid.has(parameter.key);
     const hintId = `training-parameter-${parameter.key}-hint`;
     const set = (next: TrainingForm[string]) => update(current => ({ ...current, [parameter.key]: next }));
-    // Имя Ultralytics мелким шрифтом, если подпись его ещё не называет («Размер пакета (batch)»).
+    // The Ultralytics name in small print unless the label already names it ("Initial learning rate (lr0)").
     const caption = parameter.label.includes(`(${parameter.ultralyticsKey})`)
         ? null
         : <span className="ml-1 font-mono text-[11px] text-muted-foreground">{parameter.ultralyticsKey}</span>;
@@ -77,7 +79,7 @@ export function TrainingParameterField({ parameter, context }: { parameter: Trai
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    {parameter.nullable && <SelectItem value={choiceKey(null)}>Авто</SelectItem>}
+                    {parameter.nullable && <SelectItem value={choiceKey(null)}>{t("parameterChoices.auto")}</SelectItem>}
                     {(parameter.choices ?? []).map(choice => <SelectItem key={choiceKey(choice.value)} value={choiceKey(choice.value)}>{choice.label}</SelectItem>)}
                 </SelectContent>
             </Select>
@@ -91,22 +93,22 @@ export function TrainingParameterField({ parameter, context }: { parameter: Trai
             <div className="space-y-2">
                 <Select value={device} disabled={disabled} onValueChange={next => { if (next) set(next); }}>
                     <SelectTrigger className="w-full" aria-label={parameter.label} aria-invalid={isInvalid || undefined} data-testid="training-field-device">
-                        <SelectValue placeholder="Выберите устройство" />
+                        <SelectValue placeholder={t("fields.chooseDevice")} />
                     </SelectTrigger>
                     <SelectContent>
                         {options.map(option => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
                         {device && !listed && (
-                            <SelectItem value={device}>{context.gpus === undefined ? `Видеокарта ${device} (поиск видеокарт…)` : `Вручную: ${device}`}</SelectItem>
+                            <SelectItem value={device}>{context.gpus === undefined ? t("fields.gpuSearching", { device }) : t("fields.manualValue", { device })}</SelectItem>
                         )}
                     </SelectContent>
                 </Select>
                 {manualEntry && context.gpus !== undefined && (
-                    <Input aria-label="Устройство вручную" placeholder="cpu, −1 или номер видеокарты" disabled={disabled} data-testid="training-device-manual"
+                    <Input aria-label={t("fields.manualDevice")} placeholder={t("fields.manualPlaceholder")} disabled={disabled} data-testid="training-device-manual"
                         value={listed ? "" : device} aria-invalid={isInvalid || undefined} onChange={event => set(event.target.value.trim())} />
                 )}
             </div>
         );
-        if (manualEntry && context.gpus !== undefined) note = "Драйвер NVIDIA не найден: доступен процессор или номер видеокарты вручную.";
+        if (manualEntry && context.gpus !== undefined) note = t("fields.noDriver");
     } else {
         const byOptimizer = parameter.key === "lr0" && isLr0ChosenByOptimizer({ optimizer: form.optimizer as string });
         toggled = isToggleOn(parameter, form);
@@ -141,19 +143,20 @@ export function TrainingParameterField({ parameter, context }: { parameter: Trai
             </label>
             {note && <p className="text-xs font-medium text-amber-700 dark:text-amber-400" data-testid={`training-note-${parameter.key}`}>{note}</p>}
             {parameter.hint && <p id={hintId} className="text-xs leading-relaxed text-muted-foreground">{parameter.hint}</p>}
-            {isInvalid && <p role="alert" className="text-xs text-destructive">Проверьте значение параметра.</p>}
+            {isInvalid && <p role="alert" className="text-xs text-destructive">{t("fields.invalid")}</p>}
         </div>
     );
 }
 
 /**
- * Группы параметров вне основных полей (раскрываются по одной, «Аугментации» открыта) и «Управление
- * приложением и недоступные настройки» с причинами.
+ * Parameter groups beyond the main fields (they open one by one, "Augmentations" is open) and "Managed by the application and
+ * unavailable settings" with reasons.
  */
 export function TrainingParameterGroups({ context }: { context: ParameterFieldContext }) {
+    const { t } = useTranslation("training");
     return (
         <div className="space-y-3" data-testid="training-parameter-groups">
-            <p className="text-xs text-muted-foreground">Обнаружение объектов. Настройки сохраняются в пресет и снимок запуска.</p>
+            <p className="text-xs text-muted-foreground">{t("fields.groupsNote")}</p>
             {trainingParameterGroups.filter(group => group.id !== "system").map(group => {
                 const fields = trainingParameters.filter(parameter => parameter.group === group.id && !parameter.base);
                 if (!fields.length) return null;

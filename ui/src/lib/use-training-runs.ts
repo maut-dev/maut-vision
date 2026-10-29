@@ -3,19 +3,21 @@ import { subscribeJobChanged, subscribeTrainingChanged } from "@/api/events/subs
 import { trainingJobKind, type TrainingRunResponseDto } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { trainingApi } from "@/api/projects/training/training-api";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "./training/locale";
 import { newerRun, withJob } from "./training/run-view";
 
-/** Запусков на странице «История обучения». */
+/** Runs per page of "Training history". */
 export const trainingRunPageLimit = 50;
 
 const newestFirst = (left: TrainingRunResponseDto, right: TrainingRunResponseDto) =>
     right.job.createdAt.localeCompare(left.job.createdAt) || right.id.localeCompare(left.id);
 
 /**
- * Запуски обучения открытого проекта без опроса: listRuns при открытии (и «Ещё запуски» страницами); training.changed с ревизией
- * новее известной — getRun; job.changed (kind training.run) — состояние и прогресс сразу из снимка задачи; запуск, которого нет
- * в списке (поставлен в другом окне), читается getRun. Ответы startRun и cancelRun применяются сразу.
+ * Training runs of the open project without polling: listRuns on opening (and "More runs" by pages); training.changed with a revision
+ * newer than known — getRun; job.changed (kind training.run) — state and progress at once from the job snapshot; a run missing from
+ * the list (started in another window) is read with getRun. Answers of startRun and cancelRun apply at once.
  */
 export function useTrainingRuns(projectId: string) {
     const [runs, setRuns] = useState<readonly TrainingRunResponseDto[]>([]);
@@ -63,13 +65,13 @@ export function useTrainingRuns(projectId: string) {
             setTotal(page.total);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить запуски обучения. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("training:loadErrors.runs")));
         } finally {
             if (mounted.current) setLoading(false);
         }
     }, [projectId]);
 
-    /** «Ещё запуски»: следующая страница после последнего загруженного. */
+    /** "More runs": the next page after the last loaded one. */
     const loadMore = useCallback(async () => {
         const last = latest.current[latest.current.length - 1];
         if (!last) return;
@@ -113,7 +115,7 @@ export function useTrainingRuns(projectId: string) {
         };
     }, [projectId, refresh, reread]);
 
-    /** «Отменить обучение»: ответ применяется сразу, итог — job.changed. */
+    /** "Cancel training": the answer applies at once, the result — job.changed. */
     const cancel = useCallback(async (runId: string) => {
         apply(await trainingApi.cancelRun({ projectId, runId }));
     }, [projectId, apply]);

@@ -1,12 +1,12 @@
-/** Значение параметра обучения: число, строка, флаг, null («Авто») или список (classes, freeze, fraction, scale). */
+/** A training parameter value: a number, a string, a flag, null ("Auto") or a list (classes, freeze, fraction, scale). */
 export type TrainingParameterValue = number | string | boolean | null | (number | string)[];
 
-/** Параметры: ключи протокола worker (см. training-parameters.ts); отсутствующий ключ — подобранное значение по умолчанию. */
+/** Parameters: worker protocol keys (see training-parameters.ts); a missing key is the tuned default. */
 export type TrainingParameters = Record<string, TrainingParameterValue>;
 
 export type ListTrainingPresetsRequestDto = Record<string, never>;
 
-/** «Сохранить как пресет…»: то же название (без учёта регистра) перезаписывает пресет. */
+/** "Save as preset…": the same name (ignoring case) overwrites the preset. */
 export interface SaveTrainingPresetRequestDto {
     name: string;
     parameters: TrainingParameters;
@@ -16,14 +16,14 @@ export interface DeleteTrainingPresetRequestDto {
     presetId: string;
 }
 
-/** refresh — опросить nvidia-smi заново (по умолчанию ответ кешируется). */
+/** refresh — ask nvidia-smi again (by default the answer is cached). */
 export interface ListGpusRequestDto {
     refresh?: boolean;
 }
 
 export type GetTrainingRuntimeRequestDto = Record<string, never>;
 
-/** «Начать обучение»: operationId — новый на действие; повтор с тем же operationId вернёт тот же запуск. */
+/** "Start training": operationId — new per action; a repeat with the same operationId returns the same run. */
 export interface StartTrainingRunRequestDto {
     projectId: string;
     datasetVersionId: string;
@@ -37,7 +37,7 @@ export interface CancelTrainingRunRequestDto {
     runId: string;
 }
 
-/** limit 1–200 (по умолчанию 50); before — id последнего запуска предыдущей страницы. */
+/** limit 1–200 (50 by default); before — the id of the last run of the previous page. */
 export interface ListTrainingRunsRequestDto {
     projectId: string;
     limit?: number;
@@ -49,7 +49,7 @@ export interface GetTrainingRunRequestDto {
     runId: string;
 }
 
-/** after — номер последней полученной эпохи; limit 1–1000 (по умолчанию 500). */
+/** after — the number of the last received epoch; limit 1–1000 (500 by default). */
 export interface ListTrainingEpochsRequestDto {
     projectId: string;
     runId: string;
@@ -57,7 +57,7 @@ export interface ListTrainingEpochsRequestDto {
     limit?: number;
 }
 
-/** after — sequence последней полученной записи; limit 1–1000 (по умолчанию 200). */
+/** after — the sequence of the last received entry; limit 1–1000 (200 by default). */
 export interface ListTrainingLogRequestDto {
     projectId: string;
     runId: string;
@@ -65,7 +65,7 @@ export interface ListTrainingLogRequestDto {
     limit?: number;
 }
 
-/** Последние записи журнала, limit 1–1000 (по умолчанию 50). */
+/** The last log entries, limit 1–1000 (50 by default). */
 export interface TailTrainingLogRequestDto {
     projectId: string;
     runId: string;
@@ -86,25 +86,25 @@ export interface SetWorkingModelVersionRequestDto {
     versionId: string;
 }
 
-/** Состав удаления версии для общего диалога удаления. */
+/** What deleting a version removes, for the shared deletion dialog. */
 export interface ReviewModelVersionDeletionRequestDto {
     projectId: string;
     versionId: string;
 }
 
-/** «Удалить версию»: рабочую, проверяемую или выгружаемую версию удалить нельзя (training.version_in_use, details.reason). */
+/** "Delete version": a working version or one under a check or an export cannot be deleted (training.version_in_use, details.reason). */
 export interface DeleteModelVersionRequestDto {
     projectId: string;
     versionId: string;
 }
 
-/** «Выгрузить ZIP», шаг 1: нативное «Сохранить как» с именем model-vN.zip. */
+/** "Export ZIP", step 1: the native "Save as" with the name model-vN.zip. */
 export interface SelectModelExportRequestDto {
     projectId: string;
     versionId: string;
 }
 
-/** «Выгрузить ZIP», шаг 2: destinationToken — из selectModelExportDestination; operationId — новый на действие. */
+/** "Export ZIP", step 2: destinationToken — from selectModelExportDestination; operationId — new per action. */
 export interface StartModelExportRequestDto {
     projectId: string;
     versionId: string;

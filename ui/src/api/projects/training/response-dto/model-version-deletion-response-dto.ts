@@ -3,9 +3,9 @@ import { isCount, isId } from "../../catalog/catalog-guards";
 import { isDeletionBlockerResponseDto, type DeletionBlockerResponseDto } from "../../catalog/response-dto/deletion-review-response-dto";
 
 /**
- * Состав удаления версии: evaluations — её оценок на датасетах (удаляются вместе с ней), bytes — размер файлов; непустой blockers —
- * удаление недоступно (training.version_working — рабочая версия, checks.evaluation_active, checks.live_active,
- * training.export_active; строки — message).
+ * What deleting a version removes: evaluations — its evaluations on datasets (deleted with it), bytes — the size of its files; a non-empty
+ * blockers means deletion is unavailable (training.version_working — the working version, checks.evaluation_active, checks.live_active,
+ * training.export_active; lines — blockerText).
  */
 export interface ModelVersionDeletionReviewResponseDto {
     versionId: string;
@@ -16,7 +16,7 @@ export interface ModelVersionDeletionReviewResponseDto {
     blockers: DeletionBlockerResponseDto[];
 }
 
-/** Версия удалена; cleanupPending — папка файлов ещё удаляется в фоне. */
+/** The version was deleted; cleanupPending — its file folder is still being deleted in the background. */
 export interface ModelVersionDeletionResponseDto {
     versionId: string;
     number: number;
@@ -24,13 +24,13 @@ export interface ModelVersionDeletionResponseDto {
     cleanupPending: boolean;
 }
 
-/** token — выбор места сохранения (null — окно закрыто); fileName — имя выбранного файла. */
+/** token — the chosen save location (null — the dialog was closed); fileName — the name of the chosen file. */
 export interface ModelExportSelectionResponseDto {
     token: string | null;
     fileName: string | null;
 }
 
-/** Итог задачи training.export (job.result): «Версия N выгружена: model-vN.zip · 1,2 МБ». */
+/** The result of the job training.export (job.result): "Version N exported: model-vN.zip · 1.2 MB". */
 export interface ModelExportResultDto {
     versionId: string;
     versionNumber: number;
@@ -39,7 +39,7 @@ export interface ModelExportResultDto {
     sha256: string | null;
 }
 
-/** Вид задачи выгрузки ZIP: её снимки и итог приходят в job.changed. */
+/** The kind of the ZIP export job: its snapshots and result arrive in job.changed. */
 export const modelExportJobKind = "training.export";
 
 export function isModelVersionDeletionReviewResponseDto(value: unknown): value is ModelVersionDeletionReviewResponseDto {
