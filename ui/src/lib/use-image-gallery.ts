@@ -5,22 +5,24 @@ import type { ImageArchiveFilter } from "@/api/projects/images/request-dto/list-
 import type { ImageAnnotationResponseDto } from "@/api/projects/images/response-dto/image-annotation-response-dto";
 import type { ImageResponseDto, ImageReviewState } from "@/api/projects/images/response-dto/image-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
+import "@/components/images/locale";
 import { errorMessage } from "./format";
 
 export interface GalleryFilter {
     archive: ImageArchiveFilter;
-    /** null — любые. */
+    /** null: any. */
     reviewState: ImageReviewState | null;
 }
 
 export const galleryPageSize = 100;
-/** Предел страницы и пачки разметки в API. */
+/** The page and annotation batch limit of the API. */
 const batchLimit = 200;
 
 interface GalleryState {
     items: readonly ImageResponseDto[];
     annotations: Readonly<Record<string, ImageAnnotationResponseDto>>;
-    /** Курсор следующей страницы; null — загружено до конца. */
+    /** The cursor of the next page; null when everything is loaded. */
     nextCursor: string | null;
     loading: boolean;
     error?: string;
@@ -42,17 +44,16 @@ function chunks<T>(items: readonly T[], size: number): T[][] {
 }
 
 /**
- * Галерея группы: страницы по курсору в порядке импорта и разметка каждой страницы для рамок на миниатюрах.
- * Загруженное хранится целиком, а рисует его виртуальная сетка. Без опроса: images.changed с imagesChangedIn этой
- * группы перечитывает только хвост (страницу от курсора последней загрузки, туда встают новые кадры), изменённые
- * изображения из события перечитываются поштучно. Смена группы или фильтра начинает новое поколение: ответы старого
- * отбрасываются.
+ * The gallery of a group: pages by cursor in import order and the annotation of every page for the boxes on thumbnails.
+ * Everything loaded is kept, and the virtual grid draws it. No polling: images.changed with imagesChangedIn of this group rereads only
+ * the tail (the page from the cursor of the last load, where new frames go); changed images of the event are reread one by one.
+ * A change of the group or the filter starts a new generation: answers of the old one are dropped.
  */
 export function useImageGallery(projectId: string, groupId: string | undefined, filter: GalleryFilter) {
     const [state, setState] = useState<GalleryState>(emptyState);
     const generation = useRef(0);
     const mounted = useRef(true);
-    /** Курсор, с которого загружена последняя страница (undefined — с начала). */
+    /** The cursor the last page was loaded from (undefined: from the start). */
     const tailAfter = useRef<string | undefined>(undefined);
     const loadingMore = useRef<Promise<ImageResponseDto[]> | null>(null);
     const latest = useRef(state);
@@ -65,7 +66,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
 
     const fail = useCallback((current: number, cause: unknown) => {
         if (mounted.current && current === generation.current) {
-            setState(value => ({ ...value, loading: false, error: errorMessage(cause, "Не удалось загрузить изображения. Повторите загрузку.") }));
+            setState(value => ({ ...value, loading: false, error: errorMessage(cause, i18n.t("images:errors.loadImages")) }));
         }
     }, []);
 
@@ -81,7 +82,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
         }
     }, [projectId]);
 
-    /** Добавляет или заменяет изображения в порядке ответа; новые встают в конец. */
+    /** Adds or replaces images in the order of the answer; new ones go to the end. */
     const merge = useCallback((items: readonly ImageResponseDto[], incoming: readonly ImageResponseDto[]) => {
         const index = new Map(items.map((item, position) => [item.id, position]));
         const next = [...items];
@@ -119,7 +120,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
         }
     }, [groupId, readPage, fail]);
 
-    /** Следующая страница; повторный вызов во время загрузки ждёт ту же страницу. */
+    /** The next page; a repeated call during loading waits for the same page. */
     const loadMore = useCallback((): Promise<ImageResponseDto[]> => {
         const after = latest.current.nextCursor;
         if (!after) return Promise.resolve([]);
@@ -133,7 +134,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
         return work;
     }, [readPage, fail]);
 
-    /** Новые кадры группы встают в конец: перечитывается хвост, если список уже загружен до конца. */
+    /** New frames of the group go to the end: the tail is reread when the list is loaded to the end. */
     const rereadTail = useCallback(async () => {
         if (latest.current.nextCursor !== null || loadingMore.current) return;
         const current = generation.current;
@@ -144,7 +145,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
         }
     }, [readPage, fail]);
 
-    /** Перечитывает изображения поштучно: удалённые, ушедшие в другую группу или из фильтра убираются. */
+    /** Rereads images one by one: deleted ones, moved to another group or out of the filter, are removed. */
     const rereadImages = useCallback(async (ids: readonly string[]) => {
         if (!groupId || !ids.length) return;
         const current = generation.current;
@@ -191,7 +192,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
         });
     }, [projectId, groupId, rereadImages, rereadTail]);
 
-    /** Ответ операции: изображение заменяется, или убирается, если больше не подходит под фильтр. */
+    /** The answer of an operation: the image is replaced, or removed when it no longer matches the filter. */
     const applyImages = useCallback((images: readonly ImageResponseDto[]) => {
         if (!groupId) return;
         const filterNow = filterRef.current;
@@ -216,7 +217,7 @@ export function useImageGallery(projectId: string, groupId: string | undefined, 
         setState(value => ({ ...value, items: value.items.filter(item => !gone.has(item.id)) }));
     }, []);
 
-    /** Истёкшие URL миниатюр: изображения, сообщившие об ошибке почти одновременно, перечитываются одной пачкой. */
+    /** Expired thumbnail URLs: images that reported an error almost at once are reread in one batch. */
     const renew = useCallback((imageId: string) => {
         renewQueue.current.add(imageId);
         window.clearTimeout(renewTimer.current);

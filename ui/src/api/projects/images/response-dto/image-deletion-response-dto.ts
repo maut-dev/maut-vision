@@ -3,9 +3,9 @@ import { isCount, isId } from "../../catalog/catalog-guards";
 import { isDeletionBlockerResponseDto, type DeletionBlockerResponseDto } from "../../catalog/response-dto/deletion-review-response-dto";
 
 /**
- * Состав удаления навсегда: вся группа (wholeGroup) или выбранные изображения. «Изображений к удалению: N» — images;
- * непустой blockers — «Удаление пока недоступно:» + строки blockerText (images.import_active — импорт в эту группу; позже —
- * генерация). revision передаётся в удаление; при изменении состава — images.deletion_revision_conflict.
+ * The review of a permanent deletion: the whole group (wholeGroup) or selected images. "Images to delete: N" is images;
+ * non-empty blockers give "Deletion is not available yet:" with blockerText lines (images.import_active: an import into this group; later
+ * generation). The revision goes to the deletion; a change of the contents gives images.deletion_revision_conflict.
  */
 export interface ImageDeletionReviewResponseDto {
     groupId: string;
@@ -16,7 +16,7 @@ export interface ImageDeletionReviewResponseDto {
     revision: string;
 }
 
-/** Строки удалены; cleanupPending — файлы ещё удаляются в фоне, очистка продолжится при следующем открытии проекта. */
+/** Rows are deleted; cleanupPending: files are still being deleted in the background, cleanup continues the next time the project opens. */
 export interface ImageDeletionResultResponseDto {
     groupId: string;
     groupDeleted: boolean;

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, Redo2, Undo2 } from "lucide-react";
 import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dto/class-variant-response-dto";
 import { imagesApi } from "@/api/projects/images/images-api";
@@ -15,13 +16,15 @@ import { ZoomControls } from "@/components/viewer/zoom-controls";
 import { draftOf, isDraftChanged, removeObject, saveRequest, updateObject, type AnnotationDraft } from "@/lib/annotation/draft";
 import { canRedo, canUndo, createHistory, record, redo, undo, type History } from "@/lib/annotation/history";
 import { errorMessage } from "@/lib/format";
+import { i18n } from "@/i18n";
 import { AnnotationCanvas, type AnnotationTool, type Selection } from "./annotation-canvas";
 import type { AnnotationPalette } from "./annotation-palette";
 import { ImageDetails } from "./image-details";
+import "./locale";
 
 const noVariant = "none";
 
-/** Открыт диалог или список выбора: клавиши редактора не перехватываются. */
+/** A dialog or a list is open: the editor does not take the keys. */
 const overlayOpen = () => !!document.querySelector("[role='dialog'],[role='alertdialog'],[role='listbox'],[role='menu']");
 
 export interface EditorNavigation {
@@ -30,23 +33,24 @@ export interface EditorNavigation {
 }
 
 /**
- * Редактор разметки одного изображения. Черновик живёт в истории правок; несохранённым он считается, только если
- * отличается от сохранённой ревизии (отмена до сохранённого состояния снимает признак). Защита несохранённых
- * изменений общая для приложения: редактор регистрирует сохранение и отказ от изменений.
+ * The annotation editor of one image. The draft lives in the edit history; it counts as unsaved only when it differs from the
+ * saved revision (undoing back to the saved state clears the mark). The guard of unsaved changes is shared by the application: the
+ * editor registers saving and discarding.
  */
 export function AnnotationEditor({ projectId, image, palette, lockReason, navigation, close, inspect, saved, setColor }: {
     projectId: string;
     image: ImageResponseDto;
     palette: AnnotationPalette;
-    /** Причина, по которой разметка только для просмотра (генерация или архив). */
+    /** Why the annotation is read-only (generation or archive). */
     lockReason?: string;
     navigation: EditorNavigation;
     close: () => void;
-    /** «Просмотр и масштаб»: просмотрщик с текущим черновиком. */
+    /** "View and zoom": the viewer with the current draft. */
     inspect: (draft: AnnotationDraft | undefined, revision: number | undefined) => void;
     saved: (result: SavedImageAnnotationResponseDto) => void;
     setColor: (binding: ClassVariantResponseDto, color: string | null) => void;
 }) {
+    const { t } = useTranslation("images");
     const [stored, setStored] = useState<ImageAnnotationResponseDto>();
     const [history, setHistory] = useState<History<AnnotationDraft>>();
     const [loadError, setLoadError] = useState<string>();
@@ -82,12 +86,12 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
                 setHistory(createHistory(draftOf(annotation)));
                 setSelection(null);
             },
-            cause => { if (!controller.signal.aborted) setLoadError(errorMessage(cause, "Не удалось загрузить разметку. Повторите загрузку.")); });
+            cause => { if (!controller.signal.aborted) setLoadError(errorMessage(cause, i18n.t("images:editor.loadFailed"))); });
         return () => controller.abort();
     }, [projectId, image.id, attempt]);
 
     const save = useCallback(async () => {
-        if (!stored || !draft) throw new Error("Разметка ещё загружается. Повторите сохранение.");
+        if (!stored || !draft) throw new Error(i18n.t("images:editor.stillLoading"));
         if (locked) throw new Error(lockReason);
         setBusy(true);
         setError(undefined);
@@ -98,7 +102,7 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
             setSelection(null);
             saved(result);
         } catch (cause) {
-            const message = errorMessage(cause, "Не удалось сохранить разметку.");
+            const message = errorMessage(cause, i18n.t("images:editor.saveFailed"));
             setError(message);
             throw new Error(message);
         } finally {
@@ -132,6 +136,7 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
             if (overlayOpen()) return;
             const current = latest.current;
             const control = event.ctrlKey || event.metaKey;
+            // Shortcuts also work with the Russian keyboard layout: ы, я and н are the keys S, Z and Y there.
             const key = event.key.toLowerCase();
             if (control && (key === "s" || key === "ы")) {
                 event.preventDefault();
@@ -182,25 +187,25 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
 
     const classes = palette.activeClasses;
     const classItems = selectedObject && !classes.some(item => item.id === selectedObject.classId)
-        ? [...classes, { id: selectedObject.classId, name: `${palette.labelOf(selectedObject.classId, null)} (в архиве)` }]
+        ? [...classes, { id: selectedObject.classId, name: t("editor.archivedItem", { name: palette.labelOf(selectedObject.classId, null) }) }]
         : classes;
     const variants = palette.bindingsOf(effectiveClassId);
     const variantItems = effectiveVariantId && !variants.some(item => item.binding.id === effectiveVariantId)
         ? [...variants.map(item => ({ id: item.binding.id, name: item.name, color: item.color })),
-            { id: effectiveVariantId, name: `${palette.labelOf(effectiveClassId, effectiveVariantId)} (в архиве)`, color: palette.colorOf(effectiveClassId, effectiveVariantId) }]
+            { id: effectiveVariantId, name: t("editor.archivedItem", { name: palette.labelOf(effectiveClassId, effectiveVariantId) }), color: palette.colorOf(effectiveClassId, effectiveVariantId) }]
         : variants.map(item => ({ id: item.binding.id, name: item.name, color: item.color }));
-    const status = dirty ? "Есть несохранённые изменения" : stored?.reviewState === "reviewed" ? "Проверено" : "Не проверено";
+    const status = dirty ? t("editor.unsaved") : stored?.reviewState === "reviewed" ? t("review.reviewed") : t("review.unreviewed");
     const index = selectedObject && draft ? draft.objects.indexOf(selectedObject) + 1 : 0;
 
     return (
-        <section className="space-y-3 rounded-md border bg-card p-3" aria-label={`Разметка ${image.displayName}`} data-testid="annotation-editor" data-dirty={dirty || undefined}>
+        <section className="space-y-3 rounded-md border bg-card p-3" aria-label={t("editor.label", { name: image.displayName })} data-testid="annotation-editor" data-dirty={dirty || undefined}>
             <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => inspect(draft, stored?.revision)}>Просмотр и масштаб</Button>
-                <Button size="sm" variant="outline" data-testid="editor-back" onClick={close}>Назад к изображениям</Button>
-                <Button size="icon-sm" variant="ghost" aria-label="Предыдущее изображение" title="Предыдущее изображение (←)" disabled={!navigation.previous} onClick={navigation.previous}><ChevronLeft /></Button>
-                <Button size="icon-sm" variant="ghost" aria-label="Следующее изображение" title="Следующее изображение (→)" disabled={!navigation.next} onClick={navigation.next}><ChevronRight /></Button>
+                <Button size="sm" variant="outline" onClick={() => inspect(draft, stored?.revision)}>{t("editor.inspect")}</Button>
+                <Button size="sm" variant="outline" data-testid="editor-back" onClick={close}>{t("editor.back")}</Button>
+                <Button size="icon-sm" variant="ghost" aria-label={t("editor.previous")} title={t("editor.previousHint")} disabled={!navigation.previous} onClick={navigation.previous}><ChevronLeft /></Button>
+                <Button size="icon-sm" variant="ghost" aria-label={t("editor.next")} title={t("editor.nextHint")} disabled={!navigation.next} onClick={navigation.next}><ChevronRight /></Button>
                 <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
-                    <h3 className="min-w-0 font-medium break-words">Разметка · {image.displayName}</h3>
+                    <h3 className="min-w-0 font-medium break-words">{t("editor.title", { name: image.displayName })}</h3>
                     <span className={`text-xs ${dirty ? "text-amber-300" : "text-muted-foreground"}`} data-testid="editor-status" role="status">{status}</span>
                 </div>
             </div>
@@ -209,28 +214,28 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
                 <Alert variant="destructive">
                     <AlertDescription>
                         <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setAttempt(value => value + 1)}>Повторить</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setAttempt(value => value + 1)}>{t("section.retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
             <div className="flex flex-wrap items-center gap-2">
                 <Select value={tool} onValueChange={value => { setTool(value as AnnotationTool); setSelection(null); }} disabled={locked}>
-                    <SelectTrigger size="sm" aria-label="Инструмент разметки" className="w-36" data-testid="editor-tool"><SelectValue /></SelectTrigger>
+                    <SelectTrigger size="sm" aria-label={t("editor.tool")} className="w-36" data-testid="editor-tool"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="object">Объект</SelectItem>
-                        <SelectItem value="roi">Область ROI</SelectItem>
+                        <SelectItem value="object">{t("editor.object")}</SelectItem>
+                        <SelectItem value="roi">{t("roi")}</SelectItem>
                     </SelectContent>
                 </Select>
                 <Select value={effectiveClassId} onValueChange={chooseClass} disabled={locked}>
-                    <SelectTrigger size="sm" aria-label="Класс объекта" className="w-44" data-testid="editor-class"><SelectValue placeholder="Выберите класс" /></SelectTrigger>
+                    <SelectTrigger size="sm" aria-label={t("editor.class")} className="w-44" data-testid="editor-class"><SelectValue placeholder={t("editor.chooseClass")} /></SelectTrigger>
                     <SelectContent>
                         {classItems.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
                 <Select value={effectiveVariantId ?? noVariant} onValueChange={chooseVariant} disabled={locked || !effectiveClassId}>
-                    <SelectTrigger size="sm" aria-label="Вариант объекта" className="w-44" data-testid="editor-variant"><SelectValue /></SelectTrigger>
+                    <SelectTrigger size="sm" aria-label={t("editor.variant")} className="w-44" data-testid="editor-variant"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={noVariant}>Без варианта</SelectItem>
+                        <SelectItem value={noVariant}>{t("editor.noVariant")}</SelectItem>
                         {variantItems.map(item => (
                             <SelectItem key={item.id} value={item.id}>
                                 <span className="flex items-center gap-2">
@@ -248,15 +253,15 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
                         color={binding.color}
                         displayColor={binding.displayColor}
                         disabled={!binding.available}
-                        label="Цвет рамок варианта"
-                        resetText="Цвет по умолчанию"
+                        label={t("editor.variantColor")}
+                        resetText={t("editor.defaultColor")}
                         save={color => setColor(binding, color)}
                     />
                 ) : (
                     <input
                         type="color"
-                        aria-label="Цвет рамок варианта"
-                        title="Выберите вариант, чтобы задать цвет. Рамки без варианта окрашены по классу."
+                        aria-label={t("editor.variantColor")}
+                        title={t("editor.variantColorHint")}
                         disabled
                         value={palette.colorOf(effectiveClassId, null)}
                         className="h-8 w-10 rounded-md border bg-transparent p-1 disabled:cursor-not-allowed disabled:opacity-50"
@@ -266,10 +271,10 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
             <div className="flex flex-wrap items-center gap-2">
                 <ZoomControls zoom={zoom} />
                 <div className="ml-auto flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline" aria-label="Отменить (Ctrl+Z)" title="Отменить (Ctrl+Z)" data-testid="editor-undo" disabled={locked || !history || !canUndo(history)}
-                        onClick={() => { setHistory(value => value && undo(value)); setSelection(null); }}><Undo2 />Отменить</Button>
-                    <Button size="sm" variant="outline" aria-label="Повторить (Ctrl+Y)" title="Повторить (Ctrl+Y)" data-testid="editor-redo" disabled={locked || !history || !canRedo(history)}
-                        onClick={() => { setHistory(value => value && redo(value)); setSelection(null); }}><Redo2 />Повторить</Button>
+                    <Button size="sm" variant="outline" aria-label={t("editor.undoHint")} title={t("editor.undoHint")} data-testid="editor-undo" disabled={locked || !history || !canUndo(history)}
+                        onClick={() => { setHistory(value => value && undo(value)); setSelection(null); }}><Undo2 />{t("editor.undo")}</Button>
+                    <Button size="sm" variant="outline" aria-label={t("editor.redoHint")} title={t("editor.redoHint")} data-testid="editor-redo" disabled={locked || !history || !canRedo(history)}
+                        onClick={() => { setHistory(value => value && redo(value)); setSelection(null); }}><Redo2 />{t("editor.redo")}</Button>
                 </div>
             </div>
             <AnnotationCanvas
@@ -286,10 +291,10 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
                 commit={change}
                 renew={renew}
             />
-            {selectedObject && <p className="text-xs text-muted-foreground" data-testid="editor-selection">Выбрана рамка {index}: класс и вариант применяются к ней. Delete удаляет рамку.</p>}
+            {selectedObject && <p className="text-xs text-muted-foreground" data-testid="editor-selection">{t("editor.selected", { index })}</p>}
             <p className="text-xs text-muted-foreground">
-                Протяните рамку на изображении. ROI сохраняет отмеченный сектор кадра. Датасет копирует весь готовый кадр без обрезки. Цвет рамки соответствует варианту — его можно сменить рядом с выбором варианта.
-                {" "}Рамку можно выбрать, перетащить и изменить за маркеры; Shift рисует новую поверх. Ctrl+колесо — масштаб, пробел или средняя кнопка — перемещение кадра, Ctrl+Z / Ctrl+Y — отмена и повтор, Ctrl+S — сохранить.
+                {t("editor.help")}
+                {" "}{t("editor.keys")}
             </p>
             <ImageDetails image={image} annotation={draft} revision={stored?.revision} palette={palette} />
             {draft && (
@@ -306,12 +311,12 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
                                 onClick={() => change(removeObject(draft, item.id), selection === item.id ? null : selection)}
                             >
                                 <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: palette.colorOf(item.classId, item.classVariantId) }} />
-                                Удалить рамку {position + 1}
+                                {t("editor.removeBox", { index: position + 1 })}
                                 <span className="max-w-48 truncate text-muted-foreground">{palette.labelOf(item.classId, item.classVariantId)}</span>
                             </Button>
                         ))}
                         {draft.roi && (
-                            <Button variant="outline" size="sm" disabled={locked} onClick={() => change({ ...draft, roi: null }, selection === "roi" ? null : selection)}>Убрать ROI</Button>
+                            <Button variant="outline" size="sm" disabled={locked} onClick={() => change({ ...draft, roi: null }, selection === "roi" ? null : selection)}>{t("editor.removeRoi")}</Button>
                         )}
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
@@ -322,10 +327,10 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
                                 checked={draft.reviewState === "reviewed"}
                                 onCheckedChange={checked => change({ ...draft, reviewState: checked === true ? "reviewed" : "unreviewed" })}
                             />
-                            Проверено, включая пустой кадр
+                            {t("editor.reviewed")}
                         </label>
                         <Button data-testid="annotation-save" disabled={locked || busy || !dirty} onClick={() => void save().catch(() => {})}>
-                            {busy ? "Сохранение…" : "Сохранить разметку"}
+                            {busy ? t("editor.saving") : t("editor.save")}
                         </Button>
                     </div>
                 </>

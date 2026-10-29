@@ -1,18 +1,18 @@
 export interface ImportImagesRequestDto {
     projectId: string;
     groupId: string;
-    /** Токен из images.selectFiles, images.selectFolder или images.selectVideo; действует 30 минут и только на этой странице. */
+    /** A token from images.selectFiles, images.selectFolder or images.selectVideo; valid for 30 minutes and on this page only. */
     selectionToken: string;
-    /** Создаётся UI на одно действие; повтор с тем же значением вернёт ту же задачу. */
+    /** Created by the UI for one action; a repeat with the same value returns the same job. */
     operationId: string;
-    /** Для папки: «Включая вложенные папки». По умолчанию false. */
+    /** For a folder: "Include subfolders". False by default. */
     recursive?: boolean;
-    /** «Пропускать повторы в группе». По умолчанию true. */
+    /** "Skip duplicates in the group". True by default. */
     skipDuplicates?: boolean;
-    /** Для видео (обязательно): отметка первого кадра, мс, ≥ 0. */
+    /** For a video (required): the mark of the first frame, ms, ≥ 0. */
     startMs?: number;
-    /** Для видео (обязательно): шаг между кадрами, мс, ≥ 1. */
+    /** For a video (required): the step between frames, ms, ≥ 1. */
     intervalMs?: number;
-    /** Для видео (обязательно): число кадров ≥ 1; последняя отметка startMs + (count − 1) × intervalMs раньше конца видео. */
+    /** For a video (required): the frame count ≥ 1; the last mark startMs + (count − 1) × intervalMs is before the end of the video. */
     count?: number;
 }

@@ -30,112 +30,112 @@ import { isVideoSelectionResponseDto } from "./response-dto/video-selection-resp
 const isJobList = (value: unknown): value is JobResponseDto[] => Array.isArray(value) && value.every(isJobResponseDto);
 
 /**
- * Группы изображений открытого проекта, изображения и разметка.
- * Начальное состояние — listGroups, list (страницы по порядку импорта) и listAnnotations (рамки страницы); изменения сообщает
- * событие images.changed (subscribeImagesChanged): groups — группы с ревизиями (null — удалена), images — изменённые
- * изображения, imagesChangedIn — группы, у которых изменился состав или счётчики (перечитать группу и страницы).
- * Импорт: selectFiles, selectFolder или selectVideo (нативный диалог) → import (задача images.import; прогресс и итог —
- * job.changed, parseImportImagesResult); для видео import получает startMs, intervalMs и count (videoFrameRangeError
- * проверяет их до отправки); история импорта группы — listImports.
- * Удаление навсегда: reviewGroupDeletion/deleteGroup или reviewDeletion/delete с revision состава.
- * Ошибки: images.project_not_open, images.name_invalid, images.description_invalid, images.group_not_found,
+ * Image groups of the open project, images and annotations.
+ * The initial state comes from listGroups, list (pages in import order) and listAnnotations (boxes of a page); changes come with
+ * the images.changed event (subscribeImagesChanged): groups are groups with revisions (null: deleted), images are changed
+ * images, imagesChangedIn are groups whose contents or counters changed (reread the group and its pages).
+ * Import: selectFiles, selectFolder or selectVideo (a native dialog), then import (the images.import job; progress and result in
+ * job.changed, parseImportImagesResult); for a video import gets startMs, intervalMs and count (videoFrameRangeError
+ * checks them before sending); the import history of a group is listImports.
+ * Permanent deletion: reviewGroupDeletion/deleteGroup or reviewDeletion/delete with the revision of the contents.
+ * Errors: images.project_not_open, images.name_invalid, images.description_invalid, images.group_not_found,
  * images.image_not_found, images.annotation_not_found, images.revision_conflict, images.group_archived, images.group_busy
- * (генерация наполняет группу), images.group_importing (архив группы во время импорта), images.group_not_manual,
+ * (generation is filling the group), images.group_importing (archiving a group during an import), images.group_not_manual,
  * images.origin_mismatch, images.selection_invalid, images.image_archived, images.box_invalid, images.object_id_invalid,
  * images.reference_unavailable, images.annotation_invalid, images.deletion_revision_conflict, images.deletion_blocked,
- * images.selection_expired, jobs.project_not_open; ошибки задачи импорта: images.folder_unavailable,
- * images.import_sources_changed; видео (selectVideo, import и задача): video.ffmpeg_missing, video.unsupported,
- * video.unreadable, video.frames_invalid, video.range_invalid; причины отклонения файлов: images.file_invalid,
- * images.file_unreadable, video.frame_unavailable (кадр за концом видеодорожки).
- * Неверные значения перечислений и пределов — bridge.validation.
+ * images.selection_expired, jobs.project_not_open; errors of the import job: images.folder_unavailable,
+ * images.import_sources_changed; video (selectVideo, import and the job): video.ffmpeg_missing, video.unsupported,
+ * video.unreadable, video.frames_invalid, video.range_invalid; reasons a file is rejected: images.file_invalid,
+ * images.file_unreadable, video.frame_unavailable (a frame past the end of the video track).
+ * Wrong enumeration values and limits give bridge.validation.
  */
 export const imagesApi = {
     get available(): boolean { return nativeBridge.available; },
-    /** Все группы проекта, включая архивные, по времени создания. */
+    /** All groups of the project, archived included, by creation time. */
     listGroups(request: ListImageGroupsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.listGroups", request, isImageGroupList, signal);
     },
     getGroup(request: GetImageGroupRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.getGroup", request, isImageGroupResponseDto, signal);
     },
-    /** Ручная группа («Исходные изображения»). */
+    /** A manual group ("Source images"). */
     createGroup(request: CreateImageGroupRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.createGroup", request, isImageGroupResponseDto, signal);
     },
     updateGroup(request: UpdateImageGroupRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.updateGroup", request, isImageGroupResponseDto, signal);
     },
-    /** Архивная группа только для чтения; группу с идущим импортом в архив не перенести (images.group_importing). */
+    /** An archived group is read-only; a group with a running import cannot be archived (images.group_importing). */
     setGroupArchived(request: SetImageGroupArchivedRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.setGroupArchived", request, isImageGroupResponseDto, signal);
     },
-    /** Страница изображений группы по порядку импорта с фильтрами archive и reviewState. */
+    /** A page of images of a group in import order with the archive and reviewState filters. */
     list(request: ListImagesRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.list", request, isImagePageResponseDto, signal);
     },
     get(request: GetImageRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.get", request, isImageResponseDto, signal);
     },
-    /** Текущая или указанная ревизия разметки. */
+    /** The current or the given annotation revision. */
     getAnnotation(request: GetImageAnnotationRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.getAnnotation", request, isImageAnnotationResponseDto, signal);
     },
-    /** Текущая разметка до 200 изображений (рамки на миниатюрах страницы), в порядке запроса; отсутствующие пропускаются. */
+    /** The current annotation of up to 200 images (boxes on the thumbnails of a page) in the requested order; missing ones are skipped. */
     listAnnotations(request: ListImageAnnotationsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.listAnnotations", request, isImageAnnotationList, signal);
     },
     /**
-     * Новая ревизия разметки. Новые объекты — id: null; новые и изменённые по классу или варианту объекты должны ссылаться
-     * на активные класс и вариант этого класса, неизменённые могут сохранить архивную ссылку.
+     * A new annotation revision. New objects have id: null; new objects and objects with a changed class or variant must refer to
+     * an active class and a variant of that class; unchanged ones may keep an archived reference.
      */
     saveAnnotation(request: SaveImageAnnotationRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.saveAnnotation", request, isSavedImageAnnotationResponseDto, signal);
     },
-    /** В архив / восстановить до 400 изображений с их revision; всё или ничего. */
+    /** Archive or restore up to 400 images with their revision; all or nothing. */
     setArchived(request: SetImagesArchivedRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.setArchived", request, isImageList, signal);
     },
-    /** Переместить до 400 активных изображений в группу того же происхождения; ревизии обеих групп и изображений. */
+    /** Move up to 400 active images to a group of the same origin; revisions of both groups and the images. */
     move(request: MoveImagesRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.move", request, isMovedImagesResponseDto, signal);
     },
     reviewGroupDeletion(request: ReviewImageGroupDeletionRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.reviewGroupDeletion", request, isImageDeletionReviewResponseDto, signal);
     },
-    /** Удаляет группу, её изображения, разметку и историю импорта. */
+    /** Deletes the group, its images, annotations and import history. */
     deleteGroup(request: DeleteImageGroupRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.deleteGroup", request, isImageDeletionResultResponseDto, signal);
     },
-    /** Состав удаления выбранных (до 400) изображений одной группы. */
+    /** The deletion review of selected (up to 400) images of one group. */
     reviewDeletion(request: ReviewImagesDeletionRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.reviewDeletion", request, isImageDeletionReviewResponseDto, signal);
     },
     delete(request: DeleteImagesRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.delete", request, isImageDeletionResultResponseDto, signal);
     },
-    /** История импорта группы, новые первыми; итог с ошибками по файлам — parseImportImagesResult. */
+    /** The import history of a group, newest first; the result with errors per file is parseImportImagesResult. */
     listImports(request: ListImageImportsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.listImports", request, isJobList, signal);
     },
-    /** Нативный диалог выбора PNG/JPEG/WebP/BMP; ответ приходит, когда пользователь закроет диалог. */
+    /** The native dialog for choosing PNG/JPEG/WebP/BMP; the answer comes when the user closes the dialog. */
     selectFiles(signal?: AbortSignal) {
         const request: SelectImageFilesRequestDto = {};
         return nativeBridge.request("images.selectFiles", request, isImageSelectionResponseDto, signal, null);
     },
-    /** Нативный диалог выбора папки; ответ приходит, когда пользователь закроет диалог. */
+    /** The native folder dialog; the answer comes when the user closes the dialog. */
     selectFolder(signal?: AbortSignal) {
         const request: SelectImageFolderRequestDto = {};
         return nativeBridge.request("images.selectFolder", request, isImageSelectionResponseDto, signal, null);
     },
     /**
-     * Нативный диалог выбора видео (MP4, MKV, AVI, MOV, WebM, M4V) и чтение его свойств; ответ приходит, когда пользователь
-     * закроет диалог. Закрытый диалог — selectionToken: null (isSelectedVideo).
+     * The native dialog for choosing a video (MP4, MKV, AVI, MOV, WebM, M4V) and reading its properties; the answer comes when the user
+     * closes the dialog. A closed dialog gives selectionToken: null (isSelectedVideo).
      */
     selectVideo(signal?: AbortSignal) {
         const request: SelectImageVideoRequestDto = {};
         return nativeBridge.request("images.selectVideo", request, isVideoSelectionResponseDto, signal, null);
     },
-    /** Ставит задачу импорта и сразу возвращает её снимок; повтор с тем же operationId вернёт ту же задачу. */
+    /** Starts an import job and returns its snapshot at once; a repeat with the same operationId returns the same job. */
     import(request: ImportImagesRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("images.import", request, isJobResponseDto, signal);
     },

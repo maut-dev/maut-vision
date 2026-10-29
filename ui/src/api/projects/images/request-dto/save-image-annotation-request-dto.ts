@@ -1,7 +1,7 @@
 import type { ImageBoxDto } from "../response-dto/image-annotation-response-dto";
 import type { ImageReviewState } from "../response-dto/image-response-dto";
 
-/** id — объект текущей ревизии или null для нового (ID назначит host); classVariantId — вариант этого класса или null. */
+/** id: an object of the current revision or null for a new one (the host assigns the ID); classVariantId: a variant of this class or null. */
 export interface AnnotationObjectRequestDto {
     id: string | null;
     classId: string;
@@ -12,7 +12,7 @@ export interface AnnotationObjectRequestDto {
 export interface SaveImageAnnotationRequestDto {
     projectId: string;
     imageId: string;
-    /** annotationRevision изображения, которое видел пользователь; при расхождении — images.revision_conflict. */
+    /** The annotationRevision of the image the user saw; a mismatch gives images.revision_conflict. */
     annotationRevision: number;
     objects: AnnotationObjectRequestDto[];
     roi: ImageBoxDto | null;

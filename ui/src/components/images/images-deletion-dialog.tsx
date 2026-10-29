@@ -1,10 +1,12 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageDeletionResultResponseDto, ImageDeletionReviewResponseDto } from "@/api/projects/images/response-dto/image-deletion-response-dto";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
-import { locale } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
+import "./locale";
 
-/** Вся группа (imageIds не задан) или выбранные изображения одной группы (до 400). */
+/** The whole group (no imageIds) or selected images of one group (up to 400). */
 export interface ImagesDeletionTarget {
     groupId: string;
     name: string;
@@ -12,8 +14,8 @@ export interface ImagesDeletionTarget {
 }
 
 /**
- * Удаление навсегда в две фазы: просмотр состава и блокировок (импорт в эту группу), затем удаление с ревизией
- * просмотра. Строки удаляются сразу, файлы и миниатюры — в фоне. Ошибка удаления требует «Проверить снова».
+ * Permanent deletion in two phases: a review of the contents and blockers (an import into this group), then deletion with the
+ * revision of the review. Rows are deleted at once, files and thumbnails in the background. A failed deletion needs "Check again".
  */
 export function ImagesDeletionDialog({ projectId, target, close, deleted }: {
     projectId: string;
@@ -21,6 +23,7 @@ export function ImagesDeletionDialog({ projectId, target, close, deleted }: {
     close: () => void;
     deleted: (result: ImageDeletionResultResponseDto) => void;
 }) {
+    const { t } = useTranslation("images");
     const selection = !!target.imageIds;
     const review = useCallback((signal: AbortSignal): Promise<ImageDeletionReviewResponseDto> => target.imageIds
         ? imagesApi.reviewDeletion({ projectId, groupId: target.groupId, imageIds: [...target.imageIds] }, signal)
@@ -33,21 +36,21 @@ export function ImagesDeletionDialog({ projectId, target, close, deleted }: {
         <ReviewDeletionDialog
             area="images"
             testId="images-deletion-dialog"
-            title={selection ? "Удалить изображения навсегда?" : "Удалить группу изображений навсегда?"}
+            title={selection ? t("deletion.imagesTitle") : t("deletion.groupTitle")}
             description={<>
-                {target.name}. {selection ? "Выбранные изображения, их файлы и разметка будут удалены." : "Группа, все её изображения, разметка и история импорта будут удалены."} Восстановить их в приложении нельзя.
+                {selection ? t("deletion.imagesText", { name: target.name }) : t("deletion.groupText", { name: target.name })}
             </>}
             review={review}
             remove={remove}
             deleted={deleted}
             close={close}
-            busyText="Удаляем…"
-            blockersTitle={<p className="font-medium">Удаление пока недоступно:</p>}
-            blockersNote={<p className="mt-2">Завершите задачи или измените указанные зависимости и проверьте снова.</p>}
+            busyText={t("deletion.busy")}
+            blockersTitle={<p className="font-medium">{t("deletion.blockers")}</p>}
+            blockersNote={<p className="mt-2">{t("deletion.blockersNote")}</p>}
             renderReview={current => (
                 <>
-                    <p data-testid="images-deletion-count">Изображений к удалению: {current.images.toLocaleString(locale())}</p>
-                    <p className="text-muted-foreground">Готовые датасеты и модели сохранят собственные копии. Материалы других групп сохранятся.</p>
+                    <p data-testid="images-deletion-count">{t("deletion.count", { number: formatNumber(current.images) })}</p>
+                    <p className="text-muted-foreground">{t("deletion.kept")}</p>
                 </>
             )}
         />
