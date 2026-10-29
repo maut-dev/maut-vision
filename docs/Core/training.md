@@ -22,6 +22,7 @@ momentum 0.9. `lr0`, `warmupEpochs`, `patience` and `workers` default to null â€
 in `effectiveParams`. The architecture and `imgsz` (the larger side of the project input) are set by the application; `profile` and
 `compile` are not supported by the pinned runtime. An invalid or unknown key â€” `training.parameter_invalid` with `Details["field"]`. The
 UI keeps the same keys with labels in `ui/src/api/projects/training/training-parameters.ts`; smoke checks that keys and defaults match.
+`ITrainingPresetsManager.Defaults` gives every key with its default in registry order (the MCP tools build their parameter schema from it).
 
 A preset is a name (unique case-insensitively; saving with the same name overwrites) and validated parameters; the file
 `training/presets.json` of the work directory is written through a temporary file and a rename.
