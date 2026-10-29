@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { checksApi } from "@/api/projects/checks/checks-api";
 import type { MonitorResponseDto, ScreenShotResponseDto } from "@/api/projects/checks/response-dto/check-source-response-dto";
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
@@ -10,23 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { defaultRegion, type FramePosition } from "@/lib/backgrounds/crop-frame";
 import { defaultCheckParameters, formatTime, needsRegion, parseCheckParameters, toRegion, type CheckParameterValues } from "@/lib/checks/check-view";
-import { errorMessage, locale } from "@/lib/format";
+import { i18n } from "@/i18n";
+import { errorMessage, formatNumber } from "@/lib/format";
 import { useLiveCheck } from "@/lib/use-live-check";
 import { CheckParameterFields, Field } from "./check-parameter-fields";
 import { CheckStatus, ClassSummary, DetectionChips, DetectionOverlay, previewDetections } from "./check-results";
 
-/** Строк «Последние кадры с обнаружениями». */
+/** Rows of the latest frames with detections. */
 const recentRows = 40;
 
+/** "Monitor 1 — 1920 × 1080 (primary)". Call during render. */
 export const monitorLabel = (monitor: MonitorResponseDto) =>
-    `Монитор ${monitor.index} — ${monitor.width} × ${monitor.height}${monitor.isPrimary ? " (основной)" : ""}`;
+    i18n.t(monitor.isPrimary ? "checks:screen.monitorOptionPrimary" : "checks:screen.monitorOption", { index: monitor.index, width: monitor.width, height: monitor.height });
 
 /**
- * «Проверка с экрана в реальном времени»: мониторы доступны до снимка; «Снять экран» даёт снимок для рамки размера входа (экран не
- * больше входа — захватывается целиком); частота и предел времени; живые счётчики с фактической частотой, превью, «Сейчас на
- * экране», последние кадры с обнаружениями, «Остановить». Уход из раздела останавливает проверку.
+ * The real-time screen check: monitors are listed before a screenshot; taking a screenshot gives a picture for the frame of the input size
+ * (a screen not larger than the input is captured whole); the rate and the time limit; live counters with the actual rate, the preview,
+ * what is on screen now, the latest frames with detections, Stop. Leaving the section stops the check.
  */
 export function CheckScreen({ projectId, version, gpus }: { projectId: string; version: ModelVersionResponseDto; gpus: GpuInventoryResponseDto | null | undefined }) {
+    const { t } = useTranslation("checks");
     const input = version.input;
     const [monitors, setMonitors] = useState<readonly MonitorResponseDto[]>();
     const [monitorIndex, setMonitorIndex] = useState<number>();
@@ -45,7 +49,7 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
             if (!active) return;
             setMonitors(list);
             setMonitorIndex(current => current ?? (list.find(item => item.isPrimary) ?? list[0])?.index);
-        }, cause => { if (active) setError(errorMessage(cause, "Не удалось получить список мониторов.")); });
+        }, cause => { if (active) setError(errorMessage(cause, i18n.t("checks:screen.monitorsFailed"))); });
         return () => { active = false; };
     }, []);
 
@@ -56,8 +60,8 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
     const fpsValue = Number(fps.replace(",", "."));
     const seconds = Math.round(Number(minutes.replace(",", ".")) * 60);
     const problem = "field" in parsed ? parsed.message
-        : !(Number.isFinite(fpsValue) && fpsValue > 0 && fpsValue <= 60) ? "Кадров в секунду — число больше 0 и не больше 60."
-            : !(Number.isSafeInteger(seconds) && seconds >= 1 && seconds <= 86_400) ? "«Остановить через» — от 1 секунды до 24 часов (в минутах)."
+        : !(Number.isFinite(fpsValue) && fpsValue > 0 && fpsValue <= 60) ? t("screen.fpsInvalid")
+            : !(Number.isSafeInteger(seconds) && seconds >= 1 && seconds <= 86_400) ? t("screen.durationInvalid")
                 : undefined;
     const locked = busy || session.active;
     const check = session.check;
@@ -98,19 +102,15 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
     return (
         <section className="space-y-4 rounded-lg border bg-card p-5" data-testid="check-screen">
             <div>
-                <h2 className="font-medium">Проверка с экрана в реальном времени</h2>
-                <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-                    Снимите экран и поставьте рамку {input.width} × {input.height} px туда, где появляются объекты. Рамка захватывается с заданной частотой
-                    и прогоняется через модель, пока проверку не остановят или не выйдет время. Игра должна быть в оконном режиме без рамок: эксклюзивный
-                    полноэкранный режим Windows не отдаёт.
-                </p>
+                <h2 className="font-medium">{t("screen.title")}</h2>
+                <p className="mt-1 max-w-prose text-sm text-muted-foreground">{t("screen.text", { width: input.width, height: input.height })}</p>
             </div>
             <div className="flex flex-wrap items-end gap-3">
-                <Field label="Монитор">
+                <Field label={t("screen.monitor")}>
                     <Select value={monitorIndex === undefined ? "" : String(monitorIndex)} disabled={locked || !monitors?.length}
                         onValueChange={next => { if (next) setMonitorIndex(Number(next)); }}>
-                        <SelectTrigger aria-label="Монитор" className="w-72" data-testid="check-screen-monitor">
-                            <SelectValue placeholder={monitors ? "Мониторов нет" : "Поиск мониторов…"} />
+                        <SelectTrigger aria-label={t("screen.monitor")} className="w-72" data-testid="check-screen-monitor">
+                            <SelectValue placeholder={monitors ? t("screen.noMonitors") : t("screen.findingMonitors")} />
                         </SelectTrigger>
                         <SelectContent>
                             {(monitors ?? []).map(item => <SelectItem key={item.index} value={String(item.index)}>{monitorLabel(item)}</SelectItem>)}
@@ -118,17 +118,17 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                     </Select>
                 </Field>
                 <Button variant="outline" disabled={locked || monitorIndex === undefined} data-testid="check-screen-capture" onClick={capture}>
-                    {shotOfMonitor ? "Снять экран заново" : "Снять экран"}
+                    {shotOfMonitor ? t("screen.recapture") : t("screen.capture")}
                 </Button>
             </div>
             {monitor && !crop && (
                 <p className="text-sm text-muted-foreground" data-testid="check-screen-whole">
-                    Экран {monitor.width} × {monitor.height} не больше входа модели: захватывается целиком.
+                    {t("screen.whole", { width: monitor.width, height: monitor.height })}
                 </p>
             )}
             {crop && shotOfMonitor && (
                 <BackgroundCropFrame
-                    source={{ sourceIndex: null, timestampMs: null, name: "Снимок экрана", width: shotOfMonitor.monitor.width, height: shotOfMonitor.monitor.height,
+                    source={{ sourceIndex: null, timestampMs: null, name: t("screen.shotName"), width: shotOfMonitor.monitor.width, height: shotOfMonitor.monitor.height,
                         previewUrl: shotOfMonitor.url, previewWidth: shotOfMonitor.monitor.width, previewHeight: shotOfMonitor.monitor.height }}
                     frame={input}
                     value={position}
@@ -138,11 +138,11 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                 />
             )}
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                <Field label="Кадров в секунду" htmlFor="check-screen-fps">
+                <Field label={t("screen.fps")} htmlFor="check-screen-fps">
                     <Input id="check-screen-fps" type="number" min={0.1} max={60} step={0.5} disabled={locked} data-testid="check-screen-fps" value={fps}
                         onChange={event => setFps(event.target.value)} />
                 </Field>
-                <Field label="Остановить через, мин" htmlFor="check-screen-minutes">
+                <Field label={t("screen.minutes")} htmlFor="check-screen-minutes">
                     <Input id="check-screen-minutes" type="number" min={1} step={1} disabled={locked} data-testid="check-screen-minutes" value={minutes}
                         onChange={event => setMinutes(event.target.value)} />
                 </Field>
@@ -150,45 +150,47 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                     testPrefix="check-screen" />
             </div>
             <p role={problem ? "alert" : undefined} className={`min-h-4 text-xs ${problem ? "text-destructive" : "text-muted-foreground"}`} data-testid="check-screen-hint">
-                {problem ?? (crop && !shotOfMonitor ? "Сначала снимите экран, чтобы поставить рамку." : "2–5 кадров в секунду обычно достаточно; выше — больше нагрузка на видеокарту.")}
+                {problem ?? (crop && !shotOfMonitor ? t("screen.captureFirst") : t("screen.fpsHint"))}
             </p>
             {error && <Alert variant="destructive" data-testid="check-screen-error-notice"><AlertDescription>{error}</AlertDescription></Alert>}
             <div className="flex flex-wrap gap-2">
-                <Button disabled={!ready || !!problem || locked} data-testid="check-screen-start" onClick={start}>Запустить проверку с экрана</Button>
+                <Button disabled={!ready || !!problem || locked} data-testid="check-screen-start" onClick={start}>{t("screen.start")}</Button>
                 {session.active && (
-                    <Button variant="outline" disabled={check?.state === "cancelling"} data-testid="check-screen-stop" onClick={() => void run(session.stop)}>Остановить</Button>
+                    <Button variant="outline" disabled={check?.state === "cancelling"} data-testid="check-screen-stop" onClick={() => void run(session.stop)}>{t("stop")}</Button>
                 )}
             </div>
             {check && (
                 <div className="space-y-4 border-t pt-4" data-testid="check-screen-result" data-check-id={check.id}>
                     <CheckStatus check={check} testPrefix="check-screen" />
                     <p className="text-xs tabular-nums text-muted-foreground" data-testid="check-screen-stats">
-                        Кадров {check.progress.framesProcessed.toLocaleString(locale())} · с обнаружениями {check.summary.framesWithDetections.toLocaleString(locale())}
-                        {check.progress.fps !== null ? ` · ${check.progress.fps.toLocaleString(locale(), { maximumFractionDigits: 1 })} к/с` : ""}
-                        {` · ${formatTime(check.progress.elapsedMs)} от начала`}
+                        {[
+                            t("screen.stats", { frames: formatNumber(check.progress.framesProcessed), detected: formatNumber(check.summary.framesWithDetections) }),
+                            ...(check.progress.fps !== null ? [t("screen.statsFps", { fps: formatNumber(check.progress.fps, { maximumFractionDigits: 1 }) })] : []),
+                            t("screen.statsElapsed", { time: formatTime(check.progress.elapsedMs) }),
+                        ].join(" · ")}
                     </p>
                     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
                         {check.preview ? (
                             <div className="space-y-1">
                                 <DetectionOverlay src={check.preview.url} width={check.preview.width} height={check.preview.height}
-                                    detections={previewDetections(check, session.journal)} alt="Последний кадр с экрана" testId="check-screen-preview" />
-                                <p className="text-center text-xs text-muted-foreground">Кадр {formatTime(check.preview.timeMs)} — картинка обновляется раз в секунду.</p>
+                                    detections={previewDetections(check, session.journal)} alt={t("screen.previewAlt")} testId="check-screen-preview" />
+                                <p className="text-center text-xs text-muted-foreground">{t("screen.previewNote", { time: formatTime(check.preview.timeMs) })}</p>
                             </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground">{session.active ? "Ждём первый кадр…" : "Кадров нет."}</p>
+                            <p className="text-sm text-muted-foreground">{session.active ? t("screen.waiting") : t("screen.noFrames")}</p>
                         )}
                         <div className="space-y-2" data-testid="check-screen-now">
-                            <h3 className="text-sm font-medium">Сейчас на экране</h3>
+                            <h3 className="text-sm font-medium">{t("screen.now")}</h3>
                             {check.lastFrame ? <DetectionChips detections={check.lastFrame.detections} /> : <p className="text-sm text-muted-foreground">—</p>}
                         </div>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
                         <div className="space-y-2">
-                            <h3 className="text-sm font-medium">Итог по классам</h3>
+                            <h3 className="text-sm font-medium">{t("classSummary")}</h3>
                             <ClassSummary check={check} testId="check-screen-classes" />
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-sm font-medium">Последние кадры с обнаружениями</h3>
+                            <h3 className="text-sm font-medium">{t("screen.recent")}</h3>
                             {recent.length ? (
                                 <div className="max-h-80 overflow-y-auto rounded-md border">
                                     <table className="w-full text-sm" data-testid="check-screen-journal">
@@ -203,7 +205,7 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Пока ничего не обнаружено.</p>
+                                <p className="text-sm text-muted-foreground">{t("screen.nothingYet")}</p>
                             )}
                         </div>
                     </div>

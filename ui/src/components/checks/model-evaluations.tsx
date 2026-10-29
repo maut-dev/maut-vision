@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { EvaluationSplit } from "@/api/projects/checks/request-dto/checks-request-dto";
-import { evaluationStateLabels, type ModelEvaluationResponseDto } from "@/api/projects/checks/response-dto/model-evaluation-response-dto";
+import type { ModelEvaluationResponseDto } from "@/api/projects/checks/response-dto/model-evaluation-response-dto";
 import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
@@ -8,10 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import "@/i18n/sections/checks";
 import {
-    bestOf, evaluationProblem, isEvaluationActive, preferredSplit, qualityMetricHelp, qualityMetricLabels, qualityMetrics, seriesColor, splitLabels,
+    bestOf, evaluationProblem, isEvaluationActive, preferredSplit, qualityMetricHelp, qualityMetricLabels, qualityMetrics, seriesColor, splitLabels, versionName,
 } from "@/lib/checks/check-view";
-import { errorMessage, formatDate, locale } from "@/lib/format";
+import { errorMessage, formatDate, formatDay, formatNumber } from "@/lib/format";
 import { formatMetric } from "@/lib/training/run-view";
 import type { ModelEvaluationsState } from "@/lib/use-model-evaluations";
 import { DeviceSelect, Field } from "./check-parameter-fields";
@@ -20,20 +22,21 @@ import { workerErrorText } from "@/lib/errors";
 const pairKey = (datasetId: string, split: EvaluationSplit) => `${datasetId}|${split}`;
 
 /**
- * Оценка версий на части датасета: форма (версия, неархивный и неповреждённый датасет, часть, устройство, batch) с подсказками
- * совместимости, «Сравнение выбранных версий на одном датасете» по последней успешной оценке и «Все проверки» с отменой и метриками
- * по классам. Общий компонент «Проверок» и «Аналитики»: версии для матрицы и версия формы передаёт владелец.
+ * Evaluation of versions on a dataset split: the form (version, a dataset that is neither archived nor corrupt, split, device, batch) with
+ * compatibility hints, the comparison of the chosen versions on one dataset by the latest successful evaluation, and all checks with
+ * cancel and per-class metrics. Shared by Checks and Analytics: the owner passes the versions of the matrix and the version of the form.
  */
 export function ModelEvaluations({ evaluations, versions, compared, versionId, datasets, gpus }: {
     evaluations: ModelEvaluationsState;
     versions: readonly ModelVersionResponseDto[];
-    /** Версии в матрице сравнения (по порядку столбцов). */
+    /** Versions of the comparison matrix, in column order. */
     compared: readonly ModelVersionResponseDto[];
-    /** Версия формы по умолчанию; меняется — форма следует за ней. */
+    /** The default version of the form; when it changes, the form follows it. */
     versionId: string | undefined;
     datasets: readonly DatasetVersionResponseDto[];
     gpus: GpuInventoryResponseDto | null | undefined;
 }) {
+    const { t } = useTranslation("checks");
     const usable = datasets.filter(item => !item.archivedAt && item.integrityState !== "corrupt");
     const [formVersionId, setFormVersionId] = useState(versionId);
     const [datasetId, setDatasetId] = useState<string>();
@@ -57,11 +60,11 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
 
     const datasetLabel = (id: string, fallback: string) => {
         const found = datasets.find(item => item.id === id);
-        if (!found) return `${fallback} (удалён)`;
-        return found.archivedAt ? `${found.name} (в архиве)` : found.name;
+        if (!found) return t("evaluation.datasetDeleted", { name: fallback });
+        return found.archivedAt ? t("evaluation.datasetArchived", { name: found.name }) : found.name;
     };
 
-    // Пары «датасет · часть» с успешными оценками; по умолчанию — пара формы, если по ней есть оценки.
+    // Pairs "dataset · split" with successful evaluations; by default the pair of the form when it has evaluations.
     const pairs = [...new Map(evaluations.latest.map(item => [pairKey(item.dataset.versionId, item.split), item])).values()];
     const formPair = dataset ? pairKey(dataset.id, part) : undefined;
     const activeKey = compareKey && pairs.some(item => pairKey(item.dataset.versionId, item.split) === compareKey) ? compareKey
@@ -101,70 +104,71 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
     return (
         <section className="space-y-5 rounded-lg border bg-card p-5" data-testid="model-evaluations">
             <div>
-                <h2 className="font-medium">Проверка на датасете</h2>
-                <p className="mt-1 max-w-prose text-sm text-muted-foreground">
-                    Веса версии (best.pt) прогоняются по выбранной части датасета проекта — так версии, обученные на разных датасетах, сравниваются на одних
-                    и тех же кадрах. Метрики считает ultralytics так же, как при обучении. Проверка занимает видеокарту в общей очереди с обучением.
-                </p>
+                <h2 className="font-medium">{t("evaluation.title")}</h2>
+                <p className="mt-1 max-w-prose text-sm text-muted-foreground">{t("evaluation.text")}</p>
             </div>
             <form className="space-y-3" onSubmit={submit}>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                    <Field label="Версия модели">
+                    <Field label={t("version.label")}>
                         <Select value={version?.id ?? ""} disabled={!versions.length} onValueChange={next => { if (next) setFormVersionId(next); }}>
-                            <SelectTrigger aria-label="Версия модели" className="w-full" data-testid="evaluation-version"><SelectValue placeholder="Нет версий" /></SelectTrigger>
+                            <SelectTrigger aria-label={t("version.label")} className="w-full" data-testid="evaluation-version"><SelectValue placeholder={t("version.none")} /></SelectTrigger>
                             <SelectContent>
-                                {versions.map(item => <SelectItem key={item.id} value={item.id}>Версия {item.number}{item.isWorking ? " · рабочая" : ""}</SelectItem>)}
+                                {versions.map(item => <SelectItem key={item.id} value={item.id}>{versionName(item)}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </Field>
-                    <Field label="Датасет">
+                    <Field label={t("evaluation.dataset")}>
                         <Select value={dataset?.id ?? ""} disabled={!usable.length} onValueChange={next => { if (next) { setDatasetId(next); setSplit(undefined); } }}>
-                            <SelectTrigger aria-label="Датасет проверки" className="w-full" data-testid="evaluation-dataset"><SelectValue placeholder="Нет датасетов" /></SelectTrigger>
+                            <SelectTrigger aria-label={t("evaluation.datasetAria")} className="w-full" data-testid="evaluation-dataset">
+                                <SelectValue placeholder={t("evaluation.noDatasets")} />
+                            </SelectTrigger>
                             <SelectContent>
-                                {usable.map(item => <SelectItem key={item.id} value={item.id}>{item.name} · {new Date(item.createdAt).toLocaleDateString(locale())}</SelectItem>)}
+                                {usable.map(item => <SelectItem key={item.id} value={item.id}>{item.name} · {formatDay(item.createdAt)}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </Field>
-                    <Field label="Часть датасета">
+                    <Field label={t("evaluation.split")}>
                         <Select value={part} onValueChange={next => setSplit(next as EvaluationSplit)}>
-                            <SelectTrigger aria-label="Часть датасета" className="w-full" data-testid="evaluation-split"><SelectValue /></SelectTrigger>
+                            <SelectTrigger aria-label={t("evaluation.split")} className="w-full" data-testid="evaluation-split"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="val">Validation</SelectItem>
                                 <SelectItem value="test">Test</SelectItem>
                             </SelectContent>
                         </Select>
                     </Field>
-                    <Field label="Устройство">
+                    <Field label={t("fields.device")}>
                         <DeviceSelect value={device} onChange={setDevice} gpus={gpus} invalid={!!device && !validDevice} testId="evaluation-device" />
                     </Field>
-                    <Field label="Размер батча (batch)" htmlFor="evaluation-batch">
+                    <Field label={t("evaluation.batch")} htmlFor="evaluation-batch">
                         <Input id="evaluation-batch" type="number" min={1} max={1024} step={1} aria-invalid={!validBatch || undefined} data-testid="evaluation-batch"
                             value={batch} onChange={event => setBatch(event.target.value)} />
                     </Field>
                 </div>
                 <div className="min-h-4 text-xs" aria-live="polite" data-testid="evaluation-hint">
                     {!usable.length ? (
-                        <p className="text-muted-foreground">Нет датасетов для проверки: соберите датасет. Архивные и повреждённые не подходят.</p>
+                        <p className="text-muted-foreground">{t("evaluation.noUsable")}</p>
                     ) : problem ? (
                         <p role="alert" className="text-destructive" data-testid="evaluation-problem">{problem}</p>
                     ) : !validBatch ? (
-                        <p className="text-destructive">Размер батча — целое число от 1 до 1024.</p>
+                        <p className="text-destructive">{t("evaluation.batchInvalid")}</p>
                     ) : dataset ? (
-                        <p className="text-muted-foreground">{dataset.counts[part].toLocaleString(locale())} кадров в части {splitLabels[part]}. Размер входа берётся из версии.</p>
+                        <p className="text-muted-foreground">
+                            {t("evaluation.splitFrames", { count: dataset.counts[part], frames: formatNumber(dataset.counts[part]), split: splitLabels[part] })}
+                        </p>
                     ) : null}
                 </div>
                 {error && <Alert variant="destructive" data-testid="evaluation-error"><AlertDescription>{error}</AlertDescription></Alert>}
                 <Button type="submit" data-testid="evaluation-start" disabled={busy || !version || !dataset || !!problem || !validBatch || !validDevice}>
-                    Проверить на датасете
+                    {t("evaluation.start")}
                 </Button>
             </form>
 
             <div className="space-y-3 border-t pt-4" data-testid="evaluation-comparison">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-sm font-medium">Сравнение выбранных версий на одном датасете</h3>
+                    <h3 className="text-sm font-medium">{t("evaluation.comparison")}</h3>
                     {pairs.length > 0 && (
                         <Select value={activeKey} onValueChange={setCompareKey}>
-                            <SelectTrigger aria-label="Датасет сравнения" className="w-72" data-testid="evaluation-pair"><SelectValue /></SelectTrigger>
+                            <SelectTrigger aria-label={t("evaluation.pairAria")} className="w-72" data-testid="evaluation-pair"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 {pairs.map(item => (
                                     <SelectItem key={pairKey(item.dataset.versionId, item.split)} value={pairKey(item.dataset.versionId, item.split)}>
@@ -176,26 +180,26 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                     )}
                 </div>
                 {!pairs.length || !activePair ? (
-                    <p className="text-sm text-muted-foreground">Сравнение появится после первой успешной проверки на датасете.</p>
+                    <p className="text-sm text-muted-foreground">{t("evaluation.comparisonEmpty")}</p>
                 ) : !compared.length ? (
-                    <p className="text-sm text-muted-foreground">Отметьте версии для сравнения.</p>
+                    <p className="text-sm text-muted-foreground">{t("evaluation.markVersions")}</p>
                 ) : (
                     <div className="overflow-x-auto rounded-md border">
                         <table className="w-full text-sm" data-testid="evaluation-matrix">
                             <thead>
                                 <tr className="border-b text-left text-xs text-muted-foreground">
-                                    <th className="px-3 py-2 font-normal">Метрика</th>
+                                    <th className="px-3 py-2 font-normal">{t("evaluation.metric")}</th>
                                     {compared.map((item, index) => (
                                         <th key={item.id} className="px-3 py-2 text-right font-normal" data-version-id={item.id}>
                                             <span className="inline-flex items-center gap-1.5">
                                                 <span className="inline-block size-2 rounded-full" style={{ background: seriesColor(item.number) }} />
-                                                Версия {item.number}
+                                                {t("version.number", { number: item.number })}
                                             </span>
                                             {!matrix[index] && (
                                                 <Button type="button" variant="link" size="sm" className="ml-1 h-auto p-0 text-xs" data-testid="evaluation-matrix-run"
                                                     disabled={busy || !validDevice || !pairDataset || !!evaluationProblem(item, pairDataset, activePair.split)}
                                                     onClick={() => void launch(item, activePair.dataset.versionId, activePair.split)}>
-                                                    проверить
+                                                    {t("evaluation.run")}
                                                 </Button>
                                             )}
                                         </th>
@@ -215,7 +219,7 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                                                 <td key={compared[index].id} data-best={(best !== null && value === best) || undefined}
                                                     className={`px-3 py-2 text-right tabular-nums ${best !== null && value === best ? "font-semibold text-[var(--metric-best)]" : ""}`}>
                                                     {value === null
-                                                        ? matrix[index] ? "—" : <span className="text-xs text-muted-foreground">не проверялась</span>
+                                                        ? matrix[index] ? "—" : <span className="text-xs text-muted-foreground">{t("evaluation.notChecked")}</span>
                                                         : formatMetric(value)}
                                                 </td>
                                             ))}
@@ -229,18 +233,18 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
             </div>
 
             <div className="space-y-2 border-t pt-4">
-                <h3 className="text-sm font-medium">Все проверки</h3>
+                <h3 className="text-sm font-medium">{t("evaluation.all")}</h3>
                 {evaluations.error && <p role="alert" className="text-sm text-destructive">{evaluations.error}</p>}
                 {evaluations.evaluations.length ? (
                     <div className="overflow-x-auto rounded-md border">
                         <table className="w-full text-sm" data-testid="evaluation-list">
                             <thead>
                                 <tr className="border-b text-left text-xs text-muted-foreground">
-                                    <th className="px-3 py-2 font-normal">Версия</th>
-                                    <th className="px-3 py-2 font-normal">Датасет · часть · кадров</th>
-                                    <th className="px-3 py-2 font-normal">Состояние</th>
+                                    <th className="px-3 py-2 font-normal">{t("evaluation.columnVersion")}</th>
+                                    <th className="px-3 py-2 font-normal">{t("evaluation.columnDataset")}</th>
+                                    <th className="px-3 py-2 font-normal">{t("evaluation.columnState")}</th>
                                     {qualityMetrics.map(key => <th key={key} className="px-3 py-2 text-right font-normal" title={qualityMetricHelp[key]}>{qualityMetricLabels[key]}</th>)}
-                                    <th className="px-3 py-2 font-normal">Дата</th>
+                                    <th className="px-3 py-2 font-normal">{t("evaluation.columnDate")}</th>
                                     <th className="px-3 py-2" />
                                 </tr>
                             </thead>
@@ -254,11 +258,13 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground" data-testid="evaluation-list-empty">
-                        {evaluations.loading ? "Загрузка…" : "Проверок пока нет. Выберите версию и датасет выше."}
+                        {evaluations.loading ? t("loading") : t("evaluation.listEmpty")}
                     </p>
                 )}
                 {evaluations.total > evaluations.evaluations.length && (
-                    <p className="text-xs text-muted-foreground">Показаны последние {evaluations.evaluations.length} из {evaluations.total}.</p>
+                    <p className="text-xs text-muted-foreground">
+                        {t("evaluation.shownLatest", { shown: formatNumber(evaluations.evaluations.length), total: formatNumber(evaluations.total) })}
+                    </p>
                 )}
             </div>
         </section>
@@ -272,6 +278,7 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
     toggle: () => void;
     cancel: () => void;
 }) {
+    const { t } = useTranslation("checks");
     const active = isEvaluationActive(item.state);
     const columns = 9;
     return (
@@ -280,22 +287,24 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
                 <td className="px-3 py-2">
                     <span className="inline-flex items-center gap-1.5">
                         <span className="inline-block size-2 rounded-full" style={{ background: seriesColor(item.versionNumber) }} />
-                        Версия {item.versionNumber}
+                        {t("version.number", { number: item.versionNumber })}
                     </span>
                 </td>
                 <td className="px-3 py-2">
                     {datasetLabel(item.dataset.versionId, item.dataset.name)} · {splitLabels[item.split]}
-                    {item.imageCount !== null && <span className="text-xs text-muted-foreground"> · {item.imageCount.toLocaleString(locale())} кадров</span>}
+                    {item.imageCount !== null && (
+                        <span className="text-xs text-muted-foreground"> · {t("evaluation.frames", { count: item.imageCount, frames: formatNumber(item.imageCount) })}</span>
+                    )}
                 </td>
-                <td className={`px-3 py-2 ${item.state === "failed" ? "text-destructive" : ""}`} data-testid="evaluation-row-state">{evaluationStateLabels[item.state]}</td>
+                <td className={`px-3 py-2 ${item.state === "failed" ? "text-destructive" : ""}`} data-testid="evaluation-row-state">{t(`evaluationState.${item.state}`)}</td>
                 {qualityMetrics.map(key => <td key={key} className="px-3 py-2 text-right tabular-nums">{formatMetric(item.metrics[key])}</td>)}
                 <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(item.job.createdAt)}</td>
                 <td className="px-3 py-2 text-right">
                     {active ? (
-                        <Button variant="ghost" size="sm" disabled={item.state === "cancelling"} data-testid="evaluation-cancel" onClick={cancel}>Отменить</Button>
+                        <Button variant="ghost" size="sm" disabled={item.state === "cancelling"} data-testid="evaluation-cancel" onClick={cancel}>{t("evaluation.cancel")}</Button>
                     ) : item.classMetrics.length ? (
                         <Button variant="ghost" size="sm" data-testid="evaluation-classes-toggle" aria-expanded={expanded} onClick={toggle}>
-                            {expanded ? "Скрыть классы" : "По классам"}
+                            {expanded ? t("evaluation.hideClasses") : t("evaluation.byClass")}
                         </Button>
                     ) : null}
                 </td>
@@ -311,7 +320,7 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
                         <table className="w-full text-xs" data-testid="evaluation-classes">
                             <thead>
                                 <tr className="text-left text-muted-foreground">
-                                    <th className="py-1 font-normal">Класс</th>
+                                    <th className="py-1 font-normal">{t("results.class")}</th>
                                     {qualityMetrics.map(key => <th key={key} className="py-1 text-right font-normal">{qualityMetricLabels[key]}</th>)}
                                 </tr>
                             </thead>
@@ -324,7 +333,7 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
                                 ))}
                             </tbody>
                         </table>
-                        <p className="mt-1 text-muted-foreground">Классы без объектов в этой части датасета не показываются: для них метрика не считается.</p>
+                        <p className="mt-1 text-muted-foreground">{t("evaluation.classesNote")}</p>
                     </td>
                 </tr>
             )}

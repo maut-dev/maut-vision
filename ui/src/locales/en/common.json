@@ -214,5 +214,19 @@
     "seconds": "{{seconds}} s",
     "minutesSeconds": "{{minutes}} min {{seconds}} s",
     "hoursMinutes": "{{hours}} h {{minutes}} min"
+  },
+  "metrics": {
+    "label": {
+      "mAP50": "mAP50",
+      "mAP50_95": "mAP50-95",
+      "precision": "Precision (P)",
+      "recall": "Recall (R)"
+    },
+    "help": {
+      "mAP50": "mAP50 — mean average precision over classes at IoU ≥ 0.5: the main YOLO detection metric.",
+      "mAP50_95": "mAP50-95 — the same averaged over IoU thresholds from 0.5 to 0.95: stricter about box accuracy. Ultralytics picks the best weights by it.",
+      "precision": "Precision — the share of detections that were correct. Low means the model often sees an object where there is none.",
+      "recall": "Recall — the share of real objects the model found. Low means the model misses a lot."
+    }
   }
 }

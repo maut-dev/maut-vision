@@ -5,24 +5,13 @@ import { isTrainingDatasetDto, type TrainingDatasetDto } from "../../training/re
 import type { EvaluationSplit } from "../request-dto/checks-request-dto";
 import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
-/** Вид задачи оценки на датасете: её снимки приходят в job.changed. */
+/** The job kind of a dataset evaluation: its snapshots come with job.changed. */
 export const modelEvaluationJobKind = "checks.evaluate";
 
-/** Состояние оценки; подписи — evaluationStateLabels. */
+/** State of an evaluation; the UI names it by the key checks:evaluationState.<state>. */
 export type ModelEvaluationState = "queued" | "preparing" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled" | "interrupted";
 
-export const evaluationStateLabels: Record<ModelEvaluationState, string> = {
-    queued: "Ожидает видеокарту",
-    preparing: "Подготовка",
-    running: "Идёт проверка",
-    cancelling: "Остановка…",
-    succeeded: "Готово",
-    failed: "Ошибка",
-    cancelled: "Остановлено",
-    interrupted: "Прервано",
-};
-
-/** Метрики класса (выход index): precision, recall, mAP50, mAP50_95; только классы с объектами в части. */
+/** Metrics of a class (output index): precision, recall, mAP50, mAP50_95; only classes with objects in the split. */
 export interface EvaluationClassMetricsDto {
     index: number;
     classId: string | null;
@@ -40,8 +29,8 @@ export interface CheckErrorDto {
 }
 
 /**
- * Оценка версии на части датасета. job — снимок задачи checks.evaluate; metrics — precision, recall, mAP50, mAP50_95 как у Ultralytics;
- * imageCount — кадров в части («датасет · часть · кадров»); revision — сравнить с checks.changed и перечитать getEvaluation.
+ * An evaluation of a version on a dataset split. job — the snapshot of the checks.evaluate job; metrics — precision, recall, mAP50, mAP50_95 as Ultralytics reports them;
+ * imageCount — frames in the split ("dataset · split · frames"); revision — compare with checks.changed and read getEvaluation again.
  */
 export interface ModelEvaluationResponseDto {
     id: string;

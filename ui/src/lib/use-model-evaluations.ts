@@ -4,15 +4,17 @@ import { checksApi } from "@/api/projects/checks/checks-api";
 import type { StartModelEvaluationRequestDto } from "@/api/projects/checks/request-dto/checks-request-dto";
 import { modelEvaluationJobKind, type ModelEvaluationResponseDto } from "@/api/projects/checks/response-dto/model-evaluation-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
+import "@/i18n/sections/checks";
 import { errorMessage } from "./format";
 
-/** Строк в «Все проверки». */
+/** Rows of all checks. */
 export const evaluationListLimit = 200;
 
 const newestFirst = (left: ModelEvaluationResponseDto, right: ModelEvaluationResponseDto) =>
     right.job.createdAt.localeCompare(left.job.createdAt) || right.id.localeCompare(left.id);
 
-/** Из двух снимков оценки — более поздний: по ревизии, при равной — по sequence задачи. */
+/** The later of two evaluation snapshots: by revision, on equal ones by the job sequence. */
 function newer(known: ModelEvaluationResponseDto | undefined, next: ModelEvaluationResponseDto): ModelEvaluationResponseDto {
     if (!known) return next;
     if (next.revision !== known.revision) return next.revision > known.revision ? next : known;
@@ -20,10 +22,10 @@ function newer(known: ModelEvaluationResponseDto | undefined, next: ModelEvaluat
 }
 
 /**
- * Оценки версий на датасетах открытого проекта («Все проверки» и матрица сравнения) без опроса: listEvaluations и
- * listLatestEvaluations при открытии; checks.changed с ревизией новее известной или job.changed задачи checks.evaluate —
- * getEvaluation; revision = null — оценка удалена вместе с версией. Матрица перечитывается, когда оценка завершилась успешно.
- * Компонент общий для «Проверок» и «Аналитики».
+ * Dataset evaluations of the versions of the open project (all checks and the comparison matrix) without polling: listEvaluations and
+ * listLatestEvaluations on opening; checks.changed with a revision newer than the known one or job.changed of a checks.evaluate job —
+ * getEvaluation; revision = null — the evaluation was deleted together with the version. The matrix is read again when an evaluation succeeds.
+ * Shared by Checks and Analytics.
  */
 export function useModelEvaluations(projectId: string) {
     const [evaluations, setEvaluations] = useState<readonly ModelEvaluationResponseDto[]>([]);
@@ -58,7 +60,7 @@ export function useModelEvaluations(projectId: string) {
             const list = await checksApi.listLatestEvaluations({ projectId });
             if (mounted.current && own === latestRead.current) setLatest(list);
         } catch {
-            // Матрица обновится со следующей оценкой.
+            // The matrix refreshes with the next evaluation.
         }
     }, [projectId]);
 
@@ -86,7 +88,7 @@ export function useModelEvaluations(projectId: string) {
             setTotal(page.total);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить проверки на датасетах. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("checks:evaluation.loadFailed")));
         } finally {
             if (mounted.current) setLoading(false);
         }
@@ -115,7 +117,7 @@ export function useModelEvaluations(projectId: string) {
         };
     }, [projectId, refresh, reread, remove]);
 
-    /** «Проверить на датасете…»: новая оценка сразу в списке; ход и итог приходят событиями. */
+    /** Check on the dataset: the new evaluation shows in the list at once; progress and outcome come with events. */
     const start = useCallback(async (request: Omit<StartModelEvaluationRequestDto, "projectId" | "operationId">) => {
         const evaluation = await checksApi.startEvaluation({ ...request, projectId, operationId: crypto.randomUUID() });
         if (!known.current.some(item => item.id === evaluation.id)) setTotal(value => value + 1);
@@ -123,7 +125,7 @@ export function useModelEvaluations(projectId: string) {
         return evaluation;
     }, [projectId, apply]);
 
-    /** «Отменить». */
+    /** Cancel. */
     const cancel = useCallback(async (evaluationId: string) => {
         apply(await checksApi.cancelEvaluation({ projectId, evaluationId }));
     }, [projectId, apply]);
