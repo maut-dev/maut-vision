@@ -116,6 +116,16 @@ internal sealed class McpServerHost : IAsyncDisposable
                             UriTemplate = McpResources.DatasetManifestTemplate, Name = "dataset-manifest", MimeType = "application/json",
                             Description = "Composition of a dataset version: specification, classes, counts and every sample with its split, group and boxes (JSON).",
                         },
+                        new ResourceTemplate
+                        {
+                            UriTemplate = McpResources.TrainingLogTemplate, Name = "training-log", MimeType = "application/json",
+                            Description = "The whole log of a training run (JSON lines; get_training_log gives the tail).",
+                        },
+                        new ResourceTemplate
+                        {
+                            UriTemplate = McpResources.PassportTemplate, Name = "model-passport", MimeType = "application/json",
+                            Description = "The passport of a model version (JSON, as get_model_version).",
+                        },
                     ],
                 });
                 handlers.ReadResourceHandler = async (request, cancellation) =>

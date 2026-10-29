@@ -38,6 +38,10 @@ internal sealed partial class McpTools(McpToolDependencies dependencies)
         .. BackgroundTools(),
         .. GenerationTools(),
         .. DatasetTools(),
+        .. TrainingTools(),
+        .. ModelTools(),
+        .. CheckTools(),
+        .. AnalyticsTools(),
     ];
 
     /// <summary>Ready scenarios (prompts/get), grouped by area like the tools.</summary>
@@ -45,6 +49,7 @@ internal sealed partial class McpTools(McpToolDependencies dependencies)
     [
         .. ImagePrompts(),
         .. DatasetPrompts(),
+        .. TrainingPrompts(),
     ];
 
     /// <summary>A project ready for work, prepared in the background: the user's current project and live checks are not touched.</summary>

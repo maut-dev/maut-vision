@@ -48,10 +48,20 @@ internal sealed class McpResources(McpToolDependencies dependencies, McpTools to
             }
         }
         if (DatasetManifest(uri) is { } manifest) return await tools.DatasetManifestAsync(manifest.ProjectId, manifest.VersionId, cancellationToken);
+        if (uri.StartsWith(ProjectsUri + "/", StringComparison.Ordinal))
+        {
+            var parts = uri[(ProjectsUri.Length + 1)..].Split('/');
+            if (parts is [{ Length: > 0 } projectId, "training", "runs", var runId, "log"] && Guid.TryParse(runId, out var run))
+                return (await tools.TrainingLogAsync(Uri.UnescapeDataString(projectId), run, cancellationToken)).ToJsonString(Json);
+            if (parts is [{ Length: > 0 } owner, "models", var versionId, "passport"] && Guid.TryParse(versionId, out var version))
+                return (await tools.PassportAsync(Uri.UnescapeDataString(owner), version, cancellationToken)).ToJsonString(Json);
+        }
         throw new McpToolException("mcp.resource_not_found", "There is no such resource.", new Dictionary<string, string> { ["uri"] = uri });
     }
 
     internal const string DatasetManifestTemplate = "maut://projects/{projectId}/datasets/{versionId}/manifest";
+    internal const string TrainingLogTemplate = "maut://projects/{projectId}/training/runs/{runId}/log";
+    internal const string PassportTemplate = "maut://projects/{projectId}/models/{versionId}/passport";
 
     /// <summary>maut://projects/{projectId}/datasets/{versionId}/manifest, or null for another URI.</summary>
     private static (string ProjectId, Guid VersionId)? DatasetManifest(string uri)

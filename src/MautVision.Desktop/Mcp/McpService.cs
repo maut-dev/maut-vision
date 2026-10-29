@@ -27,6 +27,7 @@ internal sealed class McpService : IAsyncDisposable
     private readonly SemaphoreSlim gate = new(1, 1);
     private McpSettings settings;
     private IAsyncDisposable? server;
+    private McpTools? tools;
     private McpStatus status = new("stopped", null, null);
     private bool disposed;
 
@@ -139,11 +140,16 @@ internal sealed class McpService : IAsyncDisposable
         {
             Uploads.Clear();
             var context = dependencies();
-            var tools = new McpTools(context);
-            var toolbox = new McpToolbox(tools.Create(), () => Settings, Confirmations, CallLog, logger);
-            var resources = new McpResources(context, tools);
-            server = await McpServerHost.StartAsync(current.Port, current.Token!, toolbox, resources, tools.CreatePrompts(), loggers, Uploads.EndSession,
-                cancellationToken);
+            var created = new McpTools(context);
+            var toolbox = new McpToolbox(created.Create(), () => Settings, Confirmations, CallLog, logger);
+            var resources = new McpResources(context, created);
+            // A session that ends takes its uploads and stops the live checks it started.
+            server = await McpServerHost.StartAsync(current.Port, current.Token!, toolbox, resources, created.CreatePrompts(), loggers, session =>
+            {
+                Uploads.EndSession(session);
+                created.EndSession(session);
+            }, cancellationToken);
+            tools = created;
             logger.LogInformation("MCP server listens on http://127.0.0.1:{Port}{Path}.", current.Port, McpServerHost.Path);
             return new McpStatus("running", current.Port, null);
         }
@@ -200,6 +206,8 @@ internal sealed class McpService : IAsyncDisposable
         if (server is not { } running) return;
         server = null;
         Confirmations.DenyAll();
+        tools?.EndAllSessions();
+        tools = null;
         try
         {
             await running.DisposeAsync();

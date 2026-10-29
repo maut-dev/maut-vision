@@ -76,7 +76,9 @@
     "unknown": "Action “{{action}}”.",
     "actions": {
       "delete_project": "Delete the project “{{name}}” with all its data from this computer. This cannot be undone.",
-      "delete_project_jobs": "Running jobs: {{jobs}} — they will be cancelled."
+      "delete_project_jobs": "Running jobs: {{jobs}} — they will be cancelled.",
+      "capture_screen": "Take a screenshot of monitor {{monitor}} and pass it to the AI assistant.",
+      "start_screen_check": "Check the screen of monitor {{monitor}} with model version {{version}} of the project “{{name}}” for up to {{seconds}} s. The AI assistant receives the frames and detections."
     }
   }
 }
