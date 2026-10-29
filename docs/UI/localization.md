@@ -26,6 +26,16 @@ Catalogs are JSON files `ui/src/locales/<language>/<namespace>.json`. A key name
 | `worker` | errors and warnings of the Python worker, keys `<code>` or `<code>.<reason>` of `python/worker/protocol/messages.py` | with the page |
 | a section (`images`, `training`…) | texts of one section | with the chunk of the section (`addResourceBundle`) |
 
+A section namespace joins the catalogs through `ui/src/i18n/sections/<namespace>.ts`: every module that reads the namespace imports it
+for its side effect, so the texts come with the first chunk that needs them (dataset checks share `checks` with analytics). A module of
+the page (the overview) loads before the catalogs initialize; the registration waits for them. Texts shared by several sections (metric
+names, job kinds) live in `common`.
+
+```ts
+import "@/i18n/sections/checks";
+const { t } = useTranslation("checks");
+```
+
 ```tsx
 const { t } = useTranslation();
 <Button>{t("library.create")}</Button>

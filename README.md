@@ -41,8 +41,8 @@ your NVIDIA GPU and check it on images, videos and a live screen region. Everyth
 command line.
 
 > [!NOTE]
-> The application interface is in **Russian** in version 1.0. English localization is planned for upcoming releases. The documentation
-> and the code are in English.
+> The interface is available in **English** and **Russian**: switch the language in the header; by default it follows the language of
+> Windows. The documentation and the code are in English.
 
 ## Features
 
