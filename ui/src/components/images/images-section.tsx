@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Archive, ArchiveRestore, Film, FolderOpen, MoveRight, Pencil, Trash2, Upload } from "lucide-react";
 import { classesApi } from "@/api/projects/catalog/classes-api";
 import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dto/class-variant-response-dto";
@@ -18,7 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useNavigationGuard } from "@/components/unsaved-changes";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { draftOf, type AnnotationDraft } from "@/lib/annotation/draft";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, formatNumber } from "@/lib/format";
+import { splitHintLabels } from "@/lib/images/split-hints";
 import { useCatalog } from "@/lib/use-catalog";
 import { useImageGallery, type GalleryFilter } from "@/lib/use-image-gallery";
 import { useImageGroups } from "@/lib/use-image-groups";
@@ -28,19 +30,19 @@ import { AnnotationEditor } from "./annotation-editor";
 import { createPalette } from "./annotation-palette";
 import { annotationOverlays, ImageDetails } from "./image-details";
 import { ImageGallery } from "./image-gallery";
-import { ImageGroupDialog, MoveImagesDialog, splitHintLabels, type GroupValues } from "./image-group-dialogs";
+import { ImageGroupDialog, MoveImagesDialog, type GroupValues } from "./image-group-dialogs";
 import { ImageImportsPanel } from "./image-imports-panel";
 import { ImagesDeletionDialog, type ImagesDeletionTarget } from "./images-deletion-dialog";
 import { VideoFrameImport } from "./video-frame-import";
+import "@/i18n/sections/images";
 
-const generationLock = "Генерация наполняет эту группу. Редактирование станет доступно после завершения.";
 const conflictCodes = /\.(revision_conflict|deletion_revision_conflict)$/;
 
 type Notice = { tone: "info" | "error"; text: string };
 
 interface ViewerState {
     imageId: string;
-    /** Черновик из редактора; без него показывается сохранённая разметка. */
+    /** Draft from the editor; without it the saved annotation is shown. */
     draft?: AnnotationDraft;
     revision?: number;
     fromEditor: boolean;
@@ -49,11 +51,12 @@ interface ViewerState {
 const reviewFilterValue = (value: ImageReviewState | null) => value ?? "any";
 
 /**
- * Раздел «Изображения»: группы слева, справа галерея выбранной группы или редактор разметки. Все переходы, которые
- * могут потерять несохранённую разметку, проходят через общую защиту (useNavigationGuard). initialGroupId — группа,
- * выбранная при открытии раздела (например, «Открыть изображения» запуска генерации).
+ * The images section: groups on the left, the gallery of the chosen group or the annotation editor on the right. Every transition
+ * that could lose an unsaved annotation goes through the shared guard (useNavigationGuard). initialGroupId is the group chosen when
+ * the section opens (for example, "Open images" of a generation run).
  */
 export function ImagesSection({ project, initialGroupId }: { project: ProjectResponseDto; initialGroupId?: string }) {
+    const { t } = useTranslation("images");
     const projectId = project.id;
     const groups = useImageGroups(projectId);
     const catalog = useCatalog(projectId);
@@ -83,8 +86,8 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
 
     const items = gallery.items;
     const selection = useRangeSelection(items, `${groupId}:${filter.archive}:${filter.reviewState}`, {
-        limit: `За один раз можно выбрать до ${selectionLimit} изображений.`,
-        firstPage: `Выбраны первые ${selectionLimit} изображений: операции выполняются не более чем над ${selectionLimit} за раз.`,
+        limit: t("selection.limit", { count: selectionLimit }),
+        firstPage: t("selection.firstPage", { count: selectionLimit }),
     }, text => setNotice({ tone: "info", text }));
     const selected = selection.selected;
     const editImage = editing ? items.find(item => item.id === editing.id) ?? editing : undefined;
@@ -92,6 +95,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
     const importLocked = !group || generating || !!group.archivedAt || group.origin !== "manual";
     const selectedImages = items.filter(item => selected.has(item.id));
     const activeCount = group ? group.imageCount - group.archivedImageCount : 0;
+    const generationLock = t("section.generationLock");
 
     // A vanished group (deleted elsewhere) closes its screen.
     useEffect(() => {
@@ -127,7 +131,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
         if (cause instanceof BridgeError && conflictCodes.test(cause.code)) {
             if (groupId) void groups.reread(groupId);
             void gallery.reload();
-            return `${message} Список обновлён.`;
+            return t("section.listUpdated", { message });
         }
         return message;
     }
@@ -222,7 +226,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
             gallery.removeImages(result.images.map(item => item.id));
             selection.clear();
             setMoving(false);
-            setNotice({ tone: "info", text: `Перемещено в «${target.name}»: ${result.images.length.toLocaleString("ru-RU")}.` });
+            setNotice({ tone: "info", text: t("section.moved", { name: target.name, number: formatNumber(result.images.length) }) });
         }, setDialogError);
     }
 
@@ -235,7 +239,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
     function deleted(result: ImageDeletionResultResponseDto) {
         const target = deletion;
         setDeletion(undefined);
-        setNotice(result.cleanupPending ? { tone: "info", text: "Удаление завершено. Занятые файлы будут очищены в фоне." } : undefined);
+        setNotice(result.cleanupPending ? { tone: "info", text: t("section.cleanupPending") } : undefined);
         selection.clear();
         if (result.groupDeleted) {
             groups.remove(result.groupId);
@@ -259,7 +263,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
         });
     }, [guard]);
 
-    /** Сосед в порядке галереи; после последнего загруженного — первая картинка следующей страницы. */
+    /** The neighbour in the gallery order; after the last loaded one, the first image of the next page. */
     async function neighbour(imageId: string, direction: -1 | 1): Promise<ImageResponseDto | undefined> {
         const index = items.findIndex(item => item.id === imageId);
         const next = items[index + direction];
@@ -331,19 +335,19 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                 <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="images-notice">
                     <AlertDescription>
                         <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>Скрыть</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
             <form className="flex max-w-2xl shrink-0 items-end gap-3" onSubmit={createGroup}>
                 <label className="min-w-0 flex-1 space-y-2">
-                    <span className="text-xs text-muted-foreground">Название группы изображений</span>
-                    <Input required maxLength={120} aria-label="Название группы" placeholder="Новая группа изображений" data-testid="image-group-new-name" value={name} onChange={event => setName(event.target.value)} />
+                    <span className="text-xs text-muted-foreground">{t("section.newGroupLabel")}</span>
+                    <Input required maxLength={120} aria-label={t("section.newGroupName")} placeholder={t("section.newGroupPlaceholder")} data-testid="image-group-new-name" value={name} onChange={event => setName(event.target.value)} />
                 </label>
-                <Button type="submit" data-testid="image-group-create" disabled={busy || !name.trim()}>Создать группу</Button>
+                <Button type="submit" data-testid="image-group-create" disabled={busy || !name.trim()}>{t("section.createGroup")}</Button>
             </form>
             <div className="grid min-h-0 flex-1 grid-cols-[150px_minmax(0,1fr)] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                <section className="min-h-0 overflow-y-auto overscroll-contain rounded-md border p-2" aria-label="Группы изображений" data-testid="image-groups" tabIndex={0}>
+                <section className="min-h-0 overflow-y-auto overscroll-contain rounded-md border p-2" aria-label={t("section.groups")} data-testid="image-groups" tabIndex={0}>
                     <div className="space-y-2">
                         {groups.groups.map(item => (
                             <button
@@ -355,67 +359,69 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                                 aria-pressed={item.id === groupId}
                                 onClick={() => selectGroup(item.id)}
                             >
-                                <span className="block text-sm font-medium break-words">{item.name}{item.archivedAt ? " · Архив" : ""}</span>
+                                <span className="block text-sm font-medium break-words">{item.archivedAt ? t("section.archivedName", { name: item.name }) : item.name}</span>
                                 <span className="mt-1 block text-xs text-muted-foreground">
-                                    {item.origin === "generated" ? "Генерация" : "Исходные изображения"} · {splitHintLabels[item.splitHint]}
+                                    {t("section.groupKind", { origin: t(`origin.${item.origin}`), split: splitHintLabels[item.splitHint] })}
                                 </span>
                             </button>
                         ))}
-                        {groups.loading && !groups.groups.length && <p role="status" className="p-2 text-sm text-muted-foreground">Загрузка групп…</p>}
+                        {groups.loading && !groups.groups.length && <p role="status" className="p-2 text-sm text-muted-foreground">{t("section.loadingGroups")}</p>}
                         {groups.error && (
                             <Alert variant="destructive">
                                 <AlertDescription>
                                     <p>{groups.error}</p>
-                                    <Button variant="ghost" size="sm" className="mt-1" onClick={() => void groups.refresh()}>Повторить</Button>
+                                    <Button variant="ghost" size="sm" className="mt-1" onClick={() => void groups.refresh()}>{t("section.retry")}</Button>
                                 </AlertDescription>
                             </Alert>
                         )}
                         {!groups.loading && !groups.error && !groups.groups.length && (
-                            <Empty>Создайте набор кадров: чистые фоны или изображения с разметкой.</Empty>
+                            <Empty>{t("section.noGroups")}</Empty>
                         )}
                     </div>
                 </section>
-                <section className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden" aria-label="Содержимое группы изображений" data-testid="image-group-content">
+                <section className="flex min-h-0 min-w-0 flex-col gap-3 overflow-hidden" aria-label={t("section.groupContent")} data-testid="image-group-content">
                     {group ? (
                         <>
                             <div className="flex shrink-0 flex-col gap-3">
                                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                                    <h2 className="min-w-0 font-medium break-words" data-testid="image-group-title">{group.name}{group.archivedAt ? " · Архив" : ""}</h2>
+                                    <h2 className="min-w-0 font-medium break-words" data-testid="image-group-title">{group.archivedAt ? t("section.archivedName", { name: group.name }) : group.name}</h2>
                                     <span className="text-xs text-muted-foreground tabular-nums" data-testid="image-group-count">
-                                        Кадров: {activeCount.toLocaleString("ru-RU")}{group.archivedImageCount ? ` · в архиве: ${group.archivedImageCount.toLocaleString("ru-RU")}` : ""}
+                                        {group.archivedImageCount
+                                            ? t("section.countWithArchive", { active: formatNumber(activeCount), archived: formatNumber(group.archivedImageCount) })
+                                            : t("section.count", { active: formatNumber(activeCount) })}
                                     </span>
-                                    <span className="text-xs text-muted-foreground">{group.origin === "generated" ? "Генерация" : "Исходные изображения"} · {splitHintLabels[group.splitHint]}</span>
+                                    <span className="text-xs text-muted-foreground">{t("section.groupKind", { origin: t(`origin.${group.origin}`), split: splitHintLabels[group.splitHint] })}</span>
                                 </div>
                                 {group.description && <p className="max-w-prose text-xs text-muted-foreground break-words">{group.description}</p>}
                                 <div className="flex flex-wrap items-center gap-2">
                                     <Button size="sm" disabled={busy || importLocked || imports.selecting} onClick={() => void imports.start("files", { skipDuplicates, recursive })}>
-                                        <Upload />Импорт файлов
+                                        <Upload />{t("section.importFiles")}
                                     </Button>
                                     <Button size="sm" variant="outline" disabled={busy || importLocked || imports.selecting} onClick={() => void imports.start("folder", { skipDuplicates, recursive })}>
-                                        <FolderOpen />Из папки
+                                        <FolderOpen />{t("section.importFolder")}
                                     </Button>
                                     <Button size="sm" variant="outline" aria-pressed={videoOpen} data-testid="video-open" disabled={busy || importLocked || imports.selecting} onClick={() => setVideoOpen(open => !open)}>
-                                        <Film />Кадры из видео
+                                        <Film />{t("section.videoFrames")}
                                     </Button>
-                                    <Button size="sm" variant="ghost" aria-label={`Изменить группу: ${group.name}`} disabled={busy || generating} onClick={() => { setDialogError(undefined); setEditGroup(group); }}>
-                                        <Pencil />Изменить
+                                    <Button size="sm" variant="ghost" aria-label={t("section.editGroupLabel", { name: group.name })} disabled={busy || generating} onClick={() => { setDialogError(undefined); setEditGroup(group); }}>
+                                        <Pencil />{t("section.edit")}
                                     </Button>
-                                    <Button size="sm" variant="ghost" aria-label={`${group.archivedAt ? "Восстановить" : "В архив"}: ${group.name}`} disabled={busy || generating} onClick={() => toggleGroupArchive(group)}>
-                                        {group.archivedAt ? <><ArchiveRestore />Восстановить</> : <><Archive />В архив</>}
+                                    <Button size="sm" variant="ghost" aria-label={t(group.archivedAt ? "section.restoreGroupLabel" : "section.archiveGroupLabel", { name: group.name })} disabled={busy || generating} onClick={() => toggleGroupArchive(group)}>
+                                        {group.archivedAt ? <><ArchiveRestore />{t("section.restore")}</> : <><Archive />{t("section.archive")}</>}
                                     </Button>
-                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label={`Удалить группу изображений: ${group.name}`} disabled={busy || generating} onClick={() => requestDeletion()}>
-                                        <Trash2 />Удалить группу
+                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label={t("section.deleteGroupLabel", { name: group.name })} disabled={busy || generating} onClick={() => requestDeletion()}>
+                                        <Trash2 />{t("section.deleteGroup")}
                                     </Button>
                                 </div>
                                 {!editImage && (
                                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                                         <label className="flex items-center gap-2">
                                             <Checkbox checked={skipDuplicates} onCheckedChange={value => setSkipDuplicates(value === true)} data-testid="import-skip-duplicates" />
-                                            Пропускать повторы в группе
+                                            {t("section.skipDuplicates")}
                                         </label>
                                         <label className="flex items-center gap-2">
                                             <Checkbox checked={recursive} onCheckedChange={value => setRecursive(value === true)} data-testid="import-recursive" />
-                                            Включая вложенные папки
+                                            {t("section.recursive")}
                                         </label>
                                     </div>
                                 )}
@@ -423,34 +429,34 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                                 {!editImage && (
                                     <div className="flex flex-wrap items-center gap-2">
                                         <Select value={filter.archive} onValueChange={value => changeFilter({ ...filter, archive: value as ImageArchiveFilter })}>
-                                            <SelectTrigger size="sm" aria-label="Показ архива" className="w-40" data-testid="filter-archive"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger size="sm" aria-label={t("filter.archiveLabel")} className="w-40" data-testid="filter-archive"><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="active">Активные</SelectItem>
-                                                <SelectItem value="archived">Архивные</SelectItem>
-                                                <SelectItem value="all">Все кадры</SelectItem>
+                                                <SelectItem value="active">{t("filter.active")}</SelectItem>
+                                                <SelectItem value="archived">{t("filter.archived")}</SelectItem>
+                                                <SelectItem value="all">{t("filter.all")}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <Select value={reviewFilterValue(filter.reviewState)} onValueChange={value => changeFilter({ ...filter, reviewState: value === "any" ? null : value as ImageReviewState })}>
-                                            <SelectTrigger size="sm" aria-label="Проверка разметки" className="w-40" data-testid="filter-review"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger size="sm" aria-label={t("filter.reviewLabel")} className="w-40" data-testid="filter-review"><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="any">Любая проверка</SelectItem>
-                                                <SelectItem value="reviewed">Проверено</SelectItem>
-                                                <SelectItem value="unreviewed">Не проверено</SelectItem>
+                                                <SelectItem value="any">{t("filter.anyReview")}</SelectItem>
+                                                <SelectItem value="reviewed">{t("review.reviewed")}</SelectItem>
+                                                <SelectItem value="unreviewed">{t("review.unreviewed")}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <Button size="sm" variant="ghost" disabled={!items.length || generating} data-testid="select-page" onClick={selection.selectPage}>
-                                            {selected.size ? "Снять выделение" : "Выбрать все на странице"}
+                                            {selected.size ? t("selection.clear") : t("selection.page")}
                                         </Button>
                                         {selected.size > 0 && (
                                             <>
                                                 <Button size="sm" variant="outline" disabled={busy || generating || !!group.archivedAt || allArchived} onClick={() => { setDialogError(undefined); setMoving(true); }}>
-                                                    <MoveRight />Переместить ({selected.size})
+                                                    <MoveRight />{t("selection.move", { number: selected.size })}
                                                 </Button>
                                                 <Button size="sm" variant="outline" disabled={busy || generating || !!group.archivedAt} data-testid="archive-selected" onClick={() => archiveSelected(!allArchived)}>
-                                                    {allArchived ? <><ArchiveRestore />Восстановить ({selected.size})</> : <><Archive />В архив ({selected.size})</>}
+                                                    {allArchived ? <><ArchiveRestore />{t("selection.restore", { number: selected.size })}</> : <><Archive />{t("selection.archive", { number: selected.size })}</>}
                                                 </Button>
                                                 <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" disabled={busy || generating} data-testid="delete-selected" onClick={() => requestDeletion([...selected])}>
-                                                    <Trash2 />Удалить выбранные ({selected.size})
+                                                    <Trash2 />{t("selection.delete", { number: selected.size })}
                                                 </Button>
                                             </>
                                         )}
@@ -464,7 +470,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                                         projectId={projectId}
                                         image={editImage}
                                         palette={palette}
-                                        lockReason={generating ? generationLock : group.archivedAt || editImage.archivedAt ? "Группа или изображение в архиве. Восстановите их, чтобы изменить разметку." : undefined}
+                                        lockReason={generating ? generationLock : group.archivedAt || editImage.archivedAt ? t("section.archiveLock") : undefined}
                                         navigation={editorNavigation}
                                         close={() => guard(() => setEditing(undefined))}
                                         inspect={(draft, revision) => setViewer({ imageId: editImage.id, draft, revision, fromEditor: true })}
@@ -484,20 +490,20 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                                             close={() => setVideoOpen(false)}
                                         />
                                     )}
-                                    {!items.length && gallery.loading && <p role="status" className="text-sm text-muted-foreground">Загрузка изображений…</p>}
+                                    {!items.length && gallery.loading && <p role="status" className="text-sm text-muted-foreground">{t("section.loadingImages")}</p>}
                                     {gallery.error && (
                                         <Alert variant="destructive" className="shrink-0">
                                             <AlertDescription>
                                                 <p>{gallery.error}</p>
-                                                <Button variant="ghost" size="sm" className="mt-1" onClick={() => void gallery.reload()}>Повторить</Button>
+                                                <Button variant="ghost" size="sm" className="mt-1" onClick={() => void gallery.reload()}>{t("section.retry")}</Button>
                                             </AlertDescription>
                                         </Alert>
                                     )}
                                     {!items.length && !gallery.loading && !gallery.error && (
                                         <Empty>
                                             {filter.archive === "active" && filter.reviewState === null
-                                                ? "Добавьте готовые кадры или кадры из видео. Можно оставить чистый фон либо разметить объекты и сектора."
-                                                : "Нет кадров с выбранными условиями."}
+                                                ? t("section.emptyGroup")
+                                                : t("section.emptyFilter")}
                                         </Empty>
                                     )}
                                     {items.length > 0 && (
@@ -525,7 +531,7 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                             {!editImage && <ImageImportsPanel imports={imports} />}
                         </>
                     ) : (
-                        <Empty>{groups.groups.length ? "Выберите группу слева." : "Создайте группу для импорта кадров и разметки."}</Empty>
+                        <Empty>{groups.groups.length ? t("section.chooseGroup") : t("section.createFirstGroup")}</Empty>
                     )}
                 </section>
             </div>
@@ -543,12 +549,12 @@ export function ImagesSection({ project, initialGroupId }: { project: ProjectRes
                             <div className="space-y-2">
                                 <div className="flex flex-wrap gap-3">
                                     <label className="flex items-center gap-2 text-xs">
-                                        <Checkbox aria-label="Рамки объектов" checked={showObjects} onCheckedChange={value => setOverlays({ imageId: viewed.id, objects: value === true, roi: showRoi })} />
-                                        Рамки объектов
+                                        <Checkbox aria-label={t("viewer.objects")} checked={showObjects} onCheckedChange={value => setOverlays({ imageId: viewed.id, objects: value === true, roi: showRoi })} />
+                                        {t("viewer.objects")}
                                     </label>
                                     <label className="flex items-center gap-2 text-xs">
-                                        <Checkbox aria-label="Область ROI" checked={showRoi} onCheckedChange={value => setOverlays({ imageId: viewed.id, objects: showObjects, roi: value === true })} />
-                                        Область ROI
+                                        <Checkbox aria-label={t("roi")} checked={showRoi} onCheckedChange={value => setOverlays({ imageId: viewed.id, objects: showObjects, roi: value === true })} />
+                                        {t("roi")}
                                     </label>
                                 </div>
                                 <ImageDetails image={viewed} annotation={shownAnnotation} revision={shownRevision} palette={palette} />

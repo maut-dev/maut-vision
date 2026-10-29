@@ -1,21 +1,24 @@
 import { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import type { ModelVersionDeletionResponseDto, ModelVersionDeletionReviewResponseDto } from "@/api/projects/training/response-dto/model-version-deletion-response-dto";
 import { trainingApi } from "@/api/projects/training/training-api";
 import { BridgeError } from "@/api/transport/errors";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
+import { i18n } from "@/i18n";
 import { formatBytes } from "@/lib/training/run-view";
+import "@/i18n/sections/models";
 
-/** Причина отказа training.version_in_use (details.reason) — тем же текстом, что блокировка в просмотре состава. */
+/** Reasons of the refusal training.version_in_use (details.reason) — the same text as the blocker in the review (read at render time). */
 export const versionInUseReasons: Readonly<Record<string, string>> = {
-    working: "Это рабочая версия: сначала сделайте рабочей другую.",
-    evaluation: "Идёт проверка этой версии на датасете.",
-    check: "Идёт живая проверка этой версии.",
-    export: "Идёт выгрузка этой версии в ZIP.",
+    get working() { return i18n.t("models:inUse.working"); },
+    get evaluation() { return i18n.t("models:inUse.evaluation"); },
+    get check() { return i18n.t("models:inUse.check"); },
+    get export() { return i18n.t("models:inUse.export"); },
 };
 
 /**
- * «Удалить» версию модели: общий диалог удаления — состав (оценки на датасетах удаляются вместе с ней, размер файлов) и причины
- * запрета (рабочая, проверяется, выгружается). Отказ при удалении (состояние изменилось после просмотра) называет причину.
+ * "Delete" a model version: the shared deletion dialog — what goes (evaluations on datasets are deleted with it, the file size) and the
+ * blockers (working, under a check, exporting). A refusal on deletion (the state changed after the review) names the reason.
  */
 export function ModelVersionDeletionDialog({ projectId, versionId, number, close, deleted }: {
     projectId: string;
@@ -24,6 +27,7 @@ export function ModelVersionDeletionDialog({ projectId, versionId, number, close
     close: () => void;
     deleted: (result: ModelVersionDeletionResponseDto) => void;
 }) {
+    const { t } = useTranslation("models");
     const review = useCallback((signal: AbortSignal) => trainingApi.reviewModelVersionDeletion({ projectId, versionId }, signal), [projectId, versionId]);
 
     async function remove(): Promise<ModelVersionDeletionResponseDto> {
@@ -31,26 +35,27 @@ export function ModelVersionDeletionDialog({ projectId, versionId, number, close
             return await trainingApi.deleteModelVersion({ projectId, versionId });
         } catch (cause) {
             const reason = cause instanceof BridgeError && cause.code === "training.version_in_use" ? cause.details?.reason : undefined;
-            if (reason && versionInUseReasons[reason]) throw new Error(`Версию сейчас нельзя удалить. ${versionInUseReasons[reason]}`);
+            if (reason && Object.hasOwn(versionInUseReasons, reason)) throw new Error(t("deletion.refused", { reason: versionInUseReasons[reason] }));
             throw cause;
         }
     }
 
     return (
         <ReviewDeletionDialog<ModelVersionDeletionReviewResponseDto, ModelVersionDeletionResponseDto>
-            title={`Удалить версию ${number}?`}
-            description="Веса, картинки обучения и проверки версии на датасетах удалятся навсегда. Запуск обучения в истории останется."
+            area="training"
+            title={t("deletion.title", { number })}
+            description={t("deletion.description")}
             testId="model-version-deletion-dialog"
             review={review}
             remove={remove}
             deleted={deleted}
             close={close}
-            busyText="Удаление…"
-            blockersTitle="Сейчас версию удалить нельзя:"
+            busyText={t("deletion.busy")}
+            blockersTitle={t("deletion.blockers")}
             renderReview={item => (
                 <ul className="space-y-1" data-testid="model-version-deletion-review">
-                    <li>Файлы версии: {formatBytes(item.bytes)}</li>
-                    <li>Проверок на датасетах: {item.evaluations}{item.evaluations > 0 && " — удалятся вместе с версией"}</li>
+                    <li>{t("deletion.files", { size: formatBytes(item.bytes) })}</li>
+                    <li>{t(item.evaluations > 0 ? "deletion.evaluationsDeleted" : "deletion.evaluations", { number: item.evaluations })}</li>
                 </ul>
             )}
         />

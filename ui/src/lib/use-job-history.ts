@@ -8,10 +8,10 @@ import { isJobActive } from "./use-asset-imports";
 export const jobHistoryLimit = 20;
 
 /**
- * История задач одного вида для одной цели (группа изображений, набор фонов): чтение list при выборе цели, затем
- * job.changed. Снимок задачи применяется, только если его sequence новее. Задача этого вида, которой ещё нет в истории
- * (запущена в другом месте), перечитывает историю один раз: снимок задачи не называет цель. Смена цели начинает новое
- * поколение — ответы и запуски прежней отбрасываются (scope/isCurrent).
+ * The job history of one kind for one target (an image group, a background set): list is read when the target is chosen, then
+ * job.changed. A job snapshot applies only when its sequence is newer. A job of this kind missing from the history
+ * (started elsewhere) reads the history again once: a job snapshot does not name its target. A target change starts a new
+ * generation — answers and starts of the previous one are dropped (scope/isCurrent).
  */
 export function useJobHistory(projectId: string, targetId: string | undefined, kind: string,
     list: (targetId: string, limit: number) => Promise<JobResponseDto[]>, failText: string) {
@@ -25,7 +25,7 @@ export function useJobHistory(projectId: string, targetId: string | undefined, k
     latest.current = jobs;
     const listRef = useRef(list);
     listRef.current = list;
-    /** Задачи последнего чтения истории и задачи других целей: их события историю не перечитывают. */
+    /** Jobs of the last history read and jobs of other targets: their events do not read the history again. */
     const listed = useRef(new Set<string>());
     const foreign = useRef(new Set<string>());
 
@@ -93,7 +93,7 @@ export function useJobHistory(projectId: string, targetId: string | undefined, k
         };
     }, [projectId, kind, refresh, apply]);
 
-    /** Поколение цели на момент начала действия; isCurrent — действие ещё относится к выбранной цели. */
+    /** The generation of the target when an action started; isCurrent — the action still belongs to the chosen target. */
     const scope = useCallback(() => generation.current, []);
     const isCurrent = useCallback((value: number) => mounted.current && value === generation.current, []);
 

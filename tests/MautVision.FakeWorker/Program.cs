@@ -62,12 +62,12 @@ Emit("started", new JsonObject { ["operation"] = "train", ["operationId"] = oper
 Emit("stage", new JsonObject { ["stage"] = "validating" });
 var datasetValid = File.Exists(Path.Combine(job, "input", "dataset", "data.yaml"))
     && File.Exists(Path.Combine(job, "input", "model", parameters["architecture"]!.GetValue<string>() + ".pt"));
-if (!datasetValid) return Fail("dataset_invalid", "В папке задачи нет датасета или весов.");
-if (scenario.StartsWith("fail=", StringComparison.Ordinal)) return Fail(scenario["fail=".Length..], $"Сообщение worker: {scenario["fail=".Length..]}.");
+if (!datasetValid) return Fail("dataset_invalid", "The job folder has no dataset or weights.");
+if (scenario.StartsWith("fail=", StringComparison.Ordinal)) return Fail(scenario["fail=".Length..], $"Worker message: {scenario["fail=".Length..]}.", "fake", new JsonObject { ["code"] = scenario["fail=".Length..] });
 if (scenario == "crash")
 {
     Console.Error.WriteLine("Traceback (most recent call last):");
-    Console.Error.WriteLine("RuntimeError: поддельный сбой");
+    Console.Error.WriteLine("RuntimeError: fake failure");
     return 7;
 }
 if (scenario == "exit0") return 0;
@@ -110,7 +110,7 @@ for (var epoch = 1; epoch <= epochs; epoch++)
     {
         var child = Process.Start(new ProcessStartInfo(Environment.ProcessPath!) { ArgumentList = { "--child", "600" }, UseShellExecute = false, CreateNoWindow = true })!;
         File.WriteAllText(Path.Combine(job, "logs", "child.pid"), child.Id.ToString());
-        Emit("warning", new JsonObject { ["code"] = "fake_hang", ["message"] = "Поддельный worker ждёт отмены." });
+        Emit("warning", new JsonObject { ["code"] = "fake_hang", ["message"] = "The fake worker waits for cancellation." });
         Thread.Sleep(Timeout.Infinite);
     }
 }
@@ -119,7 +119,7 @@ var best = Write(Path.Combine(artifacts, "best.pt"), Encoding.ASCII.GetBytes("fa
 var onnx = Write(Path.Combine(artifacts, "best.onnx"), Encoding.ASCII.GetBytes("fake onnx " + operationId));
 var plot = Write(Path.Combine(artifacts, "plots", "results.png"), Convert.FromBase64String(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="));
-var log = Write(Path.Combine(artifacts, "training.log"), Encoding.UTF8.GetBytes("Обучение поддельной модели\n"));
+var log = Write(Path.Combine(artifacts, "training.log"), Encoding.UTF8.GetBytes("Training of a fake model\n"));
 var bestEntry = Entry("weights_pt", best);
 if (scenario == "badsha") bestEntry["sha256"] = new string('0', 64);
 var result = new JsonObject
@@ -132,7 +132,7 @@ var result = new JsonObject
     ["finishedAt"] = DateTimeOffset.UtcNow.ToString("O"),
     ["durationSec"] = 0.1,
     ["error"] = null,
-    ["warnings"] = new JsonArray(new JsonObject { ["code"] = "fake_warning", ["message"] = "Поддельное предупреждение." }),
+    ["warnings"] = new JsonArray(new JsonObject { ["code"] = "fake_warning", ["message"] = "Fake warning." }),
     ["architecture"] = new JsonObject { ["yamlFile"] = parameters["architecture"]!.GetValue<string>() + ".yaml", ["scale"] = "n", ["task"] = "detect" },
     ["effectiveParams"] = trainer.DeepClone(),
     ["metrics"] = scenario == "better"
@@ -154,7 +154,7 @@ if (scenario == "publish-hang") Thread.Sleep(Timeout.Infinite);
 Emit("finished", new JsonObject { ["status"] = "succeeded", ["errorCode"] = null });
 return 0;
 
-int Fail(string code, string message)
+int Fail(string code, string message, string? reason = null, JsonObject? args = null)
 {
     var failed = new JsonObject
     {
@@ -165,7 +165,7 @@ int Fail(string code, string message)
         ["startedAt"] = started.ToString("O"),
         ["finishedAt"] = DateTimeOffset.UtcNow.ToString("O"),
         ["durationSec"] = 0.1,
-        ["error"] = new JsonObject { ["code"] = code, ["message"] = message, ["details"] = new JsonObject() },
+        ["error"] = new JsonObject { ["code"] = code, ["message"] = message, ["details"] = new JsonObject(), ["reason"] = reason, ["args"] = args ?? new JsonObject() },
     };
     Directory.CreateDirectory(output);
     File.WriteAllText(Path.Combine(output, "result.json"), failed.ToJsonString());

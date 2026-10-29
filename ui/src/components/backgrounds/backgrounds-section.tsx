@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Archive, ArchiveRestore, EyeOff, Pencil, Trash2, TriangleAlert } from "lucide-react";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { ImportBackgroundsRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
@@ -13,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { backgroundDetails, setSummary, sizeMismatchText } from "@/lib/backgrounds/background-text";
-import { errorMessage } from "@/lib/format";
+import { errorMessage, formatNumber } from "@/lib/format";
 import { useBackgroundBlur } from "@/lib/use-background-blur";
 import { useBackgroundGallery } from "@/lib/use-background-gallery";
 import { useBackgroundRuns } from "@/lib/use-background-runs";
@@ -25,17 +26,19 @@ import { BackgroundImageCropDialog } from "./background-image-crop-dialog";
 import { BackgroundRunsPanel } from "./background-runs-panel";
 import { BackgroundSetDialog, type BackgroundSetValues } from "./background-set-dialog";
 import { BackgroundsDeletionDialog, type BackgroundsDeletionTarget } from "./backgrounds-deletion-dialog";
+import "@/i18n/sections/backgrounds";
 
 const conflictCodes = /\.(revision_conflict|deletion_revision_conflict)$/;
 
 type Notice = { tone: "info" | "error"; text: string };
 
 /**
- * Раздел «Фоны»: наборы слева, справа содержимое выбранного набора — действия, «Добавить фоны» (три способа и общее
- * размытие), виртуальная галерея и история подготовки этого набора. Без опроса: backgrounds.changed, job.changed и
- * project.changed (признак несовпадения размера).
+ * The backgrounds section: sets on the left, the contents of the chosen set on the right: actions, "Add backgrounds" (three ways and a
+ * shared blur), the virtual gallery and the preparation history of this set. No polling: backgrounds.changed, job.changed and
+ * project.changed (the size mismatch mark).
  */
 export function BackgroundsSection({ project }: { project: ProjectResponseDto }) {
+    const { t } = useTranslation("backgrounds");
     const projectId = project.id;
     const sets = useBackgroundSets(projectId);
     const [setId, setSetId] = useState<string>();
@@ -48,8 +51,8 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
     const [notice, setNotice] = useState<Notice>();
     const items = gallery.items;
     const selection = useRangeSelection(items, `${setId}:${filter}`, {
-        limit: `За один раз можно выбрать до ${selectionLimit} фонов.`,
-        firstPage: `Выбраны первые ${selectionLimit} фонов: операции выполняются не более чем над ${selectionLimit} за раз.`,
+        limit: t("selection.limit", { count: selectionLimit }),
+        firstPage: t("selection.firstPage", { count: selectionLimit }),
     }, text => setNotice({ tone: "info", text }));
     const selected = selection.selected;
     const [busy, setBusy] = useState(false);
@@ -76,7 +79,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         }
     }, [setId, set, sets.loading]);
 
-    // Добавление раскрыто у пустого набора; у набора с фонами свёрнуто, чтобы галерея была видна.
+    // Adding is expanded for an empty set and folded for a set with backgrounds, so the gallery is visible.
     const emptySet = set ? set.itemCount + set.removedCount === 0 : true;
     useEffect(() => {
         setAddOpen(emptySet);
@@ -89,7 +92,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         if (cause instanceof BridgeError && conflictCodes.test(cause.code)) {
             if (setId) void sets.reread(setId);
             void gallery.reload();
-            return `${message} Список обновлён.`;
+            return t("section.listUpdated", { message });
         }
         return message;
     }
@@ -144,7 +147,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         });
     }
 
-    /** Подготовка: задача ставится сразу, ход и итог приходят в историю набора событиями job.changed. */
+    /** Preparation: the job starts at once; its progress and result come to the set history with job.changed events. */
     async function start(request: ImportBackgroundsRequestDto) {
         const scope = runs.scope();
         const job = await backgroundsApi.import(request);
@@ -179,7 +182,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         const target = deletion;
         setDeletion(undefined);
         setNotice(result.cleanupPending
-            ? { tone: "info", text: "Материалы удалены из каталога. Очистка файлов продолжится автоматически при следующем запуске приложения." }
+            ? { tone: "info", text: t("section.cleanupPending") }
             : undefined);
         selection.clear();
         if (result.setDeleted) {
@@ -222,20 +225,20 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
                 <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="backgrounds-notice">
                     <AlertDescription>
                         <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>Скрыть</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
             <form className="flex max-w-2xl shrink-0 items-end gap-3" onSubmit={createSet}>
                 <label className="min-w-0 flex-1 space-y-2">
-                    <span className="text-xs text-muted-foreground">Название набора фонов</span>
-                    <Input required maxLength={120} aria-label="Название набора фонов" placeholder="Новый набор фонов" data-testid="background-set-new-name"
+                    <span className="text-xs text-muted-foreground">{t("section.newSetLabel")}</span>
+                    <Input required maxLength={120} aria-label={t("section.newSetLabel")} placeholder={t("section.newSetPlaceholder")} data-testid="background-set-new-name"
                         value={name} onChange={event => setName(event.target.value)} />
                 </label>
-                <Button type="submit" data-testid="background-set-create" disabled={busy || !name.trim()}>Создать набор</Button>
+                <Button type="submit" data-testid="background-set-create" disabled={busy || !name.trim()}>{t("section.createSet")}</Button>
             </form>
             <div className="grid min-h-0 flex-1 grid-cols-[150px_minmax(0,1fr)] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                <section className="min-h-0 overflow-y-auto overscroll-contain rounded-md border p-2" aria-label="Наборы фонов" data-testid="background-sets" tabIndex={0}>
+                <section className="min-h-0 overflow-y-auto overscroll-contain rounded-md border p-2" aria-label={t("section.sets")} data-testid="background-sets" tabIndex={0}>
                     <div className="space-y-2">
                         {sets.sets.map(item => (
                             <button
@@ -251,73 +254,73 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
                                 <span className="mt-1 block text-xs text-muted-foreground" data-testid="background-set-summary">{setSummary(item)}</span>
                                 {!item.matchesProjectInput && (
                                     <span className="mt-1 flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400" title={sizeMismatchText(item)} data-testid="set-size-mismatch">
-                                        <TriangleAlert className="size-3.5 shrink-0" aria-hidden />Размер отличается от входа
+                                        <TriangleAlert className="size-3.5 shrink-0" aria-hidden />{t("section.sizeDiffers")}
                                     </span>
                                 )}
                             </button>
                         ))}
-                        {sets.loading && !sets.sets.length && <p role="status" className="p-2 text-sm text-muted-foreground">Загрузка наборов…</p>}
+                        {sets.loading && !sets.sets.length && <p role="status" className="p-2 text-sm text-muted-foreground">{t("section.loadingSets")}</p>}
                         {sets.error && (
                             <Alert variant="destructive">
                                 <AlertDescription>
                                     <p>{sets.error}</p>
-                                    <Button variant="ghost" size="sm" className="mt-1" onClick={() => void sets.refresh()}>Повторить</Button>
+                                    <Button variant="ghost" size="sm" className="mt-1" onClick={() => void sets.refresh()}>{t("section.retry")}</Button>
                                 </AlertDescription>
                             </Alert>
                         )}
-                        {!sets.loading && !sets.error && !sets.sets.length && <Empty>Создайте набор для подготовки фонов генерации.</Empty>}
+                        {!sets.loading && !sets.error && !sets.sets.length && <Empty>{t("section.noSets")}</Empty>}
                     </div>
                 </section>
-                <section className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain" aria-label="Содержимое набора фонов" data-testid="background-set-content">
+                <section className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain" aria-label={t("section.setContent")} data-testid="background-set-content">
                     {set ? (
                         <>
                             <div className="flex shrink-0 flex-col gap-2">
                                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                                     <h2 className="min-w-0 font-medium break-words" data-testid="background-set-title">{set.name}</h2>
                                     <span className="text-xs text-muted-foreground tabular-nums" data-testid="background-set-count">
-                                        {setSummary(set)}{set.removedCount ? ` · убрано: ${set.removedCount.toLocaleString("ru-RU")}` : ""}
+                                        {set.removedCount ? t("section.summaryRemoved", { summary: setSummary(set), removed: formatNumber(set.removedCount) }) : setSummary(set)}
                                     </span>
                                 </div>
                                 {set.description && <p className="max-w-prose text-xs text-muted-foreground break-words">{set.description}</p>}
                                 {!set.matchesProjectInput && (
                                     <p className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400" data-testid="set-size-mismatch-note">
                                         <TriangleAlert className="size-4 shrink-0" aria-hidden />
-                                        {sizeMismatchText(set)} {project.inputSize.width} × {project.inputSize.height}: такой набор не подойдёт генерации нового размера.
+                                        {t("section.sizeMismatchNote", { width: set.targetSize.width, height: set.targetSize.height, inputWidth: project.inputSize.width, inputHeight: project.inputSize.height })}
                                     </p>
                                 )}
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <Button size="sm" variant="ghost" aria-label={`Изменить набор фонов: ${set.name}`} disabled={busy} onClick={() => { setDialogError(undefined); setEditSet(set); }}>
-                                        <Pencil />Изменить
+                                    <Button size="sm" variant="ghost" aria-label={t("section.editSetLabel", { name: set.name })} disabled={busy} onClick={() => { setDialogError(undefined); setEditSet(set); }}>
+                                        <Pencil />{t("section.edit")}
                                     </Button>
-                                    <Button size="sm" variant="ghost" aria-label={`${set.archivedAt ? "Восстановить" : "В архив"}: ${set.name}`} disabled={busy} onClick={() => toggleArchive(set)}>
-                                        {set.archivedAt ? <><ArchiveRestore />Восстановить</> : <><Archive />В архив</>}
+                                    <Button size="sm" variant="ghost" aria-label={t(set.archivedAt ? "section.restoreSetLabel" : "section.archiveSetLabel", { name: set.name })} disabled={busy} onClick={() => toggleArchive(set)}>
+                                        {set.archivedAt ? <><ArchiveRestore />{t("section.restore")}</> : <><Archive />{t("section.archive")}</>}
                                     </Button>
-                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label={`Удалить набор фонов: ${set.name}`} disabled={busy}
+                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label={t("section.deleteSetLabel", { name: set.name })} disabled={busy}
                                         onClick={() => requestDeletion()}>
-                                        <Trash2 />Удалить набор
+                                        <Trash2 />{t("section.deleteSet")}
                                     </Button>
                                     {items.length > 0 && (
                                         <Button size="sm" variant="ghost" data-testid="background-select-page" onClick={selection.selectPage}>
-                                            {selected.size ? "Снять выделение" : "Выбрать все на странице"}
+                                            {selected.size ? t("selection.clear") : t("selection.page")}
                                         </Button>
                                     )}
                                     {selected.size > 0 && (
                                         <>
                                             <Button size="sm" variant="outline" disabled={busy || archived} data-testid="background-remove-selected" onClick={() => setRemoved(selectedItems, !allRemoved)}>
-                                                {allRemoved ? <><ArchiveRestore />Восстановить ({selected.size})</> : <><EyeOff />Убрать ({selected.size})</>}
+                                                {allRemoved ? <><ArchiveRestore />{t("selection.restore", { number: selected.size })}</> : <><EyeOff />{t("selection.remove", { number: selected.size })}</>}
                                             </Button>
                                             <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" disabled={busy} data-testid="background-delete-selected"
-                                                onClick={() => requestDeletion([...selected], `${set.name} · выбранные фоны`)}>
-                                                <Trash2 />Удалить выбранные ({selected.size})
+                                                onClick={() => requestDeletion([...selected], t("selection.deletionName", { name: set.name }))}>
+                                                <Trash2 />{t("selection.delete", { number: selected.size })}
                                             </Button>
                                         </>
                                     )}
                                     <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
                                         <Checkbox checked={showRemoved} data-testid="show-removed" onCheckedChange={value => setShowRemoved(value === true)} />
-                                        Показать убранные фоны
+                                        {t("section.showRemoved")}
                                     </label>
                                 </div>
-                                {archived && <p className="text-xs text-muted-foreground">Набор в архиве: добавление и «Убрать» недоступны. Восстановите набор, чтобы изменить его.</p>}
+                                {archived && <p className="text-xs text-muted-foreground">{t("section.archivedNote")}</p>}
                             </div>
                             <BackgroundAddPanel
                                 key={set.id}
@@ -330,17 +333,17 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
                                 start={start}
                                 openCrop={setCrop}
                             />
-                            {!items.length && gallery.loading && <p role="status" className="text-sm text-muted-foreground">Загрузка фонов…</p>}
+                            {!items.length && gallery.loading && <p role="status" className="text-sm text-muted-foreground">{t("section.loadingBackgrounds")}</p>}
                             {gallery.error && (
                                 <Alert variant="destructive" className="shrink-0">
                                     <AlertDescription>
                                         <p>{gallery.error}</p>
-                                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void gallery.reload()}>Повторить</Button>
+                                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void gallery.reload()}>{t("section.retry")}</Button>
                                     </AlertDescription>
                                 </Alert>
                             )}
                             {!items.length && !gallery.loading && !gallery.error && (
-                                <Empty>Фонов пока нет. Добавьте готовые кадры нужного размера или нарежьте их из изображений либо видео.</Empty>
+                                <Empty>{t("section.emptySet")}</Empty>
                             )}
                             {items.length > 0 && (
                                 <BackgroundGallery
@@ -365,8 +368,8 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
                     ) : (
                         <Empty>
                             {sets.sets.length
-                                ? "Выберите набор слева, чтобы добавить или просмотреть фоны."
-                                : "Создайте первый набор фонов. Размер кадров должен совпадать с входом модели."}
+                                ? t("section.chooseSet")
+                                : t("section.createFirstSet")}
                         </Empty>
                     )}
                 </section>

@@ -1,10 +1,10 @@
 namespace MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 
 /// <summary>
-/// Вариант класса (привязка варианта проекта к классу); название и описание — у варианта проекта VariantId.
-/// Color — сохранённый #rrggbb или null; DisplayColor — цвет для показа (сохранённый или по умолчанию).
-/// Available — ни привязка, ни класс, ни вариант проекта не в архиве. OpaqueAssetCount — изображения без альфа-канала;
-/// MaxAssetWidth/Height — наибольшие стороны изображений (0, если их нет).
+/// Class variant (a binding of a project variant to a class); the name and description belong to the project variant VariantId.
+/// Color — the saved #rrggbb or null; DisplayColor — the color to display (saved or default).
+/// Available — neither the binding, nor the class, nor the project variant is archived. OpaqueAssetCount — images without an alpha channel;
+/// MaxAssetWidth/Height — the largest image sides (0 if there are none).
 /// </summary>
 public sealed record ClassVariantResponseDto(
     Guid Id,

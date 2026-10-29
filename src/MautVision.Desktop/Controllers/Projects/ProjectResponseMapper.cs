@@ -18,7 +18,7 @@ internal static class ProjectResponseMapper
         project.UpdatedAt,
         project.ArchivedAt);
 
-    internal static ProjectImportResponseDto Map(ProjectImportInfo import, Func<string, string> messageFor) => new(
+    internal static ProjectImportResponseDto Map(ProjectImportInfo import) => new(
         import.Id,
         import.OperationId,
         import.FileName,
@@ -37,7 +37,7 @@ internal static class ProjectResponseMapper
         import.TotalBytes,
         import.ProjectId,
         import.ProjectName,
-        import.ErrorCode is { } code ? new JobErrorDto(code, messageFor(code)) : null,
+        import.ErrorCode is { } code ? new JobErrorDto(code, null) : null,
         import.StartedAt,
         import.FinishedAt,
         import.Sequence);

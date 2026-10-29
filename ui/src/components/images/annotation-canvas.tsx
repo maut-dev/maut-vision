@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { ImageResponseDto } from "@/api/projects/images/response-dto/image-response-dto";
 import { ResourceImage } from "@/components/resource-image";
 import type { ZoomViewport } from "@/components/viewer/use-zoom-viewport";
@@ -19,10 +20,11 @@ import {
 } from "@/lib/annotation/geometry";
 import { contrastText, roiColor } from "@/lib/variant-color";
 import type { AnnotationPalette } from "./annotation-palette";
+import "@/i18n/sections/images";
 
 export type AnnotationTool = "object" | "roi";
 
-/** Выделенная рамка: ID объекта или "roi". */
+/** The selected box: an object ID or "roi". */
 export type Selection = string | null;
 
 type Gesture =
@@ -36,11 +38,10 @@ const handleCursor: Record<Handle, string> = {
 };
 
 /**
- * Холст редактора: кадр в области масштаба и перемещения, рамки объектов и ROI, маркеры выделенной рамки.
- * Протяжка по свободному месту рисует рамку текущим инструментом; по рамке — выделяет и перемещает её, Shift —
- * всегда рисует новую. Пробел или средняя кнопка с перетаскиванием перемещают кадр. Координаты указателя считаются
- * от экранного прямоугольника кадра, поэтому верны при любом масштабе и прокрутке. Изменение попадает в историю
- * одним шагом по отпусканию кнопки.
+ * The editor canvas: the frame in the zoom and pan area, object boxes and the ROI, handles of the selected box.
+ * Dragging over free space draws a box with the current tool; over a box it selects and moves it, with Shift it always draws a new
+ * one. Space or the middle button with dragging pans the frame. Pointer coordinates are taken from the on-screen rectangle of the
+ * frame, so they are right at any zoom and scroll. A change enters the history as one step when the button is released.
  */
 export function AnnotationCanvas({ image, draft, selection, tool, classId, classVariantId, palette, locked, zoom, select, commit, renew }: {
     image: ImageResponseDto;
@@ -56,6 +57,7 @@ export function AnnotationCanvas({ image, draft, selection, tool, classId, class
     commit: (next: AnnotationDraft, selection: Selection) => void;
     renew: () => void;
 }) {
+    const { t } = useTranslation("images");
     const frame = useRef<HTMLDivElement>(null);
     const gesture = useRef<Gesture | undefined>(undefined);
     const [preview, setPreview] = useState<{ id: string; box: Box } | { id: "draw"; box: Box }>();
@@ -179,7 +181,7 @@ export function AnnotationCanvas({ image, draft, selection, tool, classId, class
             ref={zoom.ref}
             data-annotation-viewport
             role="region"
-            aria-label="Кадр для разметки: протяжка рисует рамку, пробел с перетаскиванием перемещает кадр"
+            aria-label={t("canvas.label")}
             tabIndex={0}
             className="relative h-[min(68dvh,720px)] min-h-72 overflow-auto overscroll-contain rounded-md border bg-muted/30 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring"
             style={{ touchAction: "none", cursor }}
@@ -201,7 +203,7 @@ export function AnnotationCanvas({ image, draft, selection, tool, classId, class
                             id="roi"
                             box={shown("roi", draft.roi)}
                             color={roiColor}
-                            label="Область ROI"
+                            label={t("roi")}
                             dashed
                             selected={selection === "roi"}
                             interactive={!locked && tool === "roi"}

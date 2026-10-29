@@ -3,25 +3,15 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isId } from "../../catalog/catalog-guards";
 import { isTrainingDatasetDto, type TrainingDatasetDto } from "../../training/response-dto/training-run-response-dto";
 import type { EvaluationSplit } from "../request-dto/checks-request-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
-/** Вид задачи оценки на датасете: её снимки приходят в job.changed. */
+/** The job kind of a dataset evaluation: its snapshots come with job.changed. */
 export const modelEvaluationJobKind = "checks.evaluate";
 
-/** Состояние оценки; подписи — evaluationStateLabels. */
+/** State of an evaluation; the UI names it by the key checks:evaluationState.<state>. */
 export type ModelEvaluationState = "queued" | "preparing" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled" | "interrupted";
 
-export const evaluationStateLabels: Record<ModelEvaluationState, string> = {
-    queued: "Ожидает видеокарту",
-    preparing: "Подготовка",
-    running: "Идёт проверка",
-    cancelling: "Остановка…",
-    succeeded: "Готово",
-    failed: "Ошибка",
-    cancelled: "Остановлено",
-    interrupted: "Прервано",
-};
-
-/** Метрики класса (выход index): precision, recall, mAP50, mAP50_95; только классы с объектами в части. */
+/** Metrics of a class (output index): precision, recall, mAP50, mAP50_95; only classes with objects in the split. */
 export interface EvaluationClassMetricsDto {
     index: number;
     classId: string | null;
@@ -29,15 +19,18 @@ export interface EvaluationClassMetricsDto {
     metrics: Record<string, number>;
 }
 
-/** Ошибка: для checks.worker_* — сообщение самого worker, для остальных кодов — текст приложения. */
+/**
+ * Error of a check: code — what the UI translates; workerMessage — for a failure the worker reported itself (checks.worker_*), a code of the
+ * catalog worker with values and its English message as the fallback; null otherwise.
+ */
 export interface CheckErrorDto {
     code: string;
-    message: string;
+    workerMessage: CodedTextDto | null;
 }
 
 /**
- * Оценка версии на части датасета. job — снимок задачи checks.evaluate; metrics — precision, recall, mAP50, mAP50_95 как у Ultralytics;
- * imageCount — кадров в части («датасет · часть · кадров»); revision — сравнить с checks.changed и перечитать getEvaluation.
+ * An evaluation of a version on a dataset split. job — the snapshot of the checks.evaluate job; metrics — precision, recall, mAP50, mAP50_95 as Ultralytics reports them;
+ * imageCount — frames in the split ("dataset · split · frames"); revision — compare with checks.changed and read getEvaluation again.
  */
 export interface ModelEvaluationResponseDto {
     id: string;
@@ -67,7 +60,8 @@ const states: readonly string[] = ["queued", "preparing", "running", "cancelling
 const isNumbers = (value: unknown) => isRecord(value) && Object.values(value).every(item => typeof item === "number");
 
 export function isCheckErrorDto(value: unknown): value is CheckErrorDto {
-    return isRecord(value) && typeof value.code === "string" && value.code.length > 0 && typeof value.message === "string";
+    return isRecord(value) && typeof value.code === "string" && value.code.length > 0
+        && (value.workerMessage === null || isCodedTextDto(value.workerMessage));
 }
 
 export function isModelEvaluationResponseDto(value: unknown): value is ModelEvaluationResponseDto {

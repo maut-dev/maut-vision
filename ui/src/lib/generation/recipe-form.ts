@@ -1,4 +1,3 @@
-import { backgroundsWord } from "@/api/projects/backgrounds/background-import-rules";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/response-dto/catalog-workspace-response-dto";
 import type { VariantResponseDto } from "@/api/projects/catalog/response-dto/variant-response-dto";
@@ -7,6 +6,7 @@ import {
     distributeEvenly,
     eligibleClassVariants,
     generationTexts,
+    maxRecipeNameLength,
     recipeClassVariantIds,
     recipeFieldError,
     weightsTotal,
@@ -15,16 +15,19 @@ import {
 import type { GenerationRecipeFormDto, GenerationVariantWeightDto } from "@/api/projects/generation/request-dto/generation-recipe-form-dto";
 import type { GenerationRecipeResponseDto } from "@/api/projects/generation/response-dto/generation-recipe-response-dto";
 import type { GenerationRepeatDraftResponseDto } from "@/api/projects/generation/response-dto/generation-sample-response-dto";
+import { i18n } from "@/i18n";
+import { formatNumber } from "@/lib/format";
+import "@/i18n/sections/generation";
 
-/** Режим формы: новый пресет, изменение сохранённого или повтор запуска (настройки снимка до «Редактировать варианты…»). */
+/** The form mode: a new preset, a change of a saved one or a repeat of a run (snapshot settings until "Edit variants…"). */
 export type RecipeFormMode =
     | { kind: "create" }
     | { kind: "edit"; recipe: GenerationRecipeResponseDto }
     | { kind: "repeat"; sourceRunId: string; notice: string; snapshot: GenerationRecipeFormDto };
 
 /**
- * Значения формы пресета. Размер кадра у нового пресета — вход проекта (canvas = null), у изменения и повтора — свой.
- * weights — доли по ID варианта проекта; emptyPercent — «Доля пустых кадров» в процентах.
+ * Values of the preset form. The frame size of a new preset is the project input (canvas = null), of a change and a repeat — its own.
+ * weights — shares by the ID of the project variant; emptyPercent — "Empty frames" in percent.
  */
 export interface RecipeFormValues {
     mode: RecipeFormMode;
@@ -45,7 +48,7 @@ export function emptyForm(): RecipeFormValues {
     };
 }
 
-/** Доля 0..1 → проценты без хвостов двоичной дроби (0.1 → 10). */
+/** A share 0..1 → percent without binary fraction tails (0.1 → 10). */
 export function toPercent(probability: number): number {
     return Math.round(probability * 1e6) / 1e4;
 }
@@ -59,17 +62,25 @@ function fromRecipe(recipe: GenerationRecipeFormDto, mode: RecipeFormMode, name 
     };
 }
 
-/** «Изменить»: форма с настройками пресета; сохранение отправляет его ревизию. */
+/** "Edit": the form with the preset settings; saving sends its revision. */
 export function formForEdit(recipe: GenerationRecipeResponseDto): RecipeFormValues {
     return fromRecipe(recipe, { kind: "edit", recipe });
 }
 
-/** «Настроить повтор»: настройки снимка запуска; доли и привязки — из снимка, пока пользователь не перейдёт к текущим источникам. */
+/** "Set up a repeat": settings of the run snapshot; shares and bindings come from the snapshot until the user moves to current sources. */
 export function formForRepeat(draft: GenerationRepeatDraftResponseDto): RecipeFormValues {
-    return fromRecipe(draft.recipe, { kind: "repeat", sourceRunId: draft.sourceRunId, notice: draft.notice, snapshot: draft.recipe });
+    return fromRecipe(draft.recipe, { kind: "repeat", sourceRunId: draft.sourceRunId, notice: i18n.t("generation:form.repeatNotice"), snapshot: draft.recipe },
+        repeatName(draft.recipe.name));
 }
 
-/** «Редактировать варианты по текущим источникам»: повтор становится обычным новым пресетом с теми же значениями. */
+/** "<name> · repeat" in the language of the page; the name is shortened so the whole fits 120 characters. */
+export function repeatName(name: string): string {
+    const suffixLength = i18n.t("generation.repeatName", { name: "" }).length;
+    const stem = name.length + suffixLength > maxRecipeNameLength ? name.slice(0, Math.max(0, maxRecipeNameLength - suffixLength)).trimEnd() : name;
+    return i18n.t("generation.repeatName", { name: stem });
+}
+
+/** "Edit variants by current sources": the repeat becomes an ordinary new preset with the same values. */
 export function leaveSnapshot(values: RecipeFormValues): RecipeFormValues {
     return { ...values, mode: { kind: "create" } };
 }
@@ -78,7 +89,7 @@ export function canvasOf(values: RecipeFormValues, input: { width: number; heigh
     return values.canvas ?? input;
 }
 
-/** Строка варианта проекта в «Доли вариантов»: доступен ли он (есть подходящие привязки) и сколько у него классов. */
+/** A row of a project variant in "Variant shares": whether it is available (it has eligible bindings) and how many classes it has. */
 export interface VariantShare {
     variant: VariantResponseDto;
     eligible: boolean;
@@ -86,7 +97,7 @@ export interface VariantShare {
     percentage: number;
 }
 
-/** Активные варианты проекта в порядке каталога; вариант без привязок с изображениями — недоступен и с долей 0. */
+/** Active project variants in catalog order; a variant without bindings with images is unavailable with the share 0. */
 export function variantShares(workspace: CatalogWorkspaceResponseDto | undefined, weights: Readonly<Record<string, number>>): VariantShare[] {
     if (!workspace) return [];
     const bindings = eligibleClassVariants(workspace);
@@ -96,25 +107,25 @@ export function variantShares(workspace: CatalogWorkspaceResponseDto | undefined
     });
 }
 
-/** Доли, которые уходят в пресет: все доступные варианты проекта в порядке каталога. */
+/** Shares that go to the preset: all available project variants in catalog order. */
 export function formWeights(shares: readonly VariantShare[]): GenerationVariantWeightDto[] {
     return shares.filter(share => share.eligible).map(share => ({ variantId: share.variant.id, percentage: share.percentage }));
 }
 
-/** «Поровну» по доступным вариантам. */
+/** "Evenly" over the available variants. */
 export function evenWeights(shares: readonly VariantShare[]): Record<string, number> {
     return Object.fromEntries(distributeEvenly(shares.filter(share => share.eligible).map(share => share.variant.id))
         .map(weight => [weight.variantId, weight.percentage]));
 }
 
-/** Поле доли: целое 0–100, пустое и нечисловое — 0. */
+/** A share field: an integer 0–100, empty and non-numeric — 0. */
 export function clampPercent(value: string | number): number {
     return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
 }
 
 /**
- * Настройки для API. В режиме повтора доли и привязки берутся из снимка запуска; иначе — по текущему каталогу
- * (classVariantIds — привязки вариантов с долей больше 0).
+ * Settings for the API. In the repeat mode shares and bindings come from the run snapshot; otherwise — by the current catalog
+ * (classVariantIds — variant bindings with a share above 0).
  */
 export function toRecipeDto(values: RecipeFormValues, workspace: CatalogWorkspaceResponseDto | undefined, input: { width: number; height: number }): GenerationRecipeFormDto {
     const canvas = canvasOf(values, input);
@@ -140,55 +151,52 @@ export function formTotal(values: RecipeFormValues, workspace: CatalogWorkspaceR
     return weightsTotal(snapshot ? snapshot.variantWeights : formWeights(variantShares(workspace, values.weights)));
 }
 
-/** Подсказка под «Объектов на кадр» и «Масштаб объекта»: ошибка первого неверного поля или общая подсказка. */
+/** The hint under "Objects per frame" and "Object scale": the error of the first wrong field or the general hint. */
 export function objectsHint(values: RecipeFormValues): { text: string; invalid: boolean } {
     if (!Number.isSafeInteger(values.objects) || values.objects < 0) return { text: generationTexts.objectsInvalid, invalid: true };
     if (!Number.isFinite(values.scale) || values.scale <= 0) return { text: generationTexts.scaleInvalid, invalid: true };
     return { text: generationTexts.objectsHint, invalid: false };
 }
 
-/** Короткие тексты полей формы для ответа host generation.invalid_recipe (details.field) и для проверки до отправки. */
-export const recipeFieldTexts: Record<GenerationRecipeField, string> = {
-    name: "Название — от 1 до 120 символов.",
-    description: "Описание — до 4000 символов.",
-    canvas: "Размер кадра должен совпадать со входом проекта и быть кратен 32.",
-    backgroundSetIds: "Выберите хотя бы один набор фонов.",
-    classVariantIds: "Нужен хотя бы один вариант с изображениями и долей больше 0%.",
-    variantWeights: "Сумма долей вариантов должна быть 100%.",
-    objectsPerImage: generationTexts.objectsInvalid,
-    emptyProbability: "Доля пустых кадров — от 0 до 100%.",
-    scale: generationTexts.scaleInvalid,
+/** Short texts of form fields for the host answer generation.invalid_recipe (details.field) and for the check before sending. */
+export const recipeFieldTexts: Readonly<Record<GenerationRecipeField, string>> = {
+    get name() { return i18n.t("generation:fields.name"); },
+    get description() { return i18n.t("generation:fields.description"); },
+    get canvas() { return i18n.t("generation:fields.canvas"); },
+    get backgroundSetIds() { return i18n.t("generation:fields.backgroundSetIds"); },
+    get classVariantIds() { return i18n.t("generation:fields.classVariantIds"); },
+    get variantWeights() { return i18n.t("generation:fields.variantWeights"); },
+    get objectsPerImage() { return generationTexts.objectsInvalid; },
+    get emptyProbability() { return i18n.t("generation:fields.emptyProbability"); },
+    get scale() { return generationTexts.scaleInvalid; },
 };
 
-/** Первое неверное поле формы (правила host) или null: «Сохранить рецепт» и «Пример кадра» доступны только без него. */
+/** The first wrong field of the form (host rules) or null: "Save recipe" and "Sample frame" are available only without it. */
 export function formFieldError(dto: GenerationRecipeFormDto): GenerationRecipeField | null {
     return recipeFieldError(dto);
 }
 
-/** Набор фонов в форме: несовместимый по размеру показан, но недоступен с объяснением (улучшение). */
+/** A background set in the form: one of another size is shown but unavailable, with an explanation. */
 export function backgroundSetOption(set: BackgroundSetResponseDto, canvas: { width: number; height: number }) {
     const fits = set.targetSize.width === canvas.width && set.targetSize.height === canvas.height;
     return {
         fits,
         reason: fits ? undefined
-            : `Размер набора ${set.targetSize.width} × ${set.targetSize.height} не совпадает с кадром ${canvas.width} × ${canvas.height}: такой набор не подойдёт генерации.`,
+            : i18n.t("generation:form.setSizeMismatch", { setWidth: set.targetSize.width, setHeight: set.targetSize.height, width: canvas.width, height: canvas.height }),
     };
 }
 
-/** «N классов» с русским склонением. */
+/** "N classes" with the plural forms of the language. */
 export function classesLabel(count: number): string {
-    const tens = count % 100;
-    const units = count % 10;
-    const word = tens >= 11 && tens <= 14 ? "классов" : units === 1 ? "класс" : units >= 2 && units <= 4 ? "класса" : "классов";
-    return `${count} ${word}`;
+    return i18n.t("generation:form.classes", { count });
 }
 
-/** «N фонов» с русским склонением. */
+/** "N backgrounds" with the plural forms of the language. */
 export function backgroundsLabel(count: number): string {
-    return `${count.toLocaleString("ru-RU")} ${backgroundsWord(count)}`;
+    return i18n.t("generation:form.backgrounds", { count, value: formatNumber(count) });
 }
 
-/** Ключ настроек формы и seed: пример кадра устарел, если ключ изменился. */
+/** The key of form settings and the seed: the sample frame is stale when the key changed. */
 export function sampleKey(dto: GenerationRecipeFormDto, seed: number): string {
     return JSON.stringify([dto, seed]);
 }

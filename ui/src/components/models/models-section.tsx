@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import type { TrainingEpochDto } from "@/api/projects/training/response-dto/training-run-response-dto";
@@ -14,16 +15,19 @@ import { useModelExport, type ModelExportState } from "@/lib/use-model-export";
 import { useModelVersions } from "@/lib/use-model-versions";
 import { ModelVersionCard } from "./model-version-card";
 import { ModelVersionDeletionDialog } from "./model-version-deletion-dialog";
+import { jobErrorText } from "@/lib/errors";
+import "@/i18n/sections/models";
 
 /**
- * Раздел «Модели»: все версии моделей проекта (новые сверху) с метриками, рабочей версией, выгрузкой ZIP, удалением и паспортом.
- * Без опроса: training.changed (версии, в том числе удалённые), datasets.changed (названия датасетов), job.changed (выгрузка).
+ * The section "Models": all model versions of the project (newest first) with metrics, the working version, ZIP export, deletion and the
+ * passport. No polling: training.changed (versions, deleted ones too), datasets.changed (dataset names), job.changed (the export).
  */
 export function ModelsSection({ project, initialVersionId, openTraining }: {
     project: ProjectResponseDto;
     initialVersionId?: string;
     openTraining: () => void;
 }) {
+    const { t } = useTranslation("models");
     const projectId = project.id;
     const models = useModelVersions(projectId);
     const datasets = useDatasetVersions(projectId);
@@ -37,7 +41,7 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
     const working = versions.find(item => item.isWorking);
 
     useEffect(() => {
-        // Удалённая версия не держит паспорт открытым.
+        // A deleted version does not keep the passport open.
         if (passportId && models.loaded && !passport) setPassportId(undefined);
     }, [passportId, passport, models.loaded]);
 
@@ -56,8 +60,8 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
 
     const datasetName = (version: ModelVersionResponseDto) => {
         const dataset = datasets.versions.find(item => item.id === version.dataset.versionId);
-        if (!dataset) return datasets.loading ? version.dataset.name : "Датасет не найден";
-        return dataset.archivedAt ? `${dataset.name} (в архиве)` : dataset.name;
+        if (!dataset) return datasets.loading ? version.dataset.name : t("section.datasetMissing");
+        return dataset.archivedAt ? t("section.datasetArchived", { name: dataset.name }) : dataset.name;
     };
 
     const actions = (version: ModelVersionResponseDto) => ({
@@ -72,7 +76,7 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
                 <Alert variant={notice.tone === "error" ? "destructive" : "default"} data-testid="models-notice" data-tone={notice.tone}>
                     <AlertDescription>
                         <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>Скрыть</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -80,7 +84,7 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
                 <Alert variant="destructive">
                     <AlertDescription>
                         <p>{models.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>Повторить</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>{t("section.retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -96,7 +100,7 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
             deleted={result => {
                 setDeleting(undefined);
                 if (passportId === result.versionId) setPassportId(undefined);
-                setNotice({ tone: "info", text: `Версия ${result.number} удалена.` });
+                setNotice({ tone: "info", text: t("section.deleted", { number: result.number }) });
                 void models.refresh();
             }}
         />
@@ -124,7 +128,7 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
         return (
             <div className="space-y-4" data-testid="models-section">
                 {header}
-                {!models.error && <p role="status" className="text-sm text-muted-foreground">Загрузка версий…</p>}
+                {!models.error && <p role="status" className="text-sm text-muted-foreground">{t("section.loading")}</p>}
             </div>
         );
     }
@@ -135,9 +139,9 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
                 {header}
                 <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed p-6 text-center" data-testid="models-empty">
                     <p className="max-w-prose text-sm text-muted-foreground">
-                        Моделей пока нет. Версия модели появляется после первого успешного обучения; первая версия станет рабочей автоматически.
+                        {t("section.empty")}
                     </p>
-                    <Button variant="outline" data-testid="models-open-training" onClick={openTraining}>К обучению</Button>
+                    <Button variant="outline" data-testid="models-open-training" onClick={openTraining}>{t("section.toTraining")}</Button>
                 </div>
             </div>
         );
@@ -149,13 +153,14 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
             {header}
             <div className="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h2 className="font-medium">Версии модели</h2>
+                    <h2 className="font-medium">{t("section.title")}</h2>
                     <p className="mt-1 text-xs text-muted-foreground" data-testid="models-summary">
-                        Всего {versions.length} · рабочая — {working ? `версия ${working.number}` : "не выбрана"}. Каждый успешный запуск обучения создаёт новую
-                        версию; прежние версии не меняются.
+                        {working
+                            ? t("section.summary", { count: versions.length, number: working.number })
+                            : t("section.summaryNoWorking", { count: versions.length })}
                     </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={openTraining}>К обучению</Button>
+                <Button variant="outline" size="sm" onClick={openTraining}>{t("section.toTraining")}</Button>
             </div>
             <ExportPlate state={exporter.state} dismiss={exporter.dismiss} />
             <ul className="space-y-3" data-testid="models-list">
@@ -176,8 +181,9 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
     );
 }
 
-/** Ход и итог выгрузки: «Версия N выгружена: model-vN.zip · 1,2 МБ»; в паспорте — только своей версии. */
+/** Progress and result of the export: "Version N exported: model-vN.zip · 1.2 MB"; in the passport — only of its own version. */
 function ExportPlate({ state, versionId, dismiss }: { state: ModelExportState | undefined; versionId?: string; dismiss: () => void }) {
+    const { t } = useTranslation("models");
     if (!state || (versionId && state.versionId !== versionId)) return null;
     const { job, result } = state;
     const running = job.status === "queued" || job.status === "running";
@@ -185,8 +191,8 @@ function ExportPlate({ state, versionId, dismiss }: { state: ModelExportState | 
         <div className="space-y-2 rounded-md border p-3 text-sm" role="status" data-testid="model-export" data-status={job.status}>
             {running && (
                 <>
-                    <p className="text-muted-foreground">Выгрузка версии {state.versionNumber} в {state.fileName}…</p>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label="Ход выгрузки" aria-valuemin={0} aria-valuemax={100}
+                    <p className="text-muted-foreground">{t("export.running", { number: state.versionNumber, fileName: state.fileName })}</p>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("export.progress")} aria-valuemin={0} aria-valuemax={100}
                         aria-valuenow={job.progress ?? undefined}>
                         <div className={job.progress === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"}
                             style={job.progress === null ? undefined : { width: `${job.progress}%` }} />
@@ -195,20 +201,22 @@ function ExportPlate({ state, versionId, dismiss }: { state: ModelExportState | 
             )}
             {job.status === "succeeded" && (
                 <p data-testid="model-export-result">
-                    Версия {result?.versionNumber ?? state.versionNumber} выгружена: {result?.fileName ?? state.fileName}{result && ` · ${formatBytes(result.bytes)}`}
+                    {result
+                        ? t("export.doneSize", { number: result.versionNumber, fileName: result.fileName, size: formatBytes(result.bytes) })
+                        : t("export.done", { number: state.versionNumber, fileName: state.fileName })}
                 </p>
             )}
             {!running && job.status !== "succeeded" && (
                 <p className="text-destructive" data-testid="model-export-error">
-                    {job.status === "cancelled" ? "Выгрузка отменена." : job.error?.message ?? "Не удалось выгрузить версию."}
+                    {job.status === "cancelled" ? t("export.cancelled") : (job.error ? jobErrorText(job.error) : t("export.failed"))}
                 </p>
             )}
-            {!running && <Button variant="ghost" size="xs" onClick={dismiss}>Скрыть</Button>}
+            {!running && <Button variant="ghost" size="xs" onClick={dismiss}>{t("section.hide")}</Button>}
         </div>
     );
 }
 
-/** Паспорт версии в «Моделях»: история эпох запуска для «лучший …» читается страницами (readEpochHistory). */
+/** The version passport in "Models": the epoch history of the run for "best …" is read by pages (readEpochHistory). */
 function VersionPassport({ projectId, version, busy, renew, back, setWorking, exportZip, remove }: {
     projectId: string;
     version: ModelVersionResponseDto;
@@ -224,7 +232,7 @@ function VersionPassport({ projectId, version, busy, renew, back, setWorking, ex
 
     useEffect(() => {
         let active = true;
-        // Без истории эпох паспорт показывает итог best.pt.
+        // Without the epoch history the passport shows the final best.pt.
         readEpochHistory(projectId, runId, () => active).then(items => { if (active && items) setEpochs(items); }, () => undefined);
         return () => { active = false; };
     }, [projectId, runId]);

@@ -1,8 +1,8 @@
-"""Захват экрана через mss.
+"""Screen capture via mss.
 
-Экземпляр mss держится открытым на весь цикл: создание на каждый кадр стоит
-десятки миллисекунд. Координаты рамки — относительно выбранного монитора;
-монитор 0 — все экраны вместе (так их нумерует mss).
+The mss instance stays open for the whole loop: creating it per frame costs
+tens of milliseconds. Crop coordinates are relative to the chosen monitor;
+monitor 0 is all screens together (this is how mss numbers them).
 """
 from __future__ import annotations
 
@@ -15,18 +15,19 @@ class Screen:
     def __init__(self, monitor: int):
         try:
             import mss
-        except Exception as exc:  # noqa: BLE001 — нет пакета: понятная причина вместо трейсбека
-            raise WorkerError(ErrorCode.CAPTURE_UNAVAILABLE, f"Захват экрана недоступен: не установлен mss ({exc})") from None
+        except Exception as exc:  # noqa: BLE001 — no package: a clear reason instead of a traceback
+            raise WorkerError(ErrorCode.CAPTURE_UNAVAILABLE, "mss_missing", {"error": exc}) from None
         try:
             self._sct = (mss.MSS if hasattr(mss, "MSS") else mss.mss)()
-        except Exception as exc:  # noqa: BLE001 — нет экрана (сервисная сессия, WSL)
-            raise WorkerError(ErrorCode.CAPTURE_UNAVAILABLE, f"Не удалось открыть захват экрана: {exc}") from None
+        except Exception as exc:  # noqa: BLE001 — no screen (service session, WSL)
+            raise WorkerError(ErrorCode.CAPTURE_UNAVAILABLE, "open_failed", {"error": exc}) from None
         monitors = self._sct.monitors
         if not 0 <= monitor < len(monitors):
             self.close()
             raise WorkerError(
                 ErrorCode.CAPTURE_UNAVAILABLE,
-                f"Монитора {monitor} нет: доступны 0..{len(monitors) - 1}",
+                "monitor_missing",
+                {"monitor": monitor, "last": len(monitors) - 1},
                 {"monitors": len(monitors) - 1},
             )
         self.index = monitor
@@ -39,7 +40,7 @@ class Screen:
         ]
 
     def check_bounds(self, expected: Any) -> None:
-        """Монитор совпадает с тем, на снимке которого host ставил рамку."""
+        """The monitor matches the one on whose screenshot the host placed the crop."""
         if expected is None:
             return
         actual = (int(self.bounds["left"]), int(self.bounds["top"]), int(self.bounds["width"]), int(self.bounds["height"]))
@@ -47,8 +48,18 @@ class Screen:
         if actual != wanted:
             raise WorkerError(
                 ErrorCode.CAPTURE_UNAVAILABLE,
-                f"Монитор {self.index} изменился после снимка: сейчас {actual[2]}×{actual[3]} в ({actual[0]}, {actual[1]}), "
-                f"а рамка выбрана на {wanted[2]}×{wanted[3]} в ({wanted[0]}, {wanted[1]}). Снимите экран заново.",
+                "monitor_changed",
+                {
+                    "monitor": self.index,
+                    "actualWidth": actual[2],
+                    "actualHeight": actual[3],
+                    "actualX": actual[0],
+                    "actualY": actual[1],
+                    "width": wanted[2],
+                    "height": wanted[3],
+                    "x": wanted[0],
+                    "y": wanted[1],
+                },
                 {"actual": list(actual), "expected": list(wanted)},
             )
 
@@ -58,12 +69,19 @@ class Screen:
         if region.x + region.width > self.bounds["width"] or region.y + region.height > self.bounds["height"]:
             raise WorkerError(
                 ErrorCode.REGION_INVALID,
-                f"Рамка {region.width}×{region.height} в точке ({region.x}, {region.y}) выходит за монитор "
-                f"{self.bounds['width']}×{self.bounds['height']}",
+                "outside_monitor",
+                {
+                    "width": region.width,
+                    "height": region.height,
+                    "x": region.x,
+                    "y": region.y,
+                    "frameWidth": self.bounds["width"],
+                    "frameHeight": self.bounds["height"],
+                },
             )
 
     def grab(self, region: Region | None) -> Any:
-        """Кадр BGR (numpy): mss отдаёт BGRA, альфа отбрасывается."""
+        """A BGR frame (numpy): mss returns BGRA, alpha is dropped."""
         import numpy as np
 
         area = {
@@ -78,7 +96,7 @@ class Screen:
     def close(self) -> None:
         try:
             self._sct.close()
-        except Exception:  # noqa: BLE001 — закрытие уже закрытого захвата не важно
+        except Exception:  # noqa: BLE001 — closing an already closed capture does not matter
             pass
 
     def __enter__(self) -> "Screen":

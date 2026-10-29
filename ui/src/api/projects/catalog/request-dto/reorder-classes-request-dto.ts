@@ -1,7 +1,7 @@
 export interface ReorderClassesRequestDto {
     projectId: string;
-    /** Все классы проекта, включая архивные, в новом порядке. */
+    /** All classes of the project, archived included, in the new order. */
     classIds: string[];
-    /** ClassOrderRevision из снимка каталога. */
+    /** ClassOrderRevision from the catalog snapshot. */
     orderRevision: number;
 }

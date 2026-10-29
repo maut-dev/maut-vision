@@ -1,10 +1,10 @@
-"""Проверка архитектуры по самим весам.
+"""Architecture check by the weights themselves.
 
-Имя файла ничего не доказывает: yolo12n.pt может оказаться переименованной
-yolo26n, а обучить «втихую» чужую сеть — худший исход (откатов на соседние
-версии намеренно нет). Смотрим на конфиг, который
-ultralytics сохраняет внутри чекпоинта: yaml_file и scale. Проверка идёт
-дважды — у исходных весов до обучения и у best.pt после.
+The file name proves nothing: yolo12n.pt may turn out to be a renamed
+yolo26n, and silently training someone else's network is the worst outcome (fallbacks to neighboring
+versions deliberately do not exist). We look at the config that
+ultralytics stores inside the checkpoint: yaml_file and scale. The check runs
+twice — on the source weights before training and on best.pt after it.
 """
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ from worker.protocol import DetectedArchitecture, ErrorCode, WorkerError
 from worker.model_catalog import MODELS
 
 def detect(model: Any) -> DetectedArchitecture:
-    """Архитектура загруженной ultralytics.YOLO: например yolov12n.yaml, n, detect."""
+    """Architecture of a loaded ultralytics.YOLO: for example yolov12n.yaml, n, detect."""
     y = getattr(getattr(model, "model", None), "yaml", None) or {}
-    # Ранние официальные YOLOv8 PT не содержат yaml_file. Их исходная
-    # архитектура сохранена в train_args.model самого чекпоинта.
+    # Early official YOLOv8 PT files do not contain yaml_file. Their source
+    # architecture is stored in train_args.model of the checkpoint itself.
     checkpoint = getattr(model, "ckpt", None) or {}
     original = (checkpoint.get("train_args") or {}).get("model", "")
     return DetectedArchitecture(
@@ -33,14 +33,14 @@ def matches(claimed: str, found: DetectedArchitecture) -> bool:
     if definition is None:
         return False
     scale = definition["scale"]
-    # ultralytics пишет конфиг как yolov12n.yaml: «v» снимаем
+    # ultralytics writes the config as yolov12n.yaml: drop the "v"
     stem = Path(found.yaml_file).stem.lower().replace("yolov", "yolo")
     if found.task != definition["task"]:
         return False
     if stem in definition["yamlNames"]:
-        # имя конфига уже содержит масштаб; противоречащий scale — отказ
+        # the config name already contains the scale; a contradicting scale is a refusal
         return found.scale in ("", scale)
-    # общий конфиг семейства (yolo12.yaml) — масштаб только из поля scale
+    # a common family config (yolo12.yaml) — the scale comes only from the scale field
     return stem in definition["yamlFamilies"] and found.scale == scale
 
 
@@ -49,8 +49,8 @@ def verify(claimed: str, model: Any, where: str) -> DetectedArchitecture:
     if not matches(claimed, found):
         raise WorkerError(
             ErrorCode.ARCHITECTURE_MISMATCH,
-            f"{where}: заявлена {claimed}, а в весах записана '{found.yaml_file or '?'}' "
-            f"(масштаб '{found.scale or '?'}', задача '{found.task or '?'}'). Обучение не запускалось.",
+            where,
+            {"claimed": claimed, "yamlFile": found.yaml_file or "?", "scale": found.scale or "?", "task": found.task or "?"},
             {"where": where, "claimed": claimed, "found": found.model_dump(by_alias=True)},
         )
     return found

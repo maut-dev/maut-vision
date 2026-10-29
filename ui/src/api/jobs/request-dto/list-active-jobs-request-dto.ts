@@ -1,7 +1,7 @@
 export interface ListActiveJobsRequestDto {
     projectId: string;
-    /** 1–200, по умолчанию 30. */
+    /** 1–200, 30 by default. */
     limit?: number;
-    /** nextCursor предыдущей страницы; задачи идут в порядке очереди. */
+    /** nextCursor of the previous page; jobs go in queue order. */
     after?: string;
 }

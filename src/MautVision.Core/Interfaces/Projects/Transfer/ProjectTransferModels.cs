@@ -2,15 +2,15 @@ using MautVision.Core.Interfaces.Jobs;
 
 namespace MautVision.Core.Interfaces.Projects.Transfer;
 
-/// <summary>DestinationPath — выбранный пользователем .zip; ProjectName — подпись задачи.</summary>
+/// <summary>DestinationPath — the .zip chosen by the user; ProjectName — the job caption.</summary>
 public sealed record ProjectExportInput(string ProjectName, string DestinationPath);
 
 /// <summary>
-/// Экспорт проекта в один ZIP (project.json, снимок project.db, files/**): задача CPU, не возобновляемая, с прогрессом по файлам
-/// (Processed/Total) и байтам (итог). Пока она в очереди или идёт, другие задачи и живые проверки проекта не запускаются
-/// (<c>projects.transfer_active</c>); ставится, только когда в проекте нет других активных задач и живой проверки
-/// (<c>projects.transfer_busy</c>, Details["section"] — область первой идущей задачи). Архив пишется во временный файл рядом с
-/// целью и заменяет её в конце; отмена и ошибка удаляют временный файл. Итог — <see cref="ProjectExportResult"/>.
+/// Project export into one ZIP (project.json, a snapshot of project.db, files/**): a CPU job, not resumable, with progress by files
+/// (Processed/Total) and bytes (result). While it is queued or running, other jobs and live checks of the project do not start
+/// (<c>projects.transfer_active</c>); it is enqueued only when the project has no other active jobs and no live check
+/// (<c>projects.transfer_busy</c>, Details["section"] — the area of the first running job). The archive is written into a temporary file next to
+/// the target and replaces it at the end; cancellation and errors delete the temporary file. The result is <see cref="ProjectExportResult"/>.
 /// </summary>
 [JobKind("projects.export")]
 public interface IProjectExportJob : IJobDefinition<ProjectExportInput>
@@ -18,13 +18,13 @@ public interface IProjectExportJob : IJobDefinition<ProjectExportInput>
 }
 
 /// <summary>
-/// Итог экспорта (и после отмены или ошибки — сколько успели): Files — записанные файлы, Links — пути жёстких ссылок, записанные в
-/// manifest без повторения содержимого, Bytes — объём содержимого, ArchiveBytes — размер архива.
+/// Export result (also after cancellation or an error — how much was done): Files — written files, Links — hard link paths written to
+/// the manifest without repeating the content, Bytes — content volume, ArchiveBytes — archive size.
 /// </summary>
 public sealed record ProjectExportResult(string FileName, long Files, long TotalFiles, long Bytes, long TotalBytes, long Links, long ArchiveBytes,
     long ElapsedMs);
 
-/// <summary>Архив, выбранный пользователем: путь, размер и время изменения на момент выбора (изменённый после выбора файл не читается).</summary>
+/// <summary>Archive chosen by the user: path, size and modification time at the time of choosing (a file changed after choosing is not read).</summary>
 public sealed record ProjectArchiveSource(string Path, long Length, DateTimeOffset LastWriteTimeUtc);
 
 public enum ProjectImportStatus
@@ -36,10 +36,10 @@ public enum ProjectImportStatus
 }
 
 /// <summary>
-/// Снимок импорта. Sequence растёт с каждым изменением: из двух снимков новее тот, у кого он больше. Счётчики Processed/Total —
-/// файлы и байты распаковки (Total известен после проверки архива, до неё 0). При успехе ProjectId и ProjectName — проект в
-/// библиотеке (новый id при совпадении, имя с суффиксом « (импорт)» при совпадении имени); ErrorCode — код отказа при Failed.
-/// Импорт живёт в памяти процесса и не переживает перезапуск.
+/// Import snapshot. Sequence grows with every change: of two snapshots, the one with the greater value is newer. Processed/Total counters —
+/// unpacked files and bytes (Total is known after the archive check, 0 before it). On success ProjectId and ProjectName — the project in
+/// the library (a new id on a collision; a taken name gets the suffix " (&lt;label&gt;)" with the word the UI passes, English "import" by default); ErrorCode — refusal code on Failed.
+/// The import lives in process memory and does not survive a restart.
 /// </summary>
 public sealed record ProjectImportInfo(
     Guid Id,

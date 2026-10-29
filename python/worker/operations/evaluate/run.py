@@ -1,9 +1,9 @@
-"""Проверка весов на датасете: входы → model.val → метрики.
+"""Check of weights on a dataset: inputs → model.val → metrics.
 
-Та же последовательность отказов, что у обучения: датасет, устройство, веса и
-архитектура проверяются до валидации. Артефактов операция не создаёт — только
-числа в result.json. Графики ultralytics выключены (plots=False): они не входят
-в контракт и тянут шрифт из сети.
+The same order of refusals as in training: dataset, device, weights and
+architecture are checked before validation. The operation creates no artifacts — only
+numbers in result.json. Ultralytics plots are off (plots=False): they are not part
+of the contract and pull a font from the network.
 """
 from __future__ import annotations
 
@@ -19,8 +19,8 @@ from worker.protocol import ClassMetrics, ErrorCode, EvaluateRequest, WorkerErro
 
 
 def _class_metrics(box: Any, names: dict[int, str] | list[str]) -> list[ClassMetrics]:
-    """Метрики по классам из DetMetrics.box: только классы с объектами в выборке
-    (ultralytics не считает AP для класса без разметки)."""
+    """Per-class metrics from DetMetrics.box: only classes with objects in the split
+    (ultralytics does not compute AP for a class without annotation)."""
     out: list[ClassMetrics] = []
     indices = [int(i) for i in getattr(box, "ap_class_index", [])]
     for position, index in enumerate(indices):
@@ -42,14 +42,14 @@ def run_evaluate(request: EvaluateRequest, ctx: OperationContext) -> dict[str, A
     ctx.stage("validating")
     data_yaml, dataset_summary = dataset.prepare(layout.resolve(request.input.dataset), layout.work_dir)
     if p.split == "test" and "imagesTest" not in dataset_summary:
-        raise WorkerError(ErrorCode.DATASET_INVALID, "В датасете нет выборки test", {"key": "test"})
+        raise WorkerError(ErrorCode.DATASET_INVALID, "test_split_missing", details={"key": "test"})
     workers = hyperparams.dataloader_workers()
     ultralytics_setup.configure(layout.work_dir)
     device = _check_device(p.device)
 
     ctx.stage("loading_model")
     model = _load_model(layout.resolve(request.input.model))
-    detected = architecture.verify(p.architecture, model, "веса версии")
+    detected = architecture.verify(p.architecture, model, "version_weights")
 
     ctx.stage("evaluating")
     try:
@@ -68,13 +68,13 @@ def run_evaluate(request: EvaluateRequest, ctx: OperationContext) -> dict[str, A
         )
     except WorkerError:
         raise
-    except Exception as exc:  # noqa: BLE001 — сбой проверки описывается в result.json
+    except Exception as exc:  # noqa: BLE001 — a check failure is described in result.json
         traceback.print_exc(file=sys.stderr)
         oom = "out of memory" in str(exc).lower()
         raise WorkerError(
             ErrorCode.OUT_OF_MEMORY if oom else ErrorCode.EVALUATION_FAILED,
-            ("Не хватило памяти устройства: уменьши batch. " if oom else "Проверка упала: ")
-            + f"{type(exc).__name__}: {exc}"[:1000],
+            "evaluate" if oom else None,
+            {"error": f"{type(exc).__name__}: {exc}"[:1000]},
         ) from None
 
     metrics = map_metrics(getattr(result, "results_dict", None) or {})

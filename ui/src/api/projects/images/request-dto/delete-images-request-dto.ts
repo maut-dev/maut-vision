@@ -2,6 +2,6 @@ export interface DeleteImagesRequestDto {
     projectId: string;
     groupId: string;
     imageIds: string[];
-    /** revision из images.reviewDeletion для тех же imageIds. */
+    /** The revision from images.reviewDeletion for the same imageIds. */
     reviewRevision: string;
 }

@@ -48,7 +48,7 @@ internal static class TransferBenchmark
         var cpu = Cpu.Start();
         var watch = Stopwatch.StartNew();
         var input = await projects.PrepareExportAsync(source.Id, archive, "perf-export-" + stamp);
-        var job = await core.Jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, source.Id, "perf-export-" + stamp, input.ProjectName);
+        var job = await core.Jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, source.Id, "perf-export-" + stamp, CodedText.Plain(input.ProjectName));
         var exported = (await WaitAsync(core, source.Id, job.Id)).Result!.Value.Deserialize<ProjectExportResult>(JobsManager.Json)!;
         var exportSeconds = watch.Elapsed.TotalSeconds;
         result["projects.export"] = Math.Round(watch.Elapsed.TotalMilliseconds);

@@ -1,0 +1,82 @@
+{
+  "amp_disabled": "AMP отключён: на этой видеокарте смешанная точность даёт NaN, обучение шло в fp32",
+  "architecture_mismatch": {
+    "base_weights": "исходные веса: заявлена {{claimed}}, а в весах записана '{{yamlFile}}' (масштаб '{{scale}}', задача '{{task}}'). Обучение не запускалось.",
+    "best_pt": "best.pt: заявлена {{claimed}}, а в весах записана '{{yamlFile}}' (масштаб '{{scale}}', задача '{{task}}'). Обучение не запускалось.",
+    "version_weights": "веса версии: заявлена {{claimed}}, а в весах записана '{{yamlFile}}' (масштаб '{{scale}}', задача '{{task}}'). Обучение не запускалось."
+  },
+  "batch_reduced": "Ultralytics уменьшил батч с {{requested}} до {{actual}} из-за нехватки памяти; lr0 {{lr0}} посчитан под исходный батч",
+  "capture_unavailable": {
+    "monitor_changed": "Монитор {{monitor}} изменился после снимка: сейчас {{actualWidth}}×{{actualHeight}} в ({{actualX}}, {{actualY}}), а рамка выбрана на {{width}}×{{height}} в ({{x}}, {{y}}). Снимите экран заново.",
+    "monitor_missing": "Монитора {{monitor}} нет: доступны 0..{{last}}",
+    "mss_missing": "Захват экрана недоступен: не установлен mss ({{error}})",
+    "open_failed": "Не удалось открыть захват экрана: {{error}}"
+  },
+  "dataset_invalid": {
+    "key_missing": "data.yaml: нет ключа '{{key}}'",
+    "names_invalid": "data.yaml: 'names' должен быть непустым списком имён классов",
+    "nc_mismatch": "data.yaml: nc={{nc}}, а имён классов {{names}}",
+    "split_empty": "В выборке '{{key}}' нет ни одной картинки",
+    "split_missing": "В датасете нет '{{value}}' (ключ '{{key}}' в data.yaml)",
+    "split_outside": "data.yaml: '{{key}}' указывает за пределы датасета",
+    "split_path_type": "data.yaml: '{{key}}' должен быть путём или списком путей",
+    "test_split_missing": "В датасете нет выборки test",
+    "validation_split_empty": "В выбранной проверочной выборке '{{key}}' нет изображений",
+    "yaml_missing": "В input/dataset нет data.yaml",
+    "yaml_not_mapping": "data.yaml должен быть словарём",
+    "yaml_unreadable": "data.yaml не читается: {{error}}"
+  },
+  "device_unavailable": {
+    "gpu_missing": "Запрошен GPU {{index}}, а видно {{count}}",
+    "no_cuda": "Запрошен GPU {{index}}, но CUDA недоступна"
+  },
+  "evaluation_failed": "Проверка упала: {{error}}",
+  "input_path_invalid": "Путь '{{path}}' выходит за пределы папки задачи",
+  "internal_error": {
+    "png_encode": "Не удалось закодировать снимок экрана в PNG",
+    "unexpected": "Внутренняя ошибка работника: {{error}}"
+  },
+  "live_time_limit": "Проверка с экрана остановлена по пределу {{seconds}} с",
+  "model_load_failed": {
+    "load_error": "Не удалось загрузить веса '{{file}}': {{error}}",
+    "not_pt": "Базовые веса должны быть файлом .pt, получено '{{file}}'"
+  },
+  "model_not_found": "Нет файла базовых весов '{{file}}' в input/model",
+  "no_weights_produced": "Обучение не сохранило best.pt — ни одной завершённой эпохи",
+  "onnx_export_failed": {
+    "export_error": "ONNX не экспортирован: {{error}}",
+    "no_file": "Экспорт ONNX завершился без файла"
+  },
+  "operation_not_implemented": "Операция '{{operation}}' есть в протоколе, но в этой версии работника не реализована",
+  "out_of_memory": {
+    "evaluate": "Не хватило памяти устройства: уменьши batch. {{error}}",
+    "predict": "Не хватило памяти устройства. {{error}}",
+    "train": "Не хватило памяти устройства: уменьши batch или imgsz. {{error}}"
+  },
+  "prediction_failed": "Прогон модели упал: {{error}}",
+  "protocol_unsupported": "Версия протокола {{received}} не поддерживается, работник понимает {{supported}}",
+  "region_invalid": {
+    "outside_image": "Рамка {{width}}×{{height}} в точке ({{x}}, {{y}}) выходит за изображение {{frameWidth}}×{{frameHeight}}",
+    "outside_monitor": "Рамка {{width}}×{{height}} в точке ({{x}}, {{y}}) выходит за монитор {{frameWidth}}×{{frameHeight}}",
+    "outside_video_frame": "Рамка {{width}}×{{height}} в точке ({{x}}, {{y}}) выходит за кадр видео {{frameWidth}}×{{frameHeight}}"
+  },
+  "reports_failed": "Картинки и лог обучения не сохранены: {{error}}",
+  "request_invalid": {
+    "class_out_of_range": "Фильтр classes содержит индекс вне карты датасета",
+    "compile_unavailable": "torch.compile недоступен в закреплённой Windows-сборке без Triton",
+    "not_object": "request.json должен быть JSON-объектом",
+    "profile_unavailable": "Профилирование требует TensorRT/ONNXRuntime и отключённых внешних интеграций",
+    "validation": "Запрос не прошёл проверку: {{summary}}"
+  },
+  "request_not_found": "В папке задачи нет request.json",
+  "request_unreadable": "request.json не читается как JSON: {{error}}",
+  "source_invalid": {
+    "image_format": "Файл не распознан как изображение (PNG, JPEG, WebP)",
+    "image_unreadable": "Не удалось прочитать изображение: {{error}}",
+    "missing": "Нет файла источника проверки",
+    "video_empty": "Из видео не прочитано ни одного кадра",
+    "video_unopened": "Видео не открылось: формат не поддерживается OpenCV или файл повреждён"
+  },
+  "training_failed": "Обучение упало: {{error}}",
+  "video_fps_unknown": "Видео не сообщает частоту кадров: время кадров посчитано для 30 к/с"
+}

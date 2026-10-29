@@ -101,7 +101,7 @@ internal sealed partial class JobsManager : IJobsManager
         }
     }
 
-    public async Task<JobInfo> EnqueueAsync<TJob, TInput>(TInput input, string projectId, string operationId, string? label = null,
+    public async Task<JobInfo> EnqueueAsync<TJob, TInput>(TInput input, string projectId, string operationId, CodedText? label = null,
         CancellationToken cancellationToken = default) where TJob : IJobDefinition<TInput>
     {
         var kind = KindOf(typeof(TJob));
@@ -401,7 +401,7 @@ internal sealed partial class JobsManager : IJobsManager
     }
 
     internal Task SaveProgressAsync(ActiveJob job, JobProgress progress) => ChangeAsync(job, info => info.Status == JobStatus.Running
-        ? info with { Progress = progress.Percent, ProgressText = progress.Text, Processed = progress.Processed, Total = progress.Total }
+        ? info with { Progress = progress.Percent, ProgressMessage = progress.Message, Processed = progress.Processed, Total = progress.Total }
         : null);
 
     /// <summary>
@@ -596,7 +596,7 @@ internal sealed partial class JobsManager : IJobsManager
                 var withProgress = last is null ? info : info with
                 {
                     Progress = last.Percent,
-                    ProgressText = last.Text,
+                    ProgressMessage = last.Message,
                     Processed = last.Processed,
                     Total = last.Total,
                 };
@@ -651,11 +651,21 @@ internal sealed partial class JobsManager : IJobsManager
         lock (scheduler) return kinds.GetValueOrDefault(kind)?.Resource == JobResource.Gpu;
     }
 
-    private static string? CleanLabel(string? label)
+    /// <summary>The text is trimmed and cut, so are the values of a code; a label without a code and text is null.</summary>
+    private static CodedText? CleanLabel(CodedText? label)
     {
-        var trimmed = label?.Trim();
-        if (string.IsNullOrEmpty(trimmed)) return null;
-        return trimmed.Length <= JobInfo.MaxLabelLength ? trimmed : trimmed[..JobInfo.MaxLabelLength].TrimEnd();
+        if (label is null) return null;
+        var text = Cut(label.Text);
+        var args = label.Args?.ToDictionary(pair => pair.Key, pair => Cut(pair.Value) ?? "", StringComparer.Ordinal);
+        if (label.Code is null && text is null) return null;
+        return label with { Text = text, Args = args };
+
+        static string? Cut(string? value)
+        {
+            var trimmed = value?.Trim();
+            if (string.IsNullOrEmpty(trimmed)) return null;
+            return trimmed.Length <= JobInfo.MaxLabelLength ? trimmed : trimmed[..JobInfo.MaxLabelLength].TrimEnd();
+        }
     }
 
     private ProjectStore RequireAttached(string projectId)

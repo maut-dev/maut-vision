@@ -1,0 +1,246 @@
+using System.IO;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.Web.WebView2.Core;
+
+namespace MautVision.Desktop;
+
+internal static partial class SmokeRunner
+{
+    /// <summary>
+    /// The interface language without a restart: settings.setLanguage to English switches the page (settings.languageChanged), the tray and
+    /// host-settings.json; the library, the base model catalog, the project settings and the navigation of a project speak English with no
+    /// Cyrillic outside the names the user typed; a bridge error (a stale revision in the project settings) is shown in English; plural
+    /// forms follow the language; job progress, a job label and a system line of the training log (codes from the host) read in English;
+    /// switching back restores Russian. The run itself is Russian (--language ru of the smoke).
+    /// </summary>
+    private static async Task CheckLanguageAsync(CoreWebView2 web, string root, string projectId, SmokeHostProbe host, JsonNode report, CancellationToken token)
+    {
+        var checks = report["checks"]!.AsArray();
+        if (host.Tray.Texts != ("Открыть Maut Vision", "Выйти")) throw new InvalidOperationException("The smoke run does not start in Russian: " + host.Tray.Texts);
+        await RunLifecycleUiStepAsync(web, LanguageEnglishScript, new { projectId }, checks, token);
+        await CheckImagesCatalogBackgroundsEnglishAsync(web, projectId, checks, token);
+        await WaitForTrayAsync(host, ("Open Maut Vision", "Exit"), token);
+        RequireStoredLanguage(root, "en");
+        checks.Add("English relabels the tray and is kept in host-settings.json");
+        await CheckProductionSectionsInEnglishAsync(web, projectId, checks, token);
+        await RunLifecycleUiStepAsync(web, LanguageHelpers + AllSectionsEnglishScript, new { projectId }, checks, token);
+        await RunLifecycleUiStepAsync(web, LanguageRussianScript, new { projectId }, checks, token);
+        await WaitForTrayAsync(host, ("Открыть Maut Vision", "Выйти"), token);
+        RequireStoredLanguage(root, "ru");
+        checks.Add("Russian comes back to the tray and to host-settings.json");
+    }
+
+    private static async Task WaitForTrayAsync(SmokeHostProbe host, (string Open, string Quit) expected, CancellationToken token)
+    {
+        for (var attempt = 0; host.Tray.Texts != expected; attempt++)
+        {
+            if (attempt > 50) throw new InvalidOperationException($"The tray is labelled {host.Tray.Texts}, expected {expected}.");
+            await Task.Delay(100, token);
+        }
+    }
+
+    private static void RequireStoredLanguage(string root, string expected)
+    {
+        using var settings = JsonDocument.Parse(File.ReadAllBytes(Path.Combine(root, Host.HostSettings.FileName)));
+        var stored = settings.RootElement.TryGetProperty("language", out var value) ? value.GetString() : null;
+        if (stored != expected) throw new InvalidOperationException($"host-settings.json keeps the language {stored}, expected {expected}.");
+    }
+
+    private const string LanguageHelpers = """
+          const cyrillic = /[А-Яа-яЁё]/;
+          const toEnglishLibrary = async () => {
+            if (!$('[data-testid="project-list"]')) headerButton('All projects').click();
+            return wait(() => $('[data-testid="project-list"]') && rows().length > 0, 'English library');
+          };
+          // Text a user reads in the element: text nodes and the labels of controls; names the user typed (projects) are not interface text.
+          const shellText = async scope => {
+            const names = (await request('projects.list', {})).data.items.flatMap(item => [item.name, item.description]).filter(Boolean)
+              .sort((left, right) => right.length - left.length);
+            const parts = [];
+            const walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+            for (let node = walker.nextNode(); node; node = walker.nextNode()) parts.push(node.textContent);
+            for (const element of [scope, ...scope.querySelectorAll('*')]) {
+              for (const name of ['aria-label', 'title', 'placeholder']) if (element.getAttribute(name)) parts.push(element.getAttribute(name));
+            }
+            let all = parts.join(' | ');
+            for (const name of names) all = all.split(name).join('');
+            return all;
+          };
+          const requireEnglish = async (scope, label) => {
+            const all = await shellText(scope);
+            const found = all.match(cyrillic);
+            assert(!found, label + (found ? ': ' + all.slice(Math.max(0, found.index - 60), found.index + 60) : ''));
+          };
+
+        """;
+
+    private const string LanguageEnglishScript = LanguageHelpers + """
+          const {projectId} = input;
+          await toLibrary();
+          const system = await request('settings.setLanguage', {language: 'system'});
+          assert(system.ok && system.data.setting === 'system' && ['ru', 'en'].includes(system.data.language), '«Как в системе» resolves to Russian or English');
+          const english = await request('settings.setLanguage', {language: 'en'});
+          assert(english.ok && english.data.setting === 'en' && english.data.language === 'en', 'settings.setLanguage stores English');
+          await wait(() => document.documentElement.lang === 'en' && headerButton('All projects'), 'English interface');
+          assert(text('h1') === 'Projects' && text('[data-testid="create-project"]') === 'Create a project'
+            && text('[data-testid="import-project"]') === 'Import a project…' && part(row(projectId), 'export-project') === 'Export…'
+            && $$('[data-testid="project-last"]').every(item => item.textContent === 'Last opened'),
+            'The library switches to English without a reload');
+          await requireEnglish($('#root'), 'The library has no Cyrillic outside project names');
+          const invalid = await request('projects.open', {projectId: crypto.randomUUID()});
+          assert(!invalid.ok && invalid.error.code === 'projects.not_found' && !('message' in invalid.error)
+            && mautLocale.errorText(invalid.error.code, invalid.error.details) === 'The project was not found. Refresh the project list.',
+            'A bridge error carries only its code; the English catalog names it');
+          assert(mautLocale.errorText('bridge.timeout', {count: '1'}) === 'The application did not answer within 1 second. Repeat the request.'
+            && mautLocale.errorText('bridge.timeout', {count: '10'}) === 'The application did not answer within 10 seconds. Repeat the request.',
+            'English plural forms: one, other');
+
+          headerButton('Base models').click();
+          await wait(() => text('#catalog-heading') === 'Base models' && $('[data-testid="base-model-list"]'), 'English base model catalog');
+          await requireEnglish($('main'), 'The base model catalog is in English');
+          await toEnglishLibrary();
+
+          const project = (await request('projects.list', {})).data.items.find(item => item.id === projectId);
+          $$('button', row(projectId)).find(item => item.textContent === 'Settings').click();
+          const editor = await wait(() => $$('[role="dialog"]').find(item => item.textContent.includes('Project settings')), 'English project settings');
+          await requireEnglish(editor, 'The project settings dialog is in English');
+          const updated = await request('projects.update', {projectId, revision: project.revision, name: project.name, description: project.description,
+            baseModelId: project.baseModelId, inputSize: project.inputSize});
+          assert(updated.ok, 'The project changes behind the open settings');
+          $('[data-testid="project-save"]', editor).click();
+          await wait(() => editor.textContent.includes('The project has already changed. Close the settings, check the data and repeat the change.'),
+            'English revision conflict', () => editor.textContent);
+          assert(true, 'A bridge error (projects.revision_conflict) is shown in English');
+          $$('button', editor).find(item => item.textContent === 'Cancel').click();
+          await wait(() => !$('[role="dialog"]'), 'Settings closed');
+
+          $('[data-testid="open-project"]', row(projectId)).click();
+          await wait(() => $('[data-section="overview"]')?.getAttribute('aria-current') === 'page', 'Project opened');
+          await requireEnglish($('header'), 'The header of a project is in English');
+          await requireEnglish($('aside nav'), 'The section navigation is in English');
+          assert(labelled('Overview') && labelled('Training') && labelled('Checks')
+            && document.body.textContent.includes('Overview · Project data, current jobs, models and computer load.'),
+            'The sections and their descriptions are in English');
+
+          // Lines the host sends as codes: job progress, job labels and system lines of the training log.
+          const jobs = (await request('jobs.list', {projectId, limit: 200})).data;
+          const trained = jobs.find(job => job.kind === 'training.run' && job.status === 'succeeded');
+          assert(trained && trained.progressMessage?.code === 'progress.saving_version' && mautLocale.codedText(trained.progressMessage) === 'Saving the model version'
+            && mautLocale.codedText({code: 'progress.epoch', args: {epoch: '3', total: '10'}, text: null}) === 'Epoch 3 of 10',
+            'Job progress comes as a code and reads in English');
+          const versionLabelled = jobs.find(job => job.label?.code === 'jobLabels.version_dataset' || job.label?.code === 'jobLabels.version');
+          assert(versionLabelled && /^Version \d+( · .+)?$/.test(mautLocale.codedText(versionLabelled.label))
+            && mautLocale.codedText({code: null, args: null, text: 'Версия 2'}) === 'Версия 2',
+            'A job label with a code reads in English; a stored label of 1.0.0 stays as it was');
+          $('[data-section="training"]').click();
+          const card = await wait(() => $('[data-testid="training-run-card"][data-run-id="' + trained.id + '"]'), 'English training history');
+          $('[data-testid="training-run-card-open"]', card).click();
+          await wait(() => $('[data-testid="training-run-passport"]')?.dataset.runId === trained.id, 'English run passport');
+          const lines = await wait(() => {
+            const found = $$('[data-testid="training-log-lines"] p').map(item => item.textContent);
+            return found.some(line => /^Model version \d+ created\.$/.test(line)) && found;
+          }, 'English system line of the training log', () => $$('[data-testid="training-log-lines"] p').map(item => item.textContent).slice(-3).join(' | '));
+          assert(!lines.some(line => cyrillic.test(line)), 'The training log has no Cyrillic in English: system lines are translated, console lines are raw');
+          await toEnglishLibrary();
+          return {checks};
+        """;
+
+    /// <summary>
+    /// Every section of a project once, in its first view, with no exclusions: the whole page has no Cyrillic outside the data the host
+    /// returns (names, descriptions, file names, job labels stored as text and the values of coded lines). Hidden native selects are
+    /// skipped: they mirror the options of the visible triggers.
+    /// </summary>
+    private const string AllSectionsEnglishScript = """
+          const {projectId} = input;
+          const userData = new Set();
+          const collect = (value, key = '') => {
+            if (typeof value === 'string') { if (/name|description|path/i.test(key) && cyrillic.test(value)) userData.add(value); return; }
+            if (Array.isArray(value)) { value.forEach(item => collect(item, key)); return; }
+            if (!value || typeof value !== 'object') return;
+            if ('code' in value && 'text' in value) {
+              // A coded line: the text is data only without a code; the values are data either way.
+              if (!value.code && value.text) userData.add(value.text);
+              for (const item of Object.values(value.args ?? {})) if (typeof item === 'string') userData.add(item);
+              return;
+            }
+            for (const [name, item] of Object.entries(value)) collect(item, name);
+          };
+          for (const [method, payload] of [
+            ['projects.list', {}], ['classes.getWorkspace', {projectId}], ['images.listGroups', {projectId}], ['backgrounds.listSets', {projectId}],
+            ['generation.listRecipes', {projectId}], ['generation.listRuns', {projectId}], ['datasets.list', {projectId}],
+            ['datasets.listOperations', {projectId, kind: 'build'}], ['datasets.listOperations', {projectId, kind: 'verify'}],
+            ['datasets.listOperations', {projectId, kind: 'export'}], ['training.listPresets', {}], ['training.listRuns', {projectId}],
+            ['training.listModelVersions', {projectId}], ['checks.list', {projectId}], ['checks.listEvaluations', {projectId, limit: 200}],
+            ['jobs.list', {projectId, limit: 200}],
+          ]) {
+            const reply = await request(method, payload);
+            if (reply.ok) collect(reply.data);
+          }
+          const names = [...userData].filter(item => item.length > 0).sort((left, right) => right.length - left.length);
+          const fileNames = /[^\s|·/:()«»“”"]+\.(png|jpe?g|webp|bmp|mp4|mkv|avi|mov|webm|m4v|pt|onnx|zip)/gi;
+          const pageText = () => {
+            const outside = node => !(node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('select');
+            const parts = [];
+            const root = $('#root');
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            for (let node = walker.nextNode(); node; node = walker.nextNode()) if (outside(node)) parts.push(node.textContent);
+            for (const element of root.querySelectorAll('*')) {
+              if (!outside(element)) continue;
+              for (const name of ['aria-label', 'title', 'placeholder', 'alt']) if (element.getAttribute(name)) parts.push(element.getAttribute(name));
+            }
+            let all = parts.join(' | ');
+            for (const name of names) all = all.split(name).join('');
+            return all.replace(fileNames, '');
+          };
+
+          if (!$('[data-section]')) {
+            $('[data-testid="open-project"]', row(projectId)).click();
+            await wait(() => $('[data-section="overview"]')?.getAttribute('aria-current') === 'page', 'Project opened');
+          }
+          const sections = $$('aside nav [data-section]').filter(item => !item.disabled).map(item => item.dataset.section);
+          assert(sections.length >= 10, 'Every section is listed: ' + sections.join(', '));
+          const found = [];
+          for (const id of sections) {
+            $('[data-section="' + id + '"]').click();
+            // The section is settled when its markup stops growing: lists and lazy chunks have arrived.
+            let last = -1, stable = 0;
+            await wait(() => {
+              if ($('[data-section="' + id + '"]')?.getAttribute('aria-current') !== 'page') return false;
+              const size = $('main').querySelectorAll('*').length;
+              stable = size === last ? stable + 1 : 0;
+              last = size;
+              return stable >= 5;
+            }, 'Section settled: ' + id);
+            const all = pageText();
+            const match = all.match(cyrillic);
+            if (match) found.push(id + ': ' + all.slice(Math.max(0, match.index - 60), match.index + 60));
+          }
+          assert(!found.length, 'Every section in English has no Cyrillic outside user data' + (found.length ? ': ' + found.join(' || ') : ' (' + sections.join(', ') + ')'));
+          await toEnglishLibrary();
+          return {checks};
+        """;
+
+    private const string LanguageRussianScript = """
+          await toLibrary();
+          const russian = await request('settings.setLanguage', {language: 'ru'});
+          assert(russian.ok && russian.data.setting === 'ru' && russian.data.language === 'ru', 'settings.setLanguage stores Russian');
+          await wait(() => document.documentElement.lang === 'ru' && headerButton('Все проекты'), 'Russian interface');
+          assert(text('h1') === 'Проекты' && text('[data-testid="create-project"]') === 'Создать проект'
+            && mautLocale.errorText('projects.revision_conflict') === 'Проект уже изменился. Закройте настройки, проверьте данные и повторите изменение.',
+            'Switching back restores the Russian interface and error texts');
+          assert(mautLocale.codedText({code: 'progress.epoch', args: {epoch: '3', total: '10'}, text: null}) === 'Эпоха 3 из 10'
+            && mautLocale.codedText({code: 'trainingLog.version_created', args: {number: '2'}, text: null}) === 'Создана версия модели 2.'
+            && mautLocale.codedText({code: 'worker.device_unavailable.gpu_missing', args: {index: '1', count: '0'}, text: 'GPU 1 is requested, but 0 are visible'})
+              === 'Запрошен GPU 1, а видно 0'
+            && mautLocale.codedText({code: 'worker.unknown_code', args: null, text: 'English fallback'}) === 'English fallback',
+            'Coded lines read in Russian again; an unknown worker code shows the English message of the worker');
+          assert(mautLocale.errorText('bridge.timeout', {count: '1'}) === 'Приложение не ответило за 1 секунду. Повторите запрос.'
+            && mautLocale.errorText('bridge.timeout', {count: '3'}) === 'Приложение не ответило за 3 секунды. Повторите запрос.'
+            && mautLocale.errorText('bridge.timeout', {count: '10'}) === 'Приложение не ответило за 10 секунд. Повторите запрос.',
+            'Russian plural forms: one, few, many');
+          assert(mautLocale.errorText('checks.evaluation_input_mismatch', {datasetWidth: '64', datasetHeight: '48', versionWidth: '320', versionHeight: '256'})
+            === 'Размер кадров датасета 64 × 48 не совпадает со входом версии 320 × 256.', 'Error texts take values of the error details');
+          return {checks};
+        """;
+}

@@ -3,15 +3,17 @@ import { subscribeImagesChanged } from "@/api/events/subscriptions";
 import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageGroupResponseDto } from "@/api/projects/images/response-dto/image-group-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
+import "@/i18n/sections/images";
 import { errorMessage } from "./format";
 
 const byCreation = (left: ImageGroupResponseDto, right: ImageGroupResponseDto) =>
     left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id);
 
 /**
- * Группы изображений открытого проекта: images.listGroups при открытии, затем images.changed. Перечитываются только
- * названные событием группы (новая ревизия, удаление или изменение состава и счётчиков); ответ, начатый раньше
- * следующего чтения той же группы, отбрасывается.
+ * Image groups of the open project: images.listGroups on opening, then images.changed. Only the groups named by the event are reread
+ * (a new revision, deletion or a change of contents and counters); an answer started before the next read of the same group is
+ * dropped.
  */
 export function useImageGroups(projectId: string) {
     const [groups, setGroups] = useState<readonly ImageGroupResponseDto[]>([]);
@@ -25,7 +27,7 @@ export function useImageGroups(projectId: string) {
         setGroups(current => current.filter(item => item.id !== groupId));
     }, []);
 
-    /** Ответ операции или чтения; более старая ревизия не заменяет новую. */
+    /** The answer of an operation or a read; an older revision does not replace a newer one. */
     const apply = useCallback((group: ImageGroupResponseDto) => {
         setGroups(current => {
             const known = current.find(item => item.id === group.id);
@@ -54,7 +56,7 @@ export function useImageGroups(projectId: string) {
             setGroups([...list].sort(byCreation));
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить группы изображений. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("images:errors.loadGroups")));
         } finally {
             if (mounted.current) setLoading(false);
         }

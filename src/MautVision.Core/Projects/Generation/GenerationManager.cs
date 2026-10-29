@@ -35,7 +35,6 @@ internal sealed class GenerationManager : IGenerationManager
     internal const int MaxSamples = 4;
     internal const int CanvasStep = 32;
     internal const double WeightTolerance = 1e-6;
-    internal const string RepeatSuffix = " · повтор";
     private const string RecipeColumns = "id, name, description, width, height, background_set_ids, class_variant_ids, variant_weights, objects_per_image, "
         + "empty_probability, scale, revision, created_at, updated_at, archived_at";
 
@@ -238,11 +237,8 @@ internal sealed class GenerationManager : IGenerationManager
     public async Task<GenerationRepeatDraft> GetRepeatDraftAsync(Guid runId, CancellationToken cancellationToken = default)
     {
         var run = await GetRunAsync(runId, cancellationToken).ConfigureAwait(false);
-        var recipe = run.Recipe;
-        var name = recipe.Name.Length + RepeatSuffix.Length > MaxNameLength
-            ? recipe.Name[..(MaxNameLength - RepeatSuffix.Length)].TrimEnd() + RepeatSuffix
-            : recipe.Name + RepeatSuffix;
-        return new GenerationRepeatDraft(recipe.ToInput() with { Name = name }, run.Seed, run.RequestedCount, runId);
+        // The name stays the name of the run's preset: the UI adds " · repeat" in the language of the user.
+        return new GenerationRepeatDraft(run.Recipe.ToInput(), run.Seed, run.RequestedCount, runId);
     }
 
     public async Task<IReadOnlyList<GenerationSample>> PreviewSamplesAsync(GenerationRecipeInput input, uint seed, int count = MaxSamples,

@@ -3,24 +3,24 @@ using MautVision.Core.Interfaces.Media;
 
 namespace MautVision.Core.Interfaces.Projects.Backgrounds;
 
-/// <summary>Левый верхний угол рамки размера набора в пикселях исходного кадра (с учётом EXIF-ориентации).</summary>
+/// <summary>Top-left corner of a set-sized crop frame in pixels of the source frame (with EXIF orientation applied).</summary>
 public sealed record BackgroundCrop(int Left, int Top);
 
 /// <summary>
-/// Файл изображения (PNG, JPEG, WebP, BMP). Path — абсолютный путь; хранится во входе задачи и наружу не выходит.
-/// Crop — рамка «Нарезать из изображений»; без неё файл берётся целиком и должен быть ровно размера набора.
+/// Image file (PNG, JPEG, WebP, BMP). Path — absolute path; stored in the job input and never leaves it.
+/// Crop — the "Cut from images" frame; without it the whole file is used and must be exactly the set size.
 /// </summary>
 public sealed record BackgroundFileSource(string Path, BackgroundCrop? Crop = null);
 
 /// <summary>
-/// Видео «Нарезать из видео»: кадры на отметках Frames, из каждого вырезается одна рамка Region. Frames обычно — все доступные
-/// кадры с выбранным шагом (<see cref="AvailableFrames"/>), а останов задаёт <see cref="ImportBackgroundsInput.RequestedCount"/>.
+/// "Cut from video": frames at the Frames marks, one Region crop is cut from each. Frames are usually all available
+/// frames with the chosen step (<see cref="AvailableFrames"/>), and the stop is set by <see cref="ImportBackgroundsInput.RequestedCount"/>.
 /// </summary>
 public sealed record BackgroundVideoSource(string Path, VideoFrameRange Frames, BackgroundCrop Region)
 {
     /// <summary>
-    /// Сколько кадров даёт видео длительностью durationMs с отметками startMs + i × intervalMs:
-    /// max(0, ⌊(durationMs − 1 − startMs) / intervalMs⌋ + 1). Последняя отметка строго раньше конца видео.
+    /// How many frames a video of durationMs gives with marks startMs + i × intervalMs:
+    /// max(0, ⌊(durationMs − 1 − startMs) / intervalMs⌋ + 1). The last mark is strictly before the end of the video.
     /// </summary>
     public static int AvailableFrames(long durationMs, long startMs, long intervalMs)
     {
@@ -30,17 +30,17 @@ public sealed record BackgroundVideoSource(string Path, VideoFrameRange Frames, 
 }
 
 /// <summary>
-/// Размытие по Гауссу (sigma = радиус): радиус кадра выбирается детерминированно от Seed и номера источника в диапазоне
-/// MinRadius–MaxRadius; меньше 0,3 px — фон остаётся резким. Seed null — выводится из ID проекта и операции, поэтому примеры
-/// и запуск одной операции совпадают; итог запуска хранит выбранный seed.
+/// Gaussian blur (sigma = radius): the frame radius is chosen deterministically from Seed and the source index in the range
+/// MinRadius–MaxRadius; below 0.3 px the background stays sharp. Seed null — derived from the project and operation IDs, so samples
+/// and the run of one operation match; the run result stores the chosen seed.
 /// </summary>
 public sealed record BackgroundBlur(double MinRadius, double MaxRadius, uint? Seed = null);
 
 /// <summary>
-/// Вход задачи подготовки фонов в набор. Ровно один способ: Files (готовые кадры и нарезка из изображений) или Video.
-/// RequestedCount — сколько фонов добавить (дальше источники не читаются; null — все источники). SkipSimilar — пропускать
-/// кадры, подпись которых почти не отличается (≤ 3/255) от фонов набора и уже взятых этим запуском. Точные повторы
-/// (те же пиксели в наборе) пропускаются всегда.
+/// Input of the job that prepares backgrounds into a set. Exactly one way: Files (ready frames and cuts from images) or Video.
+/// RequestedCount — how many backgrounds to add (further sources are not read; null — all sources). SkipSimilar — skip
+/// frames whose signature barely differs (≤ 3/255) from the backgrounds of the set and those already taken by this run. Exact duplicates
+/// (the same pixels in the set) are always skipped.
 /// </summary>
 public sealed record ImportBackgroundsInput(
     Guid SetId,
@@ -53,9 +53,9 @@ public sealed record ImportBackgroundsInput(
     public const double MaxBlurRadius = 1000;
 
     /// <summary>
-    /// Нет источников — <c>backgrounds.sources_empty</c>; радиус вне 0–1000 или «от» больше «до» — <c>backgrounds.blur_invalid</c>;
-    /// отрицательная рамка — <c>backgrounds.crop_invalid</c>; RequestedCount меньше 1 или больше числа источников —
-    /// <c>backgrounds.count_invalid</c>; диапазон видео — <see cref="VideoFrameRange.Validate"/> (без длительности: только
+    /// No sources — <c>backgrounds.sources_empty</c>; a radius outside 0–1000 or "from" greater than "to" — <c>backgrounds.blur_invalid</c>;
+    /// a negative crop — <c>backgrounds.crop_invalid</c>; RequestedCount below 1 or above the number of sources —
+    /// <c>backgrounds.count_invalid</c>; video range — <see cref="VideoFrameRange.Validate"/> (without duration: only
     /// <c>video.frames_invalid</c>).
     /// </summary>
     public void Validate()
@@ -91,16 +91,16 @@ public sealed record ImportBackgroundsInput(
 }
 
 /// <summary>
-/// Причина пропуска источника. SourceIndex — номер источника (у видео — номер кадра), Name — имя файла или видео,
-/// Reason — код: <c>backgrounds.wrong_size</c> и <c>backgrounds.crop_out_of_bounds</c> (Width/Height — размер файла или кадра),
+/// Source skip reason. SourceIndex — source index (for video — frame index), Name — file or video name,
+/// Reason — code: <c>backgrounds.wrong_size</c> and <c>backgrounds.crop_out_of_bounds</c> (Width/Height — file or frame size),
 /// <c>backgrounds.image_unreadable</c>, <c>backgrounds.similar</c>, <c>backgrounds.duplicate</c>, <c>video.frame_unavailable</c>.
 /// </summary>
 public sealed record BackgroundImportIssue(int SourceIndex, string Name, string Reason, int? Width = null, int? Height = null, long? TimestampMs = null);
 
 /// <summary>
-/// Итог запуска (в <see cref="JobInfo.Result"/>, также после отмены и сбоя): Total — источников (файлов или кадров видео),
-/// Processed — рассмотрено, Added, Duplicates (точные повторы), Similar (почти одинаковые), Rejected; RequestedCount — цель
-/// запуска; TargetSize — размер набора; Blur — размытие с выбранным seed; Issues — первые <see cref="MaxIssues"/> пропусков.
+/// Run result (in <see cref="JobInfo.Result"/>, also after cancellation and failure): Total — sources (files or video frames),
+/// Processed — examined, Added, Duplicates (exact duplicates), Similar (nearly identical), Rejected; RequestedCount — the run
+/// target; TargetSize — set size; Blur — blur with the chosen seed; Issues — the first <see cref="MaxIssues"/> skips.
 /// </summary>
 public sealed record ImportBackgroundsResult(
     int Total,
@@ -118,12 +118,12 @@ public sealed record ImportBackgroundsResult(
 }
 
 /// <summary>
-/// Подготовка фонов в набор (CPU, возобновляемая). Кадр: декодирование с ориентацией → проверка размера или рамки → вырез →
-/// подпись 32×32 → размытие → PNG RGBA ровно размера набора. Кадры обрабатываются параллельно, решения о повторах принимаются
-/// по порядку источников. Набор не найден — <c>backgrounds.set_not_found</c>, в архиве — <c>backgrounds.set_archived</c>;
-/// видео меньше набора — <c>backgrounds.video_too_small</c>, рамка вне кадра — <c>backgrounds.region_invalid</c>, ошибки
-/// видео — коды <c>video.*</c>; источники изменились до продолжения — <c>backgrounds.import_sources_changed</c>; ни один
-/// источник не подошёл — <c>backgrounds.no_usable_media</c>. Отмена и сбой оставляют добавленное.
+/// Preparing backgrounds into a set (CPU, resumable). Frame: decoding with orientation → size or crop check → cut →
+/// 32×32 signature → blur → RGBA PNG of exactly the set size. Frames are processed in parallel, duplicate decisions are made
+/// in source order. Set not found — <c>backgrounds.set_not_found</c>, archived — <c>backgrounds.set_archived</c>;
+/// video smaller than the set — <c>backgrounds.video_too_small</c>, crop outside the frame — <c>backgrounds.region_invalid</c>, video
+/// errors — <c>video.*</c> codes; sources changed before resuming — <c>backgrounds.import_sources_changed</c>; no
+/// source fitted — <c>backgrounds.no_usable_media</c>. Cancellation and failure keep what was added.
 /// </summary>
 [JobKind("backgrounds.import")]
 public interface IImportBackgroundsJob : IJobDefinition<ImportBackgroundsInput>

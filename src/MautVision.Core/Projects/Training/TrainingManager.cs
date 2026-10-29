@@ -269,7 +269,7 @@ internal sealed class TrainingManager : ITrainingManager
         var (number, evaluations) = await store.WriteAsync(async (connection, transaction, token) =>
         {
             var version = await FindVersionAsync(connection, transaction, versionId, token).ConfigureAwait(false) ?? throw VersionNotFound(versionId);
-            // «Сделать рабочей» may have run since the review: the working flag is checked again inside the transaction.
+            // "Make working" may have run since the review: the working flag is checked again inside the transaction.
             if (version.IsWorking) throw InUse(versionId, WorkingBlocker);
             var removed = await links.DeleteDependentsAsync(connection, transaction, versionId, token).ConfigureAwait(false);
             await using (var delete = Command(connection, transaction, "DELETE FROM model_versions WHERE id = $id;"))
@@ -380,7 +380,12 @@ internal sealed class TrainingManager : ITrainingManager
         Raise([new(runId, revision)], []);
     }
 
-    internal async Task SetPhaseAsync(Guid runId, string phase, string? errorCode = null, string? errorMessage = null, string? systemLine = null)
+    /// <summary>
+    /// Changes the phase of a run. errorMessage — the message for the log; workerText — what the UI shows for a failure the worker reported
+    /// itself (stored in error_message as <see cref="CodedTextJson"/> with the message as its text); systemLine — a line of the log.
+    /// </summary>
+    internal async Task SetPhaseAsync(Guid runId, string phase, string? errorCode = null, string? errorMessage = null, CodedText? systemLine = null,
+        CodedText? workerText = null)
     {
         var revision = await store.WriteAsync(async (connection, transaction, token) =>
         {
@@ -392,7 +397,8 @@ internal sealed class TrainingManager : ITrainingManager
             command.Parameters.AddWithValue("$id", Key(runId));
             command.Parameters.AddWithValue("$phase", phase);
             command.Parameters.AddWithValue("$code", (object?)errorCode ?? DBNull.Value);
-            command.Parameters.AddWithValue("$message", (object?)errorMessage ?? DBNull.Value);
+            command.Parameters.AddWithValue("$message", (object?)(workerText is not null ? CodedTextJson.Serialize(workerText with { Text = errorMessage }) : errorMessage)
+                ?? DBNull.Value);
             command.Parameters.AddWithValue("$now", Time(Now()));
             return await ScalarAsync(command, token).ConfigureAwait(false);
         }).ConfigureAwait(false);
@@ -462,7 +468,7 @@ internal sealed class TrainingManager : ITrainingManager
         Directory.Move(staging, target);
 
         var bestEpoch = result.History.Where(epoch => epoch.Fitness is not null).OrderByDescending(epoch => epoch.Fitness).Select(epoch => (int?)epoch.Epoch).FirstOrDefault();
-        var notes = result.Warnings.Select(warning => $"{warning.Code}: {warning.Message}").ToArray();
+        var notes = result.Warnings.Select(warning => CodedTextJson.Serialize(warning.Text)).ToArray();
         var now = Now();
         long runRevision = 0;
         TrainingEntityChange? versionChange = null;
@@ -527,7 +533,7 @@ internal sealed class TrainingManager : ITrainingManager
                     await InsertEpochAsync(connection, transaction, runId, new TrainingEpoch(epoch.Epoch, epoch.Losses, epoch.Metrics, epoch.Lr, epoch.Fitness), token)
                         .ConfigureAwait(false);
                 }
-                await AppendLogAsync(connection, transaction, runId, [(now, TrainingLogKind.System, $"Создана версия модели {number}.")], token).ConfigureAwait(false);
+                await AppendLogAsync(connection, transaction, runId, [(now, TrainingLogKind.System, CodedText.Of("trainingLog.version_created", ("number", number)))], token).ConfigureAwait(false);
                 await using var finish = Command(connection, transaction, """
                     INSERT INTO training_runs (id, phase, revision, created_at, updated_at) VALUES ($id, 'finished', 0, $now, $now) ON CONFLICT (id) DO NOTHING;
                     UPDATE training_runs SET phase = 'finished', result_version_id = $version, effective_params = $effective, environment = $environment,
@@ -588,7 +594,7 @@ internal sealed class TrainingManager : ITrainingManager
                 if (published is { Kind: WorkerOutcomeKind.Failed })
                     logger.LogWarning("Project {ProjectId}: published result of training run {RunId} is not accepted: {Code}.", projectId, row.Id, published.Code);
             }
-            await SetPhaseAsync(row.Id, "finished", systemLine: "Запуск прерван остановкой приложения.").ConfigureAwait(false);
+            await SetPhaseAsync(row.Id, "finished", systemLine: CodedText.Of("trainingLog.interrupted")).ConfigureAwait(false);
         }
         _ = Task.Run(() => CleanJobFoldersAsync(activeJobs));
         return accepted;
@@ -745,7 +751,7 @@ internal sealed class TrainingManager : ITrainingManager
             _ => TrainingRunState.Failed,
         };
         TrainingRunError? error = state is TrainingRunState.Failed or TrainingRunState.Interrupted
-            ? row?.ErrorCode is { } code ? new TrainingRunError(code, row.ErrorMessage ?? "")
+            ? row?.ErrorCode is { } code ? StoredError(code, row.ErrorMessage)
                 : info.Error is { } jobError ? new TrainingRunError(jobError.Code, jobError.Message) : null
             : null;
         var metrics = row?.Metrics is { } json ? JsonSerializer.Deserialize<Dictionary<string, double>>(json, Json)! : new Dictionary<string, double>();
@@ -788,17 +794,27 @@ internal sealed class TrainingManager : ITrainingManager
         reader.IsDBNull(3) ? null : reader.GetDouble(3),
         reader.IsDBNull(4) ? null : reader.GetDouble(4));
 
-    private static TrainingLogEntry ReadLog(SqliteDataReader reader) => new(
-        reader.GetInt64(0),
-        Time(reader.GetInt64(1)),
-        reader.GetString(2) switch
+    /// <summary>A failure of a run as stored: a worker failure keeps what the UI shows in error_message (<see cref="CodedTextJson"/>).</summary>
+    private static TrainingRunError StoredError(string code, string? message)
+    {
+        var stored = CodedTextJson.Parse(message);
+        return stored?.Code is not null ? new TrainingRunError(code, stored.Text ?? "", stored) : new TrainingRunError(code, message ?? "");
+    }
+
+    /// <summary>System lines and warnings hold codes (<see cref="CodedTextJson"/>); console lines and stages are raw text.</summary>
+    private static TrainingLogEntry ReadLog(SqliteDataReader reader)
+    {
+        var kind = reader.GetString(2) switch
         {
             "stage" => TrainingLogKind.Stage,
             "warning" => TrainingLogKind.Warning,
             "system" => TrainingLogKind.System,
             _ => TrainingLogKind.Log,
-        },
-        reader.GetString(3));
+        };
+        var message = reader.GetString(3);
+        return new TrainingLogEntry(reader.GetInt64(0), Time(reader.GetInt64(1)), kind,
+            kind is TrainingLogKind.System or TrainingLogKind.Warning ? CodedTextJson.Parse(message)! : CodedText.Plain(message));
+    }
 
     private static async Task InsertEpochAsync(SqliteConnection connection, SqliteTransaction transaction, Guid runId, TrainingEpoch epoch, CancellationToken token)
     {
@@ -816,7 +832,7 @@ internal sealed class TrainingManager : ITrainingManager
 
     /// <summary>Appends log lines after the last one of the run and counts them; sequence numbers start at 1.</summary>
     private static async Task AppendLogAsync(SqliteConnection connection, SqliteTransaction transaction, Guid runId,
-        IReadOnlyList<(DateTimeOffset At, TrainingLogKind Kind, string Message)> lines, CancellationToken token)
+        IReadOnlyList<(DateTimeOffset At, TrainingLogKind Kind, CodedText Message)> lines, CancellationToken token)
     {
         if (lines.Count == 0) return;
         long last;
@@ -838,7 +854,9 @@ internal sealed class TrainingManager : ITrainingManager
                 TrainingLogKind.System => "system",
                 _ => "log",
             });
-            insert.Parameters.AddWithValue("$message", line.Message);
+            insert.Parameters.AddWithValue("$message", line.Kind is TrainingLogKind.System or TrainingLogKind.Warning
+                ? CodedTextJson.Serialize(line.Message)
+                : line.Message.Text ?? "");
             await insert.ExecuteNonQueryAsync(token).ConfigureAwait(false);
         }
         await using var update = Command(connection, transaction, "UPDATE training_runs SET log_count = $count WHERE id = $run;");
@@ -918,7 +936,7 @@ internal sealed class TrainingManager : ITrainingManager
             JsonSerializer.Deserialize<ModelClass[]>(Classes, Json)!,
             JsonSerializer.Deserialize<Dictionary<string, double>>(Metrics, Json)!,
             files,
-            JsonSerializer.Deserialize<string[]>(Notes, Json)!,
+            JsonSerializer.Deserialize<string[]>(Notes, Json)!.Select(note => CodedTextJson.Parse(note)!).ToArray(),
             Element(Environment),
             Working,
             Revision,

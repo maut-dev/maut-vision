@@ -6,6 +6,7 @@ using MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 using MautVision.Desktop.Controllers.Jobs;
 using MautVision.Desktop.Controllers.Jobs.ResponseDto;
 using MautVision.Desktop.Resources;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop.Controllers.Projects.Catalog;
 
@@ -18,8 +19,7 @@ internal sealed class ClassesController(
     IJobsManager jobs,
     ResourceHandles resources,
     FileSelections selections,
-    NativeDialogs dialogs,
-    Func<string, string> messageFor)
+    NativeDialogs dialogs)
 {
     public async Task<CatalogWorkspaceResponseDto> GetWorkspaceAsync(GetCatalogWorkspaceRequestDto request, CancellationToken cancellationToken)
         => CatalogResponseMapper.Map(await (await Project(request.ProjectId, cancellationToken)).Classes.GetWorkspaceAsync(cancellationToken));
@@ -85,7 +85,7 @@ internal sealed class ClassesController(
     /// <summary>Shows the native multi-select dialog; the answer comes when the user closes it.</summary>
     public async Task<ClassAssetFileSelectionResponseDto> SelectAssetFilesAsync(SelectClassAssetFilesRequestDto request, CancellationToken cancellationToken)
     {
-        var paths = await dialogs.PickImageFiles("Добавить изображения", cancellationToken);
+        var paths = await dialogs.PickImageFiles(Strings.DialogAddImages, cancellationToken);
         return paths is null || paths.Count == 0
             ? new ClassAssetFileSelectionResponseDto(null, 0)
             : new ClassAssetFileSelectionResponseDto(selections.Register(paths), paths.Count);
@@ -104,10 +104,11 @@ internal sealed class ClassesController(
         if (!binding.Available)
             throw new CoreException("classes.variant_unavailable", $"Class variant {binding.Id} is archived or its class or project variant is.");
         var workspace = await project.Classes.GetWorkspaceAsync(cancellationToken);
-        var label = $"{workspace.Classes.FirstOrDefault(item => item.Id == binding.ClassId)?.Name} · {workspace.Variants.FirstOrDefault(item => item.Id == binding.VariantId)?.Name}";
+        var label = JobLabels.ClassVariant(workspace.Classes.FirstOrDefault(item => item.Id == binding.ClassId)?.Name,
+            workspace.Variants.FirstOrDefault(item => item.Id == binding.VariantId)?.Name);
         var job = await jobs.EnqueueAsync<IImportClassAssetsJob, ImportClassAssetsInput>(new ImportClassAssetsInput(binding.Id, paths),
             project.Id, request.OperationId, label, cancellationToken);
-        return JobResponseMapper.Map(job, messageFor);
+        return JobResponseMapper.Map(job);
     }
 
     private Task<IProject> Project(string projectId, CancellationToken cancellationToken) => projects.GetAsync(projectId, cancellationToken);

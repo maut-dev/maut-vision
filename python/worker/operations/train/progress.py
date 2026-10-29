@@ -1,12 +1,12 @@
-"""Прогресс обучения из коллбэков ultralytics.
+"""Training progress from ultralytics callbacks.
 
-Коллбэки, а не опрос results.csv: файл пишется в конце эпохи целиком и
-читать его вдогонку — гонка с записью. Коллбэки видят те же числа в тот же
-момент.
+Callbacks, not polling results.csv: the file is written whole at the end of an epoch, and
+reading it in pursuit races with the writer. Callbacks see the same numbers at the same
+moment.
 
-Ловушка: после цикла ultralytics валидирует best.pt и ещё раз вызывает
-on_fit_epoch_end — с epoch+1. Это не эпоха, а итоговая оценка; отличаем её
-по тому, что on_train_epoch_start перед ней не было.
+Trap: after the loop ultralytics validates best.pt and calls
+on_fit_epoch_end once more — with epoch+1. This is not an epoch but the final evaluation; we tell it apart
+by the absence of on_train_epoch_start before it.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from typing import Any
 from worker.protocol import EpochRecord
 from worker.runtime.events import EventEmitter
 
-# ключи метрик ultralytics → имена протокола
+# ultralytics metric keys → protocol names
 _METRIC_NAMES = {
     "metrics/precision(B)": "precision",
     "metrics/recall(B)": "recall",
@@ -91,7 +91,7 @@ class TrainingProgress:
                 if c is not None:
                     losses[k.split("/", 1)[-1]] = c
         lr = _clean((getattr(trainer, "lr", None) or {}).get("lr/pg0"))
-        # fitness уже посчитан validate() до этого коллбэка; по его максимуму сохраняется best.pt
+        # fitness is already computed by validate() before this callback; best.pt is saved by its maximum
         fitness = _clean(getattr(trainer, "fitness", None)) if self._validation_this_epoch else None
         record = EpochRecord(epoch=int(trainer.epoch) + 1, losses=losses, metrics=metrics, lr=lr, fitness=fitness)
         # Persist before notifying the backend; a failed/interrupted run keeps every complete epoch.

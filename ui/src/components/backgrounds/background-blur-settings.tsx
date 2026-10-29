@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { blurSliderMax, blurStep, maxBlurRadius } from "@/api/projects/backgrounds/background-import-rules";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { sliderRange } from "@/lib/backgrounds/blur-form";
 import type { BackgroundBlurState } from "@/lib/use-background-blur";
+import "@/i18n/sections/backgrounds";
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {
     return (
@@ -16,36 +18,36 @@ export function Field({ label, children }: { label: string; children: ReactNode 
 }
 
 /**
- * «Размывать фоны» — общие для всех способов добавления. Ползунок охватывает 0–32 px (шаг 0,5), поля ввода принимают
- * до 1000 px; seed — в «Дополнительно», пустое поле — «Из операции».
+ * "Blur backgrounds", shared by all ways of adding. The slider covers 0–32 px (step 0.5), the inputs take up to 1000 px; the seed is
+ * under "Advanced", an empty field means "From the operation".
  */
 export function BackgroundBlurSettings({ blur, disabled }: { blur: BackgroundBlurState; disabled?: boolean }) {
+    const { t } = useTranslation("backgrounds");
     const { fields } = blur;
     return (
-        <section className="space-y-3 rounded-md border bg-card p-3" aria-label="Размытие фонов" data-testid="blur-settings">
+        <section className="space-y-3 rounded-md border bg-card p-3" aria-label={t("blur.title")} data-testid="blur-settings">
             <label className="flex items-center gap-2 text-sm font-medium">
                 <Checkbox disabled={disabled} checked={fields.enabled} data-testid="blur-enabled" onCheckedChange={checked => blur.change({ enabled: checked === true })} />
-                Размывать фоны
+                {t("blur.enabled")}
             </label>
             <p className="text-xs text-muted-foreground">
-                Необязательно. Каждый фон размывается по Гауссу со случайным радиусом из диапазона — так имитируется размытый мир за
-                полупрозрачной панелью. Радиус меньше 0,3 px оставляет фон резким. Действует на все способы добавления.
+                {t("blur.description")}
             </p>
             {fields.enabled && (
                 <div className="space-y-3">
                     <div className="grid gap-3 sm:grid-cols-[8rem_8rem_minmax(0,1fr)] sm:items-end">
-                        <Field label="Радиус от, px">
+                        <Field label={t("blur.min")}>
                             <Input disabled={disabled} type="number" min={0} max={maxBlurRadius} step={blurStep} aria-invalid={!!blur.rangeError} data-testid="blur-min"
                                 value={fields.min} onChange={event => blur.change({ min: event.target.value })} />
                         </Field>
-                        <Field label="Радиус до, px">
+                        <Field label={t("blur.max")}>
                             <Input disabled={disabled} type="number" min={0} max={maxBlurRadius} step={blurStep} aria-invalid={!!blur.rangeError} data-testid="blur-max"
                                 value={fields.max} onChange={event => blur.change({ max: event.target.value })} />
                         </Field>
                         <div className="space-y-2 pb-2">
                             <Slider
-                                aria-label="Диапазон радиуса размытия"
-                                thumbLabels={["Радиус от", "Радиус до"]}
+                                aria-label={t("blur.range")}
+                                thumbLabels={[t("blur.from"), t("blur.to")]}
                                 disabled={disabled}
                                 min={0}
                                 max={blurSliderMax}
@@ -61,14 +63,14 @@ export function BackgroundBlurSettings({ blur, disabled }: { blur: BackgroundBlu
                         </div>
                     </div>
                     <details className="rounded-md border px-3 py-2">
-                        <summary className="cursor-pointer text-sm text-muted-foreground select-none">Дополнительно</summary>
+                        <summary className="cursor-pointer text-sm text-muted-foreground select-none">{t("advanced")}</summary>
                         <div className="mt-3 grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-end">
-                            <Field label="Случайность (seed)">
-                                <Input disabled={disabled} inputMode="numeric" placeholder="Из операции" aria-invalid={!!blur.seedError} data-testid="blur-seed"
+                            <Field label={t("blur.seed")}>
+                                <Input disabled={disabled} inputMode="numeric" placeholder={t("blur.seedPlaceholder")} aria-invalid={!!blur.seedError} data-testid="blur-seed"
                                     value={fields.seed} onChange={event => blur.change({ seed: event.target.value })} />
                             </Field>
                             <p className="pb-2 text-xs text-muted-foreground">
-                                Один и тот же seed даёт те же радиусы при повторе. Пустое поле — seed выбирается автоматически и сохраняется в запуске.
+                                {t("blur.seedHint")}
                             </p>
                         </div>
                     </details>

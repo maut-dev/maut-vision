@@ -93,7 +93,7 @@ internal sealed class ProjectExportHandler(IProjectsManager projects) : IJobHand
             };
             archiveBytes = await Task.Run(() => WriteAsync(temporary, metadata, snapshot, stored, manifest, progress, context), token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
-            // The user confirmed the overwrite in «Сохранить как»; the old file is replaced only by a complete archive.
+            // The user confirmed the overwrite in "Save as"; the old file is replaced only by a complete archive.
             File.Move(temporary, input.DestinationPath, overwrite: true);
             moved = true;
             context.Logger.LogInformation(

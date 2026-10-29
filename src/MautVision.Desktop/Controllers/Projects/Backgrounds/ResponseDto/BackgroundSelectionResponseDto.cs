@@ -1,16 +1,16 @@
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 
 /// <summary>
-/// Файл выбора: Index — номер в выборе (его передают в previewSource, sourceIndices и crops), Name — имя без пути, Width/Height —
-/// размер с учётом ориентации (null у нечитаемого). Fit: exact (ровно размер набора), larger (можно вырезать рамкой),
-/// smaller (будет пропущен), unreadable.
+/// Selection file: Index — index in the selection (passed to previewSource, sourceIndices and crops), Name — name without path, Width/Height —
+/// size with orientation applied (null if unreadable). Fit: exact (exactly the set size), larger (can be cut with a crop),
+/// smaller (will be skipped), unreadable.
 /// </summary>
 public sealed record BackgroundSourceFileResponseDto(int Index, string Name, int? Width, int? Height, string Fit);
 
 /// <summary>
-/// Выбор файлов в нативном диалоге. SelectionToken — null, если диалог закрыт (тогда Files пусты); действует 30 минут и только
-/// на этой странице. Файлы — в естественном порядке имён; Exact, Larger, Smaller, Unreadable — счётчики по Fit для размера
-/// набора TargetWidth × TargetHeight.
+/// File selection in a native dialog. SelectionToken — null if the dialog was closed (then Files is empty); valid for 30 minutes and only
+/// on this page. Files are in natural name order; Exact, Larger, Smaller, Unreadable — counters by Fit for the size
+/// of the set TargetWidth × TargetHeight.
 /// </summary>
 public sealed record BackgroundFileSelectionResponseDto(
     string? SelectionToken,
@@ -23,8 +23,8 @@ public sealed record BackgroundFileSelectionResponseDto(
     int Unreadable);
 
 /// <summary>
-/// Кадр для рамки: SourceIndex — файл выбора (у кадра видео null), TimestampMs — отметка кадра видео (у файла null), Width/Height —
-/// размер исходного кадра (координаты рамки), PreviewUrl — уменьшенная копия PreviewWidth × PreviewHeight (не больше 1600 px).
+/// Frame for the crop: SourceIndex — selection file (null for a video frame), TimestampMs — video frame mark (null for a file), Width/Height —
+/// source frame size (crop coordinates), PreviewUrl — a reduced copy PreviewWidth × PreviewHeight (no larger than 1600 px).
 /// </summary>
 public sealed record BackgroundSourcePreviewResponseDto(
     int? SourceIndex,

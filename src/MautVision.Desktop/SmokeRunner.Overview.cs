@@ -38,13 +38,13 @@ internal static partial class SmokeRunner
             if (page.Count < 200) break;
             before = page[^1].Id;
         }
-        var unlabelled = LabelledKinds.Where(kind => !jobs.Any(job => job.Kind == kind && !string.IsNullOrWhiteSpace(job.Label))).ToArray();
+        var unlabelled = LabelledKinds.Where(kind => !jobs.Any(job => job.Kind == kind && job.Label is not null)).ToArray();
         if (unlabelled.Length > 0) throw new InvalidOperationException("Jobs started through the bridge have no label: " + string.Join(", ", unlabelled));
-        if (!jobs.Any(job => job is { Kind: "datasets.build", Label: "Датасет smoke" })
-            || !jobs.Any(job => job.Kind == "images.import" && job.OperationId == "images-smoke-files" && !string.IsNullOrEmpty(job.Label))
-            || !jobs.Where(job => job.Kind == "training.export" && job.Label is not null).All(job => job.Label!.StartsWith("Версия ", StringComparison.Ordinal))
-            || !jobs.Where(job => job.Kind == "checks.evaluate" && job.Label is not null).All(job => job.Label!.StartsWith("Версия ", StringComparison.Ordinal)
-                && job.Label.Contains(" · ", StringComparison.Ordinal)))
+        if (!jobs.Any(job => job is { Kind: "datasets.build", Label: { Code: null, Text: "Датасет smoke" } })
+            || !jobs.Any(job => job.Kind == "images.import" && job.OperationId == "images-smoke-files" && !string.IsNullOrEmpty(job.Label?.Text))
+            || !jobs.Where(job => job.Kind == "training.export" && job.Label is not null).All(job => job.Label is { Code: "jobLabels.version", Args: { } args } && args.ContainsKey("number"))
+            || !jobs.Where(job => job.Kind == "checks.evaluate" && job.Label is not null).All(job => job.Label is { Code: "jobLabels.version_dataset", Args: { } args }
+                && args.ContainsKey("number") && args.ContainsKey("dataset")))
             throw new InvalidOperationException("Job labels do not name what the jobs work on.");
         checks.Add("Every job kind started through the bridge has a label: group, set, recipe, dataset or «Версия N»");
 
@@ -88,7 +88,7 @@ internal static partial class SmokeRunner
         const sample = await request('hardware.sample', {});
         assert(sample.ok && typeof sample.data.timestamp === 'string' && Array.isArray(sample.data.gpus)
           && ['available', 'unavailable'].includes(sample.data.gpuStatus) && (sample.data.gpuStatus === 'available') === (sample.data.gpus.length > 0)
-          && (sample.data.gpuStatus === 'available' || typeof sample.data.gpuReason === 'string'), 'hardware.sample answers with the GPUs or the reason in Russian');
+          && (sample.data.gpuStatus === 'available' || typeof sample.data.gpuReason === 'string'), 'hardware.sample answers with the GPUs or the reason code');
         assert(sample.data.ram && sample.data.ram.totalBytes > 0 && sample.data.ram.usedBytes <= sample.data.ram.totalBytes, 'hardware.sample reports the RAM of the system');
         const memory = sample.data.application;
         assert(memory.hostBytes > 0 && memory.webViewProcesses > 0 && memory.webViewBytes > 0
@@ -123,8 +123,8 @@ internal static partial class SmokeRunner
           assert(run.ok && run.data.id === latest[0].runId, 'The run of the latest version is fetched by its runId');
         }
         const labelled = await request('jobs.list', {projectId, limit: 200});
-        assert(labelled.ok && labelled.data.every(job => job.label === null || typeof job.label === 'string')
-          && labelled.data.some(job => typeof job.label === 'string'), 'Job snapshots carry their label');
+        assert(labelled.ok && labelled.data.every(job => job.label === null || (typeof job.label === 'object' && (job.label.code !== null || typeof job.label.text === 'string')))
+          && labelled.data.some(job => job.label !== null), 'Job snapshots carry their label as a code or a text');
         return {checks};
         """;
 }

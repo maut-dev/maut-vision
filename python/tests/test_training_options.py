@@ -121,9 +121,9 @@ class TrainingOptionsTest(unittest.TestCase):
         self.assertNotIn("private", sanitized)
         self.assertNotIn("User Name", sanitized)
         self.assertNotIn("server", sanitized)
-        self.assertIn("[локальный путь]", sanitized)
-        self.assertEqual(redact_console_paths("Loading /home/user/model.pt"), "Loading [локальный путь]")
-        self.assertEqual(redact_console_paths("Loading /jobs/run/input/model.pt", Path("/jobs/run")), "Loading [папка запуска][локальный путь]")
+        self.assertIn("[local path]", sanitized)
+        self.assertEqual(redact_console_paths("Loading /home/user/model.pt"), "Loading [local path]")
+        self.assertEqual(redact_console_paths("Loading /jobs/run/input/model.pt", Path("/jobs/run")), "Loading [run folder][local path]")
 
     def test_epoch_fitness_and_time_budget_epoch_total_are_live(self):
         with tempfile.TemporaryDirectory() as root:

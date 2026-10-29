@@ -1,7 +1,7 @@
 /**
- * Кадры видео на отметках startMs + i × intervalMs, i = 0…count − 1 — те же правила, что проверяет host
- * (VideoFrameRange.Validate): начало ≥ 0, интервал ≥ 1 мс, количество ≥ 1 — иначе video.frames_invalid; последняя отметка
- * строго раньше конца видео — иначе video.range_invalid.
+ * Video frames at the marks startMs + i × intervalMs, i = 0…count − 1, with the same rules the host checks
+ * (VideoFrameRange.Validate): start ≥ 0, interval ≥ 1 ms, count ≥ 1, otherwise video.frames_invalid; the last mark is
+ * strictly before the end of the video, otherwise video.range_invalid.
  */
 export interface VideoFrameRange {
     startMs: number;
@@ -11,7 +11,7 @@ export interface VideoFrameRange {
 
 export type VideoFrameRangeError = "video.frames_invalid" | "video.range_invalid";
 
-/** Код ошибки диапазона для видео длительностью durationMs или null, если диапазон допустим. */
+/** The range error code for a video of durationMs, or null when the range is valid. */
 export function videoFrameRangeError(range: VideoFrameRange, durationMs: number): VideoFrameRangeError | null {
     const { startMs, intervalMs, count } = range;
     if (!Number.isSafeInteger(startMs) || !Number.isSafeInteger(intervalMs) || !Number.isSafeInteger(count)
@@ -22,7 +22,7 @@ export function videoFrameRangeError(range: VideoFrameRange, durationMs: number)
     return !Number.isSafeInteger(last) || last >= durationMs ? "video.range_invalid" : null;
 }
 
-/** Начальный диапазон после выбора видео: с 0, шаг 1 с, min(20, max(1, ceil(длительность в секундах))) кадров. */
+/** The initial range after choosing a video: from 0, a step of 1 s, min(20, max(1, ceil(duration in seconds))) frames. */
 export function defaultVideoFrameRange(durationMs: number): VideoFrameRange {
     return { startMs: 0, intervalMs: 1000, count: Math.min(20, Math.max(1, Math.ceil(durationMs / 1000))) };
 }

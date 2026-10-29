@@ -1,8 +1,8 @@
 namespace MautVision.Core.Interfaces.Jobs;
 
 /// <summary>
-/// Контракт вида задачи. Интерфейс-наследник помечается <see cref="JobKindAttribute"/>: ключ вида
-/// сохраняется в project.db, поэтому переименование интерфейса не теряет сохранённые задачи.
+/// Contract of a job kind. The derived interface is marked with <see cref="JobKindAttribute"/>: the kind key
+/// is stored in project.db, so renaming the interface does not lose saved jobs.
 /// </summary>
 public interface IJobDefinition<TInput>
 {

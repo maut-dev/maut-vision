@@ -17,8 +17,8 @@ import {
 import { isProjectResponseDto } from "./response-dto/project-response-dto";
 
 /**
- * Проекты библиотеки. Экспорт — задача projects.export (ход — job.changed); импорт — фоновая операция с событиями projectImport.changed;
- * удаление — reviewDeletion, затем delete с ревизией (событие project.removed).
+ * Projects of the library. Export is the projects.export job (progress with job.changed); import is a background operation with projectImport.changed events;
+ * deletion is reviewDeletion, then delete with the revision (the project.removed event).
  */
 export const projectsApi = {
     get available(): boolean { return nativeBridge.available; },
@@ -41,7 +41,7 @@ export const projectsApi = {
     selectExportDestination(request: SelectProjectExportRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("projects.selectExportDestination", request, isProjectExportSelectionResponseDto, signal);
     },
-    /** Ставит projects.export и сразу возвращает снимок задачи; ход и итог — job.changed и parseProjectExportResult. */
+    /** Queues projects.export and returns the job snapshot at once; progress and outcome come with job.changed and parseProjectExportResult. */
     startExport(request: StartProjectExportRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("projects.startExport", request, isJobResponseDto, signal);
     },

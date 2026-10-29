@@ -1,22 +1,22 @@
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.RequestDto;
 
-/// <summary>Рамка для файла выбора: SourceIndex — номер файла в выборе, Left/Top — левый верхний угол в пикселях файла.</summary>
+/// <summary>Crop for a selection file: SourceIndex — index of the file in the selection, Left/Top — top-left corner in file pixels.</summary>
 public sealed record BackgroundCropRequestDto(int SourceIndex, int Left, int Top);
 
-/// <summary>Одна рамка на всё видео: левый верхний угол в пикселях кадра.</summary>
+/// <summary>One crop for the whole video: top-left corner in frame pixels.</summary>
 public sealed record BackgroundRegionRequestDto(int Left, int Top);
 
-/// <summary>Размытие: радиус от/до 0–1000 px; Seed — 0–4 294 967 295 или null («Из операции»).</summary>
+/// <summary>Blur: radius from/to 0–1000 px; Seed — 0–4 294 967 295 or null ("From operation").</summary>
 public sealed record BackgroundBlurRequestDto(double MinRadius, double MaxRadius, long? Seed = null);
 
 /// <summary>
-/// Запуск подготовки (backgrounds.import) и его примеры (backgrounds.previewImport) — одна форма, чтобы примеры совпали с
-/// будущими фонами (тот же OperationId). SelectionToken — из backgrounds.selectFiles или backgrounds.selectVideo; запуск
-/// привязывает токен к операции, примеры — нет.
-/// Файлы: SourceIndices — номера включённых файлов выбора по порядку (null — все; для «Нарезать из изображений» до 500);
-/// Crops — рамки для файлов больше набора (файл без рамки берётся целиком и должен быть ровно размера набора); Count —
-/// необязательный предел. Видео: Region, StartMs, IntervalMs (шаг ≥ 1 мс) обязательны; Count — «Сколько фонов нарезать»,
-/// от 1 до числа доступных кадров. SkipSimilar — «Пропускать повторяющиеся кадры». Blur — null или радиус до 0 — без размытия.
+/// Preparation run (backgrounds.import) and its samples (backgrounds.previewImport) — one form, so that the samples match
+/// the future backgrounds (the same OperationId). SelectionToken — from backgrounds.selectFiles or backgrounds.selectVideo; the run
+/// binds the token to the operation, the samples do not.
+/// Files: SourceIndices — indexes of the included selection files in order (null — all; for "Cut from images" up to 500);
+/// Crops — crops for files larger than the set (a file without a crop is used whole and must be exactly the set size); Count —
+/// an optional limit. Video: Region, StartMs, IntervalMs (step ≥ 1 ms) are required; Count — "How many backgrounds to cut",
+/// from 1 to the number of available frames. SkipSimilar — "Skip repeating frames". Blur — null or a radius up to 0 means no blur.
 /// </summary>
 public sealed record ImportBackgroundsRequestDto(
     string ProjectId,

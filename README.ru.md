@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.0.0-cefa1e?style=flat-square" alt="Версия 1.0.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.1.0-cefa1e?style=flat-square" alt="Версия 1.1.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="Лицензия AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows 10/11 x64">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
@@ -41,8 +41,8 @@
 облачных аккаунтов, загрузок и командной строки.
 
 > [!NOTE]
-> Интерфейс версии 1.0 — на **русском** языке. Английская локализация запланирована в следующих версиях. Документация и код — на
-> английском, краткий русский обзор архитектуры — в [docs/ru/README.md](docs/ru/README.md).
+> Интерфейс доступен на **русском** и **английском** языках: язык переключается в заголовке окна, по умолчанию — как в Windows.
+> Документация и код — на английском, краткий русский обзор архитектуры — в [docs/ru/README.md](docs/ru/README.md).
 
 ## Возможности
 
@@ -89,16 +89,16 @@
 ## Установка
 
 > [!IMPORTANT]
-> **Скачать:** [MautVision-Setup-1.0.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.0.0/MautVision-Setup-1.0.0.exe) (1,83 ГБ)
+> **Скачать:** [MautVision-Setup-1.1.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.1.0/MautVision-Setup-1.1.0.exe) (1,83 ГБ)
 >
 > Все версии и описание изменений: [выпуски на GitHub](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `8f72bf8ac1b06f8f891cea2eab1c9675bedb55fb70cbb6a3b2461a72403d66d7`
+> SHA-256: `29597c8fe95bc8a574fba9e55075c67125b155cd1517f73750df3dc975fa4abf`
 
 **Проверьте файл.** Сравните SHA-256 установщика с хешем, опубликованным рядом со ссылкой:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.0.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.1.0.exe -Algorithm SHA256
 ```
 
 Установщик пока не подписан, поэтому Windows SmartScreen может попросить подтверждение («Подробнее» → «Выполнить в любом случае»).

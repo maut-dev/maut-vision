@@ -90,7 +90,7 @@ internal sealed class DatasetExportHandler(IProjectsManager projects) : IJobHand
                 output.Flush();
                 bytes = output.Length;
             }
-            // The user confirmed the overwrite in «Сохранить как»; the old file is replaced only by a complete archive.
+            // The user confirmed the overwrite in "Save as"; the old file is replaced only by a complete archive.
             File.Move(temporary, input.DestinationPath, overwrite: true);
             moved = true;
             context.SetResult(Summary());

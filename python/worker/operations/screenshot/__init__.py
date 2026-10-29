@@ -1,7 +1,7 @@
-"""Операция screenshot: снимок монитора для выбора рамки проверки с экрана.
+"""The screenshot operation: a monitor screenshot for choosing the screen check crop.
 
-Не грузит torch и ultralytics: только mss и OpenCV (кодирование PNG). Снимок
-делается тем же захватом, что и live, поэтому координаты рамки совпадают.
+Does not load torch and ultralytics: only mss and OpenCV (PNG encoding). The screenshot
+is taken by the same capture as live, so the crop coordinates match.
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ def run_screenshot(request: ScreenshotRequest, ctx: OperationContext) -> dict[st
         index = screen.index
     ok, buffer = cv2.imencode(".png", frame)
     if not ok:
-        raise WorkerError(ErrorCode.INTERNAL_ERROR, "Не удалось закодировать снимок экрана в PNG")
+        raise WorkerError(ErrorCode.INTERNAL_ERROR, "png_encode")
     ctx.layout.artifacts_dir.mkdir(parents=True, exist_ok=True)
     target = ctx.layout.artifacts_dir / "screen.png"
     target.write_bytes(buffer.tobytes())

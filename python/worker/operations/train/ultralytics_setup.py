@@ -1,6 +1,6 @@
-"""Приведение ultralytics к офлайн-работе внутри папки задачи.
+"""Making ultralytics work offline inside the job folder.
 
-Вызывается после runtime.offline.configure_environment и импорта ultralytics.
+Called after runtime.offline.configure_environment and the ultralytics import.
 """
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
-# Интеграции, которые при наличии пакета сами подключаются к обучению и
-# шлют данные наружу (или хотя бы пытаются). Работнику они не нужны.
+# Integrations that, when their package is present, attach to training by themselves and
+# send data outside (or at least try). The worker does not need them.
 _INTEGRATIONS_OFF = ("sync", "clearml", "comet", "dvc", "mlflow", "raytune", "tensorboard", "wandb",
                      "vscode_msg", "openvino_msg")
 
-# GPU, на которых AMP даёт NaN; тот же список, что в ultralytics.utils.checks.check_amp
+# GPUs on which AMP gives NaN; the same list as in ultralytics.utils.checks.check_amp
 _AMP_BAD_GPU = re.compile(
     r"(nvidia|geforce|quadro|tesla).*?(1660|1650|1630|t400|t550|t600|t1000|t1200|t2000|k40m)", re.IGNORECASE
 )
@@ -36,13 +36,13 @@ def configure(work_dir: Path) -> None:
 
 
 def _offline_check_amp(model: Any) -> bool:
-    """Замена ultralytics check_amp без скачивания.
+    """A replacement of the ultralytics check_amp without downloading.
 
-    Оригинал сравнивает fp32 и AMP на посторонней сети yolo26n.pt, которую
-    качает из интернета («not used for training» в его же исходниках).
-    Офлайн это невозможно, поэтому оставляем только известный чёрный
-    список GPU. Проверка срабатывает лишь при amp=true в запросе (так по
-    умолчанию); при amp=false trainer её не вызывает.
+    The original compares fp32 and AMP on an unrelated network yolo26n.pt, which it
+    downloads from the internet ("not used for training" in its own sources).
+    Offline this is impossible, so only the known GPU
+    blacklist remains. The check runs only with amp=true in the request (the
+    default); with amp=false the trainer does not call it.
     """
     import torch
 
@@ -51,9 +51,9 @@ def _offline_check_amp(model: Any) -> bool:
         return False
     gpu = torch.cuda.get_device_name(device)
     if _AMP_BAD_GPU.search(gpu):
-        print(f"[amp] {gpu}: известны NaN при AMP — AMP выключен", file=sys.stderr, flush=True)
+        print(f"[amp] {gpu}: NaN with AMP is known — AMP is off", file=sys.stderr, flush=True)
         return False
-    print(f"[amp] {gpu}: AMP включён без эталонной проверки (офлайн)", file=sys.stderr, flush=True)
+    print(f"[amp] {gpu}: AMP is on without the reference check (offline)", file=sys.stderr, flush=True)
     return True
 
 
@@ -64,14 +64,14 @@ def _replace_amp_check() -> None:
 
 
 def _offline_check_font(font: str = "Arial.ttf") -> str | None:
-    """Замена ultralytics check_font без скачивания.
+    """A replacement of the ultralytics check_font without downloading.
 
-    check_det_dataset зовёт её безусловно, а Annotator — для подписей на
-    картинках обучения (plots=True), и, не найдя шрифт (сравнение имени
-    регистрозависимое, а в Windows он arial.ttf), идёт за ним на github.com.
-    Ищем только среди локальных шрифтов, иначе None: Annotator тогда берёт
-    встроенный шрифт PIL (его try/except ловит str(None)), картинки
-    рисуются, подписи попроще.
+    check_det_dataset calls it unconditionally, and Annotator — for labels on
+    training images (plots=True), and, not finding the font (the name comparison
+    is case-sensitive, and on Windows it is arial.ttf), goes for it to github.com.
+    We search only among local fonts, otherwise None: Annotator then takes
+    the built-in PIL font (its try/except catches str(None)), the images
+    are drawn, the labels are plainer.
     """
     from matplotlib import font_manager
 
@@ -87,8 +87,8 @@ def _replace_font_check() -> None:
     import ultralytics.utils.checks as checks
     import ultralytics.utils.plotting as plotting
 
-    # Каждый модуль держит свою ссылку (from ... import check_font) —
-    # подменять нужно во всех, иначе картинки обучения пойдут в сеть.
+    # Every module keeps its own reference (from ... import check_font) —
+    # it has to be replaced in all of them, otherwise the training images go to the network.
     data_utils.check_font = _offline_check_font
     checks.check_font = _offline_check_font
     plotting.check_font = _offline_check_font

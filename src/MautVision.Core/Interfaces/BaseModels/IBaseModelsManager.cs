@@ -3,8 +3,8 @@ namespace MautVision.Core.Interfaces.BaseModels;
 public interface IBaseModelsManager
 {
     /// <summary>
-    /// Сообщает об изменении Status, Progress или ErrorCode модели. Прогресс установки
-    /// прореживается; событие может прийти из фонового потока.
+    /// Reports a change of Status, Progress or ErrorCode of a model. Installation progress
+    /// is throttled; the event may arrive from a background thread.
     /// </summary>
     event EventHandler<BaseModelChangedEventArgs>? ModelChanged;
 

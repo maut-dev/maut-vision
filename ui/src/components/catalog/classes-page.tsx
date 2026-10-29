@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp, Plus, Tags } from "lucide-react";
 import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/response-dto/catalog-workspace-response-dto";
 import type { ClassResponseDto } from "@/api/projects/catalog/response-dto/class-response-dto";
@@ -15,14 +16,14 @@ export interface ClassActions {
     edit: (item: ClassResponseDto) => void;
     toggleArchive: (item: ClassResponseDto) => void;
     remove: (item: ClassResponseDto) => void;
-    /** Новая полная перестановка: активные классы в новом порядке, затем архивные. */
+    /** A new full order: active classes in the new order, then archived ones. */
     reorder: (classIds: string[]) => Promise<boolean>;
     attach: (item: ClassResponseDto) => void;
     openVariants: () => void;
     binding: ClassVariantActions;
 }
 
-/** Раздел «Классы»: список с порядком и содержимое выбранного класса по вариантам. */
+/** The "Classes" section: the ordered list and the contents of the chosen class by variants. */
 export function ClassesPage({ projectId, workspace, inputSize, busy, imports, actions }: {
     projectId: string;
     workspace: CatalogWorkspaceResponseDto;
@@ -31,6 +32,7 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
     imports: AssetImportsState["imports"];
     actions: ClassActions;
 }) {
+    const { t } = useTranslation("catalog");
     const [search, setSearch] = useState("");
     const [showArchive, setShowArchive] = useState(false);
     const [classId, setClassId] = useState("");
@@ -73,31 +75,31 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
         if (!await actions.reorder([...ids, ...archived])) refocus.current = undefined;
     }
 
-    const orderHint = searching ? "Очистите поиск, чтобы менять порядок" : undefined;
+    const orderHint = searching ? t("classes.orderLocked") : undefined;
     return (
         <>
             <CatalogToolbar
-                searchLabel="Поиск классов"
+                searchLabel={t("classes.search")}
                 search={search}
                 setSearch={setSearch}
                 showArchive={showArchive}
                 setShowArchive={setShowArchive}
-                addLabel="Добавить класс"
+                addLabel={t("classes.add")}
                 addDisabled={busy || !activeVariants.length}
                 add={actions.create}
             />
             {!activeVariants.length && (
                 <Alert className="shrink-0">
                     <Tags />
-                    <AlertTitle>Сначала зарегистрируйте варианты</AlertTitle>
+                    <AlertTitle>{t("classes.registerVariants")}</AlertTitle>
                     <AlertDescription>
-                        <p>Варианты общие для проекта: например, обычный, красный или полупрозрачный. Затем их можно использовать в разных классах.</p>
-                        <Button className="mt-3" variant="outline" onClick={actions.openVariants}>Открыть варианты</Button>
+                        <p>{t("classes.registerVariantsText")}</p>
+                        <Button className="mt-3" variant="outline" onClick={actions.openVariants}>{t("classes.openVariants")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
             <p className="shrink-0 text-sm text-muted-foreground">
-                Стрелки меняют порядок классов для новых датасетов. При сборке выбранные классы получают индексы от 0 без пропусков. Карта готовой модели сохраняется и доступна в её паспорте.
+                {t("classes.orderHelp")}
             </p>
             <div className="grid min-h-0 flex-1 grid-cols-[minmax(220px,30%)_minmax(0,1fr)] gap-5">
                 <div
@@ -106,7 +108,7 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                     data-testid="class-list"
                     tabIndex={0}
                     role="region"
-                    aria-label="Список классов"
+                    aria-label={t("classes.list")}
                 >
                     <div className="divide-y">
                         {entries.map(item => {
@@ -116,12 +118,12 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                     key={item.id}
                                     data-class-id={item.id}
                                     entry={item}
-                                    kindLabel="класс"
+                                    deleteLabel={t("classes.deleteLabel", { name: item.name })}
                                     selected={item.id === selected?.id}
                                     prefix={index !== undefined && (
-                                        <span className="mr-2 text-xs tabular-nums text-muted-foreground" data-class-index={index} title="Индекс в порядке классов">{index}</span>
+                                        <span className="mr-2 text-xs tabular-nums text-muted-foreground" data-class-index={index} title={t("classes.indexHint")}>{index}</span>
                                     )}
-                                    fallback="Выберите класс, чтобы добавить изображения"
+                                    fallback={t("classes.fallback")}
                                     busy={busy}
                                     open={() => setClassId(item.id)}
                                     edit={() => actions.edit(item)}
@@ -133,8 +135,8 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                                 size="icon-xs"
                                                 variant="ghost"
                                                 data-move="up"
-                                                aria-label={`Выше: ${item.name}`}
-                                                title={orderHint ?? "Выше"}
+                                                aria-label={t("classes.upLabel", { name: item.name })}
+                                                title={orderHint ?? t("classes.up")}
                                                 disabled={busy || searching || index === 0}
                                                 onClick={() => void move(item, -1)}
                                             >
@@ -144,8 +146,8 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                                 size="icon-xs"
                                                 variant="ghost"
                                                 data-move="down"
-                                                aria-label={`Ниже: ${item.name}`}
-                                                title={orderHint ?? "Ниже"}
+                                                aria-label={t("classes.downLabel", { name: item.name })}
+                                                title={orderHint ?? t("classes.down")}
                                                 disabled={busy || searching || index === active.length - 1}
                                                 onClick={() => void move(item, 1)}
                                             >
@@ -160,8 +162,8 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                     {!entries.length && (
                         <CatalogEmpty
                             searching={searching || classes.length > 0}
-                            title="Классов пока нет"
-                            text="Добавьте класс — объект, который должна распознавать модель."
+                            title={t("classes.emptyTitle")}
+                            text={t("classes.emptyText")}
                         />
                     )}
                 </div>
@@ -169,7 +171,7 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                     className="min-h-0 min-w-0 overflow-y-auto overscroll-contain rounded-lg border p-5"
                     data-testid="class-content"
                     tabIndex={0}
-                    aria-label={selected ? `Класс ${selected.name}` : "Содержимое класса"}
+                    aria-label={selected ? t("classes.contentLabel", { name: selected.name }) : t("classes.content")}
                 >
                     {selected ? (
                         <div className="space-y-5" data-selected-class-id={selected.id}>
@@ -177,14 +179,14 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                 <div className="min-w-0">
                                     <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold break-words">
                                         {selected.name}
-                                        {selected.archivedAt && <Badge variant="outline">В архиве</Badge>}
+                                        {selected.archivedAt && <Badge variant="outline">{t("list.archived")}</Badge>}
                                     </h2>
                                     <p className="mt-1 text-sm break-words text-muted-foreground">
-                                        {selected.description || "Добавьте изображения объектов для каждого варианта."}
+                                        {selected.description || t("classes.descriptionFallback")}
                                     </p>
                                 </div>
                                 <Button variant="outline" data-testid="attach-variant-open" disabled={busy || !!selected.archivedAt || !attachable.length} onClick={() => actions.attach(selected)}>
-                                    <Plus />Подключить вариант
+                                    <Plus />{t("classes.attach")}
                                 </Button>
                             </div>
                             {bindings.map(binding => {
@@ -195,7 +197,7 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                         projectId={projectId}
                                         binding={binding}
                                         className={selected.name}
-                                        variantName={variant?.name ?? "Вариант"}
+                                        variantName={variant?.name ?? t("classes.variantFallback")}
                                         classArchived={!!selected.archivedAt}
                                         variantArchived={!!variant?.archivedAt}
                                         inputSize={inputSize}
@@ -206,14 +208,14 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                 );
                             })}
                             {!bindings.length && (
-                                <p className="py-8 text-sm text-muted-foreground">Подключите общий вариант проекта, затем добавьте изображения этого класса.</p>
+                                <p className="py-8 text-sm text-muted-foreground">{t("classes.noBindings")}</p>
                             )}
                         </div>
                     ) : (
                         <div className="flex min-h-80 flex-col items-center justify-center gap-2 text-center">
                             <Tags className="size-6 text-muted-foreground" aria-hidden />
-                            <h2 className="font-medium">Выберите класс</h2>
-                            <p className="max-w-sm text-sm text-muted-foreground">Здесь появятся его варианты и изображения объектов.</p>
+                            <h2 className="font-medium">{t("classes.chooseTitle")}</h2>
+                            <p className="max-w-sm text-sm text-muted-foreground">{t("classes.chooseText")}</p>
                         </div>
                     )}
                 </section>

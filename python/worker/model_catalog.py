@@ -1,7 +1,7 @@
-"""Общий с приложением закреплённый каталог моделей detect (catalog/yolo-catalog.json).
+"""The pinned detect model catalog shared with the application (catalog/yolo-catalog.json).
 
-Путь передаёт host в MAUT_MODEL_CATALOG — тот же файл, что читает Core. Без переменной:
-в собранном worker — копия рядом с ним (_MEIPASS), из исходников — catalog/ репозитория.
+The host passes the path in MAUT_MODEL_CATALOG — the same file Core reads. Without the variable:
+in the packaged worker — the copy next to it (_MEIPASS), from sources — catalog/ of the repository.
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def _catalog_path() -> Path:
 
 def _load() -> dict[str, dict]:
     raw = json.loads(_catalog_path().read_text(encoding="utf-8"))
-    # Каталог приложения — массив записей; прежний формат хранил их в "models".
+    # The application catalog is an array of entries; the former format kept them in "models".
     entries = raw["models"] if isinstance(raw, dict) else raw
     return {model["id"]: model for model in entries}
 
@@ -33,5 +33,5 @@ SUPPORTED_ARCHITECTURES = tuple(MODELS)
 
 def supported_architecture(value: str) -> str:
     if value not in MODELS:
-        raise ValueError("Архитектура отсутствует в каталоге моделей detect")
+        raise ValueError("The architecture is missing from the detect model catalog")
     return value

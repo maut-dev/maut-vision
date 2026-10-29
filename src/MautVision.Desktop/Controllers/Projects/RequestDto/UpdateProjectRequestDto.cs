@@ -1,6 +1,6 @@
 namespace MautVision.Desktop.Controllers.Projects.RequestDto;
 
-/// <summary>Revision — значение, которое видел пользователь; при расхождении изменение отклоняется.</summary>
+/// <summary>Revision — the value the user saw; on a mismatch the change is rejected.</summary>
 public sealed record UpdateProjectRequestDto(
     string ProjectId,
     long Revision,

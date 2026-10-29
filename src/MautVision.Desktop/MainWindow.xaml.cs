@@ -20,8 +20,6 @@ namespace MautVision.Desktop;
 
 public partial class MainWindow : Window
 {
-    internal const string TrayNotice = "Maut Vision продолжает работать в области уведомлений";
-
     private readonly LaunchOptions options;
     private readonly ICore core;
     private readonly BridgeTransport transport;
@@ -49,7 +47,8 @@ public partial class MainWindow : Window
     private readonly ProjectsController projectsController;
     private readonly IAppTray tray;
     private readonly HostSettings hostSettings;
-    // «Выйти» (or the end of a smoke run): closing the window ends the application; otherwise it hides the window in the tray.
+    private readonly HostLanguage language;
+    // "Exit" (or the end of a smoke run): closing the window ends the application; otherwise it hides the window in the tray.
     private bool exiting;
     private bool leftoversStarted;
     private bool drained;
@@ -62,36 +61,39 @@ public partial class MainWindow : Window
     // WebView2 processes of the window for the memory of the application; replaced on the UI thread, read by hardware.sample.
     private volatile int[] webViewProcessIds = [];
 
-    public MainWindow(LaunchOptions options, ICore core, ILoggerFactory loggers)
+    internal MainWindow(LaunchOptions options, ICore core, ILoggerFactory loggers, HostSettings hostSettings, HostLanguage language)
     {
         InitializeComponent();
+        StartupMessage.Text = Strings.PreparingApplication;
         // 1200×800 does not fit every screen (150 % on 1080p leaves about 1280×688 DIP): the first size is reduced to the work area.
         var (size, minimum) = WindowBounds.Fit(SystemParameters.WorkArea.Size);
         (Width, Height, MinWidth, MinHeight) = (size.Width, size.Height, minimum.Width, minimum.Height);
         this.options = options;
         this.core = core;
+        this.hostSettings = hostSettings;
+        this.language = language;
         logger = loggers.CreateLogger<MainWindow>();
         transport = new BridgeTransport(loggers.CreateLogger<BridgeTransport>());
         closeGuard = new CloseGuard(transport.PublishEvent, OnCloseRequestedByPage);
         projectsController = ControllerRegistration.Register(transport, core, loggers, resourceHandles, OnUiReady, closeGuard, fileSelections,
-            new NativeDialogs(PickImageFilesAsync, PickFolderAsync, PickVideoAsync, PickSaveFileAsync, PickImageFileAsync, PickArchiveAsync), () => webViewProcessIds);
+            new NativeDialogs(PickImageFilesAsync, PickFolderAsync, PickVideoAsync, PickSaveFileAsync, PickImageFileAsync, PickArchiveAsync), () => webViewProcessIds, language);
         resourceServer = new ResourceServer(core, resourceHandles, loggers.CreateLogger<ResourceServer>());
-        projectEvents = new ProjectEvents(core.Projects, transport.PublishEvent, transport.MessageFor);
+        projectEvents = new ProjectEvents(core.Projects, transport.PublishEvent);
         baseModelEvents = new BaseModelEvents(core.BaseModels, transport.PublishEvent);
-        jobEvents = new JobEvents(core.Jobs, transport.PublishEvent, transport.MessageFor);
+        jobEvents = new JobEvents(core.Jobs, transport.PublishEvent);
         catalogEvents = new CatalogEvents(core.Projects, transport.PublishEvent);
         imagesEvents = new ImagesEvents(core.Projects, transport.PublishEvent);
         backgroundsEvents = new BackgroundsEvents(core.Projects, transport.PublishEvent);
         generationEvents = new GenerationEvents(core.Projects, transport.PublishEvent);
         datasetsEvents = new DatasetsEvents(core.Projects, transport.PublishEvent);
         trainingEvents = new TrainingEvents(core.Projects, core.TrainingPresets, transport.PublishEvent);
-        checksEvents = new ChecksEvents(core.Projects, resourceHandles, transport.PublishEvent, transport.MessageFor, loggers.CreateLogger<ChecksEvents>());
+        checksEvents = new ChecksEvents(core.Projects, resourceHandles, transport.PublishEvent, loggers.CreateLogger<ChecksEvents>());
         transport.EventReady += OnEvent;
-        hostSettings = new HostSettings(options.WorkDirectory, logger);
         // Smoke runs never put an icon in the notification area; they click the items of a recording tray.
         tray = options.SmokeReport is null ? new NotifyTray() : new SmokeTray();
         tray.OpenRequested += ShowFromTray;
         tray.QuitRequested += RequestQuit;
+        language.Changed += OnLanguageChanged;
         if (options.SmokeReport is not null)
         {
             ShowInTaskbar = false;
@@ -117,7 +119,7 @@ public partial class MainWindow : Window
             var webRoot = Path.Combine(AppContext.BaseDirectory, "web");
             if (!File.Exists(Path.Combine(webRoot, "index.html")))
             {
-                throw new InvalidOperationException("Не найдена web-сборка. Запустите start.ps1 из sharp-app.");
+                throw new InvalidOperationException(Strings.WebBuildMissing);
             }
             var profile = Path.Combine(options.WorkDirectory, "WebView2");
             var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: profile);
@@ -155,8 +157,8 @@ public partial class MainWindow : Window
             logger.LogError(error, "WebView2 initialization failed.");
             if (closing) return;
             StartupMessage.Text = error is WebView2RuntimeNotFoundException
-                ? "Не установлен Microsoft Edge WebView2 Runtime. Установите Runtime и повторите запуск."
-                : "Не удалось открыть приложение. " + error.Message;
+                ? Strings.WebViewRuntimeMissing
+                : Strings.OpenFailed(error.Message);
             StartupMessage.Visibility = Visibility.Visible;
             if (options.SmokeReport is not null)
             {
@@ -173,7 +175,7 @@ public partial class MainWindow : Window
         if (!args.IsSuccess)
         {
             logger.LogWarning("UI navigation failed: {Status}.", args.WebErrorStatus);
-            StartupMessage.Text = "Не удалось загрузить интерфейс: " + args.WebErrorStatus;
+            StartupMessage.Text = Strings.InterfaceLoadFailed(args.WebErrorStatus);
             return;
         }
         StartupMessage.Visibility = Visibility.Collapsed;
@@ -344,12 +346,12 @@ public partial class MainWindow : Window
         Hide();
         Browser.Visibility = Visibility.Hidden;
         if (hostSettings.TrayNoticeShown) return;
-        tray.ShowNotice(TrayNotice);
+        tray.ShowNotice(Strings.TrayNotice);
         hostSettings.MarkTrayNoticeShown();
     }
 
     /// <summary>
-    /// «Выйти» of the tray: shows the window, asks when background work runs (jobs of open projects, an import), then closes it through
+    /// "Exit" of the tray: shows the window, asks when background work runs (jobs of open projects, an import), then closes it through
     /// the unsaved changes guard of the page. The question is a native message box: it works even when the page does not answer.
     /// </summary>
     internal void RequestQuit()
@@ -362,8 +364,21 @@ public partial class MainWindow : Window
         Close();
     }
 
-    internal static string QuitQuestion(int count)
-        => $"Идут фоновые задачи: {count}. Выйти? Задачи продолжатся или будут отмечены прерванными при следующем открытии проекта; перенос будет отменён.";
+    internal static string QuitQuestion(int count) => Strings.QuitQuestion(count);
+
+    /// <summary>
+    /// The interface language changed (settings.setLanguage): the tray is relabelled on the UI thread and the page is told; the loading
+    /// window uses the language from the next start.
+    /// </summary>
+    private void OnLanguageChanged()
+    {
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        _ = Dispatcher.InvokeAsync(() =>
+        {
+            if (!closing) tray.ApplyTexts();
+        });
+        transport.PublishEvent("settings.languageChanged", Controllers.Settings.SettingsController.Map(language));
+    }
 
     private bool ConfirmQuit(string question)
     {
@@ -375,7 +390,7 @@ public partial class MainWindow : Window
         return MessageBox.Show(this, question, "Maut Vision", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes;
     }
 
-    /// <summary>Smoke seams of «Выйти»: the work count to use instead of Core's, the answer to the question and the questions asked.</summary>
+    /// <summary>Smoke seams of "Exit": the work count to use instead of Core's, the answer to the question and the questions asked.</summary>
     internal int? SmokeActiveWork { get; set; }
 
     internal bool SmokeQuitAnswer { get; set; }
@@ -419,7 +434,7 @@ public partial class MainWindow : Window
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = title,
-                Filter = "Изображения (PNG, JPEG, WebP, BMP)|*.png;*.jpg;*.jpeg;*.webp;*.bmp",
+                Filter = Strings.FilterImages + "|*.png;*.jpg;*.jpeg;*.webp;*.bmp",
                 Multiselect = true,
                 CheckFileExists = true,
             };
@@ -440,7 +455,7 @@ public partial class MainWindow : Window
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = title,
-                Filter = "Изображения (PNG, JPEG, WebP, BMP)|*.png;*.jpg;*.jpeg;*.webp;*.bmp",
+                Filter = Strings.FilterImages + "|*.png;*.jpg;*.jpeg;*.webp;*.bmp",
                 Multiselect = false,
                 CheckFileExists = true,
             };
@@ -475,7 +490,7 @@ public partial class MainWindow : Window
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = title,
-                Filter = "Видео (MP4, MKV, AVI, MOV, WebM, M4V)|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v",
+                Filter = Strings.FilterVideos + "|*.mp4;*.mkv;*.avi;*.mov;*.webm;*.m4v",
                 Multiselect = false,
                 CheckFileExists = true,
             };
@@ -489,7 +504,7 @@ public partial class MainWindow : Window
     /// </summary>
     internal static string? SmokeSaveAnswer;
 
-    /// <summary>Native «Сохранить как» for a ZIP archive owned by this window; it asks before overwriting an existing file.</summary>
+    /// <summary>Native "Save as" for a ZIP archive owned by this window; it asks before overwriting an existing file.</summary>
     private Task<string?> PickSaveFileAsync(string title, string fileName, string filter, CancellationToken cancellationToken)
     {
         if (options.SmokeReport is not null) return Task.FromResult(Interlocked.Exchange(ref SmokeSaveAnswer, null));
@@ -522,7 +537,7 @@ public partial class MainWindow : Window
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
                 Title = title,
-                Filter = "Архив проекта Maut Vision (*.zip)|*.zip",
+                Filter = Strings.FilterProjectArchive + " (*.zip)|*.zip",
                 Multiselect = false,
                 CheckFileExists = true,
             };
@@ -577,7 +592,7 @@ public partial class MainWindow : Window
             case CoreWebView2ProcessFailedKind.BrowserProcessExited:
                 // The control cannot be used any more; only a restart brings the UI back.
                 webView = null;
-                StartupMessage.Text = $"Компонент WebView2 завершился с ошибкой ({args.Reason}). Перезапустите Maut Vision.";
+                StartupMessage.Text = Strings.WebViewCrashed(args.Reason);
                 StartupMessage.Visibility = Visibility.Visible;
                 if (options.SmokeReport is not null)
                 {
@@ -629,7 +644,7 @@ public partial class MainWindow : Window
             if (closing) return;
             if (!allowed)
             {
-                // The page shows its dialog; «Уйти без сохранения» or a save asks for the exit again (system.close).
+                // The page shows its dialog; "Leave without saving" or a save asks for the exit again (system.close).
                 exiting = false;
                 return;
             }
@@ -637,6 +652,7 @@ public partial class MainWindow : Window
         closing = true;
         tray.OpenRequested -= ShowFromTray;
         tray.QuitRequested -= RequestQuit;
+        language.Changed -= OnLanguageChanged;
         StateChanged -= OnStateChanged;
         if (webEnvironment is not null) webEnvironment.ProcessInfosChanged -= OnProcessInfosChanged;
         transport.EventReady -= OnEvent;
@@ -678,7 +694,7 @@ public partial class MainWindow : Window
         await Task.Yield();
         try
         {
-            // «перенос будет отменён»: an export removes its temporary file, an import its staging folder, if they manage in time.
+            // "the transfer will be cancelled": an export removes its temporary file, an import its staging folder, if they manage in time.
             await projectsController.CancelTransfersAsync(TimeSpan.FromSeconds(5));
         }
         catch (Exception error)

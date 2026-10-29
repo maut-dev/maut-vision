@@ -84,7 +84,7 @@ internal static class ImagesResponseMapper
         review.GroupName,
         review.WholeGroup,
         review.Images,
-        review.Blockers.Select(blocker => new DeletionBlockerResponseDto(blocker.Code, blocker.Count, ImageErrorMessages.For(blocker))).ToArray(),
+        review.Blockers.Select(blocker => DeletionBlockerResponseDto.From(blocker)).ToArray(),
         review.Revision);
 
     internal static ImageDeletionResultResponseDto Map(ImageDeletionResult result) => new(result.GroupId, result.GroupDeleted, result.Images, result.CleanupPending);

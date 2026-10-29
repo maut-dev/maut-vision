@@ -89,7 +89,9 @@ internal static partial class SmokeRunner
                             await CheckChecksUiAsync(web, root, id, final, token);
                             await CheckOverviewAsync(web, id, core, jobsSeen.Values.ToArray(), setMinimized, final, token);
                             await CheckOverviewUiAsync(web, id, final, token);
+                            await CheckInsightsLanguageAsync(web, id, host, final, token);
                             await CheckLifecycleAsync(web, root, id, host, final, token);
+                            await CheckLanguageAsync(web, root, id, host, final, token);
                             await CheckLayoutAsync(web, id, layout, final, token);
                             serialized = final.ToJsonString();
                             await using var image = File.Create(Path.ChangeExtension(report, ".png"));
@@ -241,7 +243,7 @@ internal static partial class SmokeRunner
             const variant = await request('variants.create', {projectId, name: '  День  ', description: 'Светлый фон'});
             assert(variant.ok && variant.data.name === 'День' && variant.data.revision === 1 && variant.data.archivedAt === null, 'variants.create crosses the bridge');
             const duplicate = await request('variants.create', {projectId, name: 'ДЕНЬ', description: ''});
-            assert(!duplicate.ok && duplicate.error.code === 'variants.name_duplicate' && duplicate.error.message.includes('архиве'), 'Case-insensitive duplicate name returns variants.name_duplicate');
+            assert(!duplicate.ok && duplicate.error.code === 'variants.name_duplicate' && mautLocale.errorText(duplicate.error.code, duplicate.error.details).includes('архиве'), 'Case-insensitive duplicate name returns variants.name_duplicate');
             const created = await request('classes.create', {projectId, name: 'Кошка', description: ''});
             assert(created.ok && created.data.sortOrder === 0, 'classes.create crosses the bridge');
             const binding = await request('classes.addVariant', {projectId, classId: created.data.id, variantId: variant.data.id});
@@ -253,7 +255,7 @@ internal static partial class SmokeRunner
               && event.data.classVariants.some(change => change.id === binding.data.id)), 'catalog.changed event');
             assert(true, 'catalog.changed names the new binding');
             const stale = await request('classes.reorder', {projectId, classIds: [created.data.id], orderRevision: workspace.data.classOrderRevision + 5});
-            assert(!stale.ok && stale.error.code === 'classes.order_revision_conflict' && stale.error.message.startsWith('Порядок классов изменился'), 'A stale order revision returns classes.order_revision_conflict');
+            assert(!stale.ok && stale.error.code === 'classes.order_revision_conflict' && mautLocale.errorText(stale.error.code, stale.error.details).startsWith('Порядок классов изменился'), 'A stale order revision returns classes.order_revision_conflict');
             const color = await request('classes.setVariantColor', {projectId, classVariantId: binding.data.id, revision: binding.data.revision, color: 'red'});
             assert(!color.ok && color.error.code === 'classes.color_invalid', 'An invalid colour returns classes.color_invalid');
             const conflict = await request('classes.update', {projectId, classId: created.data.id, revision: 9, name: 'Кот', description: ''});
@@ -378,7 +380,7 @@ internal static partial class SmokeRunner
             const badSplit = await request('images.createGroup', {projectId, name: 'Кадры', description: '', splitHint: 'later'});
             assert(!badSplit.ok && badSplit.error.code === 'bridge.validation', 'An unknown split hint is rejected');
             const badName = await request('images.createGroup', {projectId, name: ' ', description: '', splitHint: 'test'});
-            assert(!badName.ok && badName.error.code === 'images.name_invalid' && badName.error.message.startsWith('Введите'), 'images.name_invalid has a Russian text');
+            assert(!badName.ok && badName.error.code === 'images.name_invalid' && mautLocale.errorText(badName.error.code, badName.error.details).startsWith('Введите'), 'images.name_invalid has a Russian text');
             const stale = await request('images.updateGroup', {projectId, groupId: group.data.id, name: 'Двор', description: '', splitHint: 'test', revision: 7});
             assert(!stale.ok && stale.error.code === 'images.revision_conflict', 'A stale group revision returns images.revision_conflict');
             await wait(() => events.some(event => event.event === 'images.changed' && event.data.groups.some(change => change.id === group.data.id && change.revision === 1)),
@@ -424,12 +426,12 @@ internal static partial class SmokeRunner
             assert(!conflict.ok && conflict.error.code === 'images.revision_conflict', 'A stale annotation revision returns images.revision_conflict');
             const outside = await request('images.saveAnnotation', {projectId, imageId: first.id, annotationRevision: 2,
               objects: [{id: null, classId: created.data.id, classVariantId: null, box: {x: 0.8, y: 0, width: 0.5, height: 0.5}}], roi: null, reviewState: 'reviewed'});
-            assert(!outside.ok && outside.error.code === 'images.box_invalid' && outside.error.message.includes('Рамка'), 'A box outside the frame returns images.box_invalid');
+            assert(!outside.ok && outside.error.code === 'images.box_invalid' && mautLocale.errorText(outside.error.code, outside.error.details).includes('Рамка'), 'A box outside the frame returns images.box_invalid');
             const annotations = await request('images.listAnnotations', {projectId, imageIds: page.data.items.map(item => item.id)});
             assert(annotations.ok && annotations.data.length === 3 && annotations.data.find(item => item.imageId === first.id).objects[0].box.width === 0.5,
               'images.listAnnotations returns the annotations of a page');
             const blocked = await request('classes.reviewDeletion', {projectId, classId: created.data.id});
-            assert(blocked.ok && blocked.data.blockers.some(item => item.code === 'images.annotations' && item.message.includes('Улица / кадр-1.jpg')),
+            assert(blocked.ok && blocked.data.blockers.some(item => item.code === 'images.annotations' && mautLocale.blockerText('catalog', item).includes('Улица / кадр-1.jpg')),
               'An annotated class is blocked with the image names');
             const imports = await request('images.listImports', {projectId, groupId: group.data.id});
             assert(imports.ok && imports.data.length === 2 && imports.data.every(item => item.kind === 'images.import'), 'images.listImports returns the history of the group');
@@ -627,11 +629,11 @@ internal static partial class SmokeRunner
             const group = await request('images.createGroup', {projectId, name: 'Кадры видео', description: '', splitHint: 'unassigned'});
             const groupId = group.data.id;
             const missing = await request('images.import', {projectId, groupId, selectionToken: video.selectionToken, operationId: 'video-smoke-missing'});
-            assert(!missing.ok && missing.error.code === 'video.frames_invalid' && missing.error.message.startsWith('Укажите'), 'A video import without a range returns video.frames_invalid');
+            assert(!missing.ok && missing.error.code === 'video.frames_invalid' && mautLocale.errorText(missing.error.code, missing.error.details).startsWith('Укажите'), 'A video import without a range returns video.frames_invalid');
             const beyond = await request('images.import', {projectId, groupId, selectionToken: video.selectionToken, operationId: 'video-smoke-beyond',
               startMs: 0, intervalMs: 1000, count: 6});
             assert(!beyond.ok && beyond.error.code === 'video.range_invalid'
-              && beyond.error.message === 'Последний кадр выходит за длительность видео. Уменьшите количество или интервал.',
+              && mautLocale.errorText(beyond.error.code, beyond.error.details) === 'Последний кадр выходит за длительность видео. Уменьшите количество или интервал.',
               'A range past the end returns video.range_invalid with the Russian text');
             const job = await request('images.import', {projectId, groupId, selectionToken: video.selectionToken, operationId: 'video-smoke-import',
               startMs: 0, intervalMs: 1000, count: 5});
@@ -654,7 +656,7 @@ internal static partial class SmokeRunner
             assert(sizes.every(([width, height]) => width === 256 && height === 144), 'Frame thumbnails load in <img>');
             const reused = await request('images.import', {projectId, groupId, selectionToken: video.selectionToken, operationId: 'video-smoke-other',
               startMs: 0, intervalMs: 1000, count: 1});
-            assert(!reused.ok && reused.error.code === 'images.selection_expired' && reused.error.message.includes('видео'),
+            assert(!reused.ok && reused.error.code === 'images.selection_expired' && mautLocale.errorText(reused.error.code, reused.error.details).includes('видео'),
               'A used video selection does not start another operation');
             return {checks};
           } finally {
@@ -1773,7 +1775,8 @@ internal static partial class SmokeRunner
 
     private const string DatasetsUiPlanScript = """
           (await wait(() => enabled($('[data-section="datasets"]')), 'Datasets section enabled')).click();
-          await wait(() => $('[data-testid="datasets-section"]') && $('[data-testid="datasets-empty"]'), 'Datasets opened');
+          await wait(() => $('[data-testid="datasets-section"]') && $('[data-testid="datasets-empty"]')
+            && $('[data-testid="dataset-operations-verify-empty"]'), 'Datasets opened');
           assert(document.body.textContent.includes('Неизменяемые версии готовых кадров и разметки.') && selectedTab() === 'datasets-tab-datasets'
             && text('[data-testid="datasets-empty"]') === 'Соберите датасет во вкладке «Сборка». Исходные изображения сохранятся.'
             && $('[data-testid="dataset-operations-verify-empty"]').textContent.startsWith('Откройте датасет во вкладке «Датасеты»'),
@@ -1800,7 +1803,7 @@ internal static partial class SmokeRunner
             () => [unassignedId, validationId].map(id => groupRow(id)?.textContent).join(' | '));
           const meta = id => $('[data-testid="dataset-group-meta"]', groupRow(id)).textContent;
           assert(meta(unassignedId) === '9 кадров · Исходные изображения · Без назначения · проверено: 100% (9)'
-            && meta(validationId) === '4 кадров · Исходные изображения · Проверка · проверено: 75% (3)',
+            && meta(validationId) === '4 кадра · Исходные изображения · Проверка · проверено: 75% (3)',
             'Groups show the image count, origin, назначение and the share of reviewed images: ' + meta(validationId));
           assert($('[data-testid="dataset-plan"]').disabled && text('[data-testid="dataset-form-hint"]') === 'Укажите название датасета до 120 символов.'
             && text('[data-testid="dataset-validation-hint"]') === 'Для проверки (Validation): 20% — остаток после Train и Test.'
@@ -1829,7 +1832,7 @@ internal static partial class SmokeRunner
           assert(planned.counts.total === 13 && planned.skipped.total === 1 && text('[data-testid="dataset-plan-counts"]')
             === 'Train ' + planned.counts.train + ' · Validation ' + planned.counts.val + ' · Test 0 · пропущено 1', 'The plan card shows the split counts: ' + text('[data-testid="dataset-plan-counts"]'));
           assert(text('[data-reason="unreviewed"]') === 'не проверены: 1' && $$('[data-testid="dataset-plan-skips"] li').length === 1, 'Skip reasons are itemised');
-          assert(mixed && text('[data-warning="datasets.mixed_source_splits"]') === mixed.message, 'The plan shows the mixed-source warning: ' + mixed?.message);
+          assert(mixed && text('[data-warning="datasets.mixed_source_splits"]') === mautLocale.planWarningText(mixed), 'The plan shows the mixed-source warning: ' + (mixed && mautLocale.planWarningText(mixed)));
           assert($('[data-testid="dataset-build"]').disabled === !(planned.buildable && planned.sufficientSamples)
             && (planned.buildable || !!$('[data-warning="datasets.split_collision"]')), '«Собрать датасет» follows the plan (split collision disables it)');
 
@@ -1878,7 +1881,7 @@ internal static partial class SmokeRunner
           const shown = await wait(() => tilesLoaded(version.counts[split]), 'Sample thumbnails', () => sampleTiles().length + ' tiles');
           assert(text('[data-testid="dataset-sample-count"]') === version.counts[split] + ' из ' + version.counts[split] + ' · Снимки при сборке'
             && shown.every(tile => $$('rect[data-kind="object"]', tile).length === Number(tile.dataset.objects))
-            && shown.some(tile => tile.dataset.objects === '1' && $('[data-testid="dataset-sample-caption"]', tile).textContent === width + ' × ' + height + ' · 1 объектов · 0 негативов'),
+            && shown.some(tile => tile.dataset.objects === '1' && $('[data-testid="dataset-sample-caption"]', tile).textContent === width + ' × ' + height + ' · 1 объект · 0 негативов'),
             'The sample grid shows thumbnails with their boxes and «W × H · n объектов · m негативов»');
 
           const index = shown.findIndex((tile, position) => tile.dataset.objects === '1' && position < shown.length - 1);
@@ -2149,7 +2152,7 @@ internal static partial class SmokeRunner
             assert(events.some(event=>event.event==='project.changed'&&event.data.id===projectId),'C# change event delivered');
             const settings={projectId,name:'Переименован',description:'Описание',baseModelId:'yolo26n',inputSize:{width:320,height:256}};
             const stale=await request('projects.update',{...settings,revision:5});
-            assert(!stale.ok&&stale.error.code==='projects.revision_conflict'&&stale.error.message.length>0,'Revision conflict crosses bridge');
+            assert(!stale.ok&&stale.error.code==='projects.revision_conflict'&&mautLocale.errorText(stale.error.code, stale.error.details).length>0,'Revision conflict crosses bridge');
             const updated=await request('projects.update',{...settings,revision:1});
             assert(updated.ok&&updated.data.revision===2&&updated.data.inputSize.height===256,'Project update crosses bridge');
             await wait(()=>query('active-project-name')?.textContent.includes('Переименован'),'UI applies project.changed');
@@ -2161,7 +2164,7 @@ internal static partial class SmokeRunner
             const jobs=await request('jobs.list',{projectId});
             assert(jobs.ok&&Array.isArray(jobs.data)&&jobs.data.length===0,'Opened project lists no invented jobs');
             const missingJob=await request('jobs.cancel',{projectId,jobId:crypto.randomUUID()});
-            assert(!missingJob.ok&&missingJob.error.code==='jobs.not_found'&&missingJob.error.message.length>0,'Cancel of an unknown job returns jobs.not_found');
+            assert(!missingJob.ok&&missingJob.error.code==='jobs.not_found'&&mautLocale.errorText(missingJob.error.code, missingJob.error.details).length>0,'Cancel of an unknown job returns jobs.not_found');
             const message='C# ↔ WebView2';
             const results=await Promise.all([request('system.ping',{message}),request('projects.list',{})]);
             assert(results[0].ok&&results[0].data.message===message&&results[0].data.host.startsWith('.NET'),'Unicode ping crossed native bridge');
@@ -2173,7 +2176,7 @@ internal static partial class SmokeRunner
             const unknown=await request('arbitrary.method',{});
             assert(!unknown.ok&&unknown.error.code==='bridge.method_unavailable','Unknown method rejected');
             const missingModel=await request('baseModels.install',{modelId:'unknown'});
-            assert(!missingModel.ok&&missingModel.error.code==='base_models.not_found'&&missingModel.error.message.length>0,'Core error code crosses bridge');
+            assert(!missingModel.ok&&missingModel.error.code==='base_models.not_found'&&mautLocale.errorText(missingModel.error.code, missingModel.error.details).length>0,'Core error code crosses bridge');
             const traversal=await request('projects.open',{projectId:'../elsewhere'});
             assert(!traversal.ok&&traversal.error.code==='bridge.validation','Traversal ID rejected');
             setTimeout(()=>{throw new Error('Native smoke uncaught UI error');},0);
@@ -2411,8 +2414,9 @@ internal static partial class SmokeRunner
           await wait(() => !$('[data-testid="training-chart-tooltip"]', quality), 'Tooltip hidden');
 
           const lines = $$('[data-testid="training-log-lines"] p').map(item => item.textContent);
-          assert(lines.some(line => line.includes('8/8  box_loss')) && text('[data-testid="training-log-caption"]').startsWith('Окно последних 200 сообщений'),
-            '«Журнал обучения» shows the latest messages including the last epoch');
+          assert(lines.some(line => line.includes('8/8  box_loss')) && lines.some(line => /^Создана версия модели \d+\.$/.test(line))
+            && text('[data-testid="training-log-caption"]').startsWith('Окно последних 200 сообщений'),
+            '«Журнал обучения» shows the latest messages including the last epoch and the Russian system line');
           $('[data-testid="training-log-history"]').click();
           const total = (await request('training.listLog', {projectId, runId: ended.dataset.runId, limit: 1})).data.total;
           await wait(() => text('[data-testid="training-log-caption"]') === 'Всего сохранено сообщений: ' + total + '. Страница до 200 сообщений.'
@@ -2431,7 +2435,7 @@ internal static partial class SmokeRunner
           const version = await wait(() => $('[data-testid="model-version-passport"]', ended), 'Version passport');
           const stored = (await request('training.getModelVersion', {projectId, versionId: version.dataset.versionId})).data;
           assert(text('[data-testid="model-version-metric-mAP50"]').startsWith('mAP500.300') && text('[data-testid="model-version-best-epoch"]').startsWith('лучшая эпоха' + stored.bestEpoch)
-            && text('[data-testid="model-version-best-epoch"]').includes('пройдено 8 из 8') && text('[data-testid="model-version-notes"]').includes('Поддельное предупреждение.')
+            && text('[data-testid="model-version-best-epoch"]').includes('пройдено 8 из 8') && text('[data-testid="model-version-notes"]').includes('fake_warning: Fake warning.')
             && $('[data-file-kind="weights_pt"]', version) && $('[data-file-kind="onnx"]', version),
             'The short version passport shows metrics, the best epoch, notes and files: ' + text('[data-testid="model-version-best-epoch"]'));
           // Thumbnails load lazily: the plots are scrolled into view first.

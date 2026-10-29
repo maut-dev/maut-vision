@@ -13,14 +13,12 @@ internal sealed class ProjectEvents : IDisposable
 {
     private readonly IProjectsManager projects;
     private readonly Action<string, object> publish;
-    private readonly Func<string, string> messageFor;
     private int disposed;
 
-    internal ProjectEvents(IProjectsManager projects, Action<string, object> publish, Func<string, string> messageFor)
+    internal ProjectEvents(IProjectsManager projects, Action<string, object> publish)
     {
         this.projects = projects;
         this.publish = publish;
-        this.messageFor = messageFor;
         projects.ProjectOpened += OnProjectOpened;
         projects.ProjectChanged += OnProjectChanged;
         projects.ProjectRemoved += OnProjectRemoved;
@@ -44,7 +42,7 @@ internal sealed class ProjectEvents : IDisposable
 
     private void OnImportChanged(object? sender, ProjectImportChangedEventArgs args)
     {
-        if (Volatile.Read(ref disposed) == 0) publish("projectImport.changed", ProjectResponseMapper.Map(args.Import, messageFor));
+        if (Volatile.Read(ref disposed) == 0) publish("projectImport.changed", ProjectResponseMapper.Map(args.Import));
     }
 
     public void Dispose()

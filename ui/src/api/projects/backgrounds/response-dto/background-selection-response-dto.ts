@@ -2,12 +2,12 @@ import { isResourceUrl, type ResourceUrl } from "../../../resources/resource-url
 import { isRecord } from "../../../transport/envelopes";
 import { isCount } from "../../catalog/catalog-guards";
 
-/** exact — ровно размер набора, larger — можно вырезать рамкой, smaller — будет пропущен, unreadable — не читается. */
+/** exact: exactly the set size, larger: a frame can be cut, smaller: will be skipped, unreadable: cannot be read. */
 export type BackgroundSourceFit = "exact" | "larger" | "smaller" | "unreadable";
 
 const fits: readonly string[] = ["exact", "larger", "smaller", "unreadable"] satisfies BackgroundSourceFit[];
 
-/** Файл выбора: index — номер в выборе (его передают в previewSource, sourceIndices, crops); размер с учётом ориентации. */
+/** A file of the selection: index is its number in the selection (it goes to previewSource, sourceIndices, crops); the size follows the orientation. */
 export interface BackgroundSourceFileResponseDto {
     index: number;
     name: string;
@@ -17,9 +17,9 @@ export interface BackgroundSourceFileResponseDto {
 }
 
 /**
- * Выбор файлов (backgrounds.selectFiles). selectionToken — null, если диалог закрыт (files пуст); действует 30 минут и только
- * на этой странице. Файлы — в естественном порядке имён; exact/larger/smaller/unreadable — счётчики для размера набора
- * targetWidth × targetHeight: «Готовые кадры» возьмут exact, остальные будут пропущены.
+ * A file selection (backgrounds.selectFiles). selectionToken is null when the dialog was closed (files is empty); it is valid for 30 minutes and only
+ * on this page. Files come in the natural order of names; exact/larger/smaller/unreadable are counters for the set size
+ * targetWidth × targetHeight: "Ready frames" take the exact ones, the rest are skipped.
  */
 export interface BackgroundFileSelectionResponseDto {
     selectionToken: string | null;
@@ -45,9 +45,9 @@ export function isBackgroundFileSelectionResponseDto(value: unknown): value is B
 }
 
 /**
- * Кадр для рамки: sourceIndex — файл выбора (у видео null), timestampMs — отметка кадра видео (у файла null). width/height —
- * размер исходного кадра: координаты рамки считаются в нём. previewUrl — уменьшенная копия previewWidth × previewHeight
- * (не больше 1600 px), временная: действует ограниченное время и только на этой странице.
+ * An image for the crop frame: sourceIndex is a file of the selection (null for a video), timestampMs the mark of a video frame (null for a file). width/height
+ * are the size of the source image: frame coordinates are counted in it. previewUrl is a reduced copy previewWidth × previewHeight
+ * (at most 1600 px), temporary: valid for a limited time and on this page only.
  */
 export interface BackgroundSourcePreviewResponseDto {
     sourceIndex: number | null;

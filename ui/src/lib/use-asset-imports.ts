@@ -6,7 +6,7 @@ import { jobsApi } from "@/api/jobs/jobs-api";
 import type { JobResponseDto } from "@/api/jobs/response-dto/job-response-dto";
 import { errorMessage } from "./format";
 
-/** Состояние импорта в одну привязку: выбор файлов в нативном диалоге, задача или ошибка запуска. */
+/** The import state of one binding: choosing files in the native dialog, the job or a start error. */
 export interface AssetImport {
     selecting: boolean;
     job?: JobResponseDto;
@@ -19,8 +19,8 @@ const newer = (left: JobResponseDto | undefined, right: JobResponseDto | undefin
     !left ? right : !right ? left : right.sequence > left.sequence ? right : left;
 
 /**
- * Импорт изображений: одно действие пользователя — выбор файлов и одна задача classes.import_assets.
- * Прогресс и итог приходят событиями job.changed; события, пришедшие раньше ответа importAssets, не теряются.
+ * Image import: one user action is a choice of files and one classes.import_assets job.
+ * The progress and the result come with job.changed events; events that arrive before the answer of importAssets are not lost.
  */
 export function useAssetImports(projectId: string) {
     const [imports, setImports] = useState<Readonly<Record<string, AssetImport>>>({});

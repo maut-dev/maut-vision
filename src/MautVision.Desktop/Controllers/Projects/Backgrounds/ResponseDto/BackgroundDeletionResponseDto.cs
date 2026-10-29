@@ -3,8 +3,8 @@ using MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 
 /// <summary>
-/// Состав удаления навсегда: весь набор (WholeSet) или выбранные фоны. Items — «Будет удалено фонов: N.»; непустой Blockers —
-/// «Завершите задачи или измените зависимости перед удалением:» + строки Message. Revision передаётся в удаление.
+/// What a permanent deletion removes: the whole set (WholeSet) or the selected backgrounds. Items — "Backgrounds to delete: N."; non-empty Blockers —
+/// "Finish the jobs or change the dependencies before deleting:" + Message lines. Revision is passed to the deletion.
 /// </summary>
 public sealed record BackgroundDeletionReviewResponseDto(
     Guid SetId,
@@ -14,14 +14,14 @@ public sealed record BackgroundDeletionReviewResponseDto(
     DeletionBlockerResponseDto[] Blockers,
     string Revision);
 
-/// <summary>Строки удалены; CleanupPending — файлы ещё удаляются в фоне, очистка продолжится при следующем открытии проекта.</summary>
+/// <summary>Rows are deleted; CleanupPending — files are still being deleted in the background, the cleanup continues the next time the project is opened.</summary>
 public sealed record BackgroundDeletionResultResponseDto(Guid SetId, bool SetDeleted, long Items, bool CleanupPending);
 
-/// <summary>Изменённый или удалённый (Revision = null) набор или фон.</summary>
+/// <summary>Changed or deleted (Revision = null) set or background.</summary>
 public sealed record BackgroundsEntityChangeDto(Guid Id, long? Revision);
 
 /// <summary>
-/// Событие backgrounds.changed. Sets — наборы с новыми ревизиями или удалённые; Items — фоны, изменённые явной операцией;
-/// ItemsChangedIn — наборы, у которых изменился состав или счётчики: UI перечитывает их набор и страницы.
+/// The backgrounds.changed event. Sets — sets with new revisions or deleted ones; Items — backgrounds changed by an explicit operation;
+/// ItemsChangedIn — sets whose content or counters changed: the UI rereads their set and pages.
 /// </summary>
 public sealed record BackgroundsChangedEventDto(string ProjectId, BackgroundsEntityChangeDto[] Sets, BackgroundsEntityChangeDto[] Items, Guid[] ItemsChangedIn);

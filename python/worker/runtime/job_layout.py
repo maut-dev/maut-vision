@@ -1,14 +1,14 @@
-"""Раскладка папки задачи и безопасная запись в неё.
+"""Layout of the job folder and safe writing into it.
 
 training/jobs/<jobId>/
   request.json
-  input/{dataset/, model/, manifest.json}   — только чтение
-  output/{result.json, artifacts/, work/}   — пишет работник
-  logs/                                     — диагностика
+  input/{dataset/, model/, manifest.json}   — read only
+  output/{result.json, artifacts/, work/}   — written by the worker
+  logs/                                     — diagnostics
 
-output/work/ — черновик ultralytics (results.csv, last.pt, настройки): он
-не входит в контракт и не регистрируется. Готовое лежит только в
-artifacts/ и перечислено в result.json.
+output/work/ — the ultralytics draft (results.csv, last.pt, settings): it
+is not part of the contract and is not registered. Finished results lie only in
+artifacts/ and are listed in result.json.
 """
 from __future__ import annotations
 
@@ -55,29 +55,25 @@ class JobLayout:
         return JobLayout(self.job_dir, output_root)
 
     def resolve(self, rel: str) -> Path:
-        """Относительный путь запроса → абсолютный, строго внутри папки задачи.
+        """A relative request path → an absolute one, strictly inside the job folder.
 
-        Схема уже запретила «..», но symlink/junction внутри input/ всё ещё
-        может увести наружу — поэтому сверяем уже разрешённый путь.
+        The schema already forbade "..", but a symlink/junction inside input/ can still
+        lead outside — so the already resolved path is checked.
         """
         p = (self.job_dir / rel).resolve()
         if not p.is_relative_to(self.job_dir):
-            raise WorkerError(
-                ErrorCode.INPUT_PATH_INVALID,
-                f"Путь '{rel}' выходит за пределы папки задачи",
-                {"path": rel},
-            )
+            raise WorkerError(ErrorCode.INPUT_PATH_INVALID, args={"path": rel}, details={"path": rel})
         return p
 
     def relative_to_output(self, p: Path) -> str:
         return p.resolve().relative_to(self.output_dir).as_posix()
 
     def previous_run_leftovers(self) -> list[str]:
-        """Следы прошлого запуска этой же задачи.
+        """Traces of a previous run of the same job.
 
-        Автоповтор запрещён: если result.json или артефакты уже есть, значит
-        задачу уже исполняли, и решать её судьбу — Domain Training, а не нам.
-        Перезаписать чужой результат молча — худший исход.
+        Automatic repeat is forbidden: if result.json or artifacts already exist, the
+        job has already run, and its fate is for Domain Training to decide, not us.
+        Silently overwriting someone else's result is the worst outcome.
         """
         found = []
         if self.result_path.exists():
@@ -88,12 +84,12 @@ class JobLayout:
 
 
 def atomic_write_json(path: Path, data: Any) -> None:
-    """Записать JSON так, чтобы читатель видел либо старое, либо целое новое.
+    """Write JSON so that a reader sees either the old or the whole new content.
 
-    Пишем во временный файл рядом (тот же том — иначе rename не атомарен),
-    сбрасываем на диск и только потом переименовываем. Если работника убьют
-    на любом шаге, result.json не появится недописанным: в худшем случае
-    останется .tmp, который никто не читает.
+    Write into a temporary file next to it (the same volume — otherwise rename is not atomic),
+    flush it to disk and only then rename. If the worker is killed
+    at any step, result.json never appears half-written: at worst
+    a .tmp remains that nobody reads.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.tmp")

@@ -1,16 +1,16 @@
 import { isId, isRevision } from "../../projects/catalog/catalog-guards";
 import { isRecord } from "../../transport/envelopes";
 
-/** Изменённый пресет с новой ревизией; revision = null — удалён. */
+/** A changed preset with its new revision; revision = null when it was deleted. */
 export interface GenerationEntityChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в генерации проекта: recipes — пресеты с новыми ревизиями или удалённые; runs — запуски, у которых изменились данные
- * помимо состояния задачи (подготовлен — появилась группа результата; удалён): перечитать их getRun (generation.unavailable —
- * удалён). Состояние и прогресс запусков — job.changed.
+ * What changed in the generation of the project: recipes — presets with new revisions or deleted ones; runs — runs whose data changed
+ * besides the job state (prepared — the result group appeared; deleted): read their getRun again (generation.unavailable means it
+ * was deleted). The state and progress of runs come with job.changed.
  */
 export interface GenerationChangedDto {
     projectId: string;

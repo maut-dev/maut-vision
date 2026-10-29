@@ -1,9 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { Fragment, useEffect, useLayoutEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 const gap = 12;
 const overscanRows = 3;
 
-/** Строки сетки, попадающие в окно прокрутки, с запасом; остальные плитки не создаются. */
+/** Grid rows inside the scroll window, with a margin; other tiles are not created. */
 export function visibleRows(scrollTop: number, viewportHeight: number, rows: number, rowHeight: number) {
     const first = Math.max(0, Math.floor(scrollTop / rowHeight) - overscanRows);
     const last = Math.min(rows - 1, Math.ceil((scrollTop + viewportHeight) / rowHeight) + overscanRows);
@@ -11,9 +12,9 @@ export function visibleRows(scrollTop: number, viewportHeight: number, rows: num
 }
 
 /**
- * Виртуальная сетка плиток фиксированной высоты: рисуются только видимые строки, поэтому список на сотни тысяч элементов
- * не создаёт сотни тысяч узлов. Следующая страница подгружается, когда до конца загруженного остаётся пара строк.
- * Общая для галерей изображений и фонов; плитку рисует владелец.
+ * A virtual grid of fixed-height tiles: only visible rows are drawn, so a list of hundreds of thousands of items
+ * does not create hundreds of thousands of nodes. The next page loads when a couple of rows remain to the end of the loaded ones.
+ * Shared by the image and background galleries; the owner draws a tile.
  */
 export function VirtualGrid<T>({ items, keyOf, minTileWidth, tileHeight, hasMore, loading, loadMore, label, testId, loadingText, renderTile, className = "min-h-0" }: {
     items: readonly T[];
@@ -25,10 +26,10 @@ export function VirtualGrid<T>({ items, keyOf, minTileWidth, tileHeight, hasMore
     loadMore: () => void;
     label: string;
     testId: string;
-    /** «Загрузка изображений…» и т. п. */
+    /** "Loading images…" and the like. */
     loadingText: string;
     renderTile: (item: T, index: number, style: CSSProperties) => ReactNode;
-    /** Высота сетки внутри колонки, по умолчанию сжимается до нуля. */
+    /** The grid height inside a column; by default it shrinks to zero. */
     className?: string;
 }) {
     const [element, setElement] = useState<HTMLDivElement | null>(null);
@@ -81,8 +82,12 @@ export function VirtualGrid<T>({ items, keyOf, minTileWidth, tileHeight, hasMore
             data-loaded={items.length}
         >
             <div className="relative" style={{ height: Math.max(0, rows * rowHeight - gap) }}>{tiles}</div>
-            {hasMore && <p role="status" className="py-3 text-center text-xs text-muted-foreground">{loading ? loadingText : "Прокрутите, чтобы загрузить ещё"}</p>}
+            {hasMore && <p role="status" className="py-3 text-center text-xs text-muted-foreground">{loading ? loadingText : <ScrollMoreText />}</p>}
         </div>
     );
 }
 
+function ScrollMoreText() {
+    const { t } = useTranslation();
+    return t("grid.scrollMore");
+}

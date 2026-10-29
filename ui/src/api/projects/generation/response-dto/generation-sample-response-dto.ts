@@ -5,7 +5,7 @@ import { isImageBoxDto, type ImageBoxDto } from "../../images/response-dto/image
 import { isGenerationRecipeFormDto } from "./generation-recipe-response-dto";
 import type { GenerationRecipeFormDto } from "../request-dto/generation-recipe-form-dto";
 
-/** Объект кадра: класс, привязка (цвет рамки — displayColor привязки из каталога) и рамка в долях кадра. */
+/** An object of a frame: the class, the binding (box color — displayColor of the binding from the catalog) and the box in frame fractions. */
 export interface GenerationSampleObjectDto {
     classId: string;
     classVariantId: string;
@@ -13,9 +13,9 @@ export interface GenerationSampleObjectDto {
 }
 
 /**
- * Кадр «Пример кадра»: imageUrl — временный PNG (действует 10 минут для этой страницы; при ошибке загрузки запросить примеры
- * снова), width/height — размер кадра, backgroundId — фон, objects — рамки поверх изображения, missingObjects — сколько объектов
- * не поместилось.
+ * A frame of "Sample frame": imageUrl — a temporary PNG (valid for 10 minutes for this page; on a loading error request the samples
+ * again), width/height — the frame size, backgroundId — the background, objects — boxes over the image, missingObjects — how many objects
+ * did not fit.
  */
 export interface GenerationSampleResponseDto {
     sampleIndex: number;
@@ -32,15 +32,14 @@ export interface GenerationSamplesResponseDto {
 }
 
 /**
- * «Настроить повтор»: recipe — настройки запуска для формы «Новый пресет» (имя с « · повтор»), seed и requestedCount — в
- * «Параметры запуска», notice — уведомление над формой, sourceRunId — запуск-источник.
+ * "Set up a repeat": recipe — the run settings for the form "New preset" (the name with " · repeat"), seed and requestedCount — to
+ * "Run parameters", sourceRunId — the source run.
  */
 export interface GenerationRepeatDraftResponseDto {
     recipe: GenerationRecipeFormDto;
     seed: number;
     requestedCount: number;
     sourceRunId: string;
-    notice: string;
 }
 
 function isSampleObject(value: unknown): value is GenerationSampleObjectDto {
@@ -58,5 +57,5 @@ export function isGenerationSamplesResponseDto(value: unknown): value is Generat
 
 export function isGenerationRepeatDraftResponseDto(value: unknown): value is GenerationRepeatDraftResponseDto {
     return isRecord(value) && isGenerationRecipeFormDto(value.recipe) && isCount(value.seed) && isCount(value.requestedCount)
-        && isId(value.sourceRunId) && typeof value.notice === "string";
+        && isId(value.sourceRunId);
 }

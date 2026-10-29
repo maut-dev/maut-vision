@@ -1,4 +1,4 @@
 namespace MautVision.Desktop.Controllers.System.RequestDto;
 
-/// <summary>UI показала библиотеку после запуска; Projects — число полученных проектов.</summary>
+/// <summary>The UI showed the library after start; Projects — number of received projects.</summary>
 public sealed record ReadyRequestDto(int Projects);

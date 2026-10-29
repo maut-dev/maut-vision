@@ -2,9 +2,9 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount } from "../../catalog/catalog-guards";
 
 /**
- * Видео из images.selectVideo. selectionToken — null, если пользователь закрыл диалог (тогда остальные поля null); действует
- * 30 минут и только на этой странице. displayName — имя файла без пути, byteSize — размер файла, width/height — размер
- * кадров с учётом поворота, durationMs — длительность. Видео при выборе не хешируется.
+ * A video from images.selectVideo. selectionToken is null when the user closed the dialog (then the other fields are null); it is valid for
+ * 30 minutes and on this page only. displayName is the file name without a path, byteSize the file size, width/height the size
+ * of frames after rotation, durationMs the duration. The video is not hashed when chosen.
  */
 export interface VideoSelectionResponseDto {
     selectionToken: string | null;
@@ -15,7 +15,7 @@ export interface VideoSelectionResponseDto {
     durationMs: number | null;
 }
 
-/** Выбранное видео: все поля заполнены. */
+/** A chosen video: all fields are set. */
 export type SelectedVideoDto = { [Key in keyof VideoSelectionResponseDto]: NonNullable<VideoSelectionResponseDto[Key]> };
 
 const isPositive = (value: unknown): value is number => isCount(value) && value > 0;
@@ -29,7 +29,7 @@ export function isVideoSelectionResponseDto(value: unknown): value is VideoSelec
         && isPositive(value.byteSize) && isPositive(value.width) && isPositive(value.height) && isPositive(value.durationMs);
 }
 
-/** true, если пользователь выбрал видео (а не закрыл диалог). */
+/** true when the user chose a video (and did not close the dialog). */
 export function isSelectedVideo(value: VideoSelectionResponseDto): value is SelectedVideoDto {
     return value.selectionToken !== null;
 }

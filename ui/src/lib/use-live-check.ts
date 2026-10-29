@@ -4,15 +4,15 @@ import { checksApi } from "@/api/projects/checks/checks-api";
 import type { LiveCheckFrameDto, LiveCheckMode, LiveCheckResponseDto } from "@/api/projects/checks/response-dto/live-check-response-dto";
 import { isLiveCheckActive } from "./checks/check-view";
 
-/** Страница журнала, которую дочитывает событие. */
+/** The journal page an event reads up to. */
 const journalPage = 200;
 
 /**
- * Живая проверка одного режима «Проверок» без опроса: снимок из ответа start* или checks.get, затем checks.changed этой проверки —
- * применяется, только если sequence больше известного. Новые строки журнала («кадры с обнаружениями») дочитываются listJournal с
- * after, когда событие сообщает lastOrdinal больше загруженного; в памяти — не больше keep последних строк, более ранние читает
- * olderJournal (before). При монтировании хук находит последнюю проверку своего режима (checks.list → get): переход по вкладкам
- * и разделам не теряет идущую проверку. stopOnLeave — проверка с экрана: уход из раздела её останавливает.
+ * A live check of one mode of Checks without polling: a snapshot from the answer of start* or checks.get, then checks.changed of this check,
+ * applied only when sequence is greater than the known one. New journal rows (frames with detections) are read with listJournal with
+ * after when an event reports lastOrdinal greater than the loaded one; memory keeps at most the last keep rows, earlier ones are read by
+ * olderJournal (before). On mount the hook finds the latest check of its mode (checks.list → get): moving between tabs
+ * and sections does not lose a running check. stopOnLeave — a screen check: leaving the section stops it.
  */
 export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, stopOnLeave = false }: { keep: number; stopOnLeave?: boolean }) {
     const [check, setCheck] = useState<LiveCheckResponseDto>();
@@ -23,7 +23,7 @@ export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, sto
     const reading = useRef(false);
     const mounted = useRef(true);
 
-    /** Строки по возрастанию ordinal без повторов, не больше keep последних. */
+    /** Rows by ascending ordinal without repeats, at most the last keep. */
     const merge = useCallback((rows: readonly LiveCheckFrameDto[], older = false) => {
         setJournal(known => {
             const byOrdinal = new Map(known.map(row => [row.ordinal, row]));
@@ -39,12 +39,12 @@ export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, sto
         reading.current = true;
         try {
             while (mounted.current && current.current?.id === snapshot.id && current.current.journal.lastOrdinal > lastOrdinal.current) {
-                // В памяти остаются только keep последних: пропущенное раньше читает olderJournal.
+                // Memory keeps only the last keep rows: what was skipped earlier is read by olderJournal.
                 lastOrdinal.current = Math.max(lastOrdinal.current, current.current.journal.lastOrdinal - keep);
                 const page = await checksApi.listJournal({ projectId, checkId: snapshot.id, after: lastOrdinal.current, limit: Math.min(journalPage, Math.max(keep, 1)) });
                 if (!mounted.current || current.current?.id !== snapshot.id) return;
                 if (!page.items.length) {
-                    // Кольцо экрана вытеснило запрошенное: продолжаем с первой хранимой записи.
+                    // The screen ring pushed out the requested records: continue from the first stored one.
                     lastOrdinal.current = Math.max(lastOrdinal.current, page.journal.firstOrdinal - 1);
                     if (page.journal.lastOrdinal <= lastOrdinal.current) break;
                     continue;
@@ -52,7 +52,7 @@ export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, sto
                 merge(page.items);
             }
         } catch {
-            // Следующее событие проверки повторит дочитывание.
+            // The next event of the check repeats the reading.
         } finally {
             reading.current = false;
         }
@@ -66,7 +66,7 @@ export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, sto
         if (snapshot.journal.lastOrdinal > lastOrdinal.current) void follow(snapshot);
     }, [follow]);
 
-    /** Показать проверку: ответ start* или снимок get (recentFrames — последняя страница журнала). */
+    /** Show a check: the answer of start* or a get snapshot (recentFrames is the last page of the journal). */
     const attach = useCallback((snapshot: LiveCheckResponseDto) => {
         if (current.current?.id === snapshot.id) {
             apply(snapshot);
@@ -94,7 +94,7 @@ export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, sto
                 const snapshot = await checksApi.get({ projectId, checkId: latest.id, journalLimit: Math.min(keep, 200) });
                 if (mounted.current && !current.current) attach(snapshot);
             } catch {
-                // Прежней проверки нет — режим начинается с пустой формы.
+                // There is no earlier check: the mode starts with an empty form.
             }
         })();
         return () => {
@@ -105,14 +105,14 @@ export function useLiveCheck(projectId: string, mode: LiveCheckMode, { keep, sto
         };
     }, [projectId, mode, keep, stopOnLeave, apply, attach]);
 
-    /** «Остановить». */
+    /** Stop. */
     const stop = useCallback(async () => {
         const running = current.current;
         if (!running) return;
         apply(await checksApi.stop({ projectId, checkId: running.id }));
     }, [projectId, apply]);
 
-    /** Более ранние строки журнала перед первой загруженной. */
+    /** Earlier journal rows before the first loaded one. */
     const olderJournal = useCallback(async () => {
         const running = current.current;
         const first = journal[0]?.ordinal;

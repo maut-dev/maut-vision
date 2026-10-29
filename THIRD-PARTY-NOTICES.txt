@@ -42,6 +42,10 @@ lucide-react — © Lucide Contributors. ISC License; часть значков 
 class-variance-authority — © Joe Bell. Apache License 2.0. https://github.com/joe-bell/cva
 clsx — © Luke Edwards. MIT License. https://github.com/lukeed/clsx
 tailwind-merge — © Dany Castillo. MIT License. https://github.com/dcastil/tailwind-merge
+i18next, react-i18next — © i18next. MIT License. https://github.com/i18next/i18next, https://github.com/i18next/react-i18next
+html-parse-stringify — © Henrik Joreteg. MIT License. https://github.com/henrikjoreteg/html-parse-stringify
+use-sync-external-store — © Meta Platforms, Inc. and affiliates. MIT License. https://github.com/facebook/react
+@babel/runtime — © Sebastian McKenzie and other contributors. MIT License. https://github.com/babel/babel
 Tailwind CSS (стили сборки) — © Tailwind Labs, Inc. MIT License. https://github.com/tailwindlabs/tailwindcss
 
 

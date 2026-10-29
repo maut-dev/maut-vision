@@ -7,9 +7,9 @@ export type ClassAssetFormat = "png" | "jpeg" | "webp" | "bmp";
 const formats: readonly string[] = ["png", "jpeg", "webp", "bmp"] satisfies ClassAssetFormat[];
 
 /**
- * Исходное изображение варианта класса. width/height — с учётом EXIF-ориентации; hasAlpha — есть альфа-канал.
- * originalUrl и thumbnailUrl (JPEG до 256 px) — URL канала ресурсов: действуют ограниченное время и только на этой
- * странице; после ошибки загрузки страница изображений перечитывается.
+ * A source image of a class variant. width/height follow the EXIF orientation; hasAlpha: it has an alpha channel.
+ * originalUrl and thumbnailUrl (JPEG up to 256 px) are URLs of the resource channel: valid for a limited time and only on this
+ * page; after a loading error the page of images is reread.
  */
 export interface ClassAssetResponseDto {
     id: string;
@@ -32,7 +32,7 @@ export function isClassAssetResponseDto(value: unknown): value is ClassAssetResp
         && isResourceUrl(value.originalUrl) && isResourceUrl(value.thumbnailUrl);
 }
 
-/** Страница по порядку добавления; nextCursor — значение after для следующей страницы, null на последней. */
+/** A page in the order of adding; nextCursor is the after value for the next page, null on the last one. */
 export interface ClassAssetPageResponseDto {
     items: ClassAssetResponseDto[];
     nextCursor: string | null;
@@ -44,8 +44,8 @@ export function isClassAssetPageResponseDto(value: unknown): value is ClassAsset
 }
 
 /**
- * Результат нативного диалога выбора файлов. selectionToken — null, если пользователь закрыл диалог;
- * токен действует 30 минут и только на этой странице. Пути файлов в UI не передаются.
+ * The result of the native file dialog. selectionToken is null when the user closed the dialog;
+ * the token is valid for 30 minutes and on this page only. File paths are not passed to the UI.
  */
 export interface ClassAssetFileSelectionResponseDto {
     selectionToken: string | null;

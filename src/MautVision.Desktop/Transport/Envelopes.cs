@@ -17,5 +17,8 @@ internal sealed record EventEnvelope(string Event, object Data)
 {
     public string Kind => "event";
 }
-/// <summary>Details — safe values that help the page react, such as the form field of a validation error; null when there are none.</summary>
-internal sealed record BridgeError(string Code, string Message, IReadOnlyDictionary<string, string>? Details = null);
+/// <summary>
+/// Code — the stable error code the page translates; Details — safe values that help the page react and fill the text, such as the form
+/// field of a validation error; null when there are none. There is no text: the UI owns the wording in every language.
+/// </summary>
+internal sealed record BridgeError(string Code, IReadOnlyDictionary<string, string>? Details = null);

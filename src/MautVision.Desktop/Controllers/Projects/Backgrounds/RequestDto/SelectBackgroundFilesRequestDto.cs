@@ -1,4 +1,4 @@
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.RequestDto;
 
-/// <summary>Нативный диалог выбора файлов; ответ — токен выбора и заголовки файлов относительно размера набора SetId.</summary>
+/// <summary>Native file selection dialog; the answer is a selection token and file headers relative to the size of set SetId.</summary>
 public sealed record SelectBackgroundFilesRequestDto(string ProjectId, Guid SetId);

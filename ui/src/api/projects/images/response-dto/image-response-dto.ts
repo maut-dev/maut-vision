@@ -5,7 +5,7 @@ import { isImageGroupResponseDto, type ImageGroupResponseDto } from "./image-gro
 
 export type ImageFormat = "png" | "jpeg" | "webp" | "bmp";
 
-/** reviewed — разметка проверена, в том числе осознанно пустой кадр. */
+/** reviewed: the annotation is reviewed, including a deliberately empty frame. */
 export type ImageReviewState = "unreviewed" | "reviewed";
 
 export type ImageLineageKind = "file" | "video" | "generated";
@@ -17,8 +17,8 @@ const lineageKinds: readonly string[] = ["file", "video", "generated"] satisfies
 export const isImageReviewState = (value: unknown): value is ImageReviewState => typeof value === "string" && reviewStates.includes(value);
 
 /**
- * Происхождение кадра («Источник: …»). sourceFamilyId объединяет кадры одного источника (file:<pixelHash>,
- * video:<хеш видео>). Поля видео и генерации — null у других видов.
+ * The origin of a frame ("Source: …"). sourceFamilyId joins frames of one source (file:<pixelHash>,
+ * video:<video hash>). Video and generation fields are null for other kinds.
  */
 export interface ImageLineageDto {
     kind: ImageLineageKind;
@@ -32,11 +32,11 @@ export interface ImageLineageDto {
 }
 
 /**
- * Изображение группы. width/height — с учётом EXIF-ориентации, как его показывает <img>; координаты разметки относятся к
- * этому кадру. revision растёт при сохранении разметки, архиве и перемещении (её передают в setArchived и move);
- * annotationRevision — текущая ревизия разметки (её передают в saveAnnotation). objectCount и reviewState — из текущей
- * разметки («W × H · рамок: N / без рамок · проверено»). originalUrl — для просмотрщика, thumbnailUrl (JPEG до 256 px) —
- * для галереи; URL действуют ограниченное время и только на этой странице.
+ * An image of a group. width/height follow the EXIF orientation, as <img> shows it; annotation coordinates refer to
+ * this frame. revision grows on saving an annotation, archiving and moving (it goes to setArchived and move);
+ * annotationRevision is the current annotation revision (it goes to saveAnnotation). objectCount and reviewState come from the current
+ * annotation ("W × H · boxes: N / no boxes · reviewed"). originalUrl is for the viewer, thumbnailUrl (JPEG up to 256 px)
+ * for the gallery; the URLs are valid for a limited time and on this page only.
  */
 export interface ImageResponseDto {
     id: string;
@@ -78,7 +78,7 @@ export function isImageList(value: unknown): value is ImageResponseDto[] {
     return Array.isArray(value) && value.every(isImageResponseDto);
 }
 
-/** Страница по порядку импорта; nextCursor — значение after для следующей страницы того же фильтра, null на последней. */
+/** A page in import order; nextCursor is the after value for the next page of the same filter, null on the last one. */
 export interface ImagePageResponseDto {
     items: ImageResponseDto[];
     nextCursor: string | null;
@@ -89,7 +89,7 @@ export function isImagePageResponseDto(value: unknown): value is ImagePageRespon
         && (value.nextCursor === null || (typeof value.nextCursor === "string" && value.nextCursor.length > 0));
 }
 
-/** Результат перемещения: обе группы с новыми ревизиями и перемещённые изображения (в конце порядка цели). */
+/** The result of a move: both groups with new revisions and the moved images (at the end of the target order). */
 export interface MovedImagesResponseDto {
     source: ImageGroupResponseDto;
     target: ImageGroupResponseDto;
@@ -101,8 +101,8 @@ export function isMovedImagesResponseDto(value: unknown): value is MovedImagesRe
 }
 
 /**
- * Выбор в нативном диалоге. selectionToken — null, если пользователь закрыл диалог; токен действует 30 минут и только на
- * этой странице. Для файлов fileCount — их число, для папки folderName — имя папки без пути (состав определит задача).
+ * A choice in the native dialog. selectionToken is null when the user closed the dialog; the token is valid for 30 minutes and only on
+ * this page. For files fileCount is their number, for a folder folderName is its name without a path (the job finds the contents).
  */
 export interface ImageSelectionResponseDto {
     kind: "files" | "folder";

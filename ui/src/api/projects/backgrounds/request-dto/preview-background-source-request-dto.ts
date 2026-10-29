@@ -1,10 +1,10 @@
-/** Кадр файла выбора для рамки. */
+/** A file of the selection for the crop frame. */
 export interface PreviewBackgroundSourceRequestDto {
     projectId: string;
-    /** Токен из backgrounds.selectFiles; превью не привязывает его к операции. */
+    /** A token from backgrounds.selectFiles; a preview does not bind it to an operation. */
     selectionToken: string;
-    /** index файла из ответа selectFiles. */
+    /** The index of a file from the answer of selectFiles. */
     sourceIndex: number;
-    /** 64–4096, по умолчанию 1600. */
+    /** 64–4096, 1600 by default. */
     maxSide?: number;
 }

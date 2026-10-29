@@ -1,7 +1,7 @@
 import { isRecord } from "../../transport/envelopes";
 import { isProjectResponseDto, type ProjectResponseDto } from "./project-response-dto";
 
-/** Библиотека: все проекты и последний открытый (null, если его нет); последний показывается первым с отметкой «Последний открытый». */
+/** The library: all projects and the last opened one (null when there is none); the last one is shown first, marked Last opened. */
 export interface ProjectLibraryResponseDto {
     items: ProjectResponseDto[];
     lastProjectId: string | null;

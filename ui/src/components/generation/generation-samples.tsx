@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { GenerationSampleResponseDto } from "@/api/projects/generation/response-dto/generation-sample-response-dto";
 import type { AnnotationPalette } from "@/components/images/annotation-palette";
 import { ResourceImage } from "@/components/resource-image";
@@ -8,14 +9,15 @@ import { ImageViewer, type ViewerOverlay } from "@/components/viewer/image-viewe
 import type { GenerationSamplesState } from "@/lib/use-generation-samples";
 
 /**
- * «Пример кадра»: до 4 кадров текущих настроек формы с рамками объектов (цвет — вариант класса), без сохранения. Кадр
- * открывается в общем просмотрщике; фокус после закрытия возвращается к плитке. stale — настройки или seed изменились.
+ * "Sample frame": up to 4 frames of the current form settings with object boxes (the color is the class variant), without saving. A frame
+ * opens in the shared viewer; after closing the focus returns to the tile. stale — the settings or the seed changed.
  */
 export function GenerationSamples({ samples, palette, stale }: {
     samples: GenerationSamplesState;
     palette: AnnotationPalette;
     stale: boolean;
 }) {
+    const { t } = useTranslation("generation");
     const [viewed, setViewed] = useState<number>();
     const items = samples.samples;
     const index = viewed === undefined ? -1 : items.findIndex(item => item.sampleIndex === viewed);
@@ -31,18 +33,18 @@ export function GenerationSamples({ samples, palette, stale }: {
     }));
 
     return (
-        <section className="space-y-2" aria-label="Пример кадра" data-testid="generation-samples" aria-busy={samples.loading}>
+        <section className="space-y-2" aria-label={t("form.sample")} data-testid="generation-samples" aria-busy={samples.loading}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-sm font-medium">Пример кадра{samples.seed !== undefined && <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">seed {samples.seed}</span>}</h3>
-                {samples.loading && <span role="status" className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" aria-hidden />Рисуем кадры…</span>}
+                <h3 className="text-sm font-medium">{t("form.sample")}{samples.seed !== undefined && <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">seed {samples.seed}</span>}</h3>
+                {samples.loading && <span role="status" className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" aria-hidden />{t("samples.drawing")}</span>}
             </div>
             {samples.error && <Alert variant="destructive" data-testid="generation-samples-error"><AlertDescription>{samples.error}</AlertDescription></Alert>}
             {items.length > 0 && (
                 <>
                     <p className="text-xs text-muted-foreground" data-testid="generation-samples-note">
                         {stale
-                            ? "Настройки или seed изменились после примера — нажмите «Пример кадра», чтобы обновить."
-                            : `${items.length === 1 ? "Так будет выглядеть первый кадр" : `Так будут выглядеть первые ${items.length} кадра`} запуска с этим seed. Ничего не сохраняется.`}
+                            ? t("samples.stale")
+                            : t("samples.note", { count: items.length })}
                     </p>
                     <ul className={`grid grid-cols-2 gap-2 ${stale ? "opacity-60" : ""}`}>
                         {items.map(item => (
@@ -50,18 +52,20 @@ export function GenerationSamples({ samples, palette, stale }: {
                                 <button
                                     type="button"
                                     className="w-full rounded-md text-left outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
-                                    aria-label={`Открыть пример кадра ${item.sampleIndex + 1}`}
+                                    aria-label={t("samples.open", { number: item.sampleIndex + 1 })}
                                     data-testid="generation-sample-open"
                                     onClick={() => setViewed(item.sampleIndex)}
                                 >
                                     <div className="relative">
-                                        <ResourceImage src={item.imageUrl} alt={`Пример кадра ${item.sampleIndex + 1}`} width={item.width} height={item.height} fit="contain"
+                                        <ResourceImage src={item.imageUrl} alt={t("samples.name", { number: item.sampleIndex + 1 })} width={item.width} height={item.height} fit="contain"
                                             className="w-full" onExpired={samples.renew} />
                                         <SampleOverlay sample={item} palette={palette} />
                                     </div>
                                     <span className="mt-1 block text-xs text-muted-foreground tabular-nums">
-                                        Кадр {item.sampleIndex + 1} · {item.objects.length ? `объектов: ${item.objects.length}` : "без объектов"}
-                                        {item.missingObjects > 0 && <span className="text-amber-700 dark:text-amber-400"> · не поместилось: {item.missingObjects}</span>}
+                                        {item.objects.length
+                                            ? t("samples.frameObjects", { number: item.sampleIndex + 1, objects: item.objects.length })
+                                            : t("samples.frameEmpty", { number: item.sampleIndex + 1 })}
+                                        {item.missingObjects > 0 && <span className="text-amber-700 dark:text-amber-400"> · {t("samples.missing", { missing: item.missingObjects })}</span>}
                                     </span>
                                 </button>
                             </li>
@@ -73,7 +77,7 @@ export function GenerationSamples({ samples, palette, stale }: {
                 <ImageViewer
                     source={{
                         id: `sample-${sample.sampleIndex}`,
-                        name: `Пример кадра ${sample.sampleIndex + 1}`,
+                        name: t("samples.name", { number: sample.sampleIndex + 1 }),
                         width: sample.width,
                         height: sample.height,
                         src: sample.imageUrl,
@@ -81,7 +85,8 @@ export function GenerationSamples({ samples, palette, stale }: {
                         overlays: overlays(sample),
                         metadata: (
                             <p data-testid="generation-sample-details">
-                                {sample.width} × {sample.height} · объектов: {sample.objects.length}{sample.missingObjects > 0 ? ` · не поместилось: ${sample.missingObjects}` : ""}
+                                {t("samples.details", { width: sample.width, height: sample.height, objects: sample.objects.length })}
+                                {sample.missingObjects > 0 ? ` · ${t("samples.missing", { missing: sample.missingObjects })}` : ""}
                             </p>
                         ),
                     }}
@@ -95,7 +100,7 @@ export function GenerationSamples({ samples, palette, stale }: {
     );
 }
 
-/** Рамки поверх кадра: viewBox в пикселях кадра повторяет object-contain. */
+/** Boxes over the frame: a viewBox in frame pixels repeats object-contain. */
 function SampleOverlay({ sample, palette }: { sample: GenerationSampleResponseDto; palette: AnnotationPalette }) {
     if (!sample.objects.length) return null;
     const { width, height } = sample;

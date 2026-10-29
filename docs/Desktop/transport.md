@@ -27,3 +27,11 @@ selected files, folders or videos stay in the host behind a selection token, and
 A request is for short operations; long ones are [jobs](../Core/jobs.md#long-operations). Messages are size-limited, so images, weights
 and files never travel in JSON messages: a DTO contains a [resource channel](resources.md) URL. Errors follow the
 [error model](../Core/errors.md).
+
+Desktop sends no user-facing text. An error is `{ code, details }`; a DTO carries codes, counts, names and sizes from which the UI builds
+its lines (deletion blockers, plan warnings, skip reasons, hardware reasons). The texts live in the UI catalogs
+([localization](../UI/localization.md)); the host keeps only its own window texts in `Strings.resx`.
+
+```json
+{ "kind": "response", "requestId": "…", "ok": false, "error": { "code": "projects.transfer_busy", "details": { "section": "datasets" } } }
+```

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { fitScale, frameOffset, scaleOf, scrollForCenter, viewCenter, zoomIn, zoomOut, type Size, type ZoomMode } from "@/lib/annotation/zoom";
 
-/** Нажатие клавиши: и событие React, и событие окна. */
+/** A key press: both a React event and a window event. */
 export interface KeyInput {
     key: string;
     target: EventTarget | null;
@@ -11,16 +11,16 @@ export interface KeyInput {
     preventDefault(): void;
 }
 
-/** Поля ввода сами обрабатывают клавиши: масштаб и переходы не перехватывают их. */
+/** Input fields handle keys themselves: zoom and navigation do not intercept them. */
 export function isTypingTarget(target: EventTarget | null): boolean {
     return target instanceof HTMLElement && !!target.closest("input,select,textarea,[contenteditable='true']");
 }
 
 /**
- * Область просмотра кадра с масштабом и перемещением: общий механизм просмотрщика и редактора разметки.
- * ref подключается к прокручиваемому элементу; холст (canvas) не меньше области, кадр (frame) стоит в нём по центру
- * с отступом offset. Ctrl+колесо, клавиши +/=, -, 0 и кнопки меняют масштаб, сохраняя центр; перетаскивание
- * (beginPan/movePan/endPan) прокручивает кадр. resetKey (новый кадр) возвращает «Вписать».
+ * The frame viewport with zoom and panning: the shared mechanism of the viewer and the annotation editor.
+ * ref attaches to the scrolling element; the canvas is not smaller than the viewport, the frame sits in it centered
+ * with the offset. Ctrl+wheel, the keys +/=, - and 0 and the buttons change the zoom keeping the center; dragging
+ * (beginPan/movePan/endPan) scrolls the frame. resetKey (a new frame) returns to Fit.
  */
 export function useZoomViewport(image: Size, resetKey: unknown) {
     const [element, setElement] = useState<HTMLDivElement | null>(null);
@@ -87,7 +87,7 @@ export function useZoomViewport(image: Size, resetKey: unknown) {
         return () => element.removeEventListener("wheel", wheel);
     }, [element, zoom]);
 
-    /** +/=, -, 0; true — клавиша обработана. */
+    /** +/=, -, 0; true when the key was handled. */
     function handleZoomKey(event: KeyInput): boolean {
         if (event.ctrlKey || event.altKey || event.metaKey || isTypingTarget(event.target)) return false;
         if (event.key === "+" || event.key === "=") zoom(zoomIn(scale));
@@ -104,7 +104,7 @@ export function useZoomViewport(image: Size, resetKey: unknown) {
         pan.current = { x: event.clientX, y: event.clientY, left: element.scrollLeft, top: element.scrollTop };
     }
 
-    /** true — идёт перемещение, событие обработано. */
+    /** true while panning: the event was handled. */
     function movePan(event: PointerEvent<HTMLElement>): boolean {
         const start = pan.current;
         if (!start || !element) return false;

@@ -1,8 +1,8 @@
 namespace MautVision.Core.Interfaces.BaseModels;
 
 /// <summary>
-/// Модель каталога. Экземпляр единственный для каждой модели в менеджере и меняет
-/// состояние при установке, проверке и удалении; изменения сообщает IBaseModelsManager.ModelChanged.
+/// A catalog model. The manager holds a single instance per model; it changes
+/// state on install, check and removal; changes are reported by IBaseModelsManager.ModelChanged.
 /// </summary>
 public interface IBaseModel
 {
@@ -11,7 +11,7 @@ public interface IBaseModel
     string Variant { get; }
     long ByteSize { get; }
 
-    /// <summary>Шаг входа модели: ширина и высота входа проекта кратны ему.</summary>
+    /// <summary>Model input stride: the project input width and height are multiples of it.</summary>
     int Stride { get; }
 
     BaseModelStatus Status { get; }
@@ -20,50 +20,50 @@ public interface IBaseModel
     double Progress { get; }
 
     /// <summary>
-    /// Код причины для Status = Failed, например <c>base_models.download_failed</c>;
-    /// в остальных состояниях null.
+    /// Reason code for Status = Failed, for example <c>base_models.download_failed</c>;
+    /// null in other states.
     /// </summary>
     string? ErrorCode { get; }
 
     /// <summary>
-    /// Запускает установку и завершается после её окончания, отмены или ошибки.
-    /// Во время установки Status = Installing, Progress обновляется от 0 до 100.
-    /// При успехе Status = Installed, при отмене — NotInstalled, при ошибке — Failed
-    /// с ErrorCode. После завершения Progress всегда равен 0. Повторный вызов не запускает
-    /// параллельную установку той же модели, а ожидает текущую; для установленной модели
-    /// завершается сразу. Ошибка загрузки не выбрасывается: результат отражает Status.
-    /// Отмена cancellationToken останавливает установку и выбрасывает OperationCanceledException.
+    /// Starts the installation and completes when it finishes, is cancelled or fails.
+    /// During installation Status = Installing and Progress goes from 0 to 100.
+    /// On success Status = Installed, on cancellation NotInstalled, on error Failed
+    /// with ErrorCode. After completion Progress is always 0. A repeated call does not start
+    /// a parallel installation of the same model but awaits the current one; for an installed model
+    /// it completes immediately. A download error is not thrown: Status reflects the result.
+    /// Cancelling cancellationToken stops the installation and throws OperationCanceledException.
     /// </summary>
     Task InstallAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Запрашивает остановку установки и дожидается завершения её очистки.
-    /// После остановки Status = NotInstalled, Progress = 0.
-    /// Если установка не выполняется, ничего не меняет.
+    /// Requests the installation to stop and waits until its cleanup completes.
+    /// After stopping Status = NotInstalled, Progress = 0.
+    /// Changes nothing if no installation is running.
     /// </summary>
     Task StopInstallationAsync();
 
     /// <summary>
-    /// Удаляет установленный файл; после успешного удаления Status = NotInstalled,
-    /// Progress = 0. Отсутствующий файл считается уже удалённым.
-    /// Во время установки выбрасывает CoreException <c>base_models.installation_active</c>.
+    /// Deletes the installed file; after a successful deletion Status = NotInstalled,
+    /// Progress = 0. A missing file counts as already deleted.
+    /// During installation throws CoreException <c>base_models.installation_active</c>.
     /// </summary>
     Task DeleteAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Проверяет размер и SHA-256 файла по внутренним метаданным.
-    /// Возвращает false для отсутствующего или повреждённого файла.
-    /// Обновляет Status: Installed для корректного файла, NotInstalled для
-    /// отсутствующего, Failed для повреждённого. Progress остаётся 0.
-    /// Во время установки выбрасывает CoreException <c>base_models.installation_active</c>;
-    /// ошибки чтения и отмена передаются исключениями, а не результатом false.
+    /// Checks the file size and SHA-256 against the internal metadata.
+    /// Returns false for a missing or corrupted file.
+    /// Updates Status: Installed for a valid file, NotInstalled for
+    /// a missing one, Failed for a corrupted one. Progress stays 0.
+    /// During installation throws CoreException <c>base_models.installation_active</c>;
+    /// read errors and cancellation are reported as exceptions, not as a false result.
     /// </summary>
     Task<bool> VerifyIntegrityAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Копирует установленную модель в доступный для записи поток потребителя.
-    /// Не раскрывает исходный путь и не закрывает поток назначения.
-    /// Для неустановленной модели выбрасывает CoreException <c>base_models.not_installed</c>.
+    /// Copies the installed model into a writable stream of the consumer.
+    /// Does not reveal the source path and does not close the destination stream.
+    /// For a model that is not installed throws CoreException <c>base_models.not_installed</c>.
     /// </summary>
     Task CopyToAsync(Stream destination, CancellationToken cancellationToken = default);
 }

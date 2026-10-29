@@ -3,7 +3,7 @@ import type { SaveImageAnnotationRequestDto } from "@/api/projects/images/reques
 import type { ImageReviewState } from "@/api/projects/images/response-dto/image-response-dto";
 import { sameBox, type Box } from "./geometry";
 
-/** Объект черновика; у нового объекта локальный ID (newObjectPrefix), при сохранении он уходит как null. */
+/** An object of the draft; a new object has a local ID (newObjectPrefix) that is sent as null on saving. */
 export interface DraftObject {
     id: string;
     classId: string;
@@ -11,7 +11,7 @@ export interface DraftObject {
     box: Box;
 }
 
-/** Черновик разметки: состояние истории правок редактора. */
+/** An annotation draft: a state of the edit history of the editor. */
 export interface AnnotationDraft {
     objects: readonly DraftObject[];
     roi: Box | null;
@@ -24,7 +24,7 @@ export function draftOf(annotation: ImageAnnotationResponseDto): AnnotationDraft
     return { objects: annotation.objects.map(item => ({ ...item, box: { ...item.box } })), roi: annotation.roi, reviewState: annotation.reviewState };
 }
 
-/** Черновик отличается от сохранённой ревизии: состав, порядок, классы, варианты, рамки, ROI или проверка. */
+/** The draft differs from the saved revision: contents, order, classes, variants, boxes, the ROI or the review. */
 export function isDraftChanged(draft: AnnotationDraft, saved: AnnotationDraft): boolean {
     if (draft.reviewState !== saved.reviewState || !sameBox(draft.roi, saved.roi) || draft.objects.length !== saved.objects.length) return true;
     return draft.objects.some((item, index) => {

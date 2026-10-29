@@ -4,8 +4,9 @@ import type { InputSizeDto } from "../../input-size-dto";
 import type { TrainingParameters } from "../request-dto/training-request-dto";
 import { isTrainingDatasetDto, type TrainingDatasetDto } from "./training-run-response-dto";
 import { isTrainingParameters } from "./training-runtime-response-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
-/** Класс выхода модели; classId = null у объединённого класса singleCls, sourceClassIds — классы проекта, которые он представляет. */
+/** A model output class; classId = null for the merged class of singleCls, sourceClassIds — the project classes it stands for. */
 export interface ModelClassDto {
     index: number;
     classId: string | null;
@@ -13,7 +14,7 @@ export interface ModelClassDto {
     sourceClassIds: string[];
 }
 
-/** Файл версии: kind — weights_pt (best.pt) | onnx (best.onnx) | plot (график) | log (журнал обучения); url — у картинок (канал ресурсов). */
+/** A version file: kind — weights_pt (best.pt) | onnx (best.onnx) | plot (a chart) | log (the training log); url — for images (the resource channel). */
 export interface ModelVersionFileDto {
     kind: "weights_pt" | "onnx" | "plot" | "log";
     name: string;
@@ -23,10 +24,10 @@ export interface ModelVersionFileDto {
 }
 
 /**
- * Краткий паспорт версии модели: number — «Версия N»; runId — «Паспорт запуска»; dataset — датасет и его паспорт; parameters —
- * запрошенные, effectiveParams — фактические; epochsCompleted и stoppedEarly — «ранняя остановка»; bestEpoch — лучшая эпоха (по
- * fitness); classes — в порядке выходов модели; metrics — проверка best.pt (precision, recall, mAP50, mAP50_95); files с SHA-256;
- * notes — предупреждения worker «код: текст»; environment — окружение обучения; isWorking — «Рабочая». История эпох версии —
+ * The short passport of a model version: number — "Version N"; runId — "Run passport"; dataset — the dataset and its passport; parameters —
+ * requested, effectiveParams — actual; epochsCompleted and stoppedEarly — "early stop"; bestEpoch — the best epoch (by
+ * fitness); classes — in the order of model outputs; metrics — the check of best.pt (precision, recall, mAP50, mAP50_95); files with SHA-256;
+ * notes — worker warnings (codes worker.* with args; version 1.0.0 stored the text "code: text"); environment — the training environment; isWorking — "Working". The epoch history of the version —
  * trainingApi.listEpochs(runId).
  */
 export interface ModelVersionResponseDto {
@@ -45,7 +46,7 @@ export interface ModelVersionResponseDto {
     classes: ModelClassDto[];
     metrics: Record<string, number>;
     files: ModelVersionFileDto[];
-    notes: string[];
+    notes: CodedTextDto[];
     environment: Record<string, unknown>;
     isWorking: boolean;
     revision: number;
@@ -62,7 +63,7 @@ export function isModelVersionResponseDto(value: unknown): value is ModelVersion
         && isRecord(value.metrics) && Object.values(value.metrics).every(item => typeof item === "number")
         && Array.isArray(value.files) && value.files.every(file => isRecord(file) && ["weights_pt", "onnx", "plot", "log"].includes(file.kind as string)
             && typeof file.name === "string" && isCount(file.byteSize) && typeof file.sha256 === "string" && (file.url === null || typeof file.url === "string"))
-        && Array.isArray(value.notes) && value.notes.every(note => typeof note === "string") && isRecord(value.environment)
+        && Array.isArray(value.notes) && value.notes.every(isCodedTextDto) && isRecord(value.environment)
         && typeof value.isWorking === "boolean" && isCount(value.revision) && isDate(value.createdAt);
 }
 

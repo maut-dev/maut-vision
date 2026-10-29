@@ -1,9 +1,12 @@
 import { useCallback } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundDeletionResultResponseDto, BackgroundDeletionReviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-deletion-response-dto";
 import { ReviewDeletionDialog } from "@/components/deletion/review-deletion-dialog";
+import { formatNumber } from "@/lib/format";
+import "@/i18n/sections/backgrounds";
 
-/** Весь набор (itemIds не задан) или выбранные фоны одного набора (до 400). */
+/** The whole set (no itemIds) or selected backgrounds of one set (up to 400). */
 export interface BackgroundsDeletionTarget {
     setId: string;
     name: string;
@@ -11,8 +14,8 @@ export interface BackgroundsDeletionTarget {
 }
 
 /**
- * «Удалить набор фонов навсегда?» / «Удалить фоны навсегда?»: просмотр состава и блокировок (подготовка в этот набор),
- * затем удаление с ревизией просмотра. Задачи других наборов удаление не блокируют.
+ * "Delete the background set permanently?" / "Delete the backgrounds permanently?": a review of the contents and blockers (preparation
+ * into this set), then deletion with the revision of the review. Jobs of other sets do not block the deletion.
  */
 export function BackgroundsDeletionDialog({ projectId, target, close, deleted }: {
     projectId: string;
@@ -20,6 +23,7 @@ export function BackgroundsDeletionDialog({ projectId, target, close, deleted }:
     close: () => void;
     deleted: (result: BackgroundDeletionResultResponseDto) => void;
 }) {
+    const { t } = useTranslation("backgrounds");
     const selection = !!target.itemIds;
     const review = useCallback((signal: AbortSignal): Promise<BackgroundDeletionReviewResponseDto> => target.itemIds
         ? backgroundsApi.reviewDeletion({ projectId, setId: target.setId, itemIds: [...target.itemIds] }, signal)
@@ -30,22 +34,22 @@ export function BackgroundsDeletionDialog({ projectId, target, close, deleted }:
 
     return (
         <ReviewDeletionDialog
+            area="backgrounds"
             testId="backgrounds-deletion-dialog"
-            title={selection ? "Удалить фоны навсегда?" : "Удалить набор фонов навсегда?"}
+            title={selection ? t("deletion.itemsTitle") : t("deletion.setTitle")}
             description={target.name}
             review={review}
             remove={remove}
             deleted={deleted}
             close={close}
-            busyText="Удаление…"
-            blockersTitle={<p>Завершите задачи или измените зависимости перед удалением:</p>}
+            busyText={t("deletion.busy")}
+            blockersTitle={<p>{t("deletion.blockers")}</p>}
             renderReview={current => (
                 <>
-                    <p data-testid="backgrounds-deletion-count">Будет удалено фонов: <span className="tabular-nums">{current.items.toLocaleString("ru-RU")}</span>.</p>
-                    <p className="text-muted-foreground">
-                        Исходные файлы и подготовленные изображения будут удалены с компьютера. Это действие нельзя отменить.
-                        {!selection && " История подготовки этого набора также будет удалена."} Готовые датасеты и модели сохранят свои материалы.
+                    <p data-testid="backgrounds-deletion-count">
+                        <Trans t={t} i18nKey="deletion.count" values={{ number: formatNumber(current.items) }} components={{ number: <span className="tabular-nums" /> }} />
                     </p>
+                    <p className="text-muted-foreground">{selection ? t("deletion.itemsText") : t("deletion.setText")}</p>
                 </>
             )}
         />

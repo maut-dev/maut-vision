@@ -1,11 +1,11 @@
-"""stdout — только события протокола, всё остальное — в stderr и logs/.
+"""stdout carries only protocol events, everything else goes to stderr and logs/.
 
-Ultralytics, torch и tqdm пишут в stdout что хотят: баннеры, таблицы,
-прогресс-бары. Парсер событий на стороне host принял бы это за битые
-строки протокола. Поэтому до импорта ultralytics настоящий stdout (fd 1)
-уводится в отдельный дескриптор только для событий, а fd 1 и sys.stdout
-перенаправляются в stderr. Даже нативный код, пишущий прямо в fd 1, в
-события не попадёт.
+Ultralytics, torch and tqdm write whatever they like to stdout: banners, tables,
+progress bars. The event parser on the host side would take them for broken
+protocol lines. So before the ultralytics import the real stdout (fd 1)
+is moved to a separate descriptor for events only, and fd 1 and sys.stdout
+are redirected to stderr. Even native code writing directly to fd 1 does not
+get into the events.
 """
 from __future__ import annotations
 
@@ -21,8 +21,8 @@ import re
 
 
 class _Tee(io.TextIOBase):
-    """stderr + файл лога. Лог обязательно UTF-8: ultralytics пишет эмодзи,
-    а на Windows файл по умолчанию открывается в cp1251, и запись падала."""
+    """stderr + log file. The log must be UTF-8: ultralytics writes emoji,
+    and on Windows a file opens in cp1251 by default, and writing used to fail."""
 
     def __init__(self, *targets: TextIO):
         self._targets = list(targets)
@@ -39,7 +39,7 @@ class _Tee(io.TextIOBase):
             try:
                 t.write(s)
             except (OSError, ValueError):
-                # закрытый stderr (родитель умер) не должен ронять обучение
+                # a closed stderr (the parent died) must not crash training
                 pass
         return len(s)
 
@@ -59,17 +59,17 @@ class _Tee(io.TextIOBase):
 
 
 def take_over_stdout() -> TextIO:
-    """Забрать stdout под события и вернуть поток для них.
+    """Take stdout for events and return the stream for them.
 
-    Вызывать первым делом, до импорта тяжёлых библиотек: ultralytics
-    запоминает sys.stdout в своём логгере при импорте.
+    Call it first, before importing heavy libraries: ultralytics
+    remembers sys.stdout in its logger at import.
     """
     events_fd = os.dup(1)
     events = os.fdopen(events_fd, "w", encoding="utf-8", newline="\n", buffering=1)
     sys.stdout.flush()
     os.dup2(2, 1)
-    # stderr на Windows в пайпе открыт в кодировке консоли — эмодзи из
-    # ultralytics роняли бы запись. replace: диагностика не стоит падения.
+    # stderr in a pipe on Windows is opened in the console encoding — emoji from
+    # ultralytics would break writing. replace: diagnostics are not worth a crash.
     if hasattr(sys.stderr, "reconfigure"):
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     sys.stdout = sys.stderr
@@ -84,11 +84,11 @@ def redact_console_paths(message: str, job_root: Path | None = None) -> str:
     if job_root is not None:
         root = str(job_root)
         for variant in {root, root.replace("\\", "/"), root.replace("/", "\\")}:
-            message = re.sub(re.escape(variant), "[папка запуска]", message, flags=re.IGNORECASE)
+            message = re.sub(re.escape(variant), "[run folder]", message, flags=re.IGNORECASE)
     # Quoted paths may contain spaces; bare paths end at whitespace or argument punctuation.
-    message = re.sub(r"(['\"])(?:[A-Za-z]:[\\/]|\\\\|/)[^'\"\r\n]*\1", "[локальный путь]", message)
-    message = re.sub(r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^\s,;\]\[{}()'\"]+", "[локальный путь]", message)
-    message = re.sub(r"(?<![A-Za-z0-9:/])/(?:[A-Za-z0-9_.-]+/)+[^\s,;\]\[{}()'\"]*", "[локальный путь]", message)
+    message = re.sub(r"(['\"])(?:[A-Za-z]:[\\/]|\\\\|/)[^'\"\r\n]*\1", "[local path]", message)
+    message = re.sub(r"(?<![A-Za-z0-9])(?:[A-Za-z]:[\\/]|\\\\)[^\s,;\]\[{}()'\"]+", "[local path]", message)
+    message = re.sub(r"(?<![A-Za-z0-9:/])/(?:[A-Za-z0-9_.-]+/)+[^\s,;\]\[{}()'\"]*", "[local path]", message)
     return message
 
 
@@ -120,7 +120,7 @@ class _LiveLines(io.TextIOBase):
 
 
 def attach_log_file(log_path: Path) -> None:
-    """Дублировать диагностику в logs/worker.log (UTF-8)."""
+    """Duplicate diagnostics into logs/worker.log (UTF-8)."""
     global _tee
     log_path.parent.mkdir(parents=True, exist_ok=True)
     fh = log_path.open("a", encoding="utf-8", errors="replace", buffering=1)
@@ -131,14 +131,14 @@ def attach_log_file(log_path: Path) -> None:
 
 @contextmanager
 def capture_console(path: Path, on_line: Callable[[str], None] | None = None) -> Iterator[None]:
-    """На время блока писать консольный вывод ещё и в отдельный файл.
+    """Also write the console output into a separate file for the duration of the block.
 
-    Это консольный лог обучения для паспорта версии: то, что ultralytics
-    печатает (таблицы, прогресс эпох), а не протокол событий — stdout
-    остаётся только за событиями. Логгер ultralytics при импорте запоминает
-    sys.stdout, то есть этот же _Tee, поэтому новый приёмник видит и его.
-    Файл пишется как есть (с \r прогресс-баров); чистит его сторона,
-    которая превращает черновик в отчётный файл.
+    This is the training console log for the version passport: what ultralytics
+    prints (tables, epoch progress), not the event protocol — stdout
+    stays reserved for events. The ultralytics logger remembers
+    sys.stdout at import, that is this same _Tee, so the new sink sees it too.
+    The file is written as is (with \r of progress bars); it is cleaned by the side
+    that turns the draft into a report file.
     """
     global _tee
     path.parent.mkdir(parents=True, exist_ok=True)

@@ -10,9 +10,9 @@ using MautVision.Core.Interfaces.Projects.Checks;
 namespace MautVision.Core.Interfaces.Projects;
 
 /// <summary>
-/// Корневой объект проекта. Экземпляр единственный для проекта в менеджере; изменения
-/// настроек и архивации меняют его и сообщаются событием IProjectsManager.ProjectChanged.
-/// Материалы проекта — дочерние менеджеры; они работают после IProjectsManager.OpenAsync.
+/// Root object of a project. The manager holds a single instance per project; changes
+/// of settings and archiving modify it and are reported by the event IProjectsManager.ProjectChanged.
+/// Project materials are child managers; they work after IProjectsManager.OpenAsync.
 /// </summary>
 public interface IProject
 {
@@ -20,55 +20,55 @@ public interface IProject
     string Name { get; }
     string Description { get; }
 
-    /// <summary>Базовая модель каталога, от которой начинается обучение проекта.</summary>
+    /// <summary>Catalog base model from which the project training starts.</summary>
     string BaseModelId { get; }
 
-    /// <summary>Размер входа модели; задаёт размер фонов, кадров генерации и датасетов.</summary>
+    /// <summary>Model input size; sets the size of backgrounds, generation frames and datasets.</summary>
     InputSize InputSize { get; }
 
-    /// <summary>Увеличивается при каждом сохранённом изменении; используется для обнаружения конфликтов.</summary>
+    /// <summary>Increases with every saved change; used to detect conflicts.</summary>
     long Revision { get; }
 
     DateTimeOffset CreatedAt { get; }
     DateTimeOffset UpdatedAt { get; }
 
-    /// <summary>Время переноса в архив; null для активного проекта. Архивный проект нельзя изменить.</summary>
+    /// <summary>Time of archiving; null for an active project. An archived project cannot be changed.</summary>
     DateTimeOffset? ArchivedAt { get; }
 
-    /// <summary>Файлы материалов и их миниатюры для показа в UI.</summary>
+    /// <summary>Material files and their thumbnails for display in the UI.</summary>
     IResourcesManager Resources { get; }
 
-    /// <summary>Общие варианты отображения объектов.</summary>
+    /// <summary>Shared display variants of objects.</summary>
     IVariantsManager Variants { get; }
 
-    /// <summary>Классы, их варианты и исходные изображения.</summary>
+    /// <summary>Classes, their variants and source images.</summary>
     IClassesManager Classes { get; }
 
-    /// <summary>Группы изображений, изображения и их разметка.</summary>
+    /// <summary>Image groups, images and their annotation.</summary>
     IImagesManager Images { get; }
 
-    /// <summary>Наборы фонов и фоны размера входа модели.</summary>
+    /// <summary>Background sets and backgrounds of the model input size.</summary>
     IBackgroundsManager Backgrounds { get; }
 
-    /// <summary>Пресеты генерации и запуски: объекты классов на фонах с рамками.</summary>
+    /// <summary>Generation presets and runs: class objects on backgrounds with boxes.</summary>
     IGenerationManager Generation { get; }
 
-    /// <summary>Неизменяемые версии готовых кадров и разметки (YOLO), их сборка, проверка и экспорт.</summary>
+    /// <summary>Immutable versions of ready frames and annotation (YOLO), their build, check and export.</summary>
     IDatasetsManager Datasets { get; }
 
-    /// <summary>Запуски обучения на версиях датасетов и версии моделей.</summary>
+    /// <summary>Training runs on dataset versions and model versions.</summary>
     ITrainingManager Training { get; }
 
-    /// <summary>Оценки версий моделей на датасетах и живые проверки по изображению, видео и экрану.</summary>
+    /// <summary>Evaluations of model versions on datasets and live checks on an image, video and the screen.</summary>
     IChecksManager Checks { get; }
 
     /// <summary>
-    /// Сохраняет настройки. expectedRevision — Revision, которую видел пользователь;
-    /// при расхождении выбрасывается CoreException <c>projects.revision_conflict</c>.
-    /// Новая базовая модель должна быть установлена; прежняя — не проверяется.
+    /// Saves the settings. expectedRevision — the Revision the user saw;
+    /// on a mismatch CoreException <c>projects.revision_conflict</c> is thrown.
+    /// A new base model must be installed; the previous one is not checked.
     /// </summary>
     Task UpdateAsync(ProjectSettings settings, long expectedRevision, CancellationToken cancellationToken = default);
 
-    /// <summary>Переносит проект в архив или возвращает из него. Повторный вызов с тем же значением ничего не меняет.</summary>
+    /// <summary>Moves the project to the archive or back. A repeated call with the same value changes nothing.</summary>
     Task SetArchivedAsync(bool archived, CancellationToken cancellationToken = default);
 }

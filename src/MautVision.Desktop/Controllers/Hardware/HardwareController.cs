@@ -6,11 +6,10 @@ using MautVision.Desktop.Controllers.Hardware.ResponseDto;
 namespace MautVision.Desktop.Controllers.Hardware;
 
 /// <summary>
-/// «Ваш компьютер»: the Core snapshot plus the memory of the application, which only the host can sum up — itself, its WebView2 processes
+/// "Your computer": the Core snapshot plus the memory of the application, which only the host can sum up — itself, its WebView2 processes
 /// (webViewProcessIds, kept by the window) and the Python workers of Core.
 /// </summary>
-internal sealed class HardwareController(IHardwareManager hardware, IPythonRuntime python, Func<IReadOnlyList<int>> webViewProcessIds,
-    Func<string, string> messageFor)
+internal sealed class HardwareController(IHardwareManager hardware, IPythonRuntime python, Func<IReadOnlyList<int>> webViewProcessIds)
 {
     /// <summary>Smoke seam: replaces or fails the snapshot, so the page shows a missing GPU or an error on any machine.</summary>
     internal static Func<HardwareSampleResponseDto, HardwareSampleResponseDto>? SmokeOverride;
@@ -32,18 +31,16 @@ internal sealed class HardwareController(IHardwareManager hardware, IPythonRunti
         var cpu = snapshot.Cpu;
         return new HardwareSampleResponseDto(
             snapshot.Timestamp,
-            new CpuSampleDto(cpu.Model, cpu.PhysicalCores, cpu.LogicalThreads, cpu.UtilizationPercent, Map(cpu.Status), Reason(cpu.ReasonCode)),
+            new CpuSampleDto(cpu.Model, cpu.PhysicalCores, cpu.LogicalThreads, cpu.UtilizationPercent, Map(cpu.Status), cpu.ReasonCode),
             snapshot.Ram is { } ram ? new MemorySampleDto(ram.TotalBytes, ram.UsedBytes, ram.UtilizationPercent) : null,
             new ApplicationMemoryDto(host + web + workers, host, web, webIds.Length, workers, workerIds.Count),
             snapshot.Gpus.Select(gpu => new GpuSampleDto(gpu.Index, gpu.Name, gpu.DriverVersion, gpu.MemoryTotalBytes, gpu.MemoryUsedBytes, gpu.UtilizationPercent,
                 gpu.TemperatureC)).ToArray(),
             Map(snapshot.GpuStatus),
-            Reason(snapshot.GpuReasonCode),
+            snapshot.GpuReasonCode,
             snapshot.GpuSource,
             snapshot.GpuSampledAt);
     }
-
-    private string? Reason(string? code) => code is null ? null : messageFor(code);
 
     private static string Map(HardwareStatus status) => status switch
     {

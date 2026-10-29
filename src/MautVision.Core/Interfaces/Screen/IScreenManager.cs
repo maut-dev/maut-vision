@@ -1,18 +1,18 @@
 namespace MautVision.Core.Interfaces.Screen;
 
 /// <summary>
-/// Монитор в физических пикселях виртуального экрана. Index — номер, под которым его захватывает проверка с экрана (тот же порядок,
-/// что у mss: 1..n по EnumDisplayMonitors); Name — имя устройства (\\.\DISPLAY1); IsPrimary — основной монитор.
+/// Monitor in physical pixels of the virtual screen. Index — the number under which the screen check captures it (the same order
+/// as mss: 1..n by EnumDisplayMonitors); Name — device name (\\.\DISPLAY1); IsPrimary — the primary monitor.
 /// </summary>
 public sealed record MonitorInfo(int Index, int Left, int Top, int Width, int Height, bool IsPrimary, string Name);
 
-/// <summary>«Снять экран»: PNG монитора в физических пикселях (рамка проверки ставится на нём), монитор и все мониторы на момент снимка.</summary>
+/// <summary>"Capture screen": PNG of the monitor in physical pixels (the check crop is placed on it), the monitor and all monitors at the time of the capture.</summary>
 public sealed record ScreenShot(MonitorInfo Monitor, byte[] Content, string ContentType, IReadOnlyList<MonitorInfo> Monitors);
 
 /// <summary>
-/// Мониторы и снимок экрана без Python. Координаты — физические пиксели при осведомлённости о DPI каждого монитора, как у захвата
-/// mss в проверке с экрана; снимок делается тем же способом (GDI BitBlt), поэтому рамка на снимке совпадает с захватываемой.
-/// Эксклюзивный полноэкранный режим игр не захватывается. Отказы: <c>screen.capture_unavailable</c> (нет рабочего стола),
+/// Monitors and a screenshot without Python. Coordinates are physical pixels with per-monitor DPI awareness, like the mss
+/// capture in the screen check; the screenshot is taken the same way (GDI BitBlt), so the crop on it matches the captured one.
+/// Exclusive full-screen mode of games is not captured. Refusals: <c>screen.capture_unavailable</c> (no desktop),
 /// <c>screen.monitor_not_found</c>, <c>screen.capture_failed</c>.
 /// </summary>
 public interface IScreenManager

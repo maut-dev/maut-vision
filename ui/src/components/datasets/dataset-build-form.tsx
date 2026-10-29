@@ -1,5 +1,6 @@
 import type { FormEvent, RefObject } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/response-dto/catalog-workspace-response-dto";
 import { datasetTexts, maxDatasetNameLength, randomDatasetSeed, type DatasetSpecificationField } from "@/api/projects/datasets/dataset-rules";
 import type { ImageGroupResponseDto } from "@/api/projects/images/response-dto/image-group-response-dto";
@@ -19,10 +20,10 @@ export interface DatasetFieldError {
 const toggle = (values: readonly string[], id: string) => values.includes(id) ? values.filter(value => value !== id) : [...values, id];
 
 /**
- * «Подготовить сборку»: название, группы с числом кадров и долей проверенных, классы с «Выбрать
- * все» / «Снять все», доли Train и Test с остатком Validation, «Дополнительно» — seed, «Новый случайный seed», пустые кадры и
- * незавершённые генерации; «Проверить перед сборкой» недоступна, пока форма неверна (те же правила, что у host). fieldError —
- * поле из details.field ответа host.
+ * "Prepare a build": the name, groups with frame counts and the reviewed share, classes with "Select all" / "Clear all", Train and
+ * Test shares with the Validation remainder, "Advanced" — seed, "New random seed", empty frames and unfinished generations; "Check
+ * before building" is unavailable while the form is wrong (the same rules as the host). fieldError — the field from details.field of the
+ * host answer.
  */
 export function DatasetBuildForm({ values, setValues, groups, reviewCount, workspace, invalidField, fieldError, busy, planning, plan, nameRef, repeatNotice }: {
     values: DatasetFormValues;
@@ -38,6 +39,7 @@ export function DatasetBuildForm({ values, setValues, groups, reviewCount, works
     nameRef: RefObject<HTMLInputElement | null>;
     repeatNotice: boolean;
 }) {
+    const { t } = useTranslation("datasets");
     const classes = workspace?.classes ?? [];
     const activeClassIds = classes.filter(item => !item.archivedAt).map(item => item.id);
     const missingClasses = values.classIds.filter(id => !activeClassIds.includes(id));
@@ -53,15 +55,15 @@ export function DatasetBuildForm({ values, setValues, groups, reviewCount, works
     }
 
     return (
-        <form className="space-y-4 rounded-md border bg-card p-5" onSubmit={submit} data-testid="dataset-build-form" aria-label="Подготовить сборку">
-            <h2 className="font-medium">Подготовить сборку</h2>
+        <form className="space-y-4 rounded-md border bg-card p-5" onSubmit={submit} data-testid="dataset-build-form" aria-label={t("build.title")}>
+            <h2 className="font-medium">{t("build.title")}</h2>
             {repeatNotice && (
                 <p className="text-xs text-muted-foreground" data-testid="dataset-repeat-notice">
-                    Настройки сохранённой сборки перенесены в форму. Состав текущих исходников проверяется заново.
+                    {t("build.repeatNotice")}
                 </p>
             )}
             <label className="block space-y-2">
-                <span className="text-xs text-muted-foreground">Название датасета</span>
+                <span className="text-xs text-muted-foreground">{t("build.name")}</span>
                 <Input ref={nameRef} required maxLength={maxDatasetNameLength} data-testid="dataset-name" aria-invalid={hostField === "name" || undefined}
                     value={values.name} onChange={event => setValues(current => ({ ...current, name: event.target.value }))} />
             </label>
@@ -74,41 +76,41 @@ export function DatasetBuildForm({ values, setValues, groups, reviewCount, works
                 </div>
                 <div className="space-y-1">
                     <fieldset className="max-h-64 min-h-32 space-y-2 overflow-y-auto rounded-md border p-3" data-testid="dataset-classes">
-                        <legend className="mb-2 text-xs text-muted-foreground">Классы для обучения</legend>
+                        <legend className="mb-2 text-xs text-muted-foreground">{t("build.classes")}</legend>
                         <div className="flex flex-wrap gap-2 pb-1">
                             <Button type="button" size="sm" variant="outline" data-testid="dataset-classes-all"
                                 disabled={!activeClassIds.length || activeClassIds.every(id => values.classIds.includes(id))}
                                 onClick={() => setValues(current => ({ ...current, classIds: [...activeClassIds] }))}>
-                                Выбрать все
+                                {t("build.selectAll")}
                             </Button>
                             <Button type="button" size="sm" variant="outline" data-testid="dataset-classes-none" disabled={!values.classIds.length}
                                 onClick={() => setValues(current => ({ ...current, classIds: [] }))}>
-                                Снять все
+                                {t("build.clearAll")}
                             </Button>
                         </div>
                         {classes.filter(item => !item.archivedAt).map(item => (
                             <label key={item.id} className="flex items-center gap-2 text-sm" data-dataset-class-id={item.id}>
-                                <Checkbox checked={values.classIds.includes(item.id)} aria-label={`Класс: ${item.name}`}
+                                <Checkbox checked={values.classIds.includes(item.id)} aria-label={t("build.classLabel", { name: item.name })}
                                     onCheckedChange={() => setValues(current => ({ ...current, classIds: toggle(current.classIds, item.id) }))} />
                                 {item.name}
                             </label>
                         ))}
                         {missingClasses.map(id => (
                             <label key={id} className="flex items-center gap-2 text-sm text-muted-foreground" data-dataset-class-id={id}>
-                                <Checkbox checked aria-label="Недоступный класс" onCheckedChange={() => setValues(current => ({ ...current, classIds: toggle(current.classIds, id) }))} />
-                                {classes.find(item => item.id === id)?.name ?? "Класс удалён"} — в архиве или удалён, снимите выбор
+                                <Checkbox checked aria-label={t("build.unavailableClass")} onCheckedChange={() => setValues(current => ({ ...current, classIds: toggle(current.classIds, id) }))} />
+                                {t("build.classUnavailable", { name: classes.find(item => item.id === id)?.name ?? t("build.classDeleted") })}
                             </label>
                         ))}
-                        {!activeClassIds.length && !missingClasses.length && <p className="text-sm text-muted-foreground">Создайте класс в разделе «Классы».</p>}
+                        {!activeClassIds.length && !missingClasses.length && <p className="text-sm text-muted-foreground">{t("build.noClasses")}</p>}
                     </fieldset>
-                    <p className="text-xs text-muted-foreground">Индексы классов назначаются по порядку каталога.</p>
+                    <p className="text-xs text-muted-foreground">{t("build.classOrder")}</p>
                     {(hostField === "classIds" || hostField === "variants" || hostField === "roles") && <FieldHint text={fieldError!.message} />}
                 </div>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
-                <SplitSlider id="dataset-train" label="Для обучения (Train)" value={values.trainPercent} min={1}
+                <SplitSlider id="dataset-train" label={t("build.train")} value={values.trainPercent} min={1}
                     onChange={value => setValues(current => ({ ...current, trainPercent: Math.min(99 - current.testPercent, Math.max(1, clampPercent(value))) }))} />
-                <SplitSlider id="dataset-test" label="Для тестирования (Test)" value={values.testPercent} min={0}
+                <SplitSlider id="dataset-test" label={t("build.test")} value={values.testPercent} min={0}
                     onChange={value => setValues(current => ({ ...current, testPercent: Math.min(99 - current.trainPercent, clampPercent(value)) }))} />
             </div>
             <p className={`min-h-5 text-xs ${val <= 0 || shown("ratios") ? "text-destructive" : "text-muted-foreground"}`} role={val <= 0 ? "alert" : undefined}
@@ -116,10 +118,10 @@ export function DatasetBuildForm({ values, setValues, groups, reviewCount, works
                 {val <= 0 ? datasetTexts.ratiosInvalid : hostField === "ratios" ? fieldError!.message : datasetTexts.validationRemainder(val)}
             </p>
             <details className="rounded-md border px-3 py-2" open={shown("seed") || undefined} data-testid="dataset-advanced">
-                <summary className="cursor-pointer text-sm text-muted-foreground select-none">Дополнительно</summary>
+                <summary className="cursor-pointer text-sm text-muted-foreground select-none">{t("build.advanced")}</summary>
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <label className="block space-y-2">
-                        <span className="text-xs text-muted-foreground">Число разбиения (Seed)</span>
+                        <span className="text-xs text-muted-foreground">{t("build.seed")}</span>
                         <Input inputMode="numeric" data-testid="dataset-seed" aria-invalid={!validSeed || undefined} value={values.seed}
                             onChange={event => setValues(current => ({ ...current, seed: event.target.value }))} />
                     </label>
@@ -129,29 +131,27 @@ export function DatasetBuildForm({ values, setValues, groups, reviewCount, works
                 </p>
                 <Button type="button" variant="outline" size="sm" className="mt-3" data-testid="dataset-new-seed"
                     onClick={() => setValues(current => ({ ...current, seed: String(randomDatasetSeed()) }))}>
-                    Новый случайный seed
+                    {t("build.newSeed")}
                 </Button>
                 <div className="mt-3 space-y-2">
                     <label className="flex items-center gap-2 text-sm">
                         <Checkbox checked={values.includeReviewedEmpty} data-testid="dataset-include-empty"
                             onCheckedChange={value => setValues(current => ({ ...current, includeReviewedEmpty: value === true }))} />
-                        Включить проверенные пустые кадры
+                        {t("build.includeEmpty")}
                     </label>
                     <label className="flex items-center gap-2 text-sm">
                         <Checkbox checked={values.allowPartialGeneration} data-testid="dataset-allow-partial"
                             onCheckedChange={value => setValues(current => ({ ...current, allowPartialGeneration: value === true }))} />
-                        Включать незавершённые генерации
+                        {t("build.allowPartial")}
                     </label>
                 </div>
             </details>
             <p className="text-xs text-muted-foreground">
-                Датасет сохраняет неизменяемую копию готовых кадров и разметки без обрезки и изменения размера. Для правок измените изображения и
-                соберите новый датасет. Проверка фиксирует источники и разбиение. Неразмеченные кадры пропускаются; объекты не выбранных классов
-                не размечаются и остаются фоном. Связанные изображения остаются в одной части датасета.
+                {t("build.note")}
             </p>
             <div className="flex flex-wrap items-center gap-3">
                 <Button type="submit" data-testid="dataset-plan" disabled={busy || !!invalidField || !workspace}>
-                    {planning && <Loader2 className="animate-spin" aria-hidden />}Проверить перед сборкой
+                    {planning && <Loader2 className="animate-spin" aria-hidden />}{t("build.plan")}
                 </Button>
                 {invalidField && invalidField !== "ratios" && invalidField !== "seed" && (
                     <p className="text-xs text-muted-foreground" data-testid="dataset-form-hint">{datasetFieldTexts[invalidField]}</p>

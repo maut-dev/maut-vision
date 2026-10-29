@@ -18,13 +18,13 @@ internal static partial class SmokeRunner
     private static async Task CheckOverviewUiAsync(CoreWebView2 web, string projectId, JsonNode report, CancellationToken token)
     {
         var checks = report["checks"]!.AsArray();
-        var missing = HardwareMessages.All["hardware.gpu_not_found"];
+        const string missing = "NVIDIA GPU не обнаружена. Для других производителей телеметрия пока недоступна.";
         var steps = new (string Body, Action Prepare)[]
         {
             (OverviewUiScript, () => HardwareController.SmokeOverride = null),
             (OverviewUiMissingGpuScript, () => HardwareController.SmokeOverride = sample => sample with
             {
-                Gpus = [], GpuStatus = "unavailable", GpuReason = missing, GpuSource = null,
+                Gpus = [], GpuStatus = "unavailable", GpuReason = "hardware.gpu_not_found", GpuSource = null,
             }),
             (OverviewUiFailedSampleScript, () => HardwareController.SmokeOverride = _ => throw new InvalidOperationException("Smoke: the sample fails.")),
             (OverviewUiJobsScript, () => HardwareController.SmokeOverride = null),
@@ -132,7 +132,8 @@ internal static partial class SmokeRunner
             'CPU load and two samples', () => $('[data-testid="overview-load-chart"]')?.dataset.points);
           const sample = (await request('hardware.sample', {})).data;
           assert(/^\d+(,\d)?%$/.test(text('[data-testid="overview-cpu-load-value"]')) && $('[data-testid="overview-cpu-load"] [role="progressbar"]')
-            && text('[data-testid="overview-cpu-threads"]').endsWith(sample.cpu.logicalThreads + ' потоков') && $('h3', $('[data-testid="overview-cpu"]')).textContent === (sample.cpu.model ?? 'Процессор'),
+            && text('[data-testid="overview-cpu-threads"]').endsWith(russianPlural(sample.cpu.logicalThreads, 'поток', 'потока', 'потоков'))
+            && $('h3', $('[data-testid="overview-cpu"]')).textContent === (sample.cpu.model ?? 'Процессор'),
             'CPU shows its model, threads and the load in percent: ' + text('[data-testid="overview-cpu"]'));
           assert(/^\d+(,\d{1,2})? ГБ занято из \d+(,\d{1,2})? ГБ$/.test(text('[data-testid="overview-ram-detail"]')) && /^\d+(,\d)?%$/.test(text('[data-testid="overview-ram-value"]')),
             'RAM shows the percent and «X ГБ занято из Y ГБ»: ' + text('[data-testid="overview-ram"]'));
@@ -147,7 +148,7 @@ internal static partial class SmokeRunner
               'Every GPU shows its name, load, memory, temperature and driver: ' + text('[data-testid="overview-gpus"]'));
             await wait(() => $('[data-load-line="gpu-' + sample.gpus[0].index + '"]'), 'GPU load line');
           } else {
-            assert(text('[data-testid="overview-gpu-reason"]') === sample.gpuReason, 'Without a GPU the reason of the host is shown: ' + sample.gpuReason);
+            assert(text('[data-testid="overview-gpu-reason"]') === mautLocale.errorText(sample.gpuReason), 'Without a GPU the reason of the host is shown: ' + sample.gpuReason);
           }
           assert($('[data-load-line="cpu"]') && text('[data-testid="overview-load-chart"] figcaption').startsWith('Нагрузка за 2 минуты'),
             'The mini chart draws the CPU and GPU load of the last minutes');

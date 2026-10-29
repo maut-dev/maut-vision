@@ -41,15 +41,15 @@ internal static partial class SmokeRunner
         await File.WriteAllBytesAsync(damaged, bytes[..(bytes.Length / 2)], token);
         var unknown = Path.Combine(folder, "unknown.zip");
         await File.WriteAllTextAsync(unknown, "Это не архив проекта.", token);
-        foreach (var (archive, code, label) in new[]
+        foreach (var (archive, message, label) in new[]
         {
-            (legacy, "projects.archive_legacy", "of an early format"),
-            (damaged, "projects.archive_damaged", "cut in the middle"),
-            (unknown, "projects.archive_unknown", "that is not ZIP"),
+            (legacy, "Архив создан прежней версией Maut Vision и не поддерживается. Экспортируйте проект заново в текущей версии.", "of an early format"),
+            (damaged, "Архив повреждён. Экспортируйте проект заново и повторите импорт.", "cut in the middle"),
+            (unknown, "Архив неизвестного формата: это не архив проекта Maut Vision.", "that is not ZIP"),
         })
         {
             MainWindow.SmokeArchiveAnswer = archive;
-            await RunLifecycleUiStepAsync(web, LifecycleUiRefusedScript, new { message = ProjectErrorMessages.All[code], label }, checks, token);
+            await RunLifecycleUiStepAsync(web, LifecycleUiRefusedScript, new { message, label }, checks, token);
         }
 
         await RunLifecycleUiStepAsync(web, LifecycleUiDeletionScript, new { importedId, importedName = imported["importedName"]!.GetValue<string>() }, checks, token);

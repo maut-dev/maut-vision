@@ -11,6 +11,7 @@ using MautVision.Desktop.Controllers.Projects.Backgrounds.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 using MautVision.Desktop.Controllers.Projects.Images.ResponseDto;
 using MautVision.Desktop.Resources;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds;
 
@@ -25,10 +26,9 @@ internal sealed class BackgroundsController(
     ResourceHandles resources,
     FileSelections selections,
     NativeDialogs dialogs,
-    IMediaManager media,
-    Func<string, string> messageFor)
+    IMediaManager media)
 {
-    /// <summary>Files of one «Нарезать из изображений» run: their indexes and crops must fit one bridge message.</summary>
+    /// <summary>Files of one "Cut from images" run: their indexes and crops must fit one bridge message.</summary>
     internal const int MaxCropSources = 500;
     private const int DefaultPreviewSide = 1600;
 
@@ -71,7 +71,7 @@ internal sealed class BackgroundsController(
 
     public async Task<JobResponseDto[]> ListRunsAsync(ListBackgroundRunsRequestDto request, CancellationToken cancellationToken)
         => (await (await Backgrounds(request.ProjectId, cancellationToken)).ListRunsAsync(request.SetId, request.Limit ?? 50, request.Before, cancellationToken))
-            .Select(job => JobResponseMapper.Map(job, messageFor)).ToArray();
+            .Select(job => JobResponseMapper.Map(job)).ToArray();
 
     public async Task<BackgroundDeletionReviewResponseDto> ReviewSetDeletionAsync(ReviewBackgroundSetDeletionRequestDto request, CancellationToken cancellationToken)
         => BackgroundsResponseMapper.Map(await (await Backgrounds(request.ProjectId, cancellationToken)).ReviewSetDeletionAsync(request.SetId, cancellationToken));
@@ -96,7 +96,7 @@ internal sealed class BackgroundsController(
     {
         var backgrounds = await Backgrounds(request.ProjectId, cancellationToken);
         var set = await backgrounds.GetSetAsync(request.SetId, cancellationToken);
-        var paths = await dialogs.PickImageFiles("Добавить фоны", cancellationToken);
+        var paths = await dialogs.PickImageFiles(Strings.DialogAddBackgrounds, cancellationToken);
         if (paths is null || paths.Count == 0)
             return new BackgroundFileSelectionResponseDto(null, set.TargetSize.Width, set.TargetSize.Height, [], 0, 0, 0, 0);
         var ordered = paths.OrderBy(path => Path.GetFileName(path), ImageNameOrder.Instance).ThenBy(path => path, StringComparer.Ordinal).ToArray();
@@ -111,7 +111,7 @@ internal sealed class BackgroundsController(
     /// <summary>Native video dialog, then ffprobe (size, duration); the file is not hashed here. A closed dialog answers with nulls.</summary>
     public async Task<VideoSelectionResponseDto> SelectVideoAsync(SelectBackgroundVideoRequestDto request, CancellationToken cancellationToken)
     {
-        var path = await dialogs.PickVideo("Нарезать из видео", cancellationToken);
+        var path = await dialogs.PickVideo(Strings.DialogBackgroundVideo, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new VideoSelectionResponseDto(null, null, null, null, null, null);
         var video = await media.ProbeVideoAsync(path, cancellationToken);
         var token = selections.Register([path], FileSelectionKind.Video, video);
@@ -150,7 +150,6 @@ internal sealed class BackgroundsController(
             sample.SourceName,
             sample.TimestampMs,
             sample.Reason,
-            sample.Reason is { } reason ? BackgroundErrorMessages.Reason(reason, sample.ActualWidth, sample.ActualHeight, preview.TargetSize, messageFor) : null,
             sample.ActualWidth,
             sample.ActualHeight,
             BackgroundsResponseMapper.Map(sample.Crop),
@@ -174,8 +173,8 @@ internal sealed class BackgroundsController(
         // Checked here for an immediate answer; the run checks again before it writes.
         var set = await (await Backgrounds(request.ProjectId, cancellationToken)).GetSetAsync(request.SetId, cancellationToken);
         if (set.ArchivedAt is not null) throw new CoreException("backgrounds.set_archived", $"Background set {set.Id} is archived.");
-        var job = await jobs.EnqueueAsync<IImportBackgroundsJob, ImportBackgroundsInput>(input, request.ProjectId, request.OperationId, set.Name, cancellationToken);
-        return JobResponseMapper.Map(job, messageFor);
+        var job = await jobs.EnqueueAsync<IImportBackgroundsJob, ImportBackgroundsInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(set.Name), cancellationToken);
+        return JobResponseMapper.Map(job);
     }
 
     /// <summary>

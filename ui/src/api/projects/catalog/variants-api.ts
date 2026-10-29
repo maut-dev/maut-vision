@@ -8,9 +8,9 @@ import { isDeletionResultResponseDto, isDeletionReviewResponseDto } from "./resp
 import { isVariantResponseDto } from "./response-dto/variant-response-dto";
 
 /**
- * Варианты открытого проекта. Список вариантов приходит в снимке classes.getWorkspace; изменения сообщает
- * событие catalog.changed. Ошибки: variants.project_not_open, variants.name_invalid, variants.description_invalid,
- * variants.name_duplicate, variants.not_found, variants.revision_conflict, variants.archived (правка архивного варианта),
+ * Variants of the open project. The list of variants comes in the classes.getWorkspace snapshot; changes come with
+ * the catalog.changed event. Errors: variants.project_not_open, variants.name_invalid, variants.description_invalid,
+ * variants.name_duplicate, variants.not_found, variants.revision_conflict, variants.archived (editing an archived variant),
  * variants.deletion_revision_conflict,
  * variants.deletion_blocked.
  */

@@ -1,6 +1,6 @@
 /**
- * Цвета рамок разметки. Цвет привязки (варианта класса) приходит из каталога (displayColor); рамка без варианта
- * окрашивается по классу цветом той же палитры, что Core (VariantColors): FNV-1a от ID, поэтому он стабилен.
+ * Colors of annotation boxes. The color of a binding (a class variant) comes from the catalog (displayColor); a box without a variant
+ * takes a color of its class from the same palette as Core (VariantColors): FNV-1a of the ID, so it is stable.
  */
 const palette = [
     "#ef4444", "#f97316", "#fcd34d", "#a3e635", "#10b981", "#5eead4",
@@ -18,7 +18,7 @@ export function defaultColor(id: string): string {
     return palette[(hash >>> 0) % palette.length];
 }
 
-/** Чёрный или белый текст поверх цвета — по относительной яркости. */
+/** Black or white text over a color, by its relative luminance. */
 export function contrastText(color: string): string {
     if (!/^#[0-9a-f]{6}$/i.test(color)) return "#ffffff";
     const channel = (offset: number) => {

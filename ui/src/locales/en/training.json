@@ -1,0 +1,497 @@
+{
+  "parameterGroups": {
+    "training": "Duration and mode",
+    "optimizer": "Optimizer and learning rate",
+    "loss": "Loss function",
+    "data": "Data and loading",
+    "reproducibility": "Reproducibility",
+    "augmentation": "Augmentations",
+    "validation": "Quality check",
+    "checkpoints": "Saving and reports",
+    "system": "Managed by the application and unavailable settings"
+  },
+  "parameterChoices": {
+    "on": "On",
+    "off": "Off",
+    "auto": "Auto"
+  },
+  "parameters": {
+    "epochs": {
+      "label": "Epochs",
+      "hint": "How many times the model goes through the training part of the dataset."
+    },
+    "batch": {
+      "label": "Batch size",
+      "hint": "Whole frames per step; −1 — AutoBatch; a fraction from 0 to 1 — a share of video memory."
+    },
+    "device": {
+      "label": "Device",
+      "hint": "The processor, a GPU number or any free GPU (−1)."
+    },
+    "amp": {
+      "label": "Mixed precision (AMP)",
+      "hint": "On the processor and on GPUs where mixed precision fails, the worker turns it off itself; the passport shows the actual value."
+    },
+    "time": {
+      "label": "Time limit, hours",
+      "hint": "Empty — no time limit. The limit can end training before the number of epochs."
+    },
+    "patience": {
+      "label": "Patience, epochs",
+      "hint": "Empty — max(10, min(40, epochs)). 0 turns early stopping off."
+    },
+    "pretrained": {
+      "label": "Start from pretrained weights",
+      "hint": "Off — random initialization of the model."
+    },
+    "clsRemap": {
+      "label": "Carry over weights of known classes"
+    },
+    "freeze": {
+      "label": "Freeze layers",
+      "hint": "Empty — no freezing; a number of first layers or a list of indices/names separated by commas."
+    },
+    "channelsLast": {
+      "label": "Channels-last memory format",
+      "hint": "Auto — the choice of the installed runtime."
+    },
+    "verbose": {
+      "label": "Verbose log"
+    },
+    "optimizer": {
+      "label": "Optimizer",
+      "hint": "auto can choose the actual learning rate and momentum; the passport shows the result."
+    },
+    "lr0": {
+      "label": "Initial learning rate (lr0)",
+      "hint": "Empty — 0.001 · batch / 32. With the auto optimizer the optimizer chooses the rate."
+    },
+    "lrf": {
+      "label": "Final learning rate fraction"
+    },
+    "momentum": {
+      "label": "Momentum"
+    },
+    "weightDecay": {
+      "label": "Weight decay"
+    },
+    "warmupEpochs": {
+      "label": "Warmup, epochs",
+      "hint": "Empty — by epochs and batch: at least one epoch and at most a quarter of training."
+    },
+    "warmupMomentum": {
+      "label": "Warmup momentum"
+    },
+    "warmupBiasLr": {
+      "label": "Warmup bias learning rate"
+    },
+    "cosLr": {
+      "label": "Cosine learning rate decay"
+    },
+    "box": {
+      "label": "Box loss weight"
+    },
+    "cls": {
+      "label": "Class loss weight"
+    },
+    "clsPw": {
+      "label": "Positive class weight"
+    },
+    "dfl": {
+      "label": "DFL weight"
+    },
+    "nbs": {
+      "label": "Nominal batch size"
+    },
+    "cache": {
+      "label": "Image cache"
+    },
+    "workers": {
+      "label": "Loader workers",
+      "hint": "Empty — 0 on Windows: loading in the main process is more reliable."
+    },
+    "singleCls": {
+      "label": "Merge all classes into one",
+      "hint": "All chosen classes become one output of the model."
+    },
+    "rect": {
+      "label": "Rectangular batches"
+    },
+    "fraction": {
+      "label": "Fraction of training data",
+      "hint": "A number from 0 to 1 or a list of fractions by split separated by commas."
+    },
+    "classes": {
+      "label": "Class indices to train",
+      "hint": "Empty — all classes; indices from the dataset map separated by commas."
+    },
+    "seed": {
+      "label": "Seed"
+    },
+    "deterministic": {
+      "label": "Deterministic mode"
+    },
+    "hsvH": {
+      "label": "Hue shift"
+    },
+    "hsvS": {
+      "label": "Saturation shift"
+    },
+    "hsvV": {
+      "label": "Brightness shift"
+    },
+    "degrees": {
+      "label": "Rotation, degrees",
+      "hint": "A positive value sets a random angle from −value to +value.",
+      "toggle": "Rotation"
+    },
+    "translate": {
+      "label": "Image translation",
+      "hint": "A share of width and height; 0 turns translation off."
+    },
+    "scale": {
+      "label": "Image scale",
+      "hint": "A number for a symmetric range or two factors min, max separated by a comma."
+    },
+    "shear": {
+      "label": "Shear, degrees"
+    },
+    "perspective": {
+      "label": "Perspective"
+    },
+    "flipud": {
+      "label": "Vertical flip probability"
+    },
+    "fliplr": {
+      "label": "Horizontal flip probability"
+    },
+    "bgr": {
+      "label": "RGB to BGR probability"
+    },
+    "mosaic": {
+      "label": "Mosaic probability"
+    },
+    "closeMosaic": {
+      "label": "Turn mosaic off, epochs before the end"
+    },
+    "mixup": {
+      "label": "Mixup probability"
+    },
+    "cutmix": {
+      "label": "Cutmix probability"
+    },
+    "multiScale": {
+      "label": "Input size variation range",
+      "hint": "0 turns random input size changes off."
+    },
+    "val": {
+      "label": "Check quality after epochs",
+      "hint": "Off — no check after each epoch. The installed runtime runs the final check."
+    },
+    "split": {
+      "label": "Validation split",
+      "hint": "Used to check quality; train gives no independent estimate."
+    },
+    "conf": {
+      "label": "Validation confidence threshold",
+      "hint": "Empty — the runtime chooses the threshold."
+    },
+    "iou": {
+      "label": "IoU threshold"
+    },
+    "maxDet": {
+      "label": "Max objects per frame"
+    },
+    "saveJson": {
+      "label": "Save check results to JSON"
+    },
+    "save": {
+      "label": "Save weights during training",
+      "hint": "Off — no intermediate weights; the final model is always saved."
+    },
+    "savePeriod": {
+      "label": "Save period, epochs",
+      "hint": "−1 — no extra periodic snapshots."
+    },
+    "plots": {
+      "label": "Save charts and examples"
+    }
+  },
+  "unavailableReasons": {
+    "system": "Managed by the application: the chosen model, the immutable dataset and the working folder of the run.",
+    "otherMode": "A parameter of another mode: predict, val, export or track; it does not change detect train.",
+    "notDetect": "Does not apply to the detect task.",
+    "profile": "Profiling needs TensorRT, ONNXRuntime and external integrations missing from the current build.",
+    "compile": "Compilation needs Triton, missing from the pinned Windows build.",
+    "resume": "Resuming needs a saved checkpoint with optimizer state; finished versions hold weights for inference.",
+    "quantize": "QAT needs a separate compatible export path and artifact checks; the current passport supports regular weights.",
+    "distill_model": "The teacher must be a local verified model with a compatible architecture; choosing a teacher model is not implemented yet.",
+    "dis": "The distillation weight is available only together with a verified teacher model."
+  },
+  "devices": {
+    "cpu": "Processor",
+    "gpu": "GPU {{index}} — {{name}}, {{memory}} GB",
+    "anyGpu": "Any free GPU"
+  },
+  "formWarnings": {
+    "dataset_corrupt": "The dataset files failed the check. Build a new version from the sources.",
+    "input_size_mismatch": "The dataset input size does not match the project settings. Build the dataset again.",
+    "batch_exceeds_frames": "The batch size ({{batch}}) is larger than the number of training frames ({{frames}}): reduce batch.",
+    "no_validation": "The dataset has no Validation frames: the model quality will not be checked."
+  },
+  "runStates": {
+    "queued": "Waiting for a GPU",
+    "preparing": "Preparing",
+    "training": "Training",
+    "cancelling": "Cancelling…",
+    "succeeded": "Done",
+    "failed": "Error",
+    "cancelled": "Cancelled",
+    "interrupted": "Interrupted"
+  },
+  "stages": {
+    "validating": "Checking the dataset",
+    "loading_model": "Loading the model",
+    "training": "Training",
+    "evaluating": "Checking quality",
+    "finalizing": "Saving weights",
+    "exporting": "Exporting ONNX"
+  },
+  "metrics": {
+    "precision": "Precision",
+    "recall": "Recall",
+    "mAP50": "mAP50",
+    "mAP50_95": "mAP50-95",
+    "box_loss": "Box loss (train)",
+    "cls_loss": "Class loss (train)",
+    "dfl_loss": "DFL loss (train)",
+    "l1_loss": "L1 loss (train, YOLO26)",
+    "valBoxLoss": "Box loss (val)",
+    "valClsLoss": "Class loss (val)",
+    "valDflLoss": "DFL loss (val)"
+  },
+  "deviceLabel": {
+    "cpu": "processor",
+    "anyGpu": "any free GPU",
+    "gpu": "GPU {{index}}"
+  },
+  "runErrors": {
+    "interrupted": "The run was interrupted. Start training again.",
+    "failed": "Training ended with an error. Check the log, the dataset and the parameters before running again."
+  },
+  "parameterValue": {
+    "shortened_one": "{{text}}… ({{length}} character)",
+    "shortened_other": "{{text}}… ({{length}} characters)"
+  },
+  "plotCaptions": {
+    "results": "ultralytics summary charts",
+    "confusionMatrix": "confusion matrix",
+    "confusionMatrixNormalized": "confusion matrix (normalized)",
+    "labels": "box distribution",
+    "labelsCorrelogram": "box correlations",
+    "f1Curve": "F1 by confidence threshold",
+    "prCurve": "precision–recall curve",
+    "pCurve": "precision by confidence threshold",
+    "rCurve": "recall by confidence threshold",
+    "trainBatch": "training batch {{number}}",
+    "valBatchPred": "validation batch {{number}} · predictions",
+    "valBatchLabels": "validation batch {{number}} · labels",
+    "curve": "quality curve"
+  },
+  "fileKinds": {
+    "weights_pt": "weights .pt",
+    "onnx": "weights .onnx",
+    "plot": "chart",
+    "log": "training log"
+  },
+  "passport": {
+    "tuned": "{{value}} (tuned)",
+    "chosenByOptimizer": "{{value}} (chosen by the optimizer)",
+    "version": "Version {{number}}",
+    "back": "← Back to models",
+    "workingBadge": "Working",
+    "subtitle": "Model version passport · {{architecture}} · {{width}} × {{height}} · {{date}}",
+    "makeWorking": "Make working",
+    "exportZip": "Export ZIP",
+    "delete": "Delete",
+    "metrics": {
+      "mAP50": "mAP50",
+      "mAP50_95": "mAP50-95",
+      "precision": "precision",
+      "recall": "recall"
+    },
+    "best": "best {{value}}",
+    "bestPt": "final best.pt",
+    "bestEpoch": "best epoch",
+    "epochsDone": "{{done}} of {{total}} done",
+    "epochsDoneStopped": "{{done}} of {{total}} done · early stop",
+    "parameters": "Training parameters",
+    "rows": {
+      "status": "status",
+      "dataset": "dataset",
+      "architecture": "architecture",
+      "epochs": "epochs",
+      "imageSize": "image size",
+      "optimizer": "optimizer",
+      "lr0": "learning rate (lr0)",
+      "warmup": "warmup, epochs",
+      "classes": "classes",
+      "device": "device",
+      "created": "created"
+    },
+    "statusWorking": "working version",
+    "statusTrained": "trained, not working",
+    "epochsOf": "{{done}} of {{total}}",
+    "epochsOfStopped": "{{done}} of {{total}} (early stop)",
+    "actualBatch": "{{value}} (actual {{actual}})",
+    "deviceAmp": "{{device}} · AMP {{amp}}",
+    "classesOrder": "Classes in the order of model outputs",
+    "outputMap": "Model output map",
+    "index": "Index",
+    "class": "Class",
+    "stableId": "Stable ID",
+    "merged": "merged: {{number}}",
+    "allParameters": "All parameters: requested and actual",
+    "requested": "Requested",
+    "actual": "Actual",
+    "noActual": "Actual parameters were not saved for this version.",
+    "notes": "Training notes",
+    "files": "Files",
+    "imagesCount": "Training images: {{number}}",
+    "images": "Training images",
+    "imagesHint": "ultralytics images from the run folder. Click to open full size.",
+    "noImages": "No images: the worker did not send any."
+  },
+  "runPassport": {
+    "title": "Run passport",
+    "subtitle": "{{dataset}} · {{date}}",
+    "subtitlePreset": "{{dataset}} · {{date}} · preset “{{preset}}”",
+    "cancel": "Cancel training",
+    "progress": "Training progress",
+    "epoch": "Epoch {{epoch}} of {{total}}",
+    "batch": "Batch {{batch}} of {{total}}",
+    "waitingGpu": "Waiting for the GPU: one run trains at a time.",
+    "preparing": "Preparing data and environment. Metrics appear after the first epoch.",
+    "noMetrics": "The run ended before any metrics arrived.",
+    "times": "Started: {{started}} · Finished: {{finished}}",
+    "environment": "Environment: {{environment}}",
+    "dataset": "Dataset and classes",
+    "datasetCounts": "{{name}} · Train {{train}} · Validation {{val}} · Test {{test}}",
+    "input": "{{architecture}} · input {{width}} × {{height}} · imgsz {{imageSize}}",
+    "epochs": "Epoch history",
+    "qualityChart": "Quality by epoch",
+    "lossChart": "Losses by epoch",
+    "epochsCaption": "Epochs saved: {{number}}. The charts show the whole run; val losses are dashed in the color of their train series.",
+    "epochsLoading": "Loading history…",
+    "epochsWaiting": "Waiting for the first epoch to finish.",
+    "epochsMissing": "No epoch history was saved for this run.",
+    "parameters": "Run parameters",
+    "noActual": "The worker has not reported the actual parameters yet.",
+    "log": "Training log",
+    "logLive": "Latest messages",
+    "logHistory": "Full history",
+    "logEmpty": "No messages yet.",
+    "logLiveCaption": "The window of the last {{window}} messages updates during training. Saved in total: {{total}}.",
+    "logHistoryCaption": "Messages saved in total: {{total}}. A page holds up to {{window}} messages.",
+    "logNext": "Next log page",
+    "versionDeleted": "The version was deleted.",
+    "versionLoading": "Loading the version passport…"
+  },
+  "settings": {
+    "emptyTitle": "Build a dataset first",
+    "emptyText": "Training runs on an immutable dataset version of the project. There are no datasets yet: annotate images and build a dataset.",
+    "openDatasets": "Open datasets",
+    "runtimeUnavailable": "The training environment is unavailable",
+    "runtimeNotConfigured": "The Python worker is not configured.",
+    "newRun": "New training run",
+    "dataset": "Dataset",
+    "loading": "Loading…",
+    "chooseDataset": "Choose a dataset",
+    "counts": "Train {{train}} · Validation {{val}} · Test {{test}} · {{width}} × {{height}}",
+    "classes": "Classes ({{number}}): {{names}}",
+    "built": "Built {{date}} · boxes {{boxes}} · negatives {{negatives}}",
+    "autoNote": "Empty “Auto” fields show the value training will choose. The actual precision and batch size go to the passport.",
+    "advanced": "Advanced",
+    "advancedNote": "An empty warmup is chosen by batch and number of epochs (at most a quarter of the run). Seed makes the run reproducible.",
+    "validHint": "The actual training parameters go to the version passport.",
+    "invalidHint": "Check the parameters: {{names}}.",
+    "architectureNote": "Architecture {{architecture}}, input {{width}} × {{height}}. One run trains at a time; the next ones wait in the queue for the GPU. A successful run creates a new model version; earlier versions do not change.",
+    "queue": "Queue",
+    "start": "Start training"
+  },
+  "presets": {
+    "label": "Parameter preset",
+    "choose": "Choose a preset",
+    "none": "No saved presets",
+    "saveAs": "Save as preset…",
+    "delete": "Delete preset",
+    "deleteQuestion": "Delete “{{name}}”?",
+    "deleteConfirm": "Delete",
+    "cancel": "Cancel",
+    "name": "Preset name",
+    "namePlaceholder": "For example, RTX 4090 · fast",
+    "overwrite": "Overwrite",
+    "save": "Save",
+    "overwriteHint": "The preset “{{name}}” will be overwritten with the current parameters.",
+    "saveHint": "The main and advanced training settings are saved. Presets are shared by all projects.",
+    "changedHint": "The parameters changed after the preset “{{name}}” was chosen: choose it again to restore its values.",
+    "hint": "A preset fills the form; values can be adjusted before the run."
+  },
+  "section": {
+    "presetSaved": "The preset “{{name}}” was saved.",
+    "presetDeleted": "The preset “{{name}}” was deleted.",
+    "hide": "Hide",
+    "retry": "Retry",
+    "currentRun": "Current run",
+    "runLoading": "Loading the run…",
+    "currentEmpty": "Start training in the “Settings” tab. Training progress, metrics and the log will appear here.",
+    "runs": "Training runs",
+    "loading": "Loading…",
+    "historyEmpty": "No runs yet. Model versions appear after the first successful training; the first version becomes working automatically.",
+    "moreRuns": "More runs ({{shown}} of {{total}})"
+  },
+  "card": {
+    "epochs": "{{value}} epochs",
+    "preset": "preset “{{name}}”",
+    "version": "version {{number}}",
+    "versionWorking": "version {{number}} · working",
+    "versionDeleted": "Version deleted",
+    "versionPassport": "Version {{number}} passport",
+    "modelPassport": "Model version passport",
+    "cancel": "Cancel",
+    "batch": "batch {{batch}} / {{total}}",
+    "queued": "Waiting in the queue: one run trains at a time.",
+    "preparing": "Preparing data and the training environment…"
+  },
+  "fields": {
+    "lr0ByOptimizer": "Chosen by the optimizer",
+    "autoValue": "Auto: {{value}}",
+    "chooseDevice": "Choose a device",
+    "gpuSearching": "GPU {{device}} (looking for GPUs…)",
+    "manualValue": "Manual: {{device}}",
+    "manualDevice": "Device, manual",
+    "manualPlaceholder": "cpu, −1 or a GPU number",
+    "noDriver": "No NVIDIA driver found: the processor or a GPU number entered manually is available.",
+    "invalid": "Check the parameter value.",
+    "groupsNote": "Object detection. Settings are saved to the preset and the run snapshot."
+  },
+  "chart": {
+    "legend": "Legend: {{label}}",
+    "showSeries": "Show series",
+    "hideSeries": "Hide series",
+    "epoch": "Epoch {{epoch}}"
+  },
+  "tabs": {
+    "label": "Training",
+    "settings": "Settings",
+    "current": "Current run",
+    "history": "Training history"
+  },
+  "loadErrors": {
+    "epochPageRepeated": "The epoch history returned a repeated page.",
+    "epochs": "Could not load the epoch history.",
+    "log": "Could not load the training log.",
+    "runs": "Could not load the training runs. Retry loading.",
+    "versions": "Could not load the model versions."
+  }
+}

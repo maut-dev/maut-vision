@@ -1,8 +1,8 @@
 namespace MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 
 /// <summary>
-/// Снимок каталога без изображений: варианты и классы в порядке SortOrder (включая архивные), привязки.
-/// CatalogRevision растёт с каждым изменением каталога; снимок или событие с меньшим значением устарели.
+/// Catalog snapshot without images: variants and classes in SortOrder (including archived ones), bindings.
+/// CatalogRevision grows with every catalog change; a snapshot or event with a lower value is stale.
 /// </summary>
 public sealed record CatalogWorkspaceResponseDto(
     VariantResponseDto[] Variants,

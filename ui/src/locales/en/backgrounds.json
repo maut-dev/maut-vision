@@ -1,0 +1,227 @@
+{
+  "word_one": "background",
+  "word_other": "backgrounds",
+  "import_one": "Import {{count, number}} background",
+  "import_other": "Import {{count, number}} backgrounds",
+  "advanced": "Advanced",
+  "seconds": "{{seconds}} s",
+  "errors": {
+    "loadBackgrounds": "Could not load the backgrounds. Retry loading.",
+    "loadRuns": "Could not load the preparation history.",
+    "loadSets": "Could not load the background sets. Retry loading."
+  },
+  "origin": {
+    "uploaded": "Ready image",
+    "image-crop": "Image fragment",
+    "video-frame": "Video frame"
+  },
+  "summary": {
+    "set_one": "{{count, number}} background · {{width}} × {{height}}",
+    "set_other": "{{count, number}} backgrounds · {{width}} × {{height}}",
+    "archived": "Archived",
+    "sizeMismatch": "The set size {{width}} × {{height}} differs from the project input"
+  },
+  "meta": {
+    "cropped": "cropped at x {{left}}, y {{top}}",
+    "blur": "blur {{radius}} px"
+  },
+  "details": {
+    "source": "Source: {{origin}} · {{kilobytes}} KB",
+    "video": "{{name}} · {{seconds}} s",
+    "videoFrame": "{{name}} · {{seconds}} s · frame {{frame}}",
+    "region": "Region: x {{left}}, y {{top}} · {{width}} × {{height}} px",
+    "blur": "Blur: {{radius}} px"
+  },
+  "selection": {
+    "limit_one": "You can select up to {{count}} background at a time.",
+    "limit_other": "You can select up to {{count}} backgrounds at a time.",
+    "firstPage_one": "The first {{count}} background is selected: operations take at most {{count}} at a time.",
+    "firstPage_other": "The first {{count}} backgrounds are selected: operations take at most {{count}} at a time.",
+    "clear": "Clear selection",
+    "page": "Select all on page",
+    "restore": "Restore ({{number}})",
+    "remove": "Remove ({{number}})",
+    "delete": "Delete selected ({{number}})",
+    "deletionName": "{{name}} · selected backgrounds"
+  },
+  "section": {
+    "listUpdated": "{{message}} The list is refreshed.",
+    "cleanupPending": "The materials are removed from the catalog. File cleanup continues automatically at the next start of the application.",
+    "hide": "Hide",
+    "retry": "Retry",
+    "newSetLabel": "Background set name",
+    "newSetPlaceholder": "New background set",
+    "createSet": "Create set",
+    "sets": "Background sets",
+    "sizeDiffers": "Size differs from the input",
+    "loadingSets": "Loading sets…",
+    "noSets": "Create a set to prepare backgrounds for generation.",
+    "setContent": "Background set contents",
+    "summaryRemoved": "{{summary}} · removed: {{removed}}",
+    "sizeMismatchNote": "The set size {{width}} × {{height}} differs from the project input {{inputWidth}} × {{inputHeight}}: this set does not fit generation of the new size.",
+    "editSetLabel": "Edit background set: {{name}}",
+    "edit": "Edit",
+    "restoreSetLabel": "Restore: {{name}}",
+    "archiveSetLabel": "Archive: {{name}}",
+    "restore": "Restore",
+    "archive": "Archive",
+    "deleteSetLabel": "Delete background set: {{name}}",
+    "deleteSet": "Delete set",
+    "showRemoved": "Show removed backgrounds",
+    "archivedNote": "The set is archived: adding and “Remove” are unavailable. Restore the set to change it.",
+    "loadingBackgrounds": "Loading backgrounds…",
+    "emptySet": "No backgrounds yet. Add ready frames of the right size or cut them from images or a video.",
+    "chooseSet": "Choose a set on the left to add or view backgrounds.",
+    "createFirstSet": "Create the first background set. The frame size must match the model input."
+  },
+  "add": {
+    "title": "Add backgrounds",
+    "description": "Each background is an image of exactly {{width}} × {{height}} px, like the model input. Generation pastes objects onto backgrounds; annotation happens in the images section.",
+    "modes": "Way of adding backgrounds"
+  },
+  "modes": {
+    "ready": { "title": "Ready frames", "hint": "Files already of the right size, imported as they are." },
+    "images": { "title": "Cut from images", "hint": "Large screenshots: you place a frame on each file." },
+    "video": { "title": "Cut from video", "hint": "One frame for the whole video, a shot every N seconds." }
+  },
+  "ready": {
+    "note": "Files of another size are not imported: they go to the “Skip reasons” of the run with their actual size.",
+    "choose": "Choose files",
+    "selected": "Files selected: {{number}}. Of the right size {{width}} × {{height}}: <exact>{{exact}}</exact> will be imported.",
+    "skipped": "Will be skipped: {{number}} (larger: {{larger}}, smaller: {{smaller}}, unreadable: {{unreadable}}).",
+    "largerHint": "Large files can be cut with a frame: “Cut from images”."
+  },
+  "images": {
+    "note": "Files show one by one: place a {{width}} × {{height}} px frame on each. Files of exactly this size are taken whole, smaller ones are skipped. Samples come before the import.",
+    "choose": "Choose images"
+  },
+  "dialog": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "blur": {
+    "title": "Background blur",
+    "enabled": "Blur backgrounds",
+    "description": "Optional. Each background gets a Gaussian blur with a random radius from the range, imitating a blurred world behind a translucent panel. A radius below 0.3 px leaves the background sharp. Applies to every way of adding.",
+    "min": "Radius from, px",
+    "max": "Radius to, px",
+    "range": "Blur radius range",
+    "from": "Radius from",
+    "to": "Radius to",
+    "seed": "Randomness (seed)",
+    "seedPlaceholder": "From the operation",
+    "seedHint": "The same seed gives the same radii on a repeat. An empty field picks a seed automatically and keeps it in the run.",
+    "summary": "blur {{min}}–{{max}} px, seed {{seed}}",
+    "errors": {
+      "numbers": "Enter the “from” and “to” radius as numbers.",
+      "range": "The radius is from 0 to {{max}} px.",
+      "order": "The “from” radius cannot exceed the “to” radius.",
+      "seed": "Advanced: the seed is an integer from 0 to 4,294,967,295 or an empty field."
+    }
+  },
+  "video": {
+    "title": "Cut from video",
+    "description": "One {{width}} × {{height}} px frame for the whole video: this region is cut from every taken shot.",
+    "other": "Another video",
+    "choose": "Choose video",
+    "info": "{{name}} · {{width}} × {{height}} · {{seconds}} s",
+    "started": "The job has started: its progress and result are in the preparation history. Choose the video again for the next run.",
+    "choosePrompt": "Choose a video: an example shot appears to place the frame on.",
+    "another": "Show another shot",
+    "count": "Backgrounds to cut",
+    "interval": "Take a shot every, s",
+    "skipSimilar": "Skip repeated shots",
+    "skipSimilarHint": "A shot almost the same as one already taken (a still camera, a pause) does not count; the next one is taken instead. With few distinct shots there will be fewer backgrounds than requested.",
+    "start": "Start at, s",
+    "startHint": "Useful to skip an intro or a menu at the start of the video.",
+    "available_one": "Up to {{count}} shot is available with this step.",
+    "available_other": "Up to {{count}} shots are available with this step.",
+    "preparing": "Preparing shots…",
+    "samples": "Show samples",
+    "run_one": "Cut {{count}} background",
+    "run_other": "Cut {{count}} backgrounds",
+    "runEmpty": "Cut backgrounds",
+    "errors": {
+      "tooSmall": "The video {{width}}×{{height}} is smaller than the model input {{targetWidth}}×{{targetHeight}}: the frame does not fit.",
+      "region": "The frame goes beyond the shot.",
+      "interval": "The step is a positive number of seconds.",
+      "start": "The start is from 0 to {{seconds}} s.",
+      "count": "The number of backgrounds is a positive integer.",
+      "tooMany_one": "With a step of {{interval}} s the video gives at most {{count}} background. Reduce the step or the count.",
+      "tooMany_other": "With a step of {{interval}} s the video gives at most {{count}} backgrounds. Reduce the step or the count."
+    }
+  },
+  "crop": {
+    "title": "Cut backgrounds from images",
+    "pickHint": "File {{position}} of {{total}}. Drag the {{width}} × {{height}} px frame to the right place: the frame equals the model input and does not resize. Arrows move it by 1 px, with Shift by 10 px.",
+    "reviewHint": "Check the samples and start the import. Cut backgrounds appear in the set as they are processed.",
+    "loading": "Loading the image…",
+    "unreadable": "Could not read the image",
+    "countCrop": "Cut by frame: {{number}}",
+    "countWhole": "Take whole (exactly {{width}} × {{height}}): {{number}}",
+    "countSkip": "Skipped by you: {{number}}",
+    "small": "Smaller than the model input, skipped: {{number}}",
+    "smallFile": "{{name}} · size {{width}}×{{height}}, at least {{targetWidth}}×{{targetHeight}} needed",
+    "invalid": "Not read: {{number}}",
+    "tooMany_one": "One run can cut up to {{count}} file. Skip some files or cut in several runs.",
+    "tooMany_other": "One run can cut up to {{count}} files. Skip some files or cut in several runs.",
+    "preparingSamples": "Preparing samples…",
+    "nothing": "Nothing to import: no file is chosen.",
+    "back": "Back",
+    "skip": "Skip file",
+    "take": "Take region"
+  },
+  "gallery": {
+    "label": "Background gallery",
+    "selectLabel": "Select background: {{name}}",
+    "removedName": "{{name}} · Removed",
+    "restoreToView": "Restore the background to view it",
+    "openLabel": "Open background: {{name}}",
+    "restoreLabel": "Restore background: {{name}}",
+    "removeLabel": "Remove background: {{name}}",
+    "restore": "Restore",
+    "remove": "Remove",
+    "deleteLabel": "Delete background: {{name}}",
+    "deleteHint": "Delete permanently",
+    "delete": "Delete"
+  },
+  "samples": {
+    "title": "Samples of future backgrounds {{width}} × {{height}}",
+    "noBlur": "no blur",
+    "alt": "Sample background from {{name}}"
+  },
+  "runs": {
+    "title": "Background preparation",
+    "active": "running: {{number}}",
+    "added": "added {{added}}",
+    "addedOf": "added {{added}} of {{requested}}",
+    "duplicates": "duplicates {{number}}",
+    "similar": "similar {{number}}",
+    "rejected": "rejected {{number}}",
+    "processed": "processed {{processed}} of {{total}}",
+    "progress": "Preparation progress",
+    "issues": "Skip reasons ({{number}})",
+    "more": "and {{number}} more"
+  },
+  "setDialog": {
+    "title": "Edit background set",
+    "description": "The set size is {{width}} × {{height}} px; it is set at creation and does not change.",
+    "name": "Name",
+    "descriptionLabel": "Description"
+  },
+  "deletion": {
+    "itemsTitle": "Delete the backgrounds permanently?",
+    "setTitle": "Delete the background set permanently?",
+    "busy": "Deleting…",
+    "blockers": "Finish the jobs or change the dependencies before deleting:",
+    "count": "Backgrounds to delete: <number>{{number}}</number>.",
+    "itemsText": "Source files and prepared images will be deleted from the computer. This cannot be undone. Built datasets and models keep their materials.",
+    "setText": "Source files and prepared images will be deleted from the computer. This cannot be undone. The preparation history of this set will be deleted too. Built datasets and models keep their materials."
+  },
+  "frame": {
+    "label": "Frame position on the image",
+    "broken": "Could not show the image.",
+    "position": "Frame {{width}} × {{height}} px · x {{left}}, y {{top}} · image {{sourceWidth}} × {{sourceHeight}}"
+  }
+}

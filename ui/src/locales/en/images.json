@@ -1,0 +1,214 @@
+{
+  "roi": "ROI area",
+  "origin": {
+    "manual": "Source images",
+    "generated": "Generation"
+  },
+  "splitHint": {
+    "unassigned": "Unassigned",
+    "train": "Training",
+    "validation": "Validation",
+    "test": "Test"
+  },
+  "review": {
+    "reviewed": "Reviewed",
+    "unreviewed": "Not reviewed"
+  },
+  "errors": {
+    "loadImages": "Could not load the images. Retry loading.",
+    "loadGroups": "Could not load the image groups. Retry loading.",
+    "loadImports": "Could not load the import history."
+  },
+  "section": {
+    "generationLock": "Generation is filling this group. Editing becomes available when it finishes.",
+    "archiveLock": "The group or the image is archived. Restore them to change the annotation.",
+    "listUpdated": "{{message}} The list is refreshed.",
+    "moved": "Moved to “{{name}}”: {{number}}.",
+    "cleanupPending": "Deletion is complete. Files in use will be cleaned up in the background.",
+    "hide": "Hide",
+    "retry": "Retry",
+    "newGroupLabel": "Image group name",
+    "newGroupName": "Group name",
+    "newGroupPlaceholder": "New image group",
+    "createGroup": "Create group",
+    "groups": "Image groups",
+    "archivedName": "{{name}} · Archived",
+    "groupKind": "{{origin}} · {{split}}",
+    "loadingGroups": "Loading groups…",
+    "noGroups": "Create a set of frames: clean backgrounds or annotated images.",
+    "groupContent": "Image group contents",
+    "count": "Frames: {{active}}",
+    "countWithArchive": "Frames: {{active}} · archived: {{archived}}",
+    "importFiles": "Import files",
+    "importFolder": "From folder",
+    "videoFrames": "Video frames",
+    "editGroupLabel": "Edit group: {{name}}",
+    "edit": "Edit",
+    "restoreGroupLabel": "Restore: {{name}}",
+    "archiveGroupLabel": "Archive: {{name}}",
+    "restore": "Restore",
+    "archive": "Archive",
+    "deleteGroupLabel": "Delete image group: {{name}}",
+    "deleteGroup": "Delete group",
+    "skipDuplicates": "Skip duplicates in the group",
+    "recursive": "Include subfolders",
+    "loadingImages": "Loading images…",
+    "emptyGroup": "Add ready frames or frames from a video. Keep a clean background or annotate objects and regions.",
+    "emptyFilter": "No frames match the filters.",
+    "chooseGroup": "Choose a group on the left.",
+    "createFirstGroup": "Create a group to import frames and annotations."
+  },
+  "selection": {
+    "limit_one": "You can select up to {{count}} image at a time.",
+    "limit_other": "You can select up to {{count}} images at a time.",
+    "firstPage_one": "The first {{count}} image is selected: operations take at most {{count}} at a time.",
+    "firstPage_other": "The first {{count}} images are selected: operations take at most {{count}} at a time.",
+    "clear": "Clear selection",
+    "page": "Select all on page",
+    "move": "Move ({{number}})",
+    "restore": "Restore ({{number}})",
+    "archive": "Archive ({{number}})",
+    "delete": "Delete selected ({{number}})"
+  },
+  "filter": {
+    "archiveLabel": "Archive filter",
+    "active": "Active",
+    "archived": "Archived",
+    "all": "All frames",
+    "reviewLabel": "Annotation review",
+    "anyReview": "Any review"
+  },
+  "viewer": {
+    "objects": "Object boxes"
+  },
+  "editor": {
+    "loadFailed": "Could not load the annotation. Retry loading.",
+    "stillLoading": "The annotation is still loading. Save again.",
+    "saveFailed": "Could not save the annotation.",
+    "archivedItem": "{{name}} (archived)",
+    "unsaved": "Unsaved changes",
+    "label": "Annotation of {{name}}",
+    "title": "Annotation · {{name}}",
+    "inspect": "View and zoom",
+    "back": "Back to images",
+    "previous": "Previous image",
+    "previousHint": "Previous image (←)",
+    "next": "Next image",
+    "nextHint": "Next image (→)",
+    "tool": "Annotation tool",
+    "object": "Object",
+    "class": "Object class",
+    "chooseClass": "Choose a class",
+    "variant": "Object variant",
+    "noVariant": "No variant",
+    "variantColor": "Variant box color",
+    "defaultColor": "Default color",
+    "variantColorHint": "Choose a variant to set its color. Boxes without a variant take the class color.",
+    "undo": "Undo",
+    "undoHint": "Undo (Ctrl+Z)",
+    "redo": "Redo",
+    "redoHint": "Redo (Ctrl+Y)",
+    "selected": "Box {{index}} is selected: the class and variant apply to it. Delete removes the box.",
+    "help": "Drag a box on the image. The ROI keeps the marked region of the frame. A dataset copies the whole frame without cropping. The box color follows the variant; change it next to the variant choice.",
+    "keys": "Select a box to drag it or resize it by its handles; Shift draws a new one on top. Ctrl+wheel zooms, Space or the middle button pans, Ctrl+Z / Ctrl+Y undo and redo, Ctrl+S saves.",
+    "removeBox": "Delete box {{index}}",
+    "removeRoi": "Remove ROI",
+    "reviewed": "Reviewed, including an empty frame",
+    "saving": "Saving…",
+    "save": "Save annotation"
+  },
+  "canvas": {
+    "label": "Frame to annotate: drag to draw a box, drag with Space to pan"
+  },
+  "palette": {
+    "class": "Class",
+    "variant": "Variant"
+  },
+  "source": {
+    "generated": "Generation · run {{run}} · frame {{sample}}",
+    "video": "Video {{name}} · {{seconds}} s",
+    "file": "File import"
+  },
+  "details": {
+    "label": "Annotation details",
+    "file": "{{name}} · {{width}} × {{height}} px · {{kilobytes}} KB",
+    "source": "Source: {{source}}",
+    "objects_one": "{{count}} object",
+    "objects_other": "{{count}} objects",
+    "revision": "Annotation revision {{revision}}",
+    "box": "x {{x}}, y {{y}}, width {{width}}, height {{height}} px",
+    "loading": "Loading the annotation…"
+  },
+  "gallery": {
+    "label": "Image gallery",
+    "boxes": "boxes: {{number}}",
+    "noBoxes": "no boxes",
+    "reviewed": "reviewed",
+    "archived": "archived",
+    "select": "Select",
+    "selectLabel": "Select image: {{name}}",
+    "annotateLabel": "Annotate {{name}}",
+    "view": "View",
+    "viewLabel": "View {{name}}",
+    "deleteLabel": "Delete image: {{name}}",
+    "deleteHint": "Delete permanently"
+  },
+  "dialog": {
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…"
+  },
+  "groupDialog": {
+    "title": "Edit group",
+    "description": "The purpose suggests which part of a dataset the frames of the group go to.",
+    "name": "Name",
+    "descriptionLabel": "Description",
+    "split": "Purpose"
+  },
+  "moveDialog": {
+    "title": "Move images",
+    "description": "The selected images ({{number}}) move to the end of the chosen group with their annotations.",
+    "target": "Target group",
+    "chooseGroup": "Choose a group",
+    "noTargets": "There are no other active groups of the same origin.",
+    "moving": "Moving…",
+    "move": "Move"
+  },
+  "imports": {
+    "title": "Image import",
+    "selecting": "Choose files or a folder in the dialog…",
+    "progress": "Import progress",
+    "summary": "Added {{added}} / {{total}} · skipped {{duplicates}} · errors {{rejected}}",
+    "fileErrors": "File errors ({{number}})",
+    "more": "and {{number}} more"
+  },
+  "deletion": {
+    "imagesTitle": "Delete the images permanently?",
+    "groupTitle": "Delete the image group permanently?",
+    "imagesText": "{{name}}. The selected images, their files and annotations will be deleted. They cannot be restored in the application.",
+    "groupText": "{{name}}. The group, all its images, annotations and import history will be deleted. They cannot be restored in the application.",
+    "busy": "Deleting…",
+    "blockers": "Deletion is not available yet:",
+    "blockersNote": "Finish the jobs or change the listed dependencies and check again.",
+    "count": "Images to delete: {{number}}",
+    "kept": "Built datasets and models keep their own copies. Materials of other groups are kept."
+  },
+  "video": {
+    "title": "Video frames",
+    "info": "{{name}} · {{width}} × {{height}} · {{seconds}} s",
+    "started": "The job has started: its progress and result are in the import history. Choose the video again for the next run.",
+    "choosePrompt": "Choose a video, then set which frames to extract.",
+    "other": "Another video",
+    "choose": "Choose video",
+    "close": "Close “Video frames”",
+    "start": "Start, s",
+    "interval": "Interval, s",
+    "count": "Frame count",
+    "extract": "Extract frames",
+    "sizeNote": "Frames keep the original video size; annotations can be added after the import.",
+    "rangeErrors": {
+      "range_invalid": "The last frame is beyond the end of the video. Reduce the count or the interval.",
+      "frames_invalid": "Set a start of at least 0 s, an interval of at least 0.001 s and a frame count of at least 1."
+    }
+  }
+}

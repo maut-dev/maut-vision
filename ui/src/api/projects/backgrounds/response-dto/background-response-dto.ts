@@ -2,12 +2,12 @@ import { isResourceUrl, type ResourceUrl } from "../../../resources/resource-url
 import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isId, isRevision } from "../../catalog/catalog-guards";
 
-/** uploaded — «Готовое изображение», image-crop — «Фрагмент изображения», video-frame — «Кадр видео». */
+/** uploaded: "Ready image", image-crop: "Image fragment", video-frame: "Video frame". */
 export type BackgroundOriginKind = "uploaded" | "image-crop" | "video-frame";
 
 const originKinds: readonly string[] = ["uploaded", "image-crop", "video-frame"] satisfies BackgroundOriginKind[];
 
-/** Вырезанная область исходного кадра в его пикселях: «Область: x, y · w × h px». */
+/** The cut region of the source image in its pixels: "Region: x, y · w × h px". */
 export interface BackgroundCropAreaDto {
     left: number;
     top: number;
@@ -16,8 +16,8 @@ export interface BackgroundCropAreaDto {
 }
 
 /**
- * Происхождение фона. sourceName — имя файла или видео (подпись карточки); videoName, timestampMs, frameIndex — только у кадра
- * видео. crop — «вырезан из x L, y T» (null — кадр целиком). blurRadius — «размытие r px» (0 — резкий), null — без размытия.
+ * The origin of a background. sourceName is the name of the file or the video (the card caption); videoName, timestampMs, frameIndex only for a video
+ * frame. crop gives "cropped at x L, y T" (null: the whole image). blurRadius gives "blur r px" (0: sharp), null: no blur.
  */
 export interface BackgroundOriginDto {
     kind: BackgroundOriginKind;
@@ -32,8 +32,8 @@ export interface BackgroundOriginDto {
 }
 
 /**
- * Фон — PNG ровно размера набора. revision передаётся в setRemoved; removedAt — убран («Восстановить»). originalUrl — для
- * просмотрщика, thumbnailUrl (JPEG до 256 px) — для галереи; URL действуют ограниченное время и только на этой странице.
+ * A background is a PNG of exactly the set size. The revision goes to setRemoved; removedAt: removed ("Restore"). originalUrl is for
+ * the viewer, thumbnailUrl (JPEG up to 256 px) for the gallery; the URLs are valid for a limited time and on this page only.
  */
 export interface BackgroundResponseDto {
     id: string;
@@ -74,7 +74,7 @@ export function isBackgroundList(value: unknown): value is BackgroundResponseDto
     return Array.isArray(value) && value.every(isBackgroundResponseDto);
 }
 
-/** Страница по порядку добавления; nextCursor — значение after для следующей страницы того же фильтра, null на последней. */
+/** A page in the order of adding; nextCursor is the after value for the next page of the same filter, null on the last one. */
 export interface BackgroundPageResponseDto {
     items: BackgroundResponseDto[];
     nextCursor: string | null;

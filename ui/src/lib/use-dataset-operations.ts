@@ -7,25 +7,27 @@ import type { DatasetOperationKind } from "@/api/projects/datasets/request-dto/d
 import { datasetJobKinds, type DatasetOperationResponseDto } from "@/api/projects/datasets/response-dto/dataset-operation-response-dto";
 import { BridgeError } from "@/api/transport/errors";
 import { isOperationActive } from "./datasets/dataset-view";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 
-/** Сколько последних операций вида показывает вкладка. */
+/** How many last operations of a kind the tab shows. */
 export const operationPageLimit = 50;
 
 const newestFirst = (left: DatasetOperationResponseDto, right: DatasetOperationResponseDto) =>
     right.job.createdAt.localeCompare(left.job.createdAt) || right.job.id.localeCompare(left.job.id);
 
-const failTexts: Record<DatasetOperationKind, string> = {
-    build: "Не удалось загрузить историю сборок. Повторите загрузку.",
-    verify: "Не удалось загрузить проверки. Повторите загрузку.",
-    export: "Не удалось загрузить экспорты. Повторите загрузку.",
-};
+/** Keys of the texts shown when the history of a kind fails to load. */
+const failTexts = {
+    build: "datasets:loadErrors.build",
+    verify: "datasets:loadErrors.verify",
+    export: "datasets:loadErrors.export",
+} as const satisfies Record<DatasetOperationKind, string>;
 
 /**
- * История операций одного вида (сборки, проверки, экспорты) без опроса: datasets.listOperations при открытии; состояние,
- * прогресс и итог — job.changed (kind datasets.<вид>), снимок применяется, только если его sequence новее; операция, которой
- * ещё нет в списке (запущена в другом месте), читается getOperation. Удаление версии (datasets.changed с null) удаляет и её
- * историю — карточки этой версии убираются.
+ * The history of operations of one kind (builds, checks, exports) without polling: datasets.listOperations on opening; state,
+ * progress and result — job.changed (kind datasets.<kind>), a snapshot applies only when its sequence is newer; an operation
+ * missing from the list (started elsewhere) is read with getOperation. Deleting a version (datasets.changed with null) deletes its
+ * history too — the cards of this version go.
  */
 export function useDatasetOperations(projectId: string, kind: DatasetOperationKind) {
     const [operations, setOperations] = useState<readonly DatasetOperationResponseDto[]>([]);
@@ -79,7 +81,7 @@ export function useDatasetOperations(projectId: string, kind: DatasetOperationKi
             setPageTotal(page.total);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, failTexts[kind]));
+            if (mounted.current) setError(errorMessage(cause, i18n.t(failTexts[kind])));
         } finally {
             if (mounted.current) setLoading(false);
         }
@@ -108,7 +110,7 @@ export function useDatasetOperations(projectId: string, kind: DatasetOperationKi
         };
     }, [projectId, kind, refresh, reread, applyJob, remove]);
 
-    /** «Отменить»: снимок задачи из ответа применяется сразу, дальше — события. */
+    /** "Cancel": the job snapshot from the answer applies at once, then events. */
     const cancel = useCallback(async (operation: DatasetOperationResponseDto) => {
         if (!isOperationActive(operation.job)) return;
         applyJob(await jobsApi.cancel({ projectId, jobId: operation.job.id }));

@@ -1,8 +1,10 @@
 import { useState, type KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import "@/i18n/sections/checks";
 import { versionOptionLabel } from "@/lib/checks/check-view";
 import { useDatasetVersions } from "@/lib/use-dataset-versions";
 import { useGpuInventory } from "@/lib/use-gpu-inventory";
@@ -14,23 +16,19 @@ import { CheckVideo } from "./check-video";
 
 type Mode = "image" | "dataset" | "video" | "screen";
 
-const modes: readonly { id: Mode; label: string }[] = [
-    { id: "image", label: "Изображение" },
-    { id: "dataset", label: "Датасет" },
-    { id: "video", label: "Видео" },
-    { id: "screen", label: "Экран" },
-];
+const modes: readonly { id: Mode }[] = [{ id: "image" }, { id: "dataset" }, { id: "video" }, { id: "screen" }];
 
 const tabId = (mode: Mode) => `checks-tab-${mode}`;
 const panelId = (mode: Mode) => `checks-panel-${mode}`;
 
 /**
- * Раздел «Проверки»: выбор версии (по умолчанию рабочая) и режимы «Изображение», «Датасет», «Видео», «Экран» по шаблону tablist;
- * initialMode — режим при переходе (оценка из обзора открывает «Датасет»).
- * Открытые режимы остаются смонтированными, поэтому смена вкладки не обрывает проверку; уход из раздела останавливает проверку с
- * экрана. Без опроса: training.changed, datasets.changed, checks.changed, job.changed.
+ * The Checks section: the version (the working one by default) and the modes Image, Dataset, Video, Screen as a tablist; initialMode is
+ * the mode of a navigation (an evaluation from the overview opens Dataset).
+ * Opened modes stay mounted, so switching tabs does not break a check; leaving the section stops a screen check. No polling:
+ * training.changed, datasets.changed, checks.changed, job.changed.
  */
 export function ChecksSection({ project, initialMode, openModels }: { project: ProjectResponseDto; initialMode?: Mode; openModels: () => void }) {
+    const { t } = useTranslation("checks");
     const projectId = project.id;
     const models = useModelVersions(projectId);
     const datasets = useDatasetVersions(projectId);
@@ -60,11 +58,9 @@ export function ChecksSection({ project, initialMode, openModels }: { project: P
     if (models.loaded && !versions.length) {
         return (
             <section className="space-y-3 rounded-lg border border-dashed p-6" data-testid="checks-empty">
-                <h2 className="font-medium">Проверять пока нечего</h2>
-                <p className="max-w-prose text-sm text-muted-foreground">
-                    Проверки прогоняют версию модели по картинке, датасету, видео или экрану. Версия появляется после успешного обучения.
-                </p>
-                <Button variant="outline" data-testid="checks-open-models" onClick={openModels}>Открыть модели</Button>
+                <h2 className="font-medium">{t("empty.title")}</h2>
+                <p className="max-w-prose text-sm text-muted-foreground">{t("empty.text")}</p>
+                <Button variant="outline" data-testid="checks-open-models" onClick={openModels}>{t("empty.openModels")}</Button>
             </section>
         );
     }
@@ -75,24 +71,24 @@ export function ChecksSection({ project, initialMode, openModels }: { project: P
                 <Alert variant="destructive">
                     <AlertDescription>
                         <p>{models.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>Повторить</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>{t("retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
             <section className="space-y-4 rounded-lg border bg-card p-5">
                 <div className="flex flex-wrap items-end justify-between gap-4">
                     <div className="space-y-1">
-                        <span className="block text-xs text-muted-foreground">Версия модели</span>
+                        <span className="block text-xs text-muted-foreground">{t("version.label")}</span>
                         <Select value={version?.id ?? ""} disabled={!versions.length} onValueChange={next => { if (next) setSelectedId(next); }}>
-                            <SelectTrigger aria-label="Версия модели для проверки" className="w-80" data-testid="checks-version">
-                                <SelectValue placeholder={models.loaded ? "Нет версий" : "Загрузка…"} />
+                            <SelectTrigger aria-label={t("version.aria")} className="w-80" data-testid="checks-version">
+                                <SelectValue placeholder={models.loaded ? t("version.none") : t("loading")} />
                             </SelectTrigger>
                             <SelectContent>
                                 {versions.map(item => <SelectItem key={item.id} value={item.id}>{versionOptionLabel(item)}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
-                    <div role="tablist" aria-label="Режим проверки" className="flex flex-wrap gap-1 rounded-md border p-1">
+                    <div role="tablist" aria-label={t("modeLabel")} className="flex flex-wrap gap-1 rounded-md border p-1">
                         {modes.map((item, index) => (
                             <Button
                                 key={item.id}
@@ -107,16 +103,15 @@ export function ChecksSection({ project, initialMode, openModels }: { project: P
                                 onClick={() => select(item.id)}
                                 onKeyDown={event => onKeyDown(event, index)}
                             >
-                                {item.label}
+                                {t(`modes.${item.id}`)}
                             </Button>
                         ))}
                     </div>
                 </div>
                 {version && (
                     <p className="text-xs text-muted-foreground" data-testid="checks-caption">
-                        Веса best.pt версии {version.number} · вход {version.input.width} × {version.input.height} px · классов {version.classes.length}. Проверка занимает
-                        видеокарту так же, как обучение: пока идёт обучение, проверка не запустится, а обучение, запущенное во время проверки, ждёт в очереди.{" "}
-                        <Button variant="link" size="sm" className="h-auto p-0 text-xs" data-testid="checks-models-link" onClick={openModels}>Все версии — в «Моделях»</Button>
+                        {t("caption", { number: version.number, width: version.input.width, height: version.input.height, classes: version.classes.length })}{" "}
+                        <Button variant="link" size="sm" className="h-auto p-0 text-xs" data-testid="checks-models-link" onClick={openModels}>{t("allVersions")}</Button>
                     </p>
                 )}
             </section>

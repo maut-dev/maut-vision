@@ -2,14 +2,14 @@ import { isResourceUrl, type ResourceUrl } from "../../../resources/resource-url
 import { isRecord } from "../../../transport/envelopes";
 import { isCount } from "../../catalog/catalog-guards";
 
-/** Выбранное изображение: token — выбор (null — окно закрыто), путь в UI не попадает. */
+/** The chosen image: token is the choice (null — the picker was closed); the path does not reach the UI. */
 export interface CheckFileSelectionResponseDto {
     token: string | null;
     name: string | null;
     byteSize: number | null;
 }
 
-/** Кадр видео: размер кадра видео (рамка ставится в его координатах) и уменьшенного превью по url. */
+/** A video frame: the size of the video frame (the crop is placed in its coordinates) and of the scaled-down preview at url. */
 export interface CheckVideoFrameResponseDto {
     timestampMs: number;
     width: number;
@@ -19,7 +19,7 @@ export interface CheckVideoFrameResponseDto {
     url: ResourceUrl;
 }
 
-/** Выбранное видео: размер кадра, длительность, частота и кадр из середины («Показать другой кадр» — previewVideoFrame). */
+/** The chosen video: the frame size, the duration, the frame rate and a frame from the middle (Show another frame is previewVideoFrame). */
 export interface CheckVideoSelectionResponseDto {
     token: string | null;
     name: string | null;
@@ -31,7 +31,7 @@ export interface CheckVideoSelectionResponseDto {
     frame: CheckVideoFrameResponseDto | null;
 }
 
-/** Монитор в физических пикселях: «Монитор index» (width × height); index — номер для проверки с экрана. */
+/** A monitor in physical pixels: "Monitor index" (width × height); index is the number for the screen check. */
 export interface MonitorResponseDto {
     index: number;
     left: number;
@@ -42,7 +42,7 @@ export interface MonitorResponseDto {
     name: string;
 }
 
-/** Снимок монитора (PNG по url, в физических пикселях) и все мониторы на момент снимка. */
+/** A screenshot of a monitor (PNG at url, in physical pixels) and all monitors at the moment of the screenshot. */
 export interface ScreenShotResponseDto {
     monitor: MonitorResponseDto;
     url: ResourceUrl;

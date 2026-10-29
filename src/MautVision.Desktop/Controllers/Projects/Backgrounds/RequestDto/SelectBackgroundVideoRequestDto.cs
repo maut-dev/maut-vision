@@ -1,4 +1,4 @@
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.RequestDto;
 
-/// <summary>Нативный диалог выбора видео.</summary>
+/// <summary>Native video selection dialog.</summary>
 public sealed record SelectBackgroundVideoRequestDto;

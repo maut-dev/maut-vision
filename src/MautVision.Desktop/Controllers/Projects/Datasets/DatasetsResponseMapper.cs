@@ -71,7 +71,7 @@ internal static class DatasetsResponseMapper
         Map(plan.Composition),
         new DatasetPlanSkipsDto(plan.Skipped.Unreviewed, plan.Skipped.PartialGeneration, plan.Skipped.WithoutTargets, plan.Skipped.InvalidGeometry,
             plan.Skipped.Total),
-        plan.Warnings.Select(warning => new DatasetPlanWarningDto(warning.Code, warning.Count, DatasetErrorMessages.Warning(warning))).ToArray(),
+        plan.Warnings.Select(warning => new DatasetPlanWarningDto(warning.Code, warning.Count)).ToArray(),
         plan.SufficientSamples,
         plan.Counts.Total > 0 && plan.Warnings.All(warning => warning.Code != "datasets.split_collision"),
         plan.Hash,
@@ -121,8 +121,8 @@ internal static class DatasetsResponseMapper
             resources.Issue(projectId, reference, ResourceVariant.Thumbnail));
     }
 
-    internal static DatasetOperationResponseDto Map(DatasetOperation operation, Func<string, string> messageFor) => new(
-        JobResponseMapper.Map(operation.Job, messageFor),
+    internal static DatasetOperationResponseDto Map(DatasetOperation operation) => new(
+        JobResponseMapper.Map(operation.Job),
         Key(operation.Kind),
         operation.VersionId,
         operation.VersionName,
@@ -136,7 +136,7 @@ internal static class DatasetsResponseMapper
         review.Name,
         review.Samples,
         review.Operations,
-        review.Blockers.Select(blocker => new DeletionBlockerResponseDto(blocker.Code, blocker.Count, DatasetErrorMessages.For(blocker))).ToArray(),
+        review.Blockers.Select(blocker => DeletionBlockerResponseDto.From(blocker)).ToArray(),
         review.Revision);
 
     internal static DatasetsChangedEventDto Map(DatasetsChangedEventArgs args)
@@ -147,13 +147,12 @@ internal static class DatasetsResponseMapper
     internal static DatasetBuildResultDto Map(DatasetBuildResult result)
         => new(result.VersionId, result.Total, result.Produced, result.Linked, result.Copied, result.Converted, Map(result.Counts));
 
-    internal static DatasetVerifyResultDto Map(DatasetVerifyResult result, Func<string, string> messageFor) => new(
+    internal static DatasetVerifyResultDto Map(DatasetVerifyResult result) => new(
         result.VersionId,
         result.TotalFiles,
         result.CheckedFiles,
         result.IssueCount,
-        result.Issues.Select(issue => new DatasetIntegrityIssueDto(issue.SampleId, issue.Split is { } split ? Key(split) : null, Key(issue.Role), issue.Code,
-            messageFor(issue.Code))).ToArray(),
+        result.Issues.Select(issue => new DatasetIntegrityIssueDto(issue.SampleId, issue.Split is { } split ? Key(split) : null, Key(issue.Role), issue.Code)).ToArray(),
         result.State is { } state ? Key(state) : null,
         result.Bytes,
         result.ElapsedMs);

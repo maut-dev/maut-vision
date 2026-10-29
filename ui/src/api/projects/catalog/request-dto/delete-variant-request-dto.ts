@@ -1,6 +1,6 @@
 export interface DeleteVariantRequestDto {
     projectId: string;
     variantId: string;
-    /** Revision из ответа просмотра состава удаления. */
+    /** The revision from the answer of the deletion review. */
     reviewRevision: string;
 }

@@ -2,53 +2,43 @@ import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import type { TrainingEpochDto } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { trainingMetricLabels } from "@/api/projects/training/training-parameters";
+import { i18n } from "@/i18n";
+import "@/i18n/sections/analytics";
 import { qualityMetricLabels, qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
-import { deviceLabel, formatMetric, formatNumber } from "@/lib/training/run-view";
+import { deviceLabel, formatNumber } from "@/lib/training/run-view";
+import { formatDateTime, formatMetric } from "@/lib/format";
 
-/** Версий в сравнении по умолчанию: три последние. */
+/** Versions compared by default: the latest three. */
 export const defaultSelectionSize = 3;
 
-/** Пояснения строк таблицы и метрик. */
-export const metricHelp: Readonly<Record<string, string>> = {
-    mAP50: "mAP50 — средняя точность по классам при IoU ≥ 0.5: основная метрика детекции YOLO. Считается на части Validation датасета.",
-    mAP50_95: "mAP50-95 — то же, усреднённое по порогам IoU от 0.5 до 0.95: строже к точности рамок. По ней ultralytics выбирает лучшие веса.",
-    precision: "Точность — доля срабатываний, которые оказались верными. Низкая — модель часто видит объект там, где его нет.",
-    recall: "Полнота — доля реальных объектов, которые модель нашла. Низкая — модель многое пропускает.",
-    bestEpoch: "Лучшая эпоха — эпоха с максимальным fitness ultralytics (сейчас это mAP50-95 на валидации): веса best.pt версии взяты оттуда.",
-    epochs: "Эпох пройдено из заданных. Меньше заданного — сработала ранняя остановка (patience): метрики перестали расти.",
-    dataset: "Датасет, на котором обучалась версия, и число кадров в частях Train и Validation.",
-    lr0: "Начальная скорость обучения (lr0). «подобрано» — работник посчитал её по батчу.",
-    batch: "Размер батча. Если ultralytics уменьшил его из-за нехватки памяти, в скобках — фактический.",
-    amp: "Смешанная точность (AMP): фактическое значение — на процессоре и части видеокарт работник её отключает.",
-};
+/** Rows of the table that carry an explanation besides the quality metrics. */
+type HelpKey = QualityMetric | "bestEpoch" | "epochs" | "dataset" | "lr0" | "batch" | "amp";
 
-/** Метрики графика в стандартном порядке; прочие ключи истории идут следом по алфавиту. */
+/** The explanation of a table row in the current language. Call during render. */
+export const metricHelp = (key: HelpKey): string => i18n.t(`analytics:help.${key}`);
+
+/** Chart metrics in the standard order; other history keys follow alphabetically. */
 const curveOrder = ["mAP50", "mAP50_95", "precision", "recall", "box_loss", "cls_loss", "dfl_loss", "valBoxLoss", "valClsLoss", "valDflLoss", "fitness", "lr"];
 
-const curveLabels: Readonly<Record<string, string>> = {
-    ...qualityMetricLabels,
-    box_loss: "Потери рамок",
-    cls_loss: "Потери классов",
-    dfl_loss: "Потери DFL",
-    valBoxLoss: "Потери рамок (val)",
-    valClsLoss: "Потери классов (val)",
-    valDflLoss: "Потери DFL (val)",
-    lr: "Скорость обучения (lr)",
-    fitness: "Fitness",
-};
-
-export const curveLabel = (key: string) => curveLabels[key] ?? trainingMetricLabels[key] ?? key;
+const curveKeys = ["box_loss", "cls_loss", "dfl_loss", "valBoxLoss", "valClsLoss", "valDflLoss", "lr", "fitness"] as const;
 
 export const isQualityMetric = (key: string) => (qualityMetrics as readonly string[]).includes(key);
 
-/** Значение эпохи для графика: метрика валидации, потеря обучения, lr или fitness. */
+/** The name of a chart metric in the current language; an unknown key as the training section names it, or as is. Call during render. */
+export function curveLabel(key: string): string {
+    if (isQualityMetric(key)) return qualityMetricLabels[key as QualityMetric];
+    const curve = curveKeys.find(item => item === key);
+    return curve ? i18n.t(`analytics:curve.${curve}`) : trainingMetricLabels[key] ?? key;
+}
+
+/** The value of an epoch for the chart: a validation metric, a training loss, lr or fitness. */
 export function epochValue(entry: TrainingEpochDto, key: string): number | null {
     if (key === "lr") return entry.lr;
     if (key === "fitness") return entry.fitness;
     return entry.metrics[key] ?? entry.losses[key] ?? null;
 }
 
-/** Метрики, которые есть в истории выбранных версий, в стандартном порядке. */
+/** Metrics present in the history of the chosen versions, in the standard order. */
 export function curveMetrics(histories: readonly (readonly TrainingEpochDto[])[]): string[] {
     const keys = new Set<string>();
     for (const epochs of histories) {
@@ -63,7 +53,7 @@ export function curveMetrics(histories: readonly (readonly TrainingEpochDto[])[]
     return [...known, ...[...keys].filter(key => !known.includes(key)).sort()];
 }
 
-/** Строка «Метрики и параметры»: quality — подсветка лучшего и отставание; value — число для сравнения. */
+/** A row of the metrics and parameters: quality marks the best value and the gaps. */
 export interface AnalyticsRow {
     key: string;
     label: string;
@@ -74,35 +64,39 @@ export interface AnalyticsRow {
 
 const number = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : null);
 
-/** Строки таблицы; датасет называется по текущему списку: «(в архиве)», отсутствующий — «Датасет удалён». */
+/**
+ * Rows of the table in the current language (build them during render); a dataset is named by the current list: archived ones are marked,
+ * a missing one is "Dataset deleted".
+ */
 export function analyticsRows(datasets: readonly DatasetVersionResponseDto[]): AnalyticsRow[] {
+    const t = i18n.t.bind(i18n);
     const datasetName = (version: ModelVersionResponseDto) => {
         const dataset = datasets.find(item => item.id === version.dataset.versionId);
-        if (!dataset) return "Датасет удалён";
-        return dataset.archivedAt ? `${dataset.name} (в архиве)` : dataset.name;
+        if (!dataset) return t("analytics:row.datasetDeleted");
+        return dataset.archivedAt ? t("analytics:row.datasetArchived", { name: dataset.name }) : dataset.name;
     };
     return [
         ...qualityMetrics.map<AnalyticsRow>(key => ({
             key,
             label: qualityMetricLabels[key],
-            help: metricHelp[key],
+            help: metricHelp(key),
             quality: key,
             text: version => formatMetric(version.metrics[key]),
         })),
-        { key: "bestEpoch", label: "Лучшая эпоха", help: metricHelp.bestEpoch, text: version => version.bestEpoch === null ? "—" : String(version.bestEpoch) },
+        { key: "bestEpoch", label: t("analytics:row.bestEpoch"), help: metricHelp("bestEpoch"), text: version => version.bestEpoch === null ? "—" : String(version.bestEpoch) },
         {
             key: "epochs",
-            label: "Эпох пройдено / задано",
-            help: metricHelp.epochs,
+            label: t("analytics:row.epochs"),
+            help: metricHelp("epochs"),
             text: version => `${version.epochsCompleted} / ${number(version.parameters.epochs) ?? "—"}`,
         },
-        { key: "dataset", label: "Датасет обучения", help: metricHelp.dataset, text: datasetName },
-        { key: "split", label: "Кадров train / val", text: version => `${version.dataset.counts.train} / ${version.dataset.counts.val}` },
-        { key: "date", label: "Дата", text: version => new Date(version.createdAt).toLocaleString("ru-RU") },
+        { key: "dataset", label: t("analytics:row.dataset"), help: metricHelp("dataset"), text: datasetName },
+        { key: "split", label: t("analytics:row.split"), text: version => `${version.dataset.counts.train} / ${version.dataset.counts.val}` },
+        { key: "date", label: t("analytics:row.date"), text: version => formatDateTime(version.createdAt) },
         {
             key: "batch",
-            label: "Batch",
-            help: metricHelp.batch,
+            label: t("analytics:row.batch"),
+            help: metricHelp("batch"),
             text: version => {
                 const requested = version.parameters.batch;
                 const effective = number(version.effectiveParams.effectiveBatch);
@@ -111,31 +105,33 @@ export function analyticsRows(datasets: readonly DatasetVersionResponseDto[]): A
         },
         {
             key: "lr0",
-            label: "lr0",
-            help: metricHelp.lr0,
+            label: t("analytics:row.lr0"),
+            help: metricHelp("lr0"),
             text: version => {
                 const value = number(version.effectiveParams.lr0) ?? number(version.parameters.lr0);
                 const source = version.effectiveParams.lr0Source;
-                return value === null ? "—" : formatNumber(value, 6) + (source === "computed" || source === "optimizer-auto" ? " (подобрано)" : "");
+                if (value === null) return "—";
+                const text = formatNumber(value, 6);
+                return source === "computed" || source === "optimizer-auto" ? t("analytics:row.tuned", { value: text }) : text;
             },
         },
         {
             key: "amp",
-            label: "AMP",
-            help: metricHelp.amp,
+            label: t("analytics:row.amp"),
+            help: metricHelp("amp"),
             text: version => {
                 const value = version.effectiveParams.amp ?? version.parameters.amp;
-                return typeof value === "boolean" ? (value ? "вкл" : "выкл") : "—";
+                return typeof value === "boolean" ? (value ? t("analytics:row.on") : t("analytics:row.off")) : "—";
             },
         },
-        { key: "device", label: "Устройство", text: version => deviceLabel(version.parameters.device) },
+        { key: "device", label: t("analytics:row.device"), text: version => deviceLabel(version.parameters.device) },
     ];
 }
 
-/** «Копировать таблицу»: TSV с заголовком версий, значения как в таблице без отставаний. */
+/** Copy the table: TSV with a header of versions, the values as in the table without the gaps. */
 export function analyticsTsv(rows: readonly AnalyticsRow[], versions: readonly ModelVersionResponseDto[]): string {
     const lines = [
-        ["Параметр", ...versions.map(version => `Версия ${version.number}`)],
+        [i18n.t("analytics:table.parameter"), ...versions.map(version => i18n.t("analytics:table.version", { number: version.number }))],
         ...rows.map(row => [row.label, ...versions.map(version => row.text(version))]),
     ];
     return lines.map(line => line.map(cell => cell.replace(/[\t\r\n]+/g, " ")).join("\t")).join("\n");
@@ -143,7 +139,7 @@ export function analyticsTsv(rows: readonly AnalyticsRow[], versions: readonly M
 
 const selectionKey = (projectId: string) => `maut.analytics.selection.${projectId}`;
 
-/** Сохранённый выбор версий проекта; null — выбора ещё не было или хранилище недоступно. */
+/** The saved choice of versions of a project; null when there was no choice yet or the storage is unavailable. */
 export function readSelection(projectId: string): string[] | null {
     try {
         const raw = window.localStorage.getItem(selectionKey(projectId));
@@ -158,6 +154,6 @@ export function writeSelection(projectId: string, ids: readonly string[]): void 
     try {
         window.localStorage.setItem(selectionKey(projectId), JSON.stringify(ids));
     } catch {
-        // Выбор не сохранится между запусками; сравнение работает и без него.
+        // The choice is not kept between runs; the comparison works without it.
     }
 }

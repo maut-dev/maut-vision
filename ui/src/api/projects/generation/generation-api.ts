@@ -11,32 +11,32 @@ import { isGenerationRecipeDeletionResponseDto, isGenerationRecipeList, isGenera
 import { isGenerationRunDeletionResponseDto, isGenerationRunPageResponseDto, isGenerationRunResponseDto } from "./response-dto/generation-run-response-dto";
 import { isGenerationRepeatDraftResponseDto, isGenerationSamplesResponseDto } from "./response-dto/generation-sample-response-dto";
 
-/** Примеры декодируют изображения классов и фоны: ответ может прийти позже обычных 10 с. */
+/** Samples decode class images and backgrounds: the answer may come later than the usual 10 s. */
 const previewTimeoutMs = 30_000;
 
 /**
- * Генерация открытого проекта: пресеты и запуски.
+ * Generation of the open project: presets and runs.
  *
- * Пресеты: listRecipes (все, включая архивные; «Показать архивные пресеты» фильтрует UI), createRecipe / updateRecipe с revision,
- * setRecipeArchived, deleteRecipe с revision. Форма собирает GenerationRecipeFormDto: classVariantIds — recipeClassVariantIds(workspace,
- * weights), доли — по доступным вариантам проекта («Поровну» — distributeEvenly), до отправки — recipeFieldError. previewSamples —
- * «Пример кадра»: до 4 кадров формы с seed запуска (временные ресурсы с рамками).
+ * Presets: listRecipes (all, archived ones too; "Show archived presets" filters in the UI), createRecipe / updateRecipe with revision,
+ * setRecipeArchived, deleteRecipe with revision. The form builds GenerationRecipeFormDto: classVariantIds — recipeClassVariantIds(workspace,
+ * weights), shares — by the available project variants ("Evenly" — distributeEvenly), before sending — recipeFieldError. previewSamples —
+ * "Sample frame": up to 4 frames of the form with the run seed (temporary resources with boxes).
  *
- * Запуски: start возвращает запуск сразу (job.status queued); прогресс, состояние и итог — событие job.changed (kind generation.run,
- * parseGenerationRunResult), применять снимок с большим sequence; «Отменить» — jobsApi.cancel(projectId, run.job.id); listRuns /
- * getRun при открытии и после generation.changed (runs — подготовлен или удалён); deleteRun — только завершённый, изображения
- * остаются; getRepeatDraft — «Настроить повтор». Группа результата появляется в images.changed, её изображения уже размечены
+ * Runs: start returns the run at once (job.status queued); progress, state and result — the event job.changed (kind generation.run,
+ * parseGenerationRunResult), apply the snapshot with a larger sequence; "Cancel" — jobsApi.cancel(projectId, run.job.id); listRuns /
+ * getRun on opening and after generation.changed (runs — prepared or deleted); deleteRun — only a finished one, the images
+ * stay; getRepeatDraft — "Set up a repeat". The result group appears in images.changed, its images are already annotated
  * (reviewed).
  *
- * Изменения: generation.changed (subscribeGenerationChanged) — recipes с ревизиями (null — удалён) и runs.
+ * Changes: generation.changed (subscribeGenerationChanged) — recipes with revisions (null — deleted) and runs.
  *
- * Ошибки: generation.project_not_open, generation.invalid_recipe (error.details.field — поле формы), generation.revision_conflict,
- * generation.recipe_archived, generation.unavailable, generation.deletion_blocked (удаление пресета с незавершённым запуском),
- * generation.run_active, generation.deleted_operation, generation.count_invalid, generation.seed_invalid; проверки запуска и
- * примеров: generation.canvas_mismatch, generation.background_size_mismatch, generation.backgrounds_unavailable,
+ * Errors: generation.project_not_open, generation.invalid_recipe (error.details.field — the form field), generation.revision_conflict,
+ * generation.recipe_archived, generation.unavailable, generation.deletion_blocked (deleting a preset with an unfinished run),
+ * generation.run_active, generation.deleted_operation, generation.count_invalid, generation.seed_invalid; checks of the run and
+ * samples: generation.canvas_mismatch, generation.background_size_mismatch, generation.backgrounds_unavailable,
  * generation.variant_unavailable, generation.variant_without_asset, generation.unsupported_asset, generation.backgrounds_empty;
- * ошибки задачи (job.error): те же и generation.preparation_failed, generation.execution_failed, generation.disk_full,
- * generation.out_of_memory, generation.interrupted; jobs.project_not_open. Тексты приходят готовыми в error.message.
+ * job errors (job.error): the same and generation.preparation_failed, generation.execution_failed, generation.disk_full,
+ * generation.out_of_memory, generation.interrupted; jobs.project_not_open. Errors come as codes; texts are in the errors catalog.
  */
 export const generationApi = {
     get available(): boolean { return nativeBridge.available; },
@@ -46,23 +46,23 @@ export const generationApi = {
     getRecipe(request: GetGenerationRecipeRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.getRecipe", request, isGenerationRecipeResponseDto, signal);
     },
-    /** «Сохранить рецепт»: новый пресет с revision 1. */
+    /** "Save recipe": a new preset with revision 1. */
     createRecipe(request: CreateGenerationRecipeRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.createRecipe", request, isGenerationRecipeResponseDto, signal);
     },
-    /** «Изменить пресет»: новая ревизия; архивный пресет не меняется. */
+    /** "Edit preset": a new revision; an archived preset does not change. */
     updateRecipe(request: UpdateGenerationRecipeRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.updateRecipe", request, isGenerationRecipeResponseDto, signal);
     },
-    /** «В архив» / «Восстановить». */
+    /** "Archive" / "Restore". */
     setRecipeArchived(request: SetGenerationRecipeArchivedRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.setRecipeArchived", request, isGenerationRecipeResponseDto, signal);
     },
-    /** Удаляет пресет; запуски хранят его копию и остаются. */
+    /** Deletes a preset; runs keep its copy and stay. */
     deleteRecipe(request: DeleteGenerationRecipeRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.deleteRecipe", request, isGenerationRecipeDeletionResponseDto, signal);
     },
-    /** «Пример кадра»: те же пиксели и рамки, что даст запуск с этим seed для первых кадров; ничего не сохраняет. */
+    /** "Sample frame": the same pixels and boxes a run with this seed gives for its first frames; saves nothing. */
     previewSamples(request: PreviewGenerationSamplesRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.previewSamples", request, isGenerationSamplesResponseDto, signal, previewTimeoutMs);
     },
@@ -72,14 +72,14 @@ export const generationApi = {
     getRun(request: GetGenerationRunRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.getRun", request, isGenerationRunResponseDto, signal);
     },
-    /** «Сгенерировать N изображений»: проверяет пресет и источники и ставит запуск; повтор с тем же operationId вернёт тот же запуск. */
+    /** "Generate N images": checks the preset and the sources and queues the run; a repeat with the same operationId returns the same run. */
     start(request: StartGenerationRunRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.start", request, isGenerationRunResponseDto, signal, previewTimeoutMs);
     },
     deleteRun(request: DeleteGenerationRunRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.deleteRun", request, isGenerationRunDeletionResponseDto, signal);
     },
-    /** «Настроить повтор»: настройки запуска для формы, его seed и количество, уведомление. */
+    /** "Set up a repeat": the run settings for the form, its seed and count, a notice. */
     getRepeatDraft(request: GetGenerationRepeatDraftRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("generation.getRepeatDraft", request, isGenerationRepeatDraftResponseDto, signal);
     },

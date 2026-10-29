@@ -1,15 +1,17 @@
 import type { JobResponseDto } from "@/api/jobs/response-dto/job-response-dto";
 import { generationRunSummary, generationTexts } from "@/api/projects/generation/generation-rules";
 import { parseGenerationRunResult, type GenerationRunResponseDto, type GenerationRunResultDto } from "@/api/projects/generation/response-dto/generation-run-response-dto";
+import { i18n } from "@/i18n";
+import { jobErrorText } from "@/lib/errors";
 
-/** Запуск ещё идёт: в очереди, выполняется или ожидает ресурсов — его можно отменить, но не удалить. */
+/** The run is still going: queued, running or waiting for resources — it can be cancelled but not deleted. */
 export function isRunActive(job: JobResponseDto): boolean {
     return job.status === "queued" || job.status === "running" || job.status === "blocked";
 }
 
 /**
- * Показатели запуска по последнему снимку задачи: опубликовано (итог задачи, иначе processed, иначе сохранённое
- * значение запуска), группа результата и кадры с недостающими объектами.
+ * Figures of the run by the last job snapshot: published (the job result, otherwise processed, otherwise the stored value of the
+ * run), the result group and frames with missing objects.
  */
 export function runProgress(run: GenerationRunResponseDto): GenerationRunResultDto & { percent: number } {
     const result = parseGenerationRunResult(run.job);
@@ -25,20 +27,20 @@ export function runProgress(run: GenerationRunResponseDto): GenerationRunResultD
     return { ...summary, percent: requestedCount === 0 ? 0 : Math.floor(100 * producedCount / requestedCount) };
 }
 
-/** «P / R изображений · X%» и итог «Кадров с недостающими объектами: N». */
+/** "P / R images · X%" and the result "Frames with missing objects: N". */
 export function runSummary(run: GenerationRunResponseDto): string {
     return generationRunSummary(runProgress(run));
 }
 
 /**
- * Текст ошибки завершённого запуска (тексты host) и хвост о сохранённых изображениях. null — запуск успешен или ещё идёт.
+ * The error text of a finished run (by its code) and a tail about saved images. null — the run succeeded or is still going.
  */
 export function runErrorText(run: GenerationRunResponseDto): string | null {
     const { job } = run;
     if (isRunActive(job) || job.status === "succeeded") return null;
-    const message = job.error?.message
+    const message = (job.error ? jobErrorText(job.error) : null)
         ?? (job.status === "cancelled" ? generationTexts.cancelled : job.status === "interrupted" ? generationTexts.interrupted : null);
     if (!message) return null;
     const produced = runProgress(run).producedCount;
-    return `${message} ${produced > 0 ? "Если группа результата сохранилась, в ней доступны созданные изображения." : "Изображения не были сохранены."}`;
+    return i18n.t(produced > 0 ? "generation:runs.errorSaved" : "generation:runs.errorNothingSaved", { message });
 }

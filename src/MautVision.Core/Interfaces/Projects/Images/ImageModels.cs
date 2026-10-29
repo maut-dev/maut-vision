@@ -2,14 +2,14 @@ using MautVision.Core.Interfaces.Projects.Catalog;
 
 namespace MautVision.Core.Interfaces.Projects.Images;
 
-/// <summary>Происхождение группы задаётся при создании: ручные группы наполняет импорт, сгенерированные — генерация.</summary>
+/// <summary>The group origin is set at creation: manual groups are filled by import, generated ones by generation.</summary>
 public enum ImageGroupOrigin
 {
     Manual,
     Generated,
 }
 
-/// <summary>Назначение группы при сборке датасета: «Без назначения / Обучение / Проверка / Тест».</summary>
+/// <summary>Group assignment when a dataset is built: "Unassigned / Training / Validation / Test".</summary>
 public enum ImageSplitHint
 {
     Unassigned,
@@ -18,7 +18,7 @@ public enum ImageSplitHint
     Test,
 }
 
-/// <summary>Состояние наполнения сгенерированной группы; у ручных групп — null.</summary>
+/// <summary>Fill state of a generated group; null for manual groups.</summary>
 public enum ImageGenerationState
 {
     Producing,
@@ -26,14 +26,14 @@ public enum ImageGenerationState
     Partial,
 }
 
-/// <summary>Reviewed — разметка проверена, в том числе осознанно пустой кадр.</summary>
+/// <summary>Reviewed — the annotation is reviewed, including a deliberately empty frame.</summary>
 public enum ImageReviewState
 {
     Unreviewed,
     Reviewed,
 }
 
-/// <summary>Формат исходного файла; определяется по содержимому.</summary>
+/// <summary>Format of the source file; detected by content.</summary>
 public enum ImageFileFormat
 {
     Png,
@@ -50,9 +50,9 @@ public enum ImageLineageKind
 }
 
 /// <summary>
-/// Группа изображений. Название 1–120 символов (повторы допустимы), описание до 4000. ImageCount — все изображения группы,
-/// включая архивные; ArchivedImageCount — архивные. Revision растёт при изменении полей группы, архиве и перемещении
-/// изображений; импорт её не меняет (меняются только счётчики).
+/// Image group. Name 1–120 characters (duplicates allowed), description up to 4000. ImageCount — all images of the group,
+/// including archived ones; ArchivedImageCount — archived ones. Revision grows on a change of group fields, archiving and moving
+/// images; import does not change it (only the counters change).
 /// </summary>
 public sealed record ImageGroup(
     Guid Id,
@@ -70,8 +70,8 @@ public sealed record ImageGroup(
     long ArchivedImageCount);
 
 /// <summary>
-/// Происхождение кадра. SourceFamilyId объединяет кадры одного источника, чтобы датасет не разносил их по разным split:
-/// <c>file:&lt;pixelHash&gt;</c>, <c>video:&lt;хеш видео&gt;</c>. Поля видео и генерации заполнены только у своего вида.
+/// Frame origin. SourceFamilyId joins frames of one source so that a dataset does not spread them across different splits:
+/// <c>file:&lt;pixelHash&gt;</c>, <c>video:&lt;video hash&gt;</c>. Video and generation fields are filled only for their own kind.
 /// </summary>
 public sealed record ImageLineage(
     ImageLineageKind Kind,
@@ -84,10 +84,10 @@ public sealed record ImageLineage(
     long? RecipeRevision = null);
 
 /// <summary>
-/// Изображение группы. Файл хранится без изменений в files/images/&lt;id&gt;.&lt;ext&gt;. Width/Height — с учётом
-/// EXIF-ориентации; координаты разметки относятся к ориентированному кадру. Sha256 — хеш файла, PixelHash — хеш
-/// ориентированных пикселей RGBA (повторы в группе). Revision растёт при сохранении разметки, архиве и перемещении;
-/// AnnotationRevision — номер текущей ревизии разметки. ObjectCount и ReviewState — из текущей разметки.
+/// Group image. The file is stored unchanged in files/images/&lt;id&gt;.&lt;ext&gt;. Width/Height — with
+/// EXIF orientation applied; annotation coordinates refer to the oriented frame. Sha256 — file hash, PixelHash — hash
+/// of the oriented RGBA pixels (duplicates in the group). Revision grows on saving the annotation, archiving and moving;
+/// AnnotationRevision — number of the current annotation revision. ObjectCount and ReviewState — from the current annotation.
 /// </summary>
 public sealed record ProjectImage(
     Guid Id,
@@ -108,17 +108,17 @@ public sealed record ProjectImage(
     string OperationId,
     ImageLineage Lineage)
 {
-    /// <summary>Вид материала в канале ресурсов: <c>new ResourceReference(ResourceKind, image.Id)</c>.</summary>
+    /// <summary>Material kind in the resource channel: <c>new ResourceReference(ResourceKind, image.Id)</c>.</summary>
     public const string ResourceKind = "images";
 }
 
-/// <summary>Рамка в долях кадра 0–1 от левого верхнего угла ориентированного изображения.</summary>
+/// <summary>Box as fractions 0–1 of the frame from the top-left corner of the oriented image.</summary>
 public sealed record ImageBox(double X, double Y, double Width, double Height);
 
-/// <summary>Объект разметки. ClassVariantId — вариант класса (привязка) этого класса или null («Без варианта»).</summary>
+/// <summary>Annotation object. ClassVariantId — a class variant (binding) of this class or null ("No variant").</summary>
 public sealed record AnnotationObject(Guid Id, Guid ClassId, Guid? ClassVariantId, ImageBox Box);
 
-/// <summary>Неизменяемая ревизия разметки изображения. Roi — одна рамка области или null.</summary>
+/// <summary>Immutable annotation revision of an image. Roi — one area box or null.</summary>
 public sealed record ImageAnnotation(
     Guid ImageId,
     long Revision,
@@ -127,26 +127,26 @@ public sealed record ImageAnnotation(
     ImageReviewState ReviewState,
     DateTimeOffset CreatedAt);
 
-/// <summary>Объект для сохранения: Id — существующий объект текущей ревизии или null (ID назначит Core).</summary>
+/// <summary>Object to save: Id — an existing object of the current revision or null (Core assigns the ID).</summary>
 public sealed record AnnotationObjectInput(Guid? Id, Guid ClassId, Guid? ClassVariantId, ImageBox Box);
 
 public sealed record AnnotationInput(IReadOnlyList<AnnotationObjectInput> Objects, ImageBox? Roi, ImageReviewState ReviewState);
 
-/// <summary>Результат сохранения разметки: изображение с новыми ревизиями и новая ревизия разметки.</summary>
+/// <summary>Annotation save result: the image with new revisions and the new annotation revision.</summary>
 public sealed record SavedAnnotation(ProjectImage Image, ImageAnnotation Annotation);
 
-/// <summary>Фильтр страницы: Archived — null все, true только архивные, false только активные; ReviewState — null любые.</summary>
+/// <summary>Page filter: Archived — null all, true only archived, false only active; ReviewState — null any.</summary>
 public sealed record ImageFilter(bool? Archived = false, ImageReviewState? ReviewState = null);
 
-/// <summary>Страница изображений группы по порядку импорта; NextCursor — null на последней странице.</summary>
+/// <summary>Page of group images in import order; NextCursor — null on the last page.</summary>
 public sealed record ImagePage(IReadOnlyList<ProjectImage> Items, string? NextCursor);
 
-/// <summary>Изображение с ревизией, которую видел пользователь.</summary>
+/// <summary>Image with the revision the user saw.</summary>
 public sealed record ImageRevision(Guid Id, long Revision);
 
 /// <summary>
-/// Состав удаления навсегда: вся группа (WholeGroup) или выбранные изображения. Revision передаётся в удаление; непустой
-/// Blockers — удаление сейчас недоступно (<c>images.import_active</c>, позже — генерация).
+/// What a permanent deletion removes: the whole group (WholeGroup) or the selected images. Revision is passed to the deletion; non-empty
+/// Blockers — the deletion is unavailable now (<c>images.import_active</c>, later generation).
 /// </summary>
 public sealed record ImageDeletionReview(
     Guid GroupId,
@@ -156,8 +156,8 @@ public sealed record ImageDeletionReview(
     IReadOnlyList<DeletionBlocker> Blockers,
     string Revision);
 
-/// <summary>Строки удалены; CleanupPending — файлы ещё удаляются в фоне.</summary>
+/// <summary>Rows are deleted; CleanupPending — files are still being deleted in the background.</summary>
 public sealed record ImageDeletionResult(Guid GroupId, bool GroupDeleted, long Images, bool CleanupPending);
 
-/// <summary>Результат перемещения: обе группы с новыми ревизиями и перемещённые изображения.</summary>
+/// <summary>Move result: both groups with new revisions and the moved images.</summary>
 public sealed record MovedImages(ImageGroup Source, ImageGroup Target, IReadOnlyList<ProjectImage> Images);

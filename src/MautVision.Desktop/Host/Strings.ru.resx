@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="LoadingWorkspace" xml:space="preserve">
+    <value>Подготовка рабочего пространства…</value>
+  </data>
+  <data name="PreparingApplication" xml:space="preserve">
+    <value>Подготовка Maut Vision…</value>
+  </data>
+  <data name="TrayOpen" xml:space="preserve">
+    <value>Открыть Maut Vision</value>
+  </data>
+  <data name="TrayExit" xml:space="preserve">
+    <value>Выйти</value>
+  </data>
+  <data name="TrayNotice" xml:space="preserve">
+    <value>Maut Vision продолжает работать в области уведомлений</value>
+  </data>
+  <data name="QuitQuestion" xml:space="preserve">
+    <value>Идут фоновые задачи: {0}. Выйти? Задачи продолжатся или будут отмечены прерванными при следующем открытии проекта; перенос будет отменён.</value>
+  </data>
+  <data name="StartupFailedTitle" xml:space="preserve">
+    <value>Не удалось запустить Maut Vision</value>
+  </data>
+  <data name="StartupFailed" xml:space="preserve">
+    <value>Не удалось запустить Maut Vision.</value>
+  </data>
+  <data name="UnexpectedError" xml:space="preserve">
+    <value>Произошла непредвиденная ошибка.</value>
+  </data>
+  <data name="LogDetails" xml:space="preserve">
+    <value>Подробности записаны в журнал:
+{0}</value>
+  </data>
+  <data name="WebBuildMissing" xml:space="preserve">
+    <value>Не найдена web-сборка. Запустите start.ps1 из sharp-app.</value>
+  </data>
+  <data name="WebViewRuntimeMissing" xml:space="preserve">
+    <value>Не установлен Microsoft Edge WebView2 Runtime. Установите Runtime и повторите запуск.</value>
+  </data>
+  <data name="OpenFailed" xml:space="preserve">
+    <value>Не удалось открыть приложение. {0}</value>
+  </data>
+  <data name="InterfaceLoadFailed" xml:space="preserve">
+    <value>Не удалось загрузить интерфейс: {0}</value>
+  </data>
+  <data name="WebViewCrashed" xml:space="preserve">
+    <value>Компонент WebView2 завершился с ошибкой ({0}). Перезапустите Maut Vision.</value>
+  </data>
+  <data name="LaunchValueExpected" xml:space="preserve">
+    <value>Ожидалось значение параметра запуска.</value>
+  </data>
+  <data name="LaunchUnknownParameter" xml:space="preserve">
+    <value>Неизвестный параметр запуска.</value>
+  </data>
+  <data name="LaunchPythonPair" xml:space="preserve">
+    <value>--python и --python-source задаются вместе.</value>
+  </data>
+  <data name="LaunchCatalogSmokeOnly" xml:space="preserve">
+    <value>--base-model-catalog допускается только в smoke-проверке.</value>
+  </data>
+  <data name="LaunchLanguageInvalid" xml:space="preserve">
+    <value>--language принимает system, ru или en.</value>
+  </data>
+  <data name="DialogAddImages" xml:space="preserve">
+    <value>Добавить изображения</value>
+  </data>
+  <data name="DialogAddBackgrounds" xml:space="preserve">
+    <value>Добавить фоны</value>
+  </data>
+  <data name="DialogBackgroundVideo" xml:space="preserve">
+    <value>Нарезать из видео</value>
+  </data>
+  <data name="DialogImportFiles" xml:space="preserve">
+    <value>Импорт файлов</value>
+  </data>
+  <data name="DialogImportFolder" xml:space="preserve">
+    <value>Импорт из папки</value>
+  </data>
+  <data name="DialogVideoFrames" xml:space="preserve">
+    <value>Кадры из видео</value>
+  </data>
+  <data name="DialogCheckImage" xml:space="preserve">
+    <value>Изображение для проверки</value>
+  </data>
+  <data name="DialogCheckVideo" xml:space="preserve">
+    <value>Видео для проверки</value>
+  </data>
+  <data name="DialogExportDataset" xml:space="preserve">
+    <value>Экспорт датасета в ZIP</value>
+  </data>
+  <data name="DialogExportModel" xml:space="preserve">
+    <value>Выгрузка версии модели в ZIP</value>
+  </data>
+  <data name="DialogExportProject" xml:space="preserve">
+    <value>Экспорт проекта</value>
+  </data>
+  <data name="DialogImportProject" xml:space="preserve">
+    <value>Импорт проекта</value>
+  </data>
+  <data name="FilterImages" xml:space="preserve">
+    <value>Изображения (PNG, JPEG, WebP, BMP)</value>
+  </data>
+  <data name="FilterVideos" xml:space="preserve">
+    <value>Видео (MP4, MKV, AVI, MOV, WebM, M4V)</value>
+  </data>
+  <data name="FilterProjectArchive" xml:space="preserve">
+    <value>Архив проекта Maut Vision</value>
+  </data>
+  <data name="FilterZip" xml:space="preserve">
+    <value>ZIP-архив</value>
+  </data>
+</root>

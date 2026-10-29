@@ -1,7 +1,7 @@
 /**
- * Масштаб просмотра кадра, общий для просмотрщика и редактора разметки. «Вписать» уменьшает большой кадр и не
- * увеличивает маленький; x1 — пиксель кадра на CSS-пиксель; шаги x1…x10. При смене масштаба центр видимой области
- * остаётся на той же точке кадра.
+ * The view zoom of a frame, shared by the viewer and the annotation editor. "Fit" shrinks a large frame and does not enlarge a small
+ * one; x1 is one frame pixel per CSS pixel; steps x1…x10. When the zoom changes, the center of the visible area stays on the same
+ * point of the frame.
  */
 export type ZoomMode = "fit" | number;
 
@@ -20,22 +20,22 @@ export function scaleOf(mode: ZoomMode, image: Size, viewport: Size): number {
     return mode === "fit" ? fitScale(image, viewport) : mode;
 }
 
-/** Увеличение: floor(scale) + 1, не больше x10. */
+/** Zoom in: floor(scale) + 1, at most x10. */
 export function zoomIn(scale: number): ZoomMode {
     return Math.min(maxZoom, Math.max(1, Math.floor(scale) + 1));
 }
 
-/** Уменьшение: при scale ≤ 1 — «Вписать», иначе ceil(scale) − 1. */
+/** Zoom out: "Fit" at scale ≤ 1, otherwise ceil(scale) − 1. */
 export function zoomOut(scale: number): ZoomMode {
     return scale <= 1 ? "fit" : Math.max(1, Math.ceil(scale) - 1);
 }
 
-/** Отступ кадра внутри холста: кадр меньше области просмотра стоит по центру. */
+/** The offset of the frame inside the canvas: a frame smaller than the view area is centered. */
 export function frameOffset(viewport: number, frame: number): number {
     return Math.max(0, (viewport - frame) / 2);
 }
 
-/** Точка кадра (в его пикселях) в центре области просмотра. */
+/** The point of the frame (in its pixels) at the center of the view area. */
 export function viewCenter(scroll: { left: number; top: number }, viewport: Size, image: Size, scale: number) {
     return {
         x: (scroll.left + viewport.width / 2 - frameOffset(viewport.width, image.width * scale)) / scale,
@@ -43,7 +43,7 @@ export function viewCenter(scroll: { left: number; top: number }, viewport: Size
     };
 }
 
-/** Прокрутка, при которой точка кадра center окажется в центре области просмотра при масштабе scale. */
+/** The scroll that puts the frame point center at the center of the view area at the zoom scale. */
 export function scrollForCenter(center: { x: number; y: number }, viewport: Size, image: Size, scale: number) {
     return {
         left: Math.max(0, center.x * scale + frameOffset(viewport.width, image.width * scale) - viewport.width / 2),

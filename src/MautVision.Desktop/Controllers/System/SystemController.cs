@@ -24,7 +24,7 @@ public sealed class SystemController(ILogger uiLogger, ILogger logger, Action re
         cancellationToken.ThrowIfCancellationRequested();
         if (request.Message is null || request.Message.Length > 200)
         {
-            throw new ArgumentException("Сообщение должно содержать не более 200 символов.");
+            throw new ArgumentException("The message must not exceed 200 characters.");
         }
         return Task.FromResult(new PingResponseDto(request.Message, ".NET " + Environment.Version, DateTimeOffset.UtcNow));
     }
@@ -37,15 +37,15 @@ public sealed class SystemController(ILogger uiLogger, ILogger logger, Action re
         {
             "error" => LogLevel.Error,
             "warning" => LogLevel.Warning,
-            _ => throw new ArgumentException("Уровень записи должен быть error или warning."),
+            _ => throw new ArgumentException("The level must be error or warning."),
         };
         if (request.Message.Length is 0 or > MaxLogMessageLength)
         {
-            throw new ArgumentException($"Сообщение должно содержать от 1 до {MaxLogMessageLength} символов.");
+            throw new ArgumentException($"The message must contain 1 to {MaxLogMessageLength} characters.");
         }
         if (request.Stack is { Length: > MaxLogStackLength })
         {
-            throw new ArgumentException($"Стек должен содержать не более {MaxLogStackLength} символов.");
+            throw new ArgumentException($"The stack must not exceed {MaxLogStackLength} characters.");
         }
         if (!TryCountLogRecord(out var firstDropped))
         {
@@ -66,7 +66,7 @@ public sealed class SystemController(ILogger uiLogger, ILogger logger, Action re
         cancellationToken.ThrowIfCancellationRequested();
         if (request.Projects < 0)
         {
-            throw new ArgumentException("Число проектов не может быть отрицательным.");
+            throw new ArgumentException("The project count cannot be negative.");
         }
         var elapsed = StartupTimings.ElapsedMilliseconds;
         if (Interlocked.CompareExchange(ref readyAt, elapsed, -1) != -1)

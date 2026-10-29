@@ -5,20 +5,22 @@ import type { JobResponseDto } from "@/api/jobs/response-dto/job-response-dto";
 import { generationApi } from "@/api/projects/generation/generation-api";
 import { generationRunJobKind, type GenerationRunResponseDto } from "@/api/projects/generation/response-dto/generation-run-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "@/i18n/sections/generation";
 import { isRunActive } from "./generation/run-state";
 
-/** Сколько последних запусков показывает вкладка «Запуски». */
+/** How many last runs the tab "Runs" shows. */
 export const runPageLimit = 50;
 
 const newestFirst = (left: GenerationRunResponseDto, right: GenerationRunResponseDto) =>
     right.job.createdAt.localeCompare(left.job.createdAt) || right.job.id.localeCompare(left.job.id);
 
 /**
- * Запуски генерации открытого проекта без опроса: generation.listRuns при открытии; состояние, прогресс и итог — job.changed
- * (kind generation.run), снимок задачи применяется, только если его sequence новее; запуск, которого ещё нет в списке
- * (поставлен в другом месте), читается getRun. generation.changed.runs (подготовлен — появилась группа, удалён) перечитывает
- * запуск: generation.unavailable убирает его из списка.
+ * Generation runs of the open project without polling: generation.listRuns on opening; state, progress and result — job.changed
+ * (kind generation.run), a job snapshot applies only when its sequence is newer; a run missing from the list
+ * (started elsewhere) is read with getRun. generation.changed.runs (prepared — a group appeared, deleted) reads the run again:
+ * generation.unavailable removes it from the list.
  */
 export function useGenerationRuns(projectId: string) {
     const [runs, setRuns] = useState<readonly GenerationRunResponseDto[]>([]);
@@ -28,9 +30,9 @@ export function useGenerationRuns(projectId: string) {
     const mounted = useRef(true);
     const latest = useRef(runs);
     latest.current = runs;
-    /** Запуски, удалённые в этой вкладке: поздний снимок задачи не возвращает их в список. */
+    /** Runs deleted in this tab: a late job snapshot does not bring them back to the list. */
     const removed = useRef(new Set<string>());
-    /** Запуски последнего чтения списка: «Запуски (N)» = total чтения + новые − удалённые из него. */
+    /** Runs of the last list read: "Runs (N)" = total of the read + new ones − those deleted from it. */
     const listed = useRef(new Set<string>());
 
     const apply = useCallback((run: GenerationRunResponseDto) => {
@@ -75,7 +77,7 @@ export function useGenerationRuns(projectId: string) {
             setPageTotal(page.total);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить запуски генерации. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("generation:loadErrors.runs")));
         } finally {
             if (mounted.current) setLoading(false);
         }
@@ -101,7 +103,7 @@ export function useGenerationRuns(projectId: string) {
         };
     }, [projectId, refresh, reread, applyJob]);
 
-    /** «Отменить»: снимок задачи из ответа применяется сразу, дальше — события. */
+    /** "Cancel": the job snapshot from the answer applies at once, then events. */
     const cancel = useCallback(async (run: GenerationRunResponseDto) => {
         if (!isRunActive(run.job)) return;
         applyJob(await jobsApi.cancel({ projectId, jobId: run.job.id }));

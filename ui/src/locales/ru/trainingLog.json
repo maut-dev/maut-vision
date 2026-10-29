@@ -1,0 +1,9 @@
+{
+  "preparing_folder": "Подготовка папки задачи: датасет, базовые веса, параметры.",
+  "worker_started": "Запуск Python worker.",
+  "cancelled": "Обучение отменено.",
+  "failed": "Обучение завершилось с ошибкой.",
+  "version_created": "Создана версия модели {{number}}.",
+  "interrupted": "Запуск прерван остановкой приложения.",
+  "warning": "{{code}}: {{message}}"
+}

@@ -2,41 +2,41 @@ using MautVision.Core.Interfaces.Jobs;
 
 namespace MautVision.Core.Interfaces.Projects.Datasets;
 
-/// <summary>Вход сборки: план с его hash и копия спецификации; готовит <see cref="IDatasetsManager.PrepareBuildAsync"/>. ID версии — ID задачи.</summary>
+/// <summary>Build input: the plan with its hash and a copy of the specification; prepared by <see cref="IDatasetsManager.PrepareBuildAsync"/>. The version ID is the job ID.</summary>
 public sealed record DatasetBuildInput(Guid PlanId, string PlanHash, DatasetSpecification Specification, int Width, int Height);
 
 /// <summary>
-/// Сборка версии (CPU, возобновляемая). Подготовка: источники читаются заново и план пересчитывается — другой hash даёт
-/// <c>datasets.plan_stale</c>; строки версии (building) и всех образцов пишутся одной транзакцией. Файлы: окна образцов
-/// параллельно — проверка SHA-256 исходного файла, жёсткая ссылка (JPEG и PNG без EXIF-поворота) или повёрнутый PNG, метка
-/// YOLO; checkpoint после каждого окна, после перезапуска сборка продолжается с него. Публикация: проверка одинаковых пикселей
-/// в разных частях (<c>datasets.split_collision</c>), manifest.json и data.yaml, версия ready и verified одной транзакцией.
-/// Отмена и ошибка не оставляют ни строк, ни файлов. Итог — <see cref="DatasetBuildResult"/>.
+/// Version build (CPU, resumable). Preparation: sources are reread and the plan is recalculated — a different hash gives
+/// <c>datasets.plan_stale</c>; the version row (building) and all sample rows are written in one transaction. Files: windows of samples
+/// in parallel — SHA-256 check of the source file, a hard link (JPEG and PNG without EXIF rotation) or a rotated PNG, a YOLO
+/// label; a checkpoint after each window, after a restart the build continues from it. Publishing: a check for identical pixels
+/// in different splits (<c>datasets.split_collision</c>), manifest.json and data.yaml, the version ready and verified in one transaction.
+/// Cancellation and errors leave neither rows nor files. The result is <see cref="DatasetBuildResult"/>.
 /// </summary>
 [JobKind("datasets.build")]
 public interface IDatasetBuildJob : IJobDefinition<DatasetBuildInput>
 {
 }
 
-/// <summary>Вход проверки целостности: версия и её название на момент постановки.</summary>
+/// <summary>Integrity check input: the version and its name at the time of enqueueing.</summary>
 public sealed record DatasetVerifyInput(Guid VersionId, string VersionName);
 
 /// <summary>
-/// Проверка целостности (CPU, не возобновляемая): все файлы версии читаются параллельно и сверяются с SHA-256; все проблемы
-/// перечисляются. Версия становится verified или corrupt. Итог — <see cref="DatasetVerifyResult"/>.
+/// Integrity check (CPU, not resumable): all version files are read in parallel and compared with SHA-256; all problems
+/// are listed. The version becomes verified or corrupt. The result is <see cref="DatasetVerifyResult"/>.
 /// </summary>
 [JobKind("datasets.verify")]
 public interface IDatasetVerifyJob : IJobDefinition<DatasetVerifyInput>
 {
 }
 
-/// <summary>Вход экспорта: версия, её название и абсолютный путь ZIP, выбранный в «Сохранить как».</summary>
+/// <summary>Export input: the version, its name and the absolute ZIP path chosen in "Save as".</summary>
 public sealed record DatasetExportInput(Guid VersionId, string VersionName, string DestinationPath);
 
 /// <summary>
-/// Экспорт ZIP (CPU, не возобновляемый): data.yaml, manifest.json, dataset-metadata.json, images/ (без сжатия), labels/,
-/// negatives/&lt;split&gt;/&lt;id&gt;.json — во временный файл рядом с целевым, затем замена целевого (перезапись разрешена).
-/// Отмена и ошибка удаляют временный файл, целевой не меняется. Итог — <see cref="DatasetExportResult"/>.
+/// ZIP export (CPU, not resumable): data.yaml, manifest.json, dataset-metadata.json, images/ (uncompressed), labels/,
+/// negatives/&lt;split&gt;/&lt;id&gt;.json — into a temporary file next to the target, then the target is replaced (overwriting is allowed).
+/// Cancellation and errors delete the temporary file, the target does not change. The result is <see cref="DatasetExportResult"/>.
 /// </summary>
 [JobKind("datasets.export")]
 public interface IDatasetExportJob : IJobDefinition<DatasetExportInput>

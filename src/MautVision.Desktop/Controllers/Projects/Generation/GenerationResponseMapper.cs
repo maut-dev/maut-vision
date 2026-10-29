@@ -51,8 +51,8 @@ internal static class GenerationResponseMapper
         recipe.UpdatedAt,
         recipe.ArchivedAt);
 
-    internal static GenerationRunResponseDto Map(GenerationRun run, Func<string, string> messageFor) => new(
-        JobResponseMapper.Map(run.Job, messageFor),
+    internal static GenerationRunResponseDto Map(GenerationRun run) => new(
+        JobResponseMapper.Map(run.Job),
         Map(run.Recipe),
         run.Seed,
         run.RequestedCount,

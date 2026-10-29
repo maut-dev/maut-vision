@@ -1,4 +1,4 @@
-/** Изображение с ревизией, которую видел пользователь. */
+/** An image with the revision the user saw. */
 export interface ImageRevisionRequestDto {
     id: string;
     revision: number;
@@ -6,7 +6,7 @@ export interface ImageRevisionRequestDto {
 
 export interface SetImagesArchivedRequestDto {
     projectId: string;
-    /** До 400 изображений; всё или ничего. */
+    /** Up to 400 images; all or nothing. */
     images: ImageRevisionRequestDto[];
     archived: boolean;
 }

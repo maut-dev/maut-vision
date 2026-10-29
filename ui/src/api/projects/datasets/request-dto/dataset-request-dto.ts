@@ -1,20 +1,20 @@
-/** Роль объекта без варианта класса: «Объект», «Негатив», «Отказ» (план отклоняется с datasets.unassigned_variant). */
+/** The role of an object without a class variant: "Object", "Negative", "Refuse" (the plan is refused with datasets.unassigned_variant). */
 export type DatasetUnassignedVariantRole = "target" | "negative" | "reject";
 
-/** Роль объекта класса, не выбранного для обучения: «Негатив» или «Отказ» (datasets.unselected_class). */
+/** The role of an object of a class not chosen for training: "Negative" or "Refuse" (datasets.unselected_class). */
 export type DatasetUnselectedClassRole = "negative" | "reject";
 
-/** Часть датасета — папки YOLO. В UI: «Train», «Validation», «Test». */
+/** A dataset split — YOLO folders. In the UI: "Train", "Validation", "Test". */
 export type DatasetSplit = "train" | "val" | "test";
 
-/** Вид операции датасета: сборка, проверка целостности, экспорт ZIP. */
+/** The kind of a dataset operation: build, integrity check, ZIP export. */
 export type DatasetOperationKind = "build" | "verify" | "export";
 
 /**
- * Спецификация сборки («Подготовить сборку»). groupIds — «Группы изображений»; classIds — «Классы для обучения» (индексы 0..n−1
- * назначит host по порядку каталога, не по порядку в списке); targetVariantIds / negativeVariantIds — варианты классов (привязки),
- * обычно целевые — доступные варианты выбранных классов, негативные — архивные (datasetVariantRoles). valRatio и testRatio — доли
- * 0..1 (не проценты): valRatio > 0, testRatio ≥ 0, сумма < 1; seed — целое 0–4 294 967 295.
+ * The build specification ("Prepare a build"). groupIds — "Image groups"; classIds — "Classes to train" (indices 0..n−1 are
+ * assigned by the host in catalog order, not list order); targetVariantIds / negativeVariantIds — class variants (bindings),
+ * usually targets are available variants of the chosen classes, negatives — archived ones (datasetVariantRoles). valRatio and testRatio —
+ * fractions 0..1 (not percents): valRatio > 0, testRatio ≥ 0, the sum < 1; seed — an integer 0–4 294 967 295.
  */
 export interface DatasetSpecificationDto {
     name: string;
@@ -32,7 +32,7 @@ export interface DatasetSpecificationDto {
     testRatio: number;
 }
 
-/** Готовые версии, новые первыми; includeArchived — «Показать архив датасетов» (по умолчанию true). */
+/** Finished versions, newest first; includeArchived — "Show dataset archive" (true by default). */
 export interface ListDatasetsRequestDto {
     projectId: string;
     includeArchived?: boolean;
@@ -43,13 +43,13 @@ export interface GetDatasetRequestDto {
     versionId: string;
 }
 
-/** Паспорт версии для моделей — и после её удаления (deletedAt). */
+/** The version passport for models — after its deletion too (deletedAt). */
 export interface GetDatasetPassportRequestDto {
     projectId: string;
     versionId: string;
 }
 
-/** «Изменить»: название 1–120, описание до 4000; revision — та, что видел пользователь. */
+/** "Edit": a name of 1–120, a description up to 4000; revision — the one the user saw. */
 export interface UpdateDatasetRequestDto {
     projectId: string;
     versionId: string;
@@ -58,7 +58,7 @@ export interface UpdateDatasetRequestDto {
     revision: number;
 }
 
-/** «В архив» / «Восстановить». */
+/** "Archive" / "Restore". */
 export interface SetDatasetArchivedRequestDto {
     projectId: string;
     versionId: string;
@@ -66,7 +66,7 @@ export interface SetDatasetArchivedRequestDto {
     revision: number;
 }
 
-/** «Проверить перед сборкой»; operationId — новый на каждое нажатие (повтор запроса вернёт тот же план). */
+/** "Check before building"; operationId — new for each press (a repeat of the request returns the same plan). */
 export interface PlanDatasetRequestDto {
     projectId: string;
     specification: DatasetSpecificationDto;
@@ -78,7 +78,7 @@ export interface GetDatasetPlanRequestDto {
     planId: string;
 }
 
-/** «Собрать датасет»: plan.id и plan.hash из ответа plan; operationId — новый на действие. */
+/** "Build dataset": plan.id and plan.hash from the plan answer; operationId — new per action. */
 export interface StartDatasetBuildRequestDto {
     projectId: string;
     planId: string;
@@ -86,20 +86,20 @@ export interface StartDatasetBuildRequestDto {
     operationId: string;
 }
 
-/** «Проверить целостность». */
+/** "Check integrity". */
 export interface StartDatasetVerifyRequestDto {
     projectId: string;
     versionId: string;
     operationId: string;
 }
 
-/** «Экспорт ZIP», шаг 1: нативное окно «Сохранить как» с именем «<название>.zip» (перезапись подтверждается в окне). */
+/** "ZIP export", step 1: the native "Save as" dialog with the name "<name>.zip" (overwriting is confirmed in the dialog). */
 export interface SelectDatasetExportRequestDto {
     projectId: string;
     versionId: string;
 }
 
-/** «Экспорт ZIP», шаг 2: destinationToken из selectExportDestination (один токен — одна операция). */
+/** "ZIP export", step 2: destinationToken from selectExportDestination (one token — one operation). */
 export interface StartDatasetExportRequestDto {
     projectId: string;
     versionId: string;
@@ -107,7 +107,7 @@ export interface StartDatasetExportRequestDto {
     operationId: string;
 }
 
-/** Операции вида, новые первыми; limit 1–200 (по умолчанию 50), before — job.id последней операции предыдущей страницы. */
+/** Operations of a kind, newest first; limit 1–200 (50 by default), before — job.id of the last operation of the previous page. */
 export interface ListDatasetOperationsRequestDto {
     projectId: string;
     kind: DatasetOperationKind;
@@ -115,19 +115,19 @@ export interface ListDatasetOperationsRequestDto {
     before?: string;
 }
 
-/** operationId — job.id операции (у сборки он же ID версии). */
+/** operationId — job.id of the operation (for a build it is also the version ID). */
 export interface GetDatasetOperationRequestDto {
     projectId: string;
     operationId: string;
 }
 
-/** «Удалить из истории»: только завершённая операция (datasets.operation_active), версия остаётся. */
+/** "Delete from history": only a finished operation (datasets.operation_active), the version stays. */
 export interface DeleteDatasetOperationRequestDto {
     projectId: string;
     operationId: string;
 }
 
-/** Образцы части по ID; limit 1–200 (по умолчанию 100), after — nextCursor предыдущей страницы той же части. */
+/** Samples of a split by ID; limit 1–200 (100 by default), after — nextCursor of the previous page of the same split. */
 export interface ListDatasetSamplesRequestDto {
     projectId: string;
     versionId: string;
@@ -136,7 +136,7 @@ export interface ListDatasetSamplesRequestDto {
     after?: string;
 }
 
-/** Образец по ID (ID исходного изображения) — для просмотрщика при переходе ко всем образцам. */
+/** A sample by ID (the ID of the source image) — for the viewer when it moves across all samples. */
 export interface GetDatasetSampleRequestDto {
     projectId: string;
     versionId: string;
@@ -148,7 +148,7 @@ export interface ReviewDatasetDeletionRequestDto {
     versionId: string;
 }
 
-/** «Удалить датасет» с revision из reviewDeletion. */
+/** "Delete dataset" with revision from reviewDeletion. */
 export interface DeleteDatasetRequestDto {
     projectId: string;
     versionId: string;

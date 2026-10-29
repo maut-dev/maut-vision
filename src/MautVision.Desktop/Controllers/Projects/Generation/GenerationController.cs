@@ -1,6 +1,7 @@
 using MautVision.Core.Interfaces.Jobs;
 using MautVision.Core.Interfaces.Projects;
 using MautVision.Core.Interfaces.Projects.Generation;
+using MautVision.Desktop.Controllers.Jobs;
 using MautVision.Desktop.Controllers.Projects.Generation.RequestDto;
 using MautVision.Desktop.Controllers.Projects.Generation.ResponseDto;
 using MautVision.Desktop.Resources;
@@ -11,7 +12,7 @@ namespace MautVision.Desktop.Controllers.Projects.Generation;
 /// Generation presets and runs of an opened project. A run starts as the job generation.run (its snapshot, progress and result
 /// come through job.changed); samples are transient resources held in memory for the page, never project files.
 /// </summary>
-internal sealed class GenerationController(IProjectsManager projects, IJobsManager jobs, ResourceHandles resources, Func<string, string> messageFor)
+internal sealed class GenerationController(IProjectsManager projects, IJobsManager jobs, ResourceHandles resources)
 {
     public async Task<GenerationRecipeResponseDto[]> ListRecipesAsync(ListGenerationRecipesRequestDto request, CancellationToken cancellationToken)
         => (await (await Generation(request.ProjectId, cancellationToken)).ListRecipesAsync(cancellationToken)).Select(GenerationResponseMapper.Map).ToArray();
@@ -49,11 +50,11 @@ internal sealed class GenerationController(IProjectsManager projects, IJobsManag
     public async Task<GenerationRunPageResponseDto> ListRunsAsync(ListGenerationRunsRequestDto request, CancellationToken cancellationToken)
     {
         var page = await (await Generation(request.ProjectId, cancellationToken)).ListRunsAsync(request.Limit ?? 50, request.Before, cancellationToken);
-        return new GenerationRunPageResponseDto(page.Items.Select(run => GenerationResponseMapper.Map(run, messageFor)).ToArray(), page.Total);
+        return new GenerationRunPageResponseDto(page.Items.Select(run => GenerationResponseMapper.Map(run)).ToArray(), page.Total);
     }
 
     public async Task<GenerationRunResponseDto> GetRunAsync(GetGenerationRunRequestDto request, CancellationToken cancellationToken)
-        => GenerationResponseMapper.Map(await (await Generation(request.ProjectId, cancellationToken)).GetRunAsync(request.RunId, cancellationToken), messageFor);
+        => GenerationResponseMapper.Map(await (await Generation(request.ProjectId, cancellationToken)).GetRunAsync(request.RunId, cancellationToken));
 
     /// <summary>Checks and starts the run; returns it at once, with the queued job. A repeated operation returns the same run.</summary>
     public async Task<GenerationRunResponseDto> StartAsync(StartGenerationRunRequestDto request, CancellationToken cancellationToken)
@@ -62,9 +63,9 @@ internal sealed class GenerationController(IProjectsManager projects, IJobsManag
         var generation = await Generation(request.ProjectId, cancellationToken);
         var input = await generation.PrepareRunAsync(request.RecipeId, request.RecipeRevision, GenerationResponseMapper.Seed(request.Seed), request.Count,
             request.OperationId, cancellationToken);
-        var job = await jobs.EnqueueAsync<IGenerationRunJob, GenerationRunInput>(input, request.ProjectId, request.OperationId, input.Recipe.Name,
+        var job = await jobs.EnqueueAsync<IGenerationRunJob, GenerationRunInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.Recipe.Name),
             cancellationToken);
-        return GenerationResponseMapper.Map(await generation.GetRunAsync(job.Id, cancellationToken), messageFor);
+        return GenerationResponseMapper.Map(await generation.GetRunAsync(job.Id, cancellationToken));
     }
 
     public async Task<GenerationRunDeletionResponseDto> DeleteRunAsync(DeleteGenerationRunRequestDto request, CancellationToken cancellationToken)
@@ -76,8 +77,7 @@ internal sealed class GenerationController(IProjectsManager projects, IJobsManag
     public async Task<GenerationRepeatDraftResponseDto> GetRepeatDraftAsync(GetGenerationRepeatDraftRequestDto request, CancellationToken cancellationToken)
     {
         var draft = await (await Generation(request.ProjectId, cancellationToken)).GetRepeatDraftAsync(request.RunId, cancellationToken);
-        return new GenerationRepeatDraftResponseDto(GenerationResponseMapper.Map(draft.Recipe), draft.Seed, draft.RequestedCount, draft.SourceRunId,
-            GenerationErrorMessages.RepeatNotice);
+        return new GenerationRepeatDraftResponseDto(GenerationResponseMapper.Map(draft.Recipe), draft.Seed, draft.RequestedCount, draft.SourceRunId);
     }
 
     private async Task<IGenerationManager> Generation(string projectId, CancellationToken cancellationToken)

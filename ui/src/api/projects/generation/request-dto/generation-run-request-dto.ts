@@ -1,4 +1,4 @@
-/** Запуски, новые первыми; limit 1–200 (по умолчанию 50), before — ID последнего запуска предыдущей страницы. */
+/** Runs, newest first; limit 1–200 (50 by default), before — the ID of the last run of the previous page. */
 export interface ListGenerationRunsRequestDto {
     projectId: string;
     limit?: number;
@@ -11,8 +11,8 @@ export interface GetGenerationRunRequestDto {
 }
 
 /**
- * «Сгенерировать N изображений»: recipeRevision — ревизия пресета, которую видел пользователь; seed — 0–4 294 967 295; count ≥ 1;
- * operationId — новый на каждое действие пользователя (повтор запроса с тем же operationId вернёт тот же запуск).
+ * "Generate N images": recipeRevision — the preset revision the user saw; seed — 0–4 294 967 295; count ≥ 1;
+ * operationId — new for each user action (a repeat of the request with the same operationId returns the same run).
  */
 export interface StartGenerationRunRequestDto {
     projectId: string;
@@ -23,13 +23,13 @@ export interface StartGenerationRunRequestDto {
     operationId: string;
 }
 
-/** Удаляет завершённый запуск; изображения группы результата остаются. */
+/** Deletes a finished run; the images of the result group stay. */
 export interface DeleteGenerationRunRequestDto {
     projectId: string;
     runId: string;
 }
 
-/** «Настроить повтор». */
+/** "Set up a repeat". */
 export interface GetGenerationRepeatDraftRequestDto {
     projectId: string;
     runId: string;

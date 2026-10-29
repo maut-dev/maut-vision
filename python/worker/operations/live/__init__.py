@@ -1,4 +1,4 @@
-"""Операция live: проверка весов версии на рамке экрана в реальном времени."""
+"""The live operation: check of version weights on a screen crop in real time."""
 from worker.operations.live.run import run_live
 
 __all__ = ["run_live"]

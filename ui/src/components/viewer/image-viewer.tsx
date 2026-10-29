@@ -1,4 +1,5 @@
 import { useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, ArrowRight, Circle } from "lucide-react";
 import type { ResourceUrl } from "@/api/resources/resource-url";
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
@@ -12,15 +13,15 @@ export interface ViewerOverlay {
     id: string;
     label: string;
     color: string;
-    /** negative — рамка негатива датасета, пунктиром, как ROI. */
+    /** negative — the box of a dataset negative, dashed like an ROI. */
     kind: "object" | "negative" | "roi";
-    /** Доли 0–1 от левого верхнего угла кадра. */
+    /** Fractions 0–1 from the top left corner of the frame. */
     box: Box;
 }
 
 /**
- * Что показывает просмотрщик. width/height — размер кадра с учётом ориентации; src — URL канала ресурсов. URL
- * действует ограниченное время: при ошибке загрузки просмотрщик один раз просит владельца обновить источник (renew).
+ * What the viewer shows. width/height — the frame size with the orientation applied; src — a URL of the resource channel. A URL
+ * is valid for a limited time: on a load error the viewer asks the owner once to renew the source (renew).
  */
 export interface ViewerSource {
     id: string;
@@ -30,16 +31,16 @@ export interface ViewerSource {
     src: ResourceUrl | null;
     renew?: () => void;
     overlays?: readonly ViewerOverlay[];
-    /** Подробности под кадром: размеры, источник, разметка, переключатели. */
+    /** Details under the frame: sizes, source, annotation, toggles. */
     metadata?: ReactNode;
 }
 
 type LoadState = "loading" | "loaded" | "failed";
 
 /**
- * Общий просмотрщик кадра: «Вписать» без увеличения маленького кадра, x1…x10, перетаскивание, полный экран, рамки
- * поверх кадра с легендой. Esc в полном экране сначала выходит из него, затем закрывает; фокус возвращается к
- * элементу, открывшему просмотр. Переходы «Назад»/«Далее» и подгрузку страниц выполняет владелец.
+ * The shared frame viewer: Fit without enlarging a small frame, x1…x10, dragging, full screen, boxes
+ * over the frame with a legend. Esc in full screen first leaves it, then closes; focus returns to
+ * the element that opened the viewer. Previous/Next and loading pages are done by the owner.
  */
 export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy = false, position }: {
     source: ViewerSource;
@@ -47,9 +48,10 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
     onPrevious?: () => void;
     onNext?: () => void;
     navigationBusy?: boolean;
-    /** «i / n» или «i / n+», если есть ещё страницы. */
+    /** "i / n", or "i / n+" when there are more pages. */
     position?: string;
 }) {
+    const { t } = useTranslation();
     const [fullscreen, setFullscreen] = useState(false);
     const [load, setLoad] = useState<{ src: ResourceUrl | null; state: LoadState }>({ src: source.src, state: "loading" });
     const [attempt, setAttempt] = useState(0);
@@ -106,22 +108,22 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
             >
                 <DialogTitle className="truncate pr-8 text-base">{source.name}</DialogTitle>
                 <DialogDescription className="text-xs">
-                    {source.width} × {source.height} · x1 — исходный размер · перетаскивание перемещает кадр
+                    {t("viewer.hint", { width: source.width, height: source.height })}
                 </DialogDescription>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline" disabled={!onPrevious || navigationBusy} onClick={() => go(onPrevious)}><ArrowLeft aria-hidden />Назад</Button>
+                    <Button size="sm" variant="outline" disabled={!onPrevious || navigationBusy} onClick={() => go(onPrevious)}><ArrowLeft aria-hidden />{t("viewer.previous")}</Button>
                     {position && <span className="text-xs tabular-nums text-muted-foreground" data-testid="viewer-position">{position}</span>}
-                    <Button size="sm" variant="outline" disabled={!onNext || navigationBusy} onClick={() => go(onNext)}>Далее<ArrowRight aria-hidden /></Button>
+                    <Button size="sm" variant="outline" disabled={!onNext || navigationBusy} onClick={() => go(onNext)}>{t("viewer.next")}<ArrowRight aria-hidden /></Button>
                     <ZoomControls zoom={zoom} />
                     <Button size="sm" variant="outline" onClick={() => setFullscreen(value => !value)}>
-                        {fullscreen ? "Выйти из полного экрана" : "На весь экран"}
+                        {fullscreen ? t("viewer.exitFullscreen") : t("viewer.fullscreen")}
                     </Button>
                 </div>
                 <div
                     ref={zoom.ref}
                     data-viewer-viewport
                     role="region"
-                    aria-label="Изображение: перетаскивание и прокрутка"
+                    aria-label={t("viewer.viewport")}
                     tabIndex={0}
                     aria-busy={state === "loading"}
                     className="relative min-h-0 flex-1 cursor-grab overflow-auto overscroll-contain rounded-md border bg-muted/30 outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -187,10 +189,10 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
                         <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-muted-foreground" role={state === "failed" ? "alert" : "status"}>
                             {state === "failed" ? (
                                 <div className="space-y-3">
-                                    <p>Изображение недоступно. Обновите ссылку или проверьте исходный файл.</p>
-                                    <Button variant="outline" onClick={retry}>Повторить загрузку</Button>
+                                    <p>{t("viewer.unavailable")}</p>
+                                    <Button variant="outline" onClick={retry}>{t("common.retryLoading")}</Button>
                                 </div>
-                            ) : "Загрузка изображения…"}
+                            ) : t("viewer.loading")}
                         </div>
                     )}
                 </div>
@@ -198,7 +200,7 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
                     <div className="max-h-32 shrink-0 overflow-auto text-xs text-muted-foreground">
                         {source.metadata}
                         {!!source.overlays?.length && (
-                            <div className="mt-2 flex flex-wrap gap-2" aria-label="Легенда рамок">
+                            <div className="mt-2 flex flex-wrap gap-2" aria-label={t("viewer.legend")}>
                                 {source.overlays.map((overlay, index) => (
                                     <button
                                         key={overlay.id}

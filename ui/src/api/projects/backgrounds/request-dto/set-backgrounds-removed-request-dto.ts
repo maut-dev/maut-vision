@@ -1,4 +1,4 @@
-/** Фон с ревизией, которую видел пользователь. */
+/** A background with the revision the user saw. */
 export interface BackgroundRevisionRequestDto {
     id: string;
     revision: number;
@@ -6,8 +6,8 @@ export interface BackgroundRevisionRequestDto {
 
 export interface SetBackgroundsRemovedRequestDto {
     projectId: string;
-    /** До 400 фонов; всё или ничего. Ревизия набора не нужна: идущая подготовка не мешает. */
+    /** Up to 400 backgrounds; all or nothing. No set revision is needed: running preparation does not interfere. */
     items: BackgroundRevisionRequestDto[];
-    /** true — «Убрать», false — «Восстановить». */
+    /** true: "Remove", false: "Restore". */
     removed: boolean;
 }

@@ -1,16 +1,16 @@
 import { isId } from "../../projects/catalog/catalog-guards";
 import { isRecord } from "../../transport/envelopes";
 
-/** Изменённый запуск или версия с новой ревизией; revision = null — удалены. */
+/** A changed run or version with its new revision; revision = null when it was deleted. */
 export interface TrainingEntityChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в обучении проекта: runs — запуски (ход, эпохи, журнал, фактические параметры, итог; не чаще раза в 500 мс):
- * перечитать getRun, если revision больше известной, затем listEpochs / listLog с after; versions — версии моделей (появилась,
- * сменилась «Рабочая», удалена — revision = null вместе с её оценками): перечитать listModelVersions. Состояние и прогресс задачи — job.changed (kind training.run).
+ * What changed in the training of the project: runs — runs (progress, epochs, log, actual parameters, outcome; at most once per 500 ms):
+ * read getRun again when the revision is greater than the known one, then listEpochs / listLog with after; versions — model versions (new,
+ * the working one changed, deleted — revision = null together with its evaluations): read listModelVersions again. The job state and progress come with job.changed (kind training.run).
  */
 export interface TrainingChangedDto {
     projectId: string;
@@ -24,7 +24,7 @@ export interface TrainingChangedEventDto {
     data: TrainingChangedDto;
 }
 
-/** Пресеты обучения сохранены или удалены: перечитать listPresets. */
+/** Training presets were saved or deleted: read listPresets again. */
 export interface TrainingPresetsChangedDto {
     presetIds: string[];
 }

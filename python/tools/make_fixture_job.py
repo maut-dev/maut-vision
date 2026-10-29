@@ -1,10 +1,10 @@
-"""Собрать фикстурную папку задачи для ручной проверки работника.
+"""Build a fixture job folder for checking the worker by hand.
 
-Датасет синтетический: 3 класса фигур (квадрат, круг, треугольник) на шумном
-фоне, 30 кадров (24 train / 6 val). Только для проверки протокола — ничего
-осмысленного модель на нём не выучит.
+The dataset is synthetic: 3 shape classes (square, circle, triangle) on a noisy
+background, 30 frames (24 train / 6 val). Only for checking the protocol — the model
+will learn nothing meaningful from it.
 
-  python tools/make_fixture_job.py <папка задачи> --weights <базовые.pt> [--epochs 2] [--device cpu]
+  python tools/make_fixture_job.py <job folder> --weights <base.pt> [--epochs 2] [--device cpu]
 """
 from __future__ import annotations
 
@@ -51,7 +51,7 @@ def build(job: Path, weights: Path, epochs: int, device: str, frames: int = 30) 
         img, labels = _frame(rng)
         img.save(ds / "images" / split / f"f{i:03d}.png")
         (ds / "labels" / split / f"f{i:03d}.txt").write_text("\n".join(labels) + "\n", encoding="utf-8")
-    # path намеренно чужой: работник обязан подставить настоящую папку сам
+    # path is deliberately foreign: the worker must substitute the real folder itself
     (ds / "data.yaml").write_text(
         "path: C:/somewhere/else\ntrain: images/train\nval: images/val\n"
         f"nc: {len(CLASSES)}\nnames: {json.dumps(CLASSES)}\n",

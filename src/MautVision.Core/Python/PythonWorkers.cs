@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using MautVision.Core.Interfaces;
 using MautVision.Core.Interfaces.Python;
 using Microsoft.Extensions.Logging;
 
@@ -17,13 +18,16 @@ internal enum WorkerOutcomeKind
 
 /// <summary>
 /// Outcome of a worker run. Failed carries a code without the area prefix (the consumer adds its own, e.g. training.worker_out_of_memory)
-/// and a Russian message: the worker's own one for worker_&lt;code&gt;, otherwise the host's description with the last line of stderr.
+/// and an English message for the log: the worker's own one for worker_&lt;code&gt;, otherwise the host's description with the last line of
+/// stderr. WorkerText — what the UI shows for a failure the worker reported itself (<see cref="WorkerEventParser.Text"/>); null for codes
+/// the host derives (the UI shows the text of the code).
 /// </summary>
-internal sealed record WorkerOutcome<T>(WorkerOutcomeKind Kind, T? Result, string? Code, string? Message)
+internal sealed record WorkerOutcome<T>(WorkerOutcomeKind Kind, T? Result, string? Code, string? Message, CodedText? WorkerText = null)
 {
     internal static WorkerOutcome<T> Success(T result) => new(WorkerOutcomeKind.Succeeded, result, null, null);
 
-    internal static WorkerOutcome<T> Failure(string code, string message) => new(WorkerOutcomeKind.Failed, default, code, message);
+    internal static WorkerOutcome<T> Failure(string code, string message, CodedText? workerText = null)
+        => new(WorkerOutcomeKind.Failed, default, code, message, workerText);
 
     internal static WorkerOutcome<T> Cancelled() => new(WorkerOutcomeKind.Cancelled, default, null, null);
 }
@@ -57,11 +61,11 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
     /// <summary>runtime_not_configured or runtime_missing with a message; null when the described files exist.</summary>
     internal (string Code, string Message)? CheckRuntime()
     {
-        if (launch is null) return ("runtime_not_configured", "Среда обучения не настроена: не задан Python worker.");
+        if (launch is null) return ("runtime_not_configured", "The training runtime is not configured: no Python worker is set.");
         if (!File.Exists(launch.Executable))
-            return ("runtime_missing", $"Файл среды обучения не найден: {Path.GetFileName(launch.Executable)}.");
+            return ("runtime_missing", $"The training runtime file is not found: {Path.GetFileName(launch.Executable)}.");
         if (launch.SourceDirectory is { } source && !File.Exists(Path.Combine(source, "worker", "__main__.py")))
-            return ("runtime_missing", "Исходники Python worker не найдены.");
+            return ("runtime_missing", "The Python worker sources are not found.");
         return null;
     }
 
@@ -86,7 +90,7 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
         catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
         {
             logger.LogError(error, "Python worker {Executable} for operation {OperationId} did not start.", launch!.Executable, operationId);
-            return WorkerOutcome<T>.Failure("worker_spawn_failed", $"Не удалось запустить Python worker: {error.Message}");
+            return WorkerOutcome<T>.Failure("worker_spawn_failed", $"Failed to start the Python worker: {error.Message}");
         }
         running[job] = 0;
         using var started = process;
@@ -100,7 +104,7 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
             {
                 process.Kill(entireProcessTree: true);
                 logger.LogError(error, "Python worker {Pid} could not join its job object.", process.Id);
-                return WorkerOutcome<T>.Failure("worker_spawn_failed", "Не удалось поместить Python worker в объект задания Windows.");
+                return WorkerOutcome<T>.Failure("worker_spawn_failed", "Failed to put the Python worker into a Windows job object.");
             }
             process.StandardInput.Close();
             logger.LogInformation("Python worker {Pid} started for {Operation} {OperationId} ({Mode}).", process.Id, operation, operationId, launch!.Mode);
@@ -177,15 +181,15 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
             if (exitCode != 0)
             {
                 return document is not null && WorkerResults.ReadFailure(document.RootElement, operationId, operation, ProtocolVersion) is { } failure
-                    ? WorkerOutcome<T>.Failure("worker_" + failure.Code, failure.Message)
+                    ? WorkerOutcome<T>.Failure("worker_" + failure.Code, failure.Message, failure.Text)
                     : ExitFailure<T>(exitCode, stderrTail);
             }
-            if (document is null) return WorkerOutcome<T>.Failure("result_missing", "Работник завершился с кодом 0, но не записал output/result.json.");
+            if (document is null) return WorkerOutcome<T>.Failure("result_missing", "The worker exited with code 0 but did not write output/result.json.");
             try
             {
                 WorkerResults.CheckEnvelope(document.RootElement, operationId, operation, ProtocolVersion);
                 if (WorkerResults.ReadFailure(document.RootElement, operationId, operation, ProtocolVersion) is { } failed)
-                    return WorkerOutcome<T>.Failure("worker_" + failed.Code, failed.Message);
+                    return WorkerOutcome<T>.Failure("worker_" + failed.Code, failed.Message, failed.Text);
                 return WorkerOutcome<T>.Success(await parse(document.RootElement, output, cancellationToken).ConfigureAwait(false));
             }
             catch (WorkerProtocolException error)
@@ -194,7 +198,7 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
             }
             catch (IOException error)
             {
-                return WorkerOutcome<T>.Failure("result_invalid", $"Файлы результата не читаются: {error.Message}");
+                return WorkerOutcome<T>.Failure("result_invalid", $"The result files cannot be read: {error.Message}");
             }
         }
     }
@@ -202,14 +206,14 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
     private static WorkerOutcome<T> ExitFailure<T>(int exitCode, string stderrTail)
     {
         var last = LastLines(stderrTail, 1);
-        var suffix = last.Length > 0 ? " Последняя строка журнала: " + (last.Length <= 1000 ? last : last[..1000]) : "";
+        var suffix = last.Length > 0 ? " Last log line: " + (last.Length <= 1000 ? last : last[..1000]) : "";
         return exitCode switch
         {
-            2 => WorkerOutcome<T>.Failure("worker_usage", "Работник не получил папку задачи." + suffix),
-            3 => WorkerOutcome<T>.Failure("worker_result_not_written", "Работник не смог записать result.json." + suffix),
-            4 => WorkerOutcome<T>.Failure("worker_already_ran", "В папке задачи уже есть результат: повтор запрещён." + suffix),
-            130 => WorkerOutcome<T>.Failure("worker_interrupted", "Работник прерван извне." + suffix),
-            _ => WorkerOutcome<T>.Failure("worker_crashed", $"Работник завершился с кодом {exitCode}." + suffix),
+            2 => WorkerOutcome<T>.Failure("worker_usage", "The worker did not receive the job folder." + suffix),
+            3 => WorkerOutcome<T>.Failure("worker_result_not_written", "The worker could not write result.json." + suffix),
+            4 => WorkerOutcome<T>.Failure("worker_already_ran", "The job folder already has a result: a repeat is not allowed." + suffix),
+            130 => WorkerOutcome<T>.Failure("worker_interrupted", "The worker was interrupted from outside." + suffix),
+            _ => WorkerOutcome<T>.Failure("worker_crashed", $"The worker exited with code {exitCode}." + suffix),
         };
     }
 
@@ -289,7 +293,7 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
                         if (line.WrittenCount + part.Length > WorkerEventParser.MaxLineLength)
                         {
                             broken = true;
-                            fail(new WorkerProtocolException("protocol_event", $"Строка события работника превышает {WorkerEventParser.MaxLineLength / (1024 * 1024)} МиБ."));
+                            fail(new WorkerProtocolException("protocol_event", $"A worker event line exceeds {WorkerEventParser.MaxLineLength / (1024 * 1024)} MiB."));
                         }
                         else
                         {
@@ -312,7 +316,7 @@ internal sealed class PythonWorkers(PythonWorkerLaunch? launch, string catalogPa
         {
             // An observer failure stops the run: the host cannot follow it any more.
             broken = true;
-            fail(new WorkerProtocolException("worker_io", $"Событие работника не обработано: {error.Message}"));
+            fail(new WorkerProtocolException("worker_io", $"A worker event was not processed: {error.Message}"));
         }
         finally
         {

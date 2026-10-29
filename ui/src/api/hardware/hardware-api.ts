@@ -3,8 +3,8 @@ import type { SampleHardwareRequestDto } from "./request-dto/sample-hardware-req
 import { isHardwareSampleResponseDto } from "./response-dto/hardware-sample-response-dto";
 
 /**
- * Нагрузка компьютера. Host ничего не опрашивает сам: каждый снимок — ответ на запрос. Страница спрашивает раз в ~2 с после
- * ответа и только пока раздел виден (useHardwareSample).
+ * The load of the computer. The host polls nothing by itself: every sample answers a request. The page asks every ~2 s after an
+ * answer and only while the section is visible (useHardwareSample).
  */
 export const hardwareApi = {
     sample(signal?: AbortSignal) {

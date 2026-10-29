@@ -1,7 +1,7 @@
 import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isId, isRevision } from "../../catalog/catalog-guards";
 
-/** Назначение: «Без назначения / Обучение / Проверка / Тест». */
+/** The purpose: "Unassigned / Training / Validation / Test". */
 export type ImageSplitHint = "unassigned" | "train" | "validation" | "test";
 
 export type ImageGroupOrigin = "manual" | "generated";
@@ -14,10 +14,10 @@ const origins: readonly string[] = ["manual", "generated"] satisfies ImageGroupO
 const generationStates: readonly string[] = ["producing", "completed", "partial"] satisfies ImageGenerationState[];
 
 /**
- * Группа изображений. imageCount — все изображения, включая архивные; archivedImageCount — архивные («Кадров: N»).
- * revision растёт при изменении полей группы, архиве и перемещении изображений; импорт меняет только счётчики (их
- * изменение приходит в images.changed → imagesChangedIn). generationState — только у сгенерированных групп;
- * при producing группа только для чтения: «Генерация наполняет эту группу. Редактирование станет доступно после завершения.»
+ * An image group. imageCount counts all images, archived included; archivedImageCount the archived ones ("Frames: N").
+ * revision grows when group fields change, on archiving and on moving images; an import changes only the counters (their
+ * change comes in images.changed, imagesChangedIn). generationState is only set on generated groups;
+ * while producing the group is read-only: "Generation is filling this group. Editing becomes available when it finishes."
  */
 export interface ImageGroupResponseDto {
     id: string;

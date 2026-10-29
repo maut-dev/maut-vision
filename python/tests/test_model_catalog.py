@@ -1,4 +1,4 @@
-"""Контракт одного каталога: допустимые архитектуры, шаг входа и признаки весов."""
+"""Contract of the single catalog: allowed architectures, input stride and weight markers."""
 import unittest
 from types import SimpleNamespace
 

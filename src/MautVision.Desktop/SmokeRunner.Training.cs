@@ -104,7 +104,7 @@ internal static partial class SmokeRunner
 
             const badPreset = await request('training.savePreset', {name: 'Плохой', parameters: {mosaic: 2}});
             assert(!badPreset.ok && badPreset.error.code === 'training.parameter_invalid' && badPreset.error.details?.field === 'mosaic'
-              && badPreset.error.message.startsWith('Проверьте параметр'), 'An invalid preset parameter names its field with a Russian text');
+              && mautLocale.errorText(badPreset.error.code, badPreset.error.details).startsWith('Проверьте параметр'), 'An invalid preset parameter names its field with a Russian text');
             const saved = await request('training.savePreset', {name: 'Smoke', parameters: {epochs: 2, batch: 4}});
             const listed = await request('training.listPresets', {});
             assert(saved.ok && listed.ok && listed.data.some(preset => preset.id === saved.data.id && preset.parameters.epochs === 2)
@@ -154,14 +154,15 @@ internal static partial class SmokeRunner
             const failed = await finished(failing.data.id);
             const failedRun = await request('training.getRun', {projectId, runId: failing.data.id});
             assert(failed.data.status === 'failed' && failed.data.error.code === 'training.worker_device_unavailable'
-              && failedRun.data.state === 'failed' && failedRun.data.error.message === 'Сообщение worker: device_unavailable.',
+              && failedRun.data.state === 'failed' && failedRun.data.error.workerMessage?.code === 'worker.device_unavailable.fake'
+              && failedRun.data.error.workerMessage.text === 'Worker message: device_unavailable.' && failedRun.data.error.workerMessage.args?.code === 'device_unavailable',
               'A worker failure keeps the worker code and its own message');
 
             await rename('fake:hang');
             const hanging = await request('training.startRun', {...start, operationId: 'training-smoke-hang'});
             await wait(async () => (await request('training.getRun', {projectId, runId: hanging.data.id})).data?.state === 'training', 'training state');
             const review = await request('datasets.reviewDeletion', {projectId, versionId: datasetId});
-            assert(review.ok && review.data.blockers.some(blocker => blocker.code === 'training.active' && blocker.message.startsWith('Датасет используется обучением')),
+            assert(review.ok && review.data.blockers.some(blocker => blocker.code === 'training.active' && mautLocale.blockerText('datasets', blocker).startsWith('Датасет используется обучением')),
               'A running training blocks deleting its dataset');
             const cancelling = await request('training.cancelRun', {projectId, runId: hanging.data.id});
             assert(cancelling.ok && ['cancelling', 'cancelled'].includes(cancelling.data.state), 'training.cancelRun shows «Отмена…»');
@@ -171,7 +172,7 @@ internal static partial class SmokeRunner
             assert(runs.ok && runs.data.total === 3 && runs.data.items[0].id === hanging.data.id && runs.data.items[0].state === 'cancelled',
               'training.listRuns lists the runs newest first');
             const missing = await request('training.getRun', {projectId, runId: '00000000-0000-4000-8000-000000000000'});
-            assert(!missing.ok && missing.error.code === 'training.run_not_found' && missing.error.message === 'Запуск обучения не найден.', 'An unknown run is training.run_not_found');
+            assert(!missing.ok && missing.error.code === 'training.run_not_found' && mautLocale.errorText(missing.error.code, missing.error.details) === 'Запуск обучения не найден.', 'An unknown run is training.run_not_found');
             return {checks};
           } finally {
             window.chrome.webview.removeEventListener('message', listen);

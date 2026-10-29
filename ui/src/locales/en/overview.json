@@ -1,0 +1,65 @@
+{
+  "projectAria": "Project",
+  "noDescription": "Describe the recognition task in the project settings.",
+  "weightsMissing": "The {{model}} weights are not installed on this computer. Training needs them.",
+  "openCatalog": "Open the model catalog",
+  "retry": "Retry",
+  "data": {
+    "title": "Project data",
+    "error": "Could not refresh the project data. Refresh again.",
+    "loading": "Loading project data…",
+    "readyDatasets": "Ready datasets",
+    "modelVersions": "Model versions",
+    "activeJobs": "Current jobs",
+    "states": "Archived datasets: {{archived}} · Corrupt: {{corrupt}}",
+    "openDatasets": "Open datasets"
+  },
+  "jobs": {
+    "title": "Running now",
+    "empty": "No active jobs. You can prepare images, build a dataset or start training.",
+    "loading": "Loading…",
+    "more": "Show more jobs",
+    "progressAria": "Progress: {{title}}",
+    "open": "Open",
+    "waitingForGpu": "Waiting for the GPU",
+    "running": "Running",
+    "counter": {
+      "plain": "Running · {{progress}}",
+      "images": "Running · {{progress}} images",
+      "files": "Running · {{progress}} files",
+      "frames": "Running · {{progress}} frames",
+      "epochs": "Running · {{progress}} epochs"
+    }
+  },
+  "models": {
+    "title": "Latest models",
+    "all": "All models",
+    "empty": "No trained models yet. A ready version appears here after training finishes.",
+    "version": "Version {{number}} · {{architecture}}",
+    "working": "Working",
+    "passport": "Passport"
+  },
+  "hardware": {
+    "title": "Your computer",
+    "failed": "Could not refresh the computer readings. They may be out of date.",
+    "collecting": "Collecting specs and load…",
+    "cpu": "CPU",
+    "cores_one": "{{value}} core",
+    "cores_other": "{{value}} cores",
+    "threads_one": "{{value}} thread",
+    "threads_other": "{{value}} threads",
+    "cpuLoad": "CPU · system",
+    "ramLoad": "RAM · system",
+    "used": "{{used}} used of {{total}}",
+    "application": "Application: {{size}}",
+    "parts": "Main process {{host}} · WebView2 ({{webViewCount}}) {{webView}} · Training and checks ({{workerCount}}) {{worker}}",
+    "unavailable": "Unavailable",
+    "gpuLoad": "Load",
+    "gpuMemory": "Memory",
+    "temperature": "Temperature {{value}}",
+    "driver": "Driver {{value}}",
+    "chartCaption": "Load over 2 minutes",
+    "chartAria": "CPU and GPU load over the last 2 minutes",
+    "sampled": "Sampled: {{time}}"
+  }
+}

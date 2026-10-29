@@ -121,7 +121,7 @@ internal static partial class SmokeRunner
           try {
             const invalid = await request('generation.createRecipe', {projectId, recipe: {...form, scale: 0}});
             assert(!invalid.ok && invalid.error.code === 'generation.invalid_recipe' && invalid.error.details?.field === 'scale'
-              && invalid.error.message.startsWith('Настройки генерации'), 'generation.invalid_recipe names the field and has a Russian text');
+              && mautLocale.errorText(invalid.error.code, invalid.error.details).startsWith('Настройки генерации'), 'generation.invalid_recipe names the field and has a Russian text');
             const created = await request('generation.createRecipe', {projectId, recipe: form});
             assert(created.ok && created.data.name === 'Пресет smoke' && created.data.revision === 1 && created.data.classVariantIds[0] === bindingId
               && created.data.variantWeights[0].percentage === 100, 'generation.createRecipe stores the recipe');
@@ -176,19 +176,18 @@ internal static partial class SmokeRunner
             assert(runs.ok && runs.data.total >= 1 && runs.data.items[0].job.id === runId && runs.data.items[0].producedCount === 3
               && runs.data.items[0].outputGroupId === groupId, 'generation.listRuns returns the run with its group');
             const draft = await request('generation.getRepeatDraft', {projectId, runId});
-            assert(draft.ok && draft.data.recipe.name === 'Пресет smoke · повтор' && draft.data.seed === 5 && draft.data.requestedCount === 3
-              && draft.data.notice.startsWith('Настройки сохранённого запуска'), 'generation.getRepeatDraft fills the form for a repeat');
+            assert(draft.ok && draft.data.recipe.name === 'Пресет smoke' && draft.data.seed === 5 && draft.data.requestedCount === 3, 'generation.getRepeatDraft fills the form for a repeat');
             const removed = await request('generation.deleteRun', {projectId, runId});
             assert(removed.ok && removed.data.runId === runId, 'generation.deleteRun deletes a finished run');
             const kept = await request('images.getGroup', {projectId, groupId});
             assert(kept.ok && kept.data.imageCount === 3, 'The images of a deleted run stay');
             const replay = await request('generation.start', start);
-            assert(!replay.ok && replay.error.code === 'generation.deleted_operation' && replay.error.message.includes('удалён'),
+            assert(!replay.ok && replay.error.code === 'generation.deleted_operation' && mautLocale.errorText(replay.error.code, replay.error.details).includes('удалён'),
               'The operation of a deleted run does not start again');
             const deleted = await request('generation.deleteRecipe', {projectId, recipeId: recipe.id, revision: recipe.revision});
             assert(deleted.ok, 'generation.deleteRecipe deletes the recipe');
             const gone = await request('generation.getRecipe', {projectId, recipeId: recipe.id});
-            assert(!gone.ok && gone.error.code === 'generation.unavailable' && gone.error.message.startsWith('Пресет или запуск'),
+            assert(!gone.ok && gone.error.code === 'generation.unavailable' && mautLocale.errorText(gone.error.code, gone.error.details).startsWith('Пресет или запуск'),
               'A deleted recipe returns generation.unavailable');
             return {checks};
           } finally {

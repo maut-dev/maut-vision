@@ -721,11 +721,13 @@ internal sealed class ProjectsManager : IProjectsManager
         return new ProjectExportInput(project.Name, destination);
     }
 
-    public async Task<ProjectImportInfo> StartImportAsync(ProjectArchiveSource source, string operationId, CancellationToken cancellationToken = default)
+    public async Task<ProjectImportInfo> StartImportAsync(ProjectArchiveSource source, string operationId, string? copyLabel = null,
+        CancellationToken cancellationToken = default)
     {
         await Task.CompletedTask.ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
-        return Imports.Start(source, operationId);
+        var label = copyLabel?.Trim();
+        return Imports.Start(source, operationId, string.IsNullOrEmpty(label) ? null : label[..Math.Min(label.Length, MaxCopyLabelLength)]);
     }
 
     public ProjectImportInfo GetImport(Guid importId) => Imports.Get(importId);
@@ -735,10 +737,11 @@ internal sealed class ProjectsManager : IProjectsManager
     public ProjectImportInfo CancelImport(Guid importId) => Imports.Cancel(importId);
 
     /// <summary>
-    /// Publishes a checked import folder: a project whose id is in the library gets a new id, a taken name gets « (импорт)», « (импорт 2)»…;
+    /// Publishes a checked import folder: a project whose id is in the library gets a new id, a taken name gets " (import)", " (import 2)"…
+    /// (the word chosen by the UI);
     /// then one rename makes it projects/&lt;id&gt; and the project appears (ProjectChanged).
     /// </summary>
-    private async Task<Project> PublishImportAsync(string staging, CancellationToken cancellationToken)
+    private async Task<Project> PublishImportAsync(string staging, string? copyLabel, CancellationToken cancellationToken)
     {
         ProjectMetadata? metadata;
         try
@@ -763,7 +766,7 @@ internal sealed class ProjectsManager : IProjectsManager
             {
                 id = Guid.NewGuid().ToString("D");
             }
-            var name = UniqueName(metadata.Name, library.Select(item => item.Name).ToHashSet(StringComparer.CurrentCultureIgnoreCase));
+            var name = UniqueName(metadata.Name, library.Select(item => item.Name).ToHashSet(StringComparer.CurrentCultureIgnoreCase), copyLabel);
             if (id != metadata.Id || name != metadata.Name)
             {
                 await WriteAsync(metadata with { Id = id, Name = name }, overwrite: true, cancellationToken, staging).ConfigureAwait(false);
@@ -780,13 +783,20 @@ internal sealed class ProjectsManager : IProjectsManager
         return project;
     }
 
-    /// <summary>The name, or with « (импорт)», « (импорт 2)»… when a project of the library has it; the base is shortened to fit 120 characters.</summary>
-    internal static string UniqueName(string name, IReadOnlySet<string> taken)
+    /// <summary>The longest word of the copy suffix the UI may pass.</summary>
+    internal const int MaxCopyLabelLength = 40;
+
+    /// <summary>
+    /// The name, or with " (&lt;label&gt;)", " (&lt;label&gt; 2)"… when a project of the library has it (label — the word the UI chose in the language of
+    /// the user; English "import" without it); the base is shortened to fit 120 characters.
+    /// </summary>
+    internal static string UniqueName(string name, IReadOnlySet<string> taken, string? label = null)
     {
         if (!taken.Contains(name)) return name;
+        label ??= "import";
         for (var number = 1; ; number++)
         {
-            var suffix = number == 1 ? " (импорт)" : $" (импорт {number})";
+            var suffix = number == 1 ? $" ({label})" : $" ({label} {number})";
             var stem = name.Length + suffix.Length <= MaxNameLength ? name : name[..(MaxNameLength - suffix.Length)].TrimEnd();
             var candidate = stem + suffix;
             if (!taken.Contains(candidate)) return candidate;

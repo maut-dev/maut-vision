@@ -33,6 +33,10 @@ The application runs until the user chooses "Exit". Closing the window hides it 
 minimized window, and jobs continue. The first hide shows a notification once that the application keeps running in the notification
 area; the fact is kept in `host-settings.json` of the work directory.
 
+Texts of the host (loading window, tray menu and notice, exit question, native file dialogs, startup failures) come from
+`Strings.resx` (English) and `Strings.ru.resx`. Their culture follows the interface language kept in `host-settings.json`; a change
+relabels the tray at once ([localization](../UI/localization.md#language)).
+
 ```text
 window close button        → window hidden, page hidden
 tray: click, "Open"        → window and page visible

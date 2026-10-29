@@ -10,30 +10,30 @@ import {
 import { isLiveCheckJournalPageResponseDto, isLiveCheckList, isLiveCheckResponseDto } from "./response-dto/live-check-response-dto";
 import { isModelEvaluationList, isModelEvaluationPageResponseDto, isModelEvaluationResponseDto } from "./response-dto/model-evaluation-response-dto";
 
-/** Нативное окно выбора ждёт пользователя. */
+/** The native picker waits for the user. */
 const dialogTimeoutMs = 600_000;
-/** Старт проверяет версию и датасет; видео — ffprobe и кадр-пример; снимок 4K кодируется в PNG. */
+/** A start checks the version and the dataset; a video runs ffprobe and a sample frame; a 4K screenshot is encoded to PNG. */
 const slowTimeoutMs = 60_000;
 
 /**
- * Проверки версий моделей открытого проекта (раздел «Проверки»; оценки — также «Аналитика»).
+ * Checks of the model versions of the open project (the Checks section; evaluations also in Analytics).
  *
- * Датасет: startEvaluation — задача checks.evaluate в общей GPU-очереди (job.changed: состояние; checks.changed: evaluations с revision —
- * перечитать getEvaluation); cancelEvaluation — «Отменить»; listEvaluations — «Все проверки» (фильтры версия, датасет, часть);
- * listLatestEvaluations — матрица сравнения (последняя успешная оценка версии на паре «датасет · часть»; нет записи — «не проверялась»).
- * Совместимость (классы и их порядок, размер кадров, кадры в части) проверяется и в Core: checks.evaluation_classes_mismatch,
- * checks.evaluation_input_mismatch, checks.evaluation_split_empty — тексты спецификации приходят в error.message.
+ * Dataset: startEvaluation — a checks.evaluate job in the shared GPU queue (job.changed: the state; checks.changed: evaluations with a revision —
+ * read getEvaluation again); cancelEvaluation — Cancel; listEvaluations — all checks (filters: version, dataset, split);
+ * listLatestEvaluations — the comparison matrix (the latest successful evaluation of a version on a "dataset · split" pair; no record — not checked).
+ * Core checks the compatibility too (classes and their order, the frame size, frames in the split): checks.evaluation_classes_mismatch,
+ * checks.evaluation_input_mismatch, checks.evaluation_split_empty with their values in error.details.
  *
- * Живые проверки (одна на приложение, занимают видеокарту; занята — сразу checks.gpu_busy_training | gpu_busy_evaluation |
- * gpu_busy_prediction): selectImage → startImage; selectVideo (кадр из середины) / previewVideoFrame («Показать другой кадр») →
- * startVideo; listMonitors / captureScreen («Снять экран», рамка в координатах монитора) → startScreen. Снимок — start*, get (с последней
- * страницей журнала), list; события — subscribeChecksChanged (снимок без журнала, не чаще 5 раз в секунду, применять по sequence;
- * превью — preview.url канала ресурсов); новые строки журнала — listJournal({after: последний ordinal}). stop — «Остановить».
- * Уход из раздела UI вызывает stop сам; смена проекта и перезагрузка страницы останавливают проверку в host.
+ * Live checks (one per application, they take the GPU; a busy one is refused at once with checks.gpu_busy_training | gpu_busy_evaluation |
+ * gpu_busy_prediction): selectImage → startImage; selectVideo (a frame from the middle) / previewVideoFrame (Show another frame) →
+ * startVideo; listMonitors / captureScreen (Take a screenshot, the frame in monitor coordinates) → startScreen. Snapshots: start*, get (with the last
+ * page of the journal), list; events: subscribeChecksChanged (a snapshot without the journal, at most 5 times a second, apply by sequence;
+ * the preview is preview.url of the resource channel); new journal rows: listJournal({after: the last ordinal}). stop — Stop.
+ * Leaving the section, the UI calls stop itself; switching the project and reloading the page stop the check in the host.
  *
- * Ошибки: checks.prediction_parameters и checks.evaluation_parameters (details.field), checks.prediction_source, checks.source_changed,
+ * Errors: checks.prediction_parameters and checks.evaluation_parameters (details.field), checks.prediction_source, checks.source_changed,
  * checks.selection_expired, checks.region_invalid, checks.runtime_*, screen.monitor_not_found, screen.capture_*, training.version_not_found,
- * training.artifact_corrupt; ошибки исполнения (check.error, evaluation.error) — checks.worker_* с сообщением worker, checks.protocol_*,
+ * training.artifact_corrupt; execution errors (check.error, evaluation.error) — checks.worker_* with the worker message, checks.protocol_*,
  * checks.result_*.
  */
 export const checksApi = {
@@ -53,21 +53,21 @@ export const checksApi = {
     listLatestEvaluations(request: ListLatestModelEvaluationsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.listLatestEvaluations", request, isModelEvaluationList, signal);
     },
-    /** «Выбрать изображение и проверить…», шаг 1. */
+    /** Choose an image and check…, step 1. */
     selectImage(request: SelectCheckImageRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.selectImage", request, isCheckFileSelectionResponseDto, signal, dialogTimeoutMs);
     },
     selectVideo(request: SelectCheckVideoRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.selectVideo", request, isCheckVideoSelectionResponseDto, signal, dialogTimeoutMs);
     },
-    /** «Показать другой кадр». */
+    /** Show another frame. */
     previewVideoFrame(request: PreviewCheckVideoFrameRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.previewVideoFrame", request, isCheckVideoFrameResponseDto, signal, slowTimeoutMs);
     },
     listMonitors(request: ListMonitorsRequestDto = {}, signal?: AbortSignal) {
         return nativeBridge.request("checks.listMonitors", request, isMonitorList, signal);
     },
-    /** «Снять экран». */
+    /** Take a screenshot. */
     captureScreen(request: CaptureScreenRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.captureScreen", request, isScreenShotResponseDto, signal, slowTimeoutMs);
     },
@@ -77,11 +77,11 @@ export const checksApi = {
     startVideo(request: StartVideoCheckRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.startVideo", request, isLiveCheckResponseDto, signal, slowTimeoutMs);
     },
-    /** «Запустить проверку с экрана». */
+    /** Start the screen check. */
     startScreen(request: StartScreenCheckRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.startScreen", request, isLiveCheckResponseDto, signal, slowTimeoutMs);
     },
-    /** «Остановить». */
+    /** Stop. */
     stop(request: StopCheckRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("checks.stop", request, isLiveCheckResponseDto, signal);
     },

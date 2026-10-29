@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.0.0-cefa1e?style=flat-square" alt="Version 1.0.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.1.0-cefa1e?style=flat-square" alt="Version 1.1.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Platform Windows 10/11 x64">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
@@ -41,8 +41,8 @@ your NVIDIA GPU and check it on images, videos and a live screen region. Everyth
 command line.
 
 > [!NOTE]
-> The application interface is in **Russian** in version 1.0. English localization is planned for upcoming releases. The documentation
-> and the code are in English.
+> The interface is available in **English** and **Russian**: switch the language in the header; by default it follows the language of
+> Windows. The documentation and the code are in English.
 
 ## Features
 
@@ -91,16 +91,16 @@ Maut Vision is built to stay fast on large libraries:
 ## Installation
 
 > [!IMPORTANT]
-> **Download:** [MautVision-Setup-1.0.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.0.0/MautVision-Setup-1.0.0.exe) (1.83 GB)
+> **Download:** [MautVision-Setup-1.1.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.1.0/MautVision-Setup-1.1.0.exe) (1.83 GB)
 >
 > All versions and release notes: [GitHub Releases](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `8f72bf8ac1b06f8f891cea2eab1c9675bedb55fb70cbb6a3b2461a72403d66d7`
+> SHA-256: `29597c8fe95bc8a574fba9e55075c67125b155cd1517f73750df3dc975fa4abf`
 
 **Verify the download.** Compare the SHA-256 of the installer with the hash published next to the download link:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.0.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.1.0.exe -Algorithm SHA256
 ```
 
 The installer is not code-signed yet, so Windows SmartScreen may ask for confirmation ("More info" → "Run anyway"). Install only a file

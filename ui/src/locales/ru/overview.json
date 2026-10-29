@@ -1,0 +1,69 @@
+{
+  "projectAria": "Проект",
+  "noDescription": "Укажите задачу распознавания в настройках проекта.",
+  "weightsMissing": "Веса модели {{model}} не установлены на этом компьютере. Они понадобятся для обучения.",
+  "openCatalog": "Открыть каталог моделей",
+  "retry": "Повторить",
+  "data": {
+    "title": "Данные проекта",
+    "error": "Не удалось обновить данные проекта. Повторите обновление.",
+    "loading": "Загрузка данных проекта…",
+    "readyDatasets": "Готовые датасеты",
+    "modelVersions": "Версии моделей",
+    "activeJobs": "Текущие задачи",
+    "states": "Архивных датасетов: {{archived}} · Повреждённых: {{corrupt}}",
+    "openDatasets": "Открыть датасеты"
+  },
+  "jobs": {
+    "title": "Сейчас выполняется",
+    "empty": "Активных задач нет. Можно подготовить изображения, собрать датасет или запустить обучение.",
+    "loading": "Загрузка…",
+    "more": "Показать ещё задачи",
+    "progressAria": "Ход: {{title}}",
+    "open": "Открыть",
+    "waitingForGpu": "Ожидает видеокарту",
+    "running": "Выполняется",
+    "counter": {
+      "plain": "Выполняется · {{progress}}",
+      "images": "Выполняется · {{progress}} изображений",
+      "files": "Выполняется · {{progress}} файлов",
+      "frames": "Выполняется · {{progress}} кадров",
+      "epochs": "Выполняется · {{progress}} эпох"
+    }
+  },
+  "models": {
+    "title": "Последние модели",
+    "all": "Все модели",
+    "empty": "Обученных моделей ещё нет. Готовая версия появится здесь после завершения обучения.",
+    "version": "Версия {{number}} · {{architecture}}",
+    "working": "Рабочая",
+    "passport": "Паспорт"
+  },
+  "hardware": {
+    "title": "Ваш компьютер",
+    "failed": "Не удалось обновить показатели компьютера. Показатели могут быть устаревшими.",
+    "collecting": "Сбор характеристик и нагрузки…",
+    "cpu": "Процессор",
+    "cores_one": "{{value}} ядро",
+    "cores_few": "{{value}} ядра",
+    "cores_many": "{{value}} ядер",
+    "cores_other": "{{value}} ядра",
+    "threads_one": "{{value}} поток",
+    "threads_few": "{{value}} потока",
+    "threads_many": "{{value}} потоков",
+    "threads_other": "{{value}} потока",
+    "cpuLoad": "CPU · система",
+    "ramLoad": "RAM · система",
+    "used": "{{used}} занято из {{total}}",
+    "application": "Приложение: {{size}}",
+    "parts": "Основной процесс {{host}} · WebView2 ({{webViewCount}}) {{webView}} · Обучение и проверки ({{workerCount}}) {{worker}}",
+    "unavailable": "Недоступно",
+    "gpuLoad": "Нагрузка",
+    "gpuMemory": "Память",
+    "temperature": "Температура {{value}}",
+    "driver": "Драйвер {{value}}",
+    "chartCaption": "Нагрузка за 2 минуты",
+    "chartAria": "Нагрузка CPU и GPU за последние 2 минуты",
+    "sampled": "Замер: {{time}}"
+  }
+}

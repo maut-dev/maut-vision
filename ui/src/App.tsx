@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
     Boxes,
     ChartLine,
@@ -20,8 +21,9 @@ import type { ProjectResponseDto } from "@/api/projects/response-dto/project-res
 import { BaseModelCatalog } from "@/components/base-model-catalog";
 import { CatalogSection } from "@/components/catalog/catalog-section";
 import { BridgeError } from "@/api/transport/errors";
-import { ProjectDeletionDialog, deletionCleanupNotice } from "@/components/project-deletion-dialog";
+import { ProjectDeletionDialog } from "@/components/project-deletion-dialog";
 import { ProjectEditor, type ProjectEditorValues } from "@/components/project-editor";
+import { LanguageSelect } from "@/components/language-select";
 import { ProjectLibrary } from "@/components/project-library";
 import { OverviewSection, type OverviewTarget } from "@/components/overview/overview-section";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -54,32 +56,33 @@ const ModelsSection = lazy(() => import("@/components/models/models-section").th
 const ChecksSection = lazy(() => import("@/components/checks/checks-section").then(module => ({ default: module.ChecksSection })));
 const AnalyticsSection = lazy(() => import("@/components/analytics/analytics-section").then(module => ({ default: module.AnalyticsSection })));
 
+type SectionId = "overview" | "variants" | "classes" | "backgrounds" | "generation" | "images" | "datasets" | "training" | "models" | "checks" | "analytics";
+
+/** A section of the project; its label and description come from the common catalog (sections.<id>). */
 interface Section {
-    id: string;
-    label: string;
+    id: SectionId;
     icon: LucideIcon;
-    description: string;
     available: boolean;
 }
 
 const sections: readonly Section[] = [
-    { id: "overview", label: "Обзор", icon: LayoutDashboard, available: true, description: "Данные проекта, текущие задачи, модели и нагрузка компьютера." },
-    { id: "variants", label: "Варианты", icon: SlidersHorizontal, available: true, description: "Общие варианты отображения объектов для всего проекта." },
-    { id: "classes", label: "Классы", icon: Tags, available: true, description: "Объекты для распознавания и их изображения по вариантам." },
-    { id: "backgrounds", label: "Фоны", icon: Layers, available: true, description: "Готовые фоны или кадры из видео размером со вход модели." },
-    { id: "generation", label: "Генерация", icon: WandSparkles, available: true, description: "Наложение объектов на фоны с заданными долями вариантов." },
-    { id: "images", label: "Изображения", icon: Image, available: true, description: "Кадры для просмотра и разметки: импортированные или сгенерированные." },
-    { id: "datasets", label: "Датасеты", icon: Database, available: true, description: "Неизменяемые версии готовых кадров и разметки." },
-    { id: "training", label: "Обучение", icon: Cpu, available: true, description: "Обучение модели на собранном датасете и её версии с паспортом." },
-    { id: "models", label: "Модели", icon: Boxes, available: true, description: "Все версии моделей проекта: паспорта, веса и рабочая версия." },
-    { id: "checks", label: "Проверки", icon: ScanSearch, available: true, description: "Прогон моделей по изображению, датасету, видео и экрану." },
-    { id: "analytics", label: "Аналитика", icon: ChartLine, available: true, description: "Сравнение версий модели: метрики, кривые обучения и проверки на датасетах." },
+    { id: "overview", icon: LayoutDashboard, available: true },
+    { id: "variants", icon: SlidersHorizontal, available: true },
+    { id: "classes", icon: Tags, available: true },
+    { id: "backgrounds", icon: Layers, available: true },
+    { id: "generation", icon: WandSparkles, available: true },
+    { id: "images", icon: Image, available: true },
+    { id: "datasets", icon: Database, available: true },
+    { id: "training", icon: Cpu, available: true },
+    { id: "models", icon: Boxes, available: true },
+    { id: "checks", icon: ScanSearch, available: true },
+    { id: "analytics", icon: ChartLine, available: true },
 ];
 
 /**
- * Экран — состояние React, адрес страницы не меняется (см. docs/UI/navigation.md). groupId — намерение перехода
- * «Открыть изображения»: раздел изображений открывается с этой группой; versionId — паспорт версии в «Моделях»; runId — запуск во
- * вкладке «Текущий запуск» обучения; checksMode — режим «Датасет» проверок. Переход из боковой панели намерения не несёт.
+ * The screen is React state, the page address does not change (see docs/UI/navigation.md). groupId — the intent of the navigation
+ * Open images: the images section opens with this group; versionId — the version passport in Models; runId — a run in the
+ * Current run tab of training; checksMode — the Dataset mode of checks. A navigation from the sidebar carries no intent.
  */
 type View =
     | { kind: "library" }
@@ -92,6 +95,7 @@ interface EditorState {
 }
 
 export function App() {
+    const { t } = useTranslation();
     const library = useProjects();
     const catalog = useBaseModels();
     const [view, setView] = useState<View>({ kind: "library" });
@@ -101,11 +105,11 @@ export function App() {
     const [notice, setNotice] = useState<string>();
     const [archiveTarget, setArchiveTarget] = useState<ProjectResponseDto>();
     const [deleteTarget, setDeleteTarget] = useState<ProjectResponseDto>();
-    const [deletionNotice, setDeletionNotice] = useState<string>();
+    const [deletionNotice, setDeletionNotice] = useState(false);
     const [opening, setOpening] = useState<string>();
     const openSequence = useRef(0);
     const guard = useNavigationGuard();
-    // Импортированный проект открывается сам, только если пользователь в библиотеке и ничего в ней не начал.
+    // An imported project opens by itself only when the user is in the library and has not started anything there.
     const transfers = useProjectTransfers(library.projects, !library.loading && !library.error, projectId => {
         if (view.kind === "library" && !editor && !deleteTarget && !archiveTarget && !opening && !busy) void openProject(projectId);
     });
@@ -126,8 +130,8 @@ export function App() {
     }, [library.loading, library.error, library.projects.length]);
 
     /**
-     * Номер перехода растёт и между перезагрузками страницы (от времени): host сравнивает его с последним известным. Побеждает последний
-     * переход — медленное открытие не держит переключение, его ответ (или projects.open_superseded) отбрасывается.
+     * The navigation number grows across page reloads too (it starts from the time): the host compares it with the last known one. The last
+     * navigation wins: a slow opening does not hold a switch, its answer (or projects.open_superseded) is dropped.
      */
     function nextOpenSequence(): number {
         openSequence.current = Math.max(Date.now(), openSequence.current + 1);
@@ -151,7 +155,7 @@ export function App() {
         }
     }
 
-    /** Другой переход отменяет ожидание открытия: его ответ больше не меняет экран. */
+    /** Another navigation cancels waiting for an opening: its answer no longer changes the screen. */
     function supersedeOpen() {
         nextOpenSequence();
         setOpening(undefined);
@@ -202,7 +206,7 @@ export function App() {
         });
     }
 
-    /** Переход между экранами: несохранённая разметка сначала требует решения пользователя. */
+    /** A navigation between screens: unsaved annotation first needs the user's decision. */
     function navigate(next: View) {
         guard(() => {
             supersedeOpen();
@@ -218,13 +222,13 @@ export function App() {
                     <span className="hidden font-semibold tracking-tight sm:inline">Maut Vision</span>
                     <div className="h-6 border-l" />
                     <Button size="sm" variant="ghost" onClick={() => navigate({ kind: "library" })} disabled={busy} aria-current={view.kind === "library" ? "page" : undefined}>
-                        <FolderOpen />Все проекты
+                        <FolderOpen />{t("app.allProjects")}
                     </Button>
                     {project && (
                         <>
                             <span className="text-muted-foreground" aria-hidden>/</span>
                             <Select value={project.id} onValueChange={id => guard(() => void openProject(id))} disabled={busy}>
-                                <SelectTrigger aria-label="Переключить проект" className="w-44 sm:w-64"><SelectValue /></SelectTrigger>
+                                <SelectTrigger aria-label={t("app.switchProject")} className="w-44 sm:w-64"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     {activeProjects.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
                                 </SelectContent>
@@ -234,26 +238,27 @@ export function App() {
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                     {project && (
-                        <Button size="icon-sm" variant="ghost" aria-label="Настройки проекта" title="Настройки проекта" disabled={busy} onClick={() => editProject(project)}>
+                        <Button size="icon-sm" variant="ghost" aria-label={t("app.projectSettings")} title={t("app.projectSettings")} disabled={busy} onClick={() => editProject(project)}>
                             <Settings />
                         </Button>
                     )}
                     <Button size="sm" variant={view.kind === "catalog" ? "secondary" : "ghost"} onClick={showCatalog} disabled={busy} aria-current={view.kind === "catalog" ? "page" : undefined}>
-                        <Boxes />Базовые модели
+                        <Boxes />{t("app.baseModels")}
                     </Button>
-                    <span className="hidden text-xs text-muted-foreground lg:block">Сохранение на этом компьютере</span>
+                    <LanguageSelect disabled={busy} failed={setNotice} />
+                    <span className="hidden text-xs text-muted-foreground lg:block">{t("app.localStorage")}</span>
                 </div>
             </header>
             <div className="flex min-h-0 flex-1">
                 {project && view.kind === "project" && (
                     <aside className="flex min-h-0 w-16 shrink-0 flex-col overflow-y-auto border-r bg-card p-2 md:w-52 md:p-3">
-                        <nav aria-label="Разделы проекта" className="space-y-1">
-                            {sections.map(({ id, label, icon: Icon, available }) => (
+                        <nav aria-label={t("app.projectSections")} className="space-y-1">
+                            {sections.map(({ id, icon: Icon, available }) => { const label = t(`sections.${id}.label`); return (
                                 <Button
                                     key={id}
                                     data-section={id}
                                     aria-current={view.section === id ? "page" : undefined}
-                                    title={available ? label : `${label} — появится позже`}
+                                    title={available ? label : t("app.comingLater", { label })}
                                     aria-label={label}
                                     variant={view.section === id ? "secondary" : "ghost"}
                                     className="w-full justify-center gap-3 md:justify-start"
@@ -262,9 +267,9 @@ export function App() {
                                 >
                                     <Icon className="size-4" />
                                     <span className="hidden md:inline">{label}</span>
-                                    {!available && <span className="ml-auto hidden text-[11px] text-muted-foreground md:inline">скоро</span>}
+                                    {!available && <span className="ml-auto hidden text-[11px] text-muted-foreground md:inline">{t("app.soon")}</span>}
                                 </Button>
-                            ))}
+                            ); })}
                         </nav>
                     </aside>
                 )}
@@ -276,13 +281,13 @@ export function App() {
                                 transfers={transfers}
                                 busy={busy}
                                 opening={opening}
-                                notice={deletionNotice}
-                                dismissNotice={() => setDeletionNotice(undefined)}
+                                notice={deletionNotice ? t("projectDeletion.cleanupNotice") : undefined}
+                                dismissNotice={() => setDeletionNotice(false)}
                                 create={() => editProject()}
                                 edit={target => editProject(target)}
                                 open={target => void openProject(target.id)}
                                 archive={target => target.archivedAt ? void setArchived(target, false) : setArchiveTarget(target)}
-                                remove={target => { setDeletionNotice(undefined); setDeleteTarget(target); }}
+                                remove={target => { setDeletionNotice(false); setDeleteTarget(target); }}
                                 catalog={showCatalog}
                             />
                         )}
@@ -293,7 +298,7 @@ export function App() {
                             <>
                                 <div className="shrink-0">
                                     <h1 className="text-2xl font-semibold break-words" data-testid="active-project-name">{project.name}</h1>
-                                    <p className="mt-2 max-w-prose text-sm text-muted-foreground">{section.label} · {section.description}</p>
+                                    <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t(`sections.${section.id}.label`)} · {t(`sections.${section.id}.description`)}</p>
                                 </div>
                                 {section.id === "overview" && (
                                     <OverviewSection
@@ -306,17 +311,17 @@ export function App() {
                                     />
                                 )}
                                 {section.id === "images" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <ImagesSection key={project.id} project={project} initialGroupId={view.groupId} />
                                     </Suspense>
                                 )}
                                 {section.id === "backgrounds" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <BackgroundsSection key={project.id} project={project} />
                                     </Suspense>
                                 )}
                                 {section.id === "generation" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <GenerationSection
                                             key={project.id}
                                             project={project}
@@ -325,12 +330,12 @@ export function App() {
                                     </Suspense>
                                 )}
                                 {section.id === "datasets" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <DatasetsSection key={project.id} project={project} />
                                     </Suspense>
                                 )}
                                 {section.id === "training" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <TrainingSection
                                             key={`${project.id}:${view.runId ?? ""}`}
                                             project={project}
@@ -340,7 +345,7 @@ export function App() {
                                     </Suspense>
                                 )}
                                 {section.id === "models" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <ModelsSection
                                             key={`${project.id}:${view.versionId ?? ""}`}
                                             project={project}
@@ -350,7 +355,7 @@ export function App() {
                                     </Suspense>
                                 )}
                                 {section.id === "checks" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <ChecksSection
                                             key={`${project.id}:${view.checksMode ?? ""}`}
                                             project={project}
@@ -360,7 +365,7 @@ export function App() {
                                     </Suspense>
                                 )}
                                 {section.id === "analytics" && (
-                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">Загрузка раздела…</p>}>
+                                    <Suspense fallback={<p role="status" className="text-sm text-muted-foreground">{t("app.loadingSection")}</p>}>
                                         <AnalyticsSection
                                             key={project.id}
                                             project={project}
@@ -387,7 +392,7 @@ export function App() {
                     <Alert variant="destructive" className="bg-card">
                         <AlertDescription>
                             <p>{notice}</p>
-                            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setNotice(undefined)}>Закрыть</Button>
+                            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setNotice(undefined)}>{t("app.close")}</Button>
                         </AlertDescription>
                     </Alert>
                 )}
@@ -413,22 +418,22 @@ export function App() {
                     deleted={result => {
                         setDeleteTarget(undefined);
                         library.remove(result.projectId);
-                        if (result.cleanupPending) setDeletionNotice(deletionCleanupNotice);
+                        if (result.cleanupPending) setDeletionNotice(true);
                     }}
                 />
             )}
             <AlertDialog open={!!archiveTarget} onOpenChange={open => { if (!open && !busy) setArchiveTarget(undefined); }}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Перенести в архив?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("app.archiveTitle")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Проект «{archiveTarget?.name}» скроется из списка, его нельзя будет открыть и изменить. Данные сохранятся; проект можно восстановить в любой момент.
+                            {t("app.archiveText", { name: archiveTarget?.name ?? "" })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={busy}>Отмена</AlertDialogCancel>
+                        <AlertDialogCancel disabled={busy}>{t("app.cancel")}</AlertDialogCancel>
                         <AlertDialogAction disabled={busy} onClick={event => { event.preventDefault(); if (archiveTarget) void setArchived(archiveTarget, true); }}>
-                            В архив
+                            {t("app.toArchive")}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

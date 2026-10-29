@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { BackgroundSourcePreviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-selection-response-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
 import { nudgeRegion, pointerRegion, type FramePosition } from "@/lib/backgrounds/crop-frame";
+import "@/i18n/sections/backgrounds";
 
 const percent = (part: number, whole: number) => `${(part / whole) * 100}%`;
 
 /**
- * Рамка неизменного размера (размер набора) поверх кадра. Мышью задаётся только положение: центр рамки идёт за
- * указателем; стрелки двигают на 1 px, с Shift — на 10 px. Картинка на экране — уменьшенная копия (до 1600 px),
- * поэтому всё считается в пикселях исходного кадра (source.width × source.height), а на экран переводится долями.
+ * A frame of a fixed size (the set size) over the image. The mouse sets only the position: the frame center follows the pointer;
+ * arrows move it by 1 px, with Shift by 10 px. The image on screen is a reduced copy (up to 1600 px), so everything is counted in pixels
+ * of the source image (source.width × source.height) and converted to the screen by fractions.
  */
 export function BackgroundCropFrame({ source, frame, value, onChange, disabled, autoFocus, maxHeight = "58vh" }: {
     source: BackgroundSourcePreviewResponseDto;
@@ -16,11 +18,12 @@ export function BackgroundCropFrame({ source, frame, value, onChange, disabled, 
     value: FramePosition;
     onChange: (value: FramePosition) => void;
     disabled?: boolean;
-    /** Фокус на рамке при показе кадра: стрелки сразу двигают её. */
+    /** Focus on the frame when the image shows: arrows move it at once. */
     autoFocus?: boolean;
-    /** Предел высоты кадра на экране. */
+    /** The height limit of the image on screen. */
     maxHeight?: string;
 }) {
+    const { t } = useTranslation("backgrounds");
     const surface = useRef<HTMLDivElement>(null);
     const [dragging, setDragging] = useState(false);
     const [broken, setBroken] = useState<string>();
@@ -49,7 +52,7 @@ export function BackgroundCropFrame({ source, frame, value, onChange, disabled, 
                 ref={surface}
                 role="slider"
                 tabIndex={disabled ? -1 : 0}
-                aria-label="Положение рамки на кадре"
+                aria-label={t("frame.label")}
                 aria-valuetext={`x ${value.left}, y ${value.top}`}
                 aria-valuenow={value.left}
                 aria-valuemin={0}
@@ -73,7 +76,7 @@ export function BackgroundCropFrame({ source, frame, value, onChange, disabled, 
                 onKeyDown={nudge}
             >
                 {broken === source.previewUrl ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">Не удалось показать кадр.</div>
+                    <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">{t("frame.broken")}</div>
                 ) : (
                     <img src={source.previewUrl} alt={source.name} draggable={false} className="absolute inset-0 block size-full" data-testid="crop-image" onError={() => setBroken(source.previewUrl)} />
                 )}
@@ -83,7 +86,7 @@ export function BackgroundCropFrame({ source, frame, value, onChange, disabled, 
                 />
             </div>
             <p className="text-center text-xs text-muted-foreground tabular-nums" data-testid="crop-position">
-                Рамка {frame.width} × {frame.height} px · x {value.left}, y {value.top} · кадр {source.width} × {source.height}
+                {t("frame.position", { width: frame.width, height: frame.height, left: value.left, top: value.top, sourceWidth: source.width, sourceHeight: source.height })}
             </p>
         </div>
     );

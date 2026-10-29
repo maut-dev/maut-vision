@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { VariantResponseDto } from "@/api/projects/catalog/response-dto/variant-response-dto";
 import { CatalogEmpty, CatalogRow, CatalogToolbar, filterEntries } from "./catalog-list";
 
@@ -9,24 +10,25 @@ export interface VariantActions {
     remove: (variant: VariantResponseDto) => void;
 }
 
-/** Раздел «Варианты»: общий справочник способов отображения объектов проекта. */
+/** The "Variants" section: the shared list of the ways objects of the project look. */
 export function VariantsPage({ variants, busy, actions }: {
     variants: readonly VariantResponseDto[];
     busy: boolean;
     actions: VariantActions;
 }) {
+    const { t } = useTranslation("catalog");
     const [search, setSearch] = useState("");
     const [showArchive, setShowArchive] = useState(false);
     const entries = filterEntries(variants, search, showArchive);
     return (
         <>
             <CatalogToolbar
-                searchLabel="Поиск вариантов"
+                searchLabel={t("variants.search")}
                 search={search}
                 setSearch={setSearch}
                 showArchive={showArchive}
                 setShowArchive={setShowArchive}
-                addLabel="Добавить вариант"
+                addLabel={t("variants.add")}
                 addDisabled={busy}
                 add={actions.create}
             />
@@ -35,7 +37,7 @@ export function VariantsPage({ variants, busy, actions }: {
                 data-testid="variant-list"
                 tabIndex={0}
                 role="region"
-                aria-label="Список вариантов"
+                aria-label={t("variants.list")}
             >
                 <div className="divide-y">
                     {entries.map(variant => (
@@ -43,8 +45,8 @@ export function VariantsPage({ variants, busy, actions }: {
                             key={variant.id}
                             data-variant-id={variant.id}
                             entry={variant}
-                            kindLabel="вариант"
-                            fallback="Общий вариант проекта"
+                            deleteLabel={t("variants.deleteLabel", { name: variant.name })}
+                            fallback={t("variants.fallback")}
                             busy={busy}
                             open={() => actions.edit(variant)}
                             openDisabled={!!variant.archivedAt}
@@ -57,8 +59,8 @@ export function VariantsPage({ variants, busy, actions }: {
                 {!entries.length && (
                     <CatalogEmpty
                         searching={!!search.trim() || variants.length > 0}
-                        title="Вариантов пока нет"
-                        text="Добавьте варианты отображения объектов. Их доли можно будет выбирать при генерации."
+                        title={t("variants.emptyTitle")}
+                        text={t("variants.emptyText")}
                     />
                 )}
             </div>

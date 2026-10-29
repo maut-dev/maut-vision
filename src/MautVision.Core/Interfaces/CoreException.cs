@@ -1,9 +1,9 @@
 namespace MautVision.Core.Interfaces;
 
 /// <summary>
-/// Ошибка, о которой можно сообщить пользователю. Code — стабильный код вида
-/// <c>&lt;область&gt;.&lt;причина&gt;</c>; Message предназначено для журнала. Details — безопасные для показа значения,
-/// которые помогают UI отреагировать (например, поле формы: <c>field</c>); null, если их нет.
+/// An error that can be reported to the user. Code — a stable code of the form
+/// <c>&lt;area&gt;.&lt;reason&gt;</c>; Message is meant for the log. Details — values safe to display
+/// that help the UI react (for example, a form field: <c>field</c>); null if there are none.
 /// </summary>
 public sealed class CoreException(string code, string message, Exception? innerException = null)
     : Exception(message, innerException)

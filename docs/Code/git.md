@@ -4,16 +4,16 @@
 
 | Branch | Purpose |
 |---|---|
-| `master` | Released versions only. Every commit on `master` is a release and carries a tag `vX.Y.Z`. |
+| `master` | Released versions only. It moves only by a `--no-ff` merge of `dev` at a release; each such merge carries a tag `vX.Y.Z`. |
 | `dev` | Linear development history. Work branches start from `dev` and return to it. |
 | `feature/<topic>` | A new capability. |
 | `fix/<topic>` | A bug fix for the next regular release. |
 | `docs/<topic>`, `refactor/<topic>`, `perf/<topic>`, `test/<topic>`, `build/<topic>` | Other work by commit type. |
 | `release/x.y.z` | Release preparation: version bump, changelog, final checks. Starts from `dev`. |
-| `hotfix/x.y.z` | An urgent fix of a released version. Starts from `master`. |
+| `hotfix/x.y.z` | An urgent PATCH release. Starts from `dev`, returns to `dev`, then `dev` is released into `master`. |
 
 Topic names are short lowercase-kebab-case: `feature/job-cancellation`, `fix/startup-paths`. Keep `dev` linear: rebase a work
-branch on `dev` before merging and merge with fast-forward or squash. Never force-push `master` or `dev`.
+branch on `dev` before merging and merge with fast-forward or squash. Never force-push `master` or `dev`. Never merge or commit into `master` directly: changes flow only `dev` → `master`, so `dev` always contains `master`.
 
 ## Commits
 

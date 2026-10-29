@@ -113,7 +113,7 @@ internal static class TransferSmoke
         await RejectsCode("projects.export_destination", () => manager.PrepareExportAsync(project.Id, Path.Combine(outside, "missing", "a.zip"), "bad-3"));
         await RejectsCode("projects.export_destination", () => manager.PrepareExportAsync(project.Id, Path.Combine(projectDirectory, "inside.zip"), "bad-4"));
         holds["busy"] = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var busy = await jobs.EnqueueAsync<ITransferHoldJob, string>("busy", project.Id, "hold-busy", label: "Удержание");
+        var busy = await jobs.EnqueueAsync<ITransferHoldJob, string>("busy", project.Id, "hold-busy", label: CodedText.Plain("Удержание"));
         Check(core.Jobs.CountActive() == 1, "CountActive counts the active jobs of open projects.");
         var refused = await RejectsCode("projects.transfer_busy", () => manager.PrepareExportAsync(project.Id, archive, "export-busy"));
         Check(refused.Details?["section"] == "smoke", $"transfer_busy names the area of the running job ({refused.Details?["section"]}).");
@@ -133,7 +133,7 @@ internal static class TransferSmoke
         };
         var cancelInput = await manager.PrepareExportAsync(project.Id, archive, "export-cancel");
         Check(cancelInput.DestinationPath == archive && cancelInput.ProjectName == "Перенос", "The export input names the destination and the project.");
-        var cancelled = await jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(cancelInput, project.Id, "export-cancel", cancelInput.ProjectName);
+        var cancelled = await jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(cancelInput, project.Id, "export-cancel", CodedText.Plain(cancelInput.ProjectName));
         await paused.Task.WaitAsync(WaitLimit);
         await RejectsCode("projects.transfer_active", () => jobs.EnqueueAsync<ITransferHoldJob, string>("never", project.Id, "hold-during-export"));
         var review = await manager.ReviewDeletionAsync(project.Id);
@@ -149,10 +149,10 @@ internal static class TransferSmoke
         exports.Pause = null;
 
         var input = await manager.PrepareExportAsync(project.Id, archive, "export-1");
-        var exportJob = await jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, project.Id, "export-1", input.ProjectName);
+        var exportJob = await jobs.EnqueueAsync<IProjectExportJob, ProjectExportInput>(input, project.Id, "export-1", CodedText.Plain(input.ProjectName));
         var exported = await WaitAsync(jobs, project.Id, exportJob.Id, JobStatus.Succeeded);
         var result = exported.Result!.Value.Deserialize<ProjectExportResult>(JobsManager.Json)!;
-        Check(exported.Label == "Перенос" && exported.Processed == exported.Total && exported.Total == 6 && result.Files == 6 && result.Links == 3
+        Check(exported.Label?.Text == "Перенос" && exported.Processed == exported.Total && exported.Total == 6 && result.Files == 6 && result.Links == 3
             && result.TotalBytes == result.Bytes && result.ArchiveBytes == new FileInfo(archive).Length,
             $"The export counts 6 files (4 material files, project.json, project.db) and 3 links with totals known upfront: {exported.Result}.");
         Check((await manager.PrepareExportAsync(project.Id, Path.Combine(outside, "other.zip"), "export-1")).DestinationPath == archive,
@@ -186,10 +186,10 @@ internal static class TransferSmoke
         var bytes = await File.ReadAllBytesAsync(archive);
         Check(IndexOf(bytes, [0x50, 0x4b, 0x06, 0x06]) > 0 && IndexOf(bytes, [0x50, 0x4b, 0x06, 0x07]) > 0, "The archive ends with Zip64 records.");
 
-        // Import: a copy of an existing project gets a new id and « (импорт)», a second one « (импорт 2)»; files and hard links come back.
+        // Import: a copy of an existing project gets a new id and " (<label>)" (the word the UI passes), a second one " (<label> 2)"; files and hard links come back.
         var stamp = Source(archive);
-        var started = await manager.StartImportAsync(stamp, "import-1");
-        Check(started.Status == ProjectImportStatus.Running && (await manager.StartImportAsync(stamp, "import-1")).Id == started.Id,
+        var started = await manager.StartImportAsync(stamp, "import-1", "импорт");
+        Check(started.Status == ProjectImportStatus.Running && (await manager.StartImportAsync(stamp, "import-1", "импорт")).Id == started.Id,
             "An import starts at once and a repeated operation returns it.");
         var first = await FinishImportAsync(manager, started.Id);
         Check(first.Status == ProjectImportStatus.Succeeded && first.ProjectId != project.Id && first.ProjectName == "Перенос (импорт)"
@@ -211,9 +211,10 @@ internal static class TransferSmoke
         Check((await copy.Images.ListImagesAsync(group.Id, new ImageFilter(Archived: null))).Items.Select(item => item.Id).SequenceEqual(images.Select(item => item.Id))
             && (await core.Jobs.ListAsync(copy.Id)).All(job => job.Id != exportJob.Id && job.Status is not (JobStatus.Queued or JobStatus.Running or JobStatus.Interrupted)),
             "The copy opens with the same images and without the export that made it.");
-        var second = await FinishImportAsync(manager, (await manager.StartImportAsync(stamp, "import-2")).Id);
-        Check(second.ProjectName == "Перенос (импорт 2)" && second.ProjectId != copy.Id, "A further copy is named « (импорт 2)».");
-        Check(ProjectsManager.UniqueName(new string('я', 120), new HashSet<string>([new string('я', 120)])) is { Length: 120 } fitted && fitted.EndsWith(" (импорт)", StringComparison.Ordinal),
+        var second = await FinishImportAsync(manager, (await manager.StartImportAsync(stamp, "import-2", "импорт")).Id);
+        Check(second.ProjectName == "Перенос (импорт 2)" && second.ProjectId != copy.Id, "A further copy is named \" (импорт 2)\" with the label of the UI.");
+        Check(ProjectsManager.UniqueName(new string('я', 120), new HashSet<string>([new string('я', 120)])) is { Length: 120 } fitted && fitted.EndsWith(" (import)", StringComparison.Ordinal)
+            && ProjectsManager.UniqueName("Перенос", new HashSet<string>(["Перенос"]), "импорт") == "Перенос (импорт)",
             "A long name is shortened to fit 120 characters with the suffix.");
 
         // Cancel and failures leave the library as it was.
@@ -291,10 +292,10 @@ internal static class TransferSmoke
 
         // Deletion: busy work, a stale revision, cancelling the jobs; the folder goes away.
         holds["delete"] = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var held = await jobs.EnqueueAsync<ITransferHoldJob, string>("delete", copy.Id, "hold-delete", label: "Удержание");
+        var held = await jobs.EnqueueAsync<ITransferHoldJob, string>("delete", copy.Id, "hold-delete", label: CodedText.Plain("Удержание"));
         await WaitAsync(jobs, copy.Id, held.Id, JobStatus.Running);
         var deletion = await manager.ReviewDeletionAsync(copy.Id);
-        Check(deletion.Activities is [{ Kind: "smoke.transfer_hold", Label: "Удержание" }] && !deletion.TransferActive && deletion.Name == copy.Name,
+        Check(deletion.Activities is [{ Kind: "smoke.transfer_hold", Label.Text: "Удержание" }] && !deletion.TransferActive && deletion.Name == copy.Name,
             "The deletion review lists the running job with its label.");
         var busyError = await RejectsCode("projects.busy", () => manager.DeleteAsync(copy.Id, deletion.Revision, cancelJobs: false));
         Check(busyError.Details?["count"] == "1", "Deletion without cancelling refuses while a job runs.");

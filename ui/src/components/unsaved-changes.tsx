@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -13,7 +14,7 @@ import { systemApi } from "@/api/system/system-api";
 import { Button } from "@/components/ui/button";
 import { errorMessage } from "@/lib/format";
 
-/** Экран с несохранёнными изменениями: признак, сохранение и явный отказ от изменений. */
+/** A screen with unsaved changes: the flag, saving and explicitly discarding the changes. */
 interface UnsavedRegistration {
     dirty: boolean;
     save: () => Promise<void>;
@@ -28,12 +29,13 @@ interface UnsavedChangesContext {
 const Context = createContext<UnsavedChangesContext>({ register: () => {}, guard: intent => intent() });
 
 /**
- * Одна защита несохранённых изменений для всех переходов: внутри раздела, смена раздела или проекта, перезагрузка страницы
- * (beforeunload) и закрытие окна приложения (app.closeRequested от host: окно закрывается, только если изменений нет,
- * иначе после сохранения или отказа UI просит host закрыть его — system.close). Переход выполняется только после
- * успешного сохранения или явного отказа; ошибка сохранения остаётся в диалоге.
+ * One guard of unsaved changes for every navigation: inside a section, switching the section or the project, reloading the page
+ * (beforeunload) and closing the application window (app.closeRequested from the host: the window closes only when there are no changes,
+ * otherwise after saving or discarding the UI asks the host to close it — system.close). The navigation runs only after
+ * a successful save or an explicit discard; a save error stays in the dialog.
  */
 export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
+    const { t } = useTranslation();
     const registration = useRef<{ current: UnsavedRegistration } | null>(null);
     const [pending, setPending] = useState<{ intent: () => void }>();
     const [busy, setBusy] = useState(false);
@@ -86,7 +88,7 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
             setPending(undefined);
             intent();
         } catch (cause) {
-            setError(errorMessage(cause, "Не удалось сохранить разметку."));
+            setError(errorMessage(cause, t("unsaved.saveFailed")));
         } finally {
             setBusy(false);
         }
@@ -98,19 +100,19 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
             <AlertDialog open={!!pending} onOpenChange={open => { if (!open && !busy) setPending(undefined); }}>
                 <AlertDialogContent data-testid="unsaved-guard" onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Уйти без сохранения?</AlertDialogTitle>
+                        <AlertDialogTitle>{t("unsaved.title")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Изменения разметки этого изображения ещё не сохранены. Сохраните их перед следующим действием или явно отбросьте.
+                            {t("unsaved.text")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="min-h-6" aria-live="polite">
                         {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
                     </div>
                     <AlertDialogFooter className="sm:flex-wrap">
-                        <AlertDialogCancel disabled={busy}>Продолжить разметку</AlertDialogCancel>
-                        <Button variant="outline" disabled={busy} data-testid="unsaved-leave" onClick={leave}>Уйти без сохранения</Button>
+                        <AlertDialogCancel disabled={busy}>{t("unsaved.continue")}</AlertDialogCancel>
+                        <Button variant="outline" disabled={busy} data-testid="unsaved-leave" onClick={leave}>{t("unsaved.leave")}</Button>
                         <Button disabled={busy} data-testid="unsaved-save" onClick={() => void saveAndContinue()}>
-                            {busy ? "Сохранение…" : "Сохранить и продолжить"}
+                            {busy ? t("common.saving") : t("unsaved.save")}
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -119,12 +121,12 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
     );
 }
 
-/** Переход, который при несохранённых изменениях сначала спрашивает пользователя. */
+/** A navigation that first asks the user when there are unsaved changes. */
 export function useNavigationGuard(): (intent: () => void) => void {
     return useContext(Context).guard;
 }
 
-/** Регистрирует экран с несохранёнными изменениями на время его жизни. */
+/** Registers a screen with unsaved changes for its lifetime. */
 export function useUnsavedChanges(dirty: boolean, save: () => Promise<void>, discard: () => void) {
     const { register } = useContext(Context);
     const latest = useRef<UnsavedRegistration>({ dirty, save, discard });

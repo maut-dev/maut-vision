@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -24,6 +25,9 @@ public partial class App : Application
         AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+        // The language of Windows, before the setting is read: the setting is in the work directory named by the command line.
+        var systemCulture = CultureInfo.CurrentUICulture;
+        HostLanguage.UseSystem(systemCulture);
         LaunchOptions options;
         try
         {
@@ -31,7 +35,7 @@ public partial class App : Application
         }
         catch (ArgumentException error)
         {
-            MessageBox.Show(error.Message, "Не удалось запустить Maut Vision", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(error.Message, Strings.StartupFailedTitle, MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(1);
             return;
         }
@@ -44,6 +48,9 @@ public partial class App : Application
         }
         RunningMarker.Hold();
         SessionEnding += OnSessionEnding;
+        // The loading window already speaks the chosen language: the small settings file is read before it is shown.
+        var hostSettings = new HostSettings(options.WorkDirectory);
+        var language = new HostLanguage(hostSettings, options.Language, systemCulture);
         using var cancellation = new CancellationTokenSource();
         var loading = new LoadingWindow();
         var switching = false;
@@ -62,6 +69,8 @@ public partial class App : Application
             var catalog = options.BaseModelCatalog ?? Path.Combine(AppContext.BaseDirectory, "catalog", "yolo-catalog.json");
             log = await Task.Run(() => ApplicationLog.Start(options.WorkDirectory, catalog));
             logger = log.Factory.CreateLogger<App>();
+            hostSettings.Logger = log.Factory.CreateLogger<HostSettings>();
+            logger.LogInformation("Interface language: {Language} (setting {Setting}).", language.Language, language.Setting);
             StartupTimings.Log(logger, StartupTimings.LoadingWindowShown, loadingShown);
             await WorkDirectorySetup.PrepareAsync(options.WorkDirectory, cancellation.Token);
             var pythonWorker = options.PythonWorker(AppContext.BaseDirectory);
@@ -76,7 +85,7 @@ public partial class App : Application
             await core.InitializeAsync(cancellation.Token);
             StartupTimings.Log(logger, StartupTimings.CoreInitialized);
             cancellation.Token.ThrowIfCancellationRequested();
-            MainWindow = new MainWindow(options, core, log.Factory);
+            MainWindow = new MainWindow(options, core, log.Factory, hostSettings, language);
             MainWindow.Show();
             StartupTimings.Log(logger, StartupTimings.MainWindowShown);
             switching = true;
@@ -90,7 +99,7 @@ public partial class App : Application
         catch (Exception error)
         {
             logger.LogError(error, "Startup failed.");
-            MessageBox.Show(error.Message, "Не удалось запустить Maut Vision", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(error.Message, Strings.StartupFailedTitle, MessageBoxButton.OK, MessageBoxImage.Error);
             switching = true;
             loading.Close();
             Shutdown(1);
@@ -135,8 +144,8 @@ public partial class App : Application
         var running = MainWindow is MainWindow;
         if (!smoke)
         {
-            var details = log.FilePath is { } path ? $"\n\nПодробности записаны в журнал:\n{path}" : "";
-            MessageBox.Show(running ? "Произошла непредвиденная ошибка." + details : "Не удалось запустить Maut Vision." + details,
+            var details = log.FilePath is { } path ? "\n\n" + Strings.LogDetails(path) : "";
+            MessageBox.Show(running ? Strings.UnexpectedError + details : Strings.StartupFailed + details,
                 "Maut Vision", MessageBoxButton.OK, running ? MessageBoxImage.Warning : MessageBoxImage.Error);
         }
         if (!running || smoke) Shutdown(1);

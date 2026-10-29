@@ -3,13 +3,13 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isId } from "../../catalog/catalog-guards";
 import { isGenerationRecipeResponseDto, type GenerationRecipeResponseDto } from "./generation-recipe-response-dto";
 
-/** Вид задачи запуска генерации: её снимки приходят в job.changed. */
+/** The kind of the generation run job: its snapshots arrive in job.changed. */
 export const generationRunJobKind = "generation.run";
 
 /**
- * Итог запуска в job.result (есть и у отменённого или неудачного): requestedCount, producedCount — опубликовано,
- * missingObjectFrames — «Кадров с недостающими объектами: N», outputGroupId — группа результата (null, пока запуск не подготовлен),
- * seed. Прогресс по ходу — job.processed / job.total («P / R изображений») и job.progress.
+ * The run result in job.result (a cancelled or failed run has it too): requestedCount, producedCount — published,
+ * missingObjectFrames — "Frames with missing objects: N", outputGroupId — the result group (null until the run is prepared),
+ * seed. Progress on the way — job.processed / job.total ("P / R images") and job.progress.
  */
 export interface GenerationRunResultDto {
     requestedCount: number;
@@ -20,10 +20,10 @@ export interface GenerationRunResultDto {
 }
 
 /**
- * Запуск: job — снимок задачи generation.run (status queued / running / succeeded / failed / cancelled / blocked, cancelRequested,
- * error с русским текстом, result); recipe — копия пресета («Настройки этого запуска»); seed; requestedCount; producedCount —
- * опубликованный непрерывный префикс; missingObjectFrames; outputGroupId — «Открыть изображения» (null до подготовки);
- * outputGroupName — «<пресет> · <дата>». Живой прогресс — job.changed с kind generation.run и тем же id.
+ * A run: job — the snapshot of the job generation.run (status queued / running / succeeded / failed / cancelled / blocked, cancelRequested,
+ * error by code, result); recipe — a copy of the preset ("Settings of this run"); seed; requestedCount; producedCount —
+ * the published continuous prefix; missingObjectFrames; outputGroupId — "Open images" (null before preparation);
+ * outputGroupName — "<preset> · <date>". Live progress — job.changed with kind generation.run and the same id.
  */
 export interface GenerationRunResponseDto {
     job: JobResponseDto;
@@ -36,7 +36,7 @@ export interface GenerationRunResponseDto {
     outputGroupName: string;
 }
 
-/** Страница запусков, новые первыми; total — «Запуски (N)». */
+/** A page of runs, newest first; total — "Runs (N)". */
 export interface GenerationRunPageResponseDto {
     items: GenerationRunResponseDto[];
     total: number;
@@ -51,7 +51,7 @@ export function isGenerationRunResultDto(value: unknown): value is GenerationRun
         && (value.outputGroupId === null || isId(value.outputGroupId)) && isCount(value.seed);
 }
 
-/** Итог запуска из снимка задачи; null — задача другого вида или итога ещё нет. */
+/** The run result from a job snapshot; null — a job of another kind or no result yet. */
 export function parseGenerationRunResult(job: JobResponseDto): GenerationRunResultDto | null {
     return job.kind === generationRunJobKind && isGenerationRunResultDto(job.result) ? job.result : null;
 }

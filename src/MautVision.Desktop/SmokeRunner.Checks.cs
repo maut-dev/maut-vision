@@ -14,7 +14,7 @@ internal static partial class SmokeRunner
 {
     /// <summary>
     /// Model checks API from the real page with the fake worker, on the versions the training check made: deletion review and the refusal
-    /// for the working version with its Russian text; the ZIP export through «Сохранить как» and job.changed (the archive is opened in
+    /// for the working version with its Russian text; the ZIP export through "Save as" and job.changed (the archive is opened in
     /// C#); an evaluation with the compatibility text formatted from details, its metrics through checks.changed; an image check whose
     /// preview loads from the resource channel; immediate refusal while the GPU is busy and stop; monitors and the screenshot; a video
     /// check with its sample frame; a screen check stopped by the reload of the page.
@@ -22,10 +22,6 @@ internal static partial class SmokeRunner
     private static async Task CheckChecksAsync(CoreWebView2 web, string root, string projectId, ICore core, JsonNode report, CancellationToken token)
     {
         var checks = report["checks"]!.AsArray();
-        if (BridgeErrors.Format("Кадры {width} × {height}, {missing}.", new Dictionary<string, string> { ["width"] = "64", ["height"] = "48" })
-            != "Кадры 64 × 48, {missing}.")
-            throw new InvalidOperationException("Error texts do not take values of the details.");
-        checks.Add("Error texts take values of the error details");
         // The training checks end their runs; a check needs the GPU slot free.
         for (var attempt = 0; (await core.Jobs.ListAsync(projectId, 200, cancellationToken: token)).Any(job => job.Status is JobStatus.Queued or JobStatus.Running); attempt++)
         {
@@ -49,7 +45,7 @@ internal static partial class SmokeRunner
             if (!archive.Entries.Select(entry => entry.FullName).SequenceEqual(["weights/best.pt", "weights/best.onnx", "manifest.json", "classes.json", "README.md"]))
                 throw new InvalidOperationException("The exported archive has other entries: " + string.Join(", ", archive.Entries.Select(entry => entry.FullName)));
         }
-        checks.Add("The archive saved through «Сохранить как» has weights, manifest, classes and README");
+        checks.Add("The archive saved through \"Save as\" has weights, manifest, classes and README");
 
         MainWindow.SmokeFilesAnswer = [hang];
         MainWindow.SmokeVideoAnswer = Path.Combine(root, "smoke-video", "улица.mp4");
@@ -124,13 +120,13 @@ internal static partial class SmokeRunner
         try {
           const review = await request('training.reviewModelVersionDeletion', {projectId, versionId: working.id});
           assert(review.ok && review.data.isWorking && review.data.blockers[0]?.code === 'training.version_working'
-            && review.data.blockers[0].message.startsWith('Это рабочая версия'), 'The deletion review of the working version explains the blocker');
+            && mautLocale.blockerText('training', review.data.blockers[0]).startsWith('Это рабочая версия'), 'The deletion review of the working version explains the blocker');
           const refused = await request('training.deleteModelVersion', {projectId, versionId: working.id});
           assert(!refused.ok && refused.error.code === 'training.version_in_use' && refused.error.details?.reason === 'working'
-            && refused.error.message.startsWith('Версию сейчас нельзя удалить'), 'Deleting the working version is refused with the reason');
+            && mautLocale.errorText(refused.error.code, refused.error.details).startsWith('Версию сейчас нельзя удалить'), 'Deleting the working version is refused with the reason');
 
           const selection = await request('training.selectModelExportDestination', {projectId, versionId: working.id});
-          assert(selection.ok && selection.data.token && selection.data.fileName === 'model-v1.zip', '«Сохранить как» gives a destination token');
+          assert(selection.ok && selection.data.token && selection.data.fileName === 'model-v1.zip', '"Save as" gives a destination token');
           const export1 = await request('training.startModelExport', {projectId, versionId: working.id, destinationToken: selection.data.token, operationId: 'checks-smoke-export'});
           assert(export1.ok && export1.data.kind === 'training.export', 'training.startModelExport returns the job at once');
           const exported = await finished(export1.data.id);
@@ -140,7 +136,7 @@ internal static partial class SmokeRunner
           await rename(datasetId, 'Проверка smoke');
           const empty = await request('checks.startEvaluation', {projectId, versionId: working.id, datasetVersionId: datasetId, split: 'test', device: 'cpu', batch: null,
             operationId: 'checks-smoke-empty'});
-          assert(!empty.ok && empty.error.code === 'checks.evaluation_split_empty' && empty.error.message === 'В части Test этого датасета нет кадров.',
+          assert(!empty.ok && empty.error.code === 'checks.evaluation_split_empty' && mautLocale.errorText(empty.error.code, empty.error.details) === 'В части Test этого датасета нет кадров.',
             'An empty part is refused with the text of the spec');
           const bad = await request('checks.startEvaluation', {projectId, versionId: working.id, datasetVersionId: datasetId, split: 'train', device: 'cpu', batch: null,
             operationId: 'checks-smoke-bad'});
@@ -188,7 +184,7 @@ internal static partial class SmokeRunner
           const hanging = await request('checks.startImage', {projectId, versionId: working.id, selectionToken: picked.data.token, parameters, operationId: 'checks-smoke-hang'});
           await checkEvent(hanging.data.id, ['running']);
           const busy = await request('checks.startImage', {projectId, versionId: working.id, selectionToken: picked.data.token, parameters, operationId: 'checks-smoke-busy'});
-          assert(!busy.ok && busy.error.code === 'checks.gpu_busy_prediction' && busy.error.message.startsWith('Уже идёт другая проверка'),
+          assert(!busy.ok && busy.error.code === 'checks.gpu_busy_prediction' && mautLocale.errorText(busy.error.code, busy.error.details).startsWith('Уже идёт другая проверка'),
             'A second check is refused at once while one runs');
           const review = await request('training.reviewModelVersionDeletion', {projectId, versionId: working.id});
           assert(review.data.blockers.some(blocker => blocker.code === 'checks.live_active'), 'A running check blocks deleting its version');
@@ -204,7 +200,7 @@ internal static partial class SmokeRunner
           const screen = await load(shot.data.url);
           assert(screen.naturalWidth === monitors.data[0].width && screen.naturalHeight === monitors.data[0].height, 'The screenshot loads in physical pixels');
           const missing = await request('checks.captureScreen', {projectId, monitor: 99});
-          assert(!missing.ok && missing.error.code === 'screen.monitor_not_found' && missing.error.message.startsWith('Монитор не найден'), 'An unknown monitor is refused');
+          assert(!missing.ok && missing.error.code === 'screen.monitor_not_found' && mautLocale.errorText(missing.error.code, missing.error.details).startsWith('Монитор не найден'), 'An unknown monitor is refused');
 
           const video = await request('checks.selectVideo', {projectId});
           assert(video.ok && video.data.width === 640 && video.data.height === 360 && video.data.durationMs > 4000 && video.data.frame?.timestampMs > 2000,

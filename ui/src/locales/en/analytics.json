@@ -1,0 +1,77 @@
+{
+  "help": {
+    "mAP50": "mAP50 — mean average precision over classes at IoU ≥ 0.5: the main YOLO detection metric. Computed on the Validation split of the dataset.",
+    "mAP50_95": "mAP50-95 — the same averaged over IoU thresholds from 0.5 to 0.95: stricter about box accuracy. Ultralytics picks the best weights by it.",
+    "precision": "Precision — the share of detections that were correct. Low means the model often sees an object where there is none.",
+    "recall": "Recall — the share of real objects the model found. Low means the model misses a lot.",
+    "bestEpoch": "Best epoch — the epoch with the highest Ultralytics fitness (now mAP50-95 on validation): the best.pt weights of the version come from it.",
+    "epochs": "Epochs done of those set. Fewer than set means early stopping (patience) fired: the metrics stopped improving.",
+    "dataset": "The dataset the version was trained on and the number of frames in the Train and Validation splits.",
+    "lr0": "Initial learning rate (lr0). \"auto\" means the worker computed it from the batch.",
+    "batch": "Batch size. If Ultralytics reduced it for lack of memory, the actual one is in brackets.",
+    "amp": "Mixed precision (AMP): the actual value; the worker turns it off on the CPU and on some GPUs."
+  },
+  "curve": {
+    "box_loss": "Box loss",
+    "cls_loss": "Class loss",
+    "dfl_loss": "DFL loss",
+    "valBoxLoss": "Box loss (val)",
+    "valClsLoss": "Class loss (val)",
+    "valDflLoss": "DFL loss (val)",
+    "lr": "Learning rate (lr)",
+    "fitness": "Fitness"
+  },
+  "row": {
+    "bestEpoch": "Best epoch",
+    "epochs": "Epochs done / set",
+    "dataset": "Training dataset",
+    "split": "Frames train / val",
+    "date": "Date",
+    "batch": "Batch",
+    "lr0": "lr0",
+    "amp": "AMP",
+    "device": "Device",
+    "datasetDeleted": "Dataset deleted",
+    "datasetArchived": "{{name}} (archived)",
+    "tuned": "{{value}} (auto)",
+    "on": "on",
+    "off": "off"
+  },
+  "table": {
+    "parameter": "Parameter",
+    "version": "Version {{number}}"
+  },
+  "empty": {
+    "title": "Nothing to compare yet",
+    "text": "Analytics compares the model versions of the project: metrics, training curves and dataset checks. A version appears after a successful training run.",
+    "openTraining": "Open training"
+  },
+  "retry": "Retry",
+  "versions": {
+    "title": "Versions to compare",
+    "loading": "Loading versions…",
+    "working": "working",
+    "note": "Versions may come from different runs and be trained on different datasets: the table metrics are computed on the validation split of each version's dataset. For a fair comparison on the same frames, use the checks below."
+  },
+  "metrics": {
+    "title": "Metrics and parameters",
+    "copy": "Copy the table",
+    "copied": "Copied",
+    "copyFailed": "Could not copy the table to the clipboard.",
+    "openPassport": "Open the version passport",
+    "gap": "Behind the best version",
+    "note": "The best metric value of a row is green; the others show how far behind it they are. Hover a row name for its explanation; a version header opens its passport."
+  },
+  "none": "Mark one or more versions to compare them.",
+  "evaluations": "Dataset checks",
+  "curves": {
+    "title": "Training curves by epoch",
+    "metricAria": "Chart metric",
+    "chart": "{{metric}} by epoch",
+    "loading": "Loading the epoch history…",
+    "noValues": "The chosen versions have no {{metric}} values by epoch.",
+    "missingAria": "Versions without curves",
+    "failed": "— could not load the epoch history",
+    "noEpochs": "— the worker sent no epochs"
+  }
+}

@@ -1,6 +1,6 @@
 import { isRecord } from "../../transport/envelopes";
 
-/** accepted — false, если ответ относится к уже неактуальному запросу закрытия. */
+/** accepted — false when the answer belongs to a close request that is no longer current. */
 export interface CloseResponseDto {
     accepted: boolean;
 }

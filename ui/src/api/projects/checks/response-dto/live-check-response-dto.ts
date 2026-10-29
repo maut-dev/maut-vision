@@ -3,22 +3,17 @@ import { isRecord } from "../../../transport/envelopes";
 import { isCount, isDate, isDateOrNull, isId } from "../../catalog/catalog-guards";
 import type { CheckRegionDto } from "../request-dto/checks-request-dto";
 import { isCheckErrorDto, type CheckErrorDto } from "./model-evaluation-response-dto";
+import { isCodedTextDto, type CodedTextDto } from "../../../coded-text-dto";
 
 export type LiveCheckMode = "image" | "video" | "screen";
 
-/** Состояние живой проверки; подписи — liveCheckStateLabels. Живая проверка не ждёт видеокарту: занятая — сразу отказ checks.gpu_busy_*. */
+/**
+ * State of a live check; the UI names it by the key checks:liveState.<state>. A live check does not wait for the GPU: a busy one is refused
+ * at once with checks.gpu_busy_*.
+ */
 export type LiveCheckState = "preparing" | "running" | "cancelling" | "succeeded" | "failed" | "cancelled";
 
-export const liveCheckStateLabels: Record<LiveCheckState, string> = {
-    preparing: "Подготовка",
-    running: "Идёт проверка",
-    cancelling: "Остановка…",
-    succeeded: "Готово",
-    failed: "Ошибка",
-    cancelled: "Остановлено",
-};
-
-/** Кто остановил: кнопка, переход в другой проект, перезагрузка страницы или закрытие окна, предел времени экрана (тогда «Готово»). */
+/** Who stopped it: the button, switching to another project, a page reload or closing the window, the screen time limit (then Done). */
 export type LiveCheckStopReason = "user" | "project_switched" | "session_ended" | "time_limit";
 
 export interface LiveCheckSettingsDto {
@@ -33,7 +28,7 @@ export interface LiveCheckSettingsDto {
     maxDurationSec: number | null;
 }
 
-/** Что проверяется: имя файла (null у экрана), размер кадра, длительность и частота видео, монитор. */
+/** What is checked: the file name (null for the screen), the frame size, the video duration and frame rate, the monitor. */
 export interface LiveCheckSourceDto {
     name: string | null;
     width: number | null;
@@ -44,8 +39,8 @@ export interface LiveCheckSourceDto {
 }
 
 /**
- * Видео: «m:ss.s из m:ss.s · проверено кадров framesProcessed из ~framesTotal»; экран: «Кадров N · fps к/с · elapsedMs от начала»;
- * firstFrameMs — от запуска worker до первого кадра.
+ * Video: "m:ss.s of m:ss.s · frames checked framesProcessed of ~framesTotal"; screen: "Frames N · fps · elapsedMs elapsed";
+ * firstFrameMs — from the worker start to the first frame.
  */
 export interface LiveCheckProgressDto {
     framesProcessed: number;
@@ -57,7 +52,7 @@ export interface LiveCheckProgressDto {
     firstFrameMs: number | null;
 }
 
-/** Строка «Итог по классам»; цвет класса — --series-N по classIndex. */
+/** A row of the per-class summary; the class color is --series-N by classIndex. */
 export interface LiveCheckClassSummaryDto {
     classIndex: number;
     classId: string | null;
@@ -74,7 +69,7 @@ export interface LiveCheckSummaryDto {
     classes: LiveCheckClassSummaryDto[];
 }
 
-/** Обнаружение: рамка в долях анализируемого кадра (поверх превью без пересчёта), подпись «имя NN%». */
+/** A detection: the box in fractions of the analyzed frame (over the preview without conversion), the caption "name NN%". */
 export interface LiveDetectionDto {
     classIndex: number;
     classId: string | null;
@@ -87,8 +82,8 @@ export interface LiveDetectionDto {
 }
 
 /**
- * Кадр: ordinal — запись журнала (0 у последнего кадра без обнаружений), index — номер кадра, timeMs — его время; в событиях
- * detections — не больше 100 самых уверенных, detectionCount — все.
+ * A frame: ordinal — the journal record (0 for the last frame without detections), index — the frame number, timeMs — its time; in events
+ * detections holds at most the 100 most confident ones, detectionCount counts all.
  */
 export interface LiveCheckFrameDto {
     ordinal: number;
@@ -101,7 +96,7 @@ export interface LiveCheckFrameDto {
     detectionCount: number;
 }
 
-/** Последнее превью (JPEG); number растёт с каждым новым превью. */
+/** The latest preview (JPEG); number grows with each new preview. */
 export interface LiveCheckPreviewDto {
     number: number;
     frameIndex: number;
@@ -111,7 +106,7 @@ export interface LiveCheckPreviewDto {
     url: ResourceUrl;
 }
 
-/** total — кадров с обнаружениями всего; kept — хранится (экран — 2 000 последних, видео — 5 000 первых); truncated — журнал видео обрезан. */
+/** total — frames with detections in all; kept — stored (screen: the last 2,000, video: the first 5,000); truncated — the video journal is cut. */
 export interface LiveCheckJournalInfoDto {
     total: number;
     kept: number;
@@ -125,14 +120,15 @@ export interface LiveCheckJournalPageResponseDto {
     journal: LiveCheckJournalInfoDto;
 }
 
+/** A warning of the worker: code for the log; message — a code of the catalog worker with values and the English fallback. */
 export interface LiveCheckWarningDto {
     code: string;
-    message: string;
+    message: CodedTextDto;
 }
 
 /**
- * Живая проверка. Снимок (checksApi.get, list, start*) и события checks.changed (без recentFrames): применять, только если sequence
- * больше известного. lastFrame — «Сейчас на экране»; новые записи журнала после события — checksApi.listJournal({after: lastOrdinal}).
+ * A live check. Snapshots (checksApi.get, list, start*) and checks.changed events (without recentFrames): apply them only when sequence
+ * is greater than the known one. lastFrame is what is on screen now; new journal records after an event — checksApi.listJournal({after: lastOrdinal}).
  */
 export interface LiveCheckResponseDto {
     id: string;
@@ -203,7 +199,7 @@ export function isLiveCheckResponseDto(value: unknown): value is LiveCheckRespon
         && (value.preview === null || (isRecord(value.preview) && isCount(value.preview.number) && isCount(value.preview.frameIndex) && isCount(value.preview.timeMs)
             && isCount(value.preview.width) && isCount(value.preview.height) && isResourceUrl(value.preview.url)))
         && isLiveCheckJournalInfoDto(value.journal) && Array.isArray(value.recentFrames) && value.recentFrames.every(isLiveCheckFrameDto)
-        && Array.isArray(value.warnings) && value.warnings.every(item => isRecord(item) && typeof item.code === "string" && typeof item.message === "string")
+        && Array.isArray(value.warnings) && value.warnings.every(item => isRecord(item) && typeof item.code === "string" && isCodedTextDto(item.message))
         && (value.error === null || isCheckErrorDto(value.error)) && (value.stopReason === null || (typeof value.stopReason === "string" && reasons.includes(value.stopReason)))
         && isDate(value.startedAt) && isDateOrNull(value.finishedAt) && isCount(value.sequence);
 }

@@ -5,10 +5,10 @@ import type { HardwareSampleResponseDto } from "@/api/hardware/response-dto/hard
 export const hardwareSampleIntervalMs = 2_000;
 
 /**
- * Снимок «Ваш компьютер», пока компонент смонтирован и страница видна. Следующий запрос уходит через 2 с после ответа (цепочка
- * setTimeout, без setInterval): медленный ответ не накапливает запросы. Свёрнутое окно (visibilityState hidden — host скрывает
- * WebView2) останавливает цепочку, возвращение окна сразу запрашивает новый снимок. Фокус окна не нужен. failed — последний
- * запрос не удался; sample тогда остаётся прежним (показатели могут быть устаревшими).
+ * A sample of the computer while the component is mounted and the page is visible. The next request goes 2 s after the answer (a chain
+ * of setTimeout, no setInterval): a slow answer does not pile up requests. A minimized window (visibilityState hidden — the host hides
+ * WebView2) stops the chain, a returning window asks for a new sample at once. Window focus is not needed. failed — the last
+ * request failed; sample then stays as it was (the readings may be out of date).
  */
 export function useHardwareSample() {
     const [sample, setSample] = useState<HardwareSampleResponseDto>();

@@ -3,8 +3,8 @@ using MautVision.Core.Interfaces.Projects;
 namespace MautVision.Core.Projects;
 
 /// <summary>
-/// Содержимое projects/&lt;projectId&gt;/project.json. Неизменяемый снимок: изменение
-/// создаёт новую запись с увеличенной Revision.
+/// Content of projects/&lt;projectId&gt;/project.json. An immutable snapshot: a change
+/// creates a new record with an increased Revision.
 /// </summary>
 internal sealed record ProjectMetadata
 {

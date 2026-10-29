@@ -29,14 +29,14 @@ internal static class FakeChecks
         emit("started", new JsonObject { ["operation"] = operation, ["operationId"] = operationId, ["protocolVersion"] = 1, ["pid"] = Environment.ProcessId });
         emit("stage", new JsonObject { ["stage"] = "validating" });
         var model = request["input"]!["model"]!.GetValue<string>();
-        if (!File.Exists(Path.Combine(job, model.Replace('/', Path.DirectorySeparatorChar)))) return Fail("model_not_found", "Нет весов версии.");
+        if (!File.Exists(Path.Combine(job, model.Replace('/', Path.DirectorySeparatorChar)))) return Fail("model_not_found", "There are no version weights.");
         emit("stage", new JsonObject { ["stage"] = "loading_model" });
         return operation switch
         {
             "evaluate" => Evaluate(),
             "predict" => Predict(),
             "live" => Live(),
-            _ => Fail("operation_not_implemented", $"Операции {operation} нет."),
+            _ => Fail("operation_not_implemented", $"There is no operation {operation}."),
         };
 
         int Evaluate()
@@ -44,8 +44,8 @@ internal static class FakeChecks
             var scenario = Scenario(manifest["dataset"]?["name"]?.GetValue<string>());
             var split = parameters["split"]!.GetValue<string>();
             var images = Directory.EnumerateFiles(Path.Combine(job, "input", "dataset", "images", split)).Count();
-            if (images == 0) return Fail("dataset_invalid", $"В выборке {split} нет изображений.");
-            if (scenario.StartsWith("fail=", StringComparison.Ordinal)) return Fail(scenario["fail=".Length..], $"Сообщение worker: {scenario["fail=".Length..]}.");
+            if (images == 0) return Fail("dataset_invalid", $"The split {split} has no images.");
+            if (scenario.StartsWith("fail=", StringComparison.Ordinal)) return Fail(scenario["fail=".Length..], $"Worker message: {scenario["fail=".Length..]}.");
             emit("stage", new JsonObject { ["stage"] = "evaluating" });
             if (scenario == "hang") Thread.Sleep(Timeout.Infinite);
             if (scenario == "slow") Thread.Sleep(1500);
@@ -78,7 +78,7 @@ internal static class FakeChecks
             var input = request["input"]!.AsObject();
             var source = input["source"] is { } relative ? Path.Combine(job, relative.GetValue<string>().Replace('/', Path.DirectorySeparatorChar))
                 : input["externalSource"]!.GetValue<string>();
-            if (!File.Exists(source) || name.Contains("fake-fail", StringComparison.Ordinal)) return Fail("source_invalid", "Файл не распознан как изображение или видео.");
+            if (!File.Exists(source) || name.Contains("fake-fail", StringComparison.Ordinal)) return Fail("source_invalid", "The file is not recognized as an image or a video.");
             emit("stage", new JsonObject { ["stage"] = "predicting" });
             if (name.Contains("fake-hang", StringComparison.Ordinal)) Thread.Sleep(Timeout.Infinite);
             if (parameters["source"]!.GetValue<string>() == "image")
@@ -141,12 +141,12 @@ internal static class FakeChecks
                 frames++;
                 if (frames > burst) Thread.Sleep(TimeSpan.FromSeconds(1 / fps));
             }
-            emit("warning", new JsonObject { ["code"] = "live_time_limit", ["message"] = $"Проверка с экрана остановлена по пределу {limit.TotalSeconds:0} с" });
+            emit("warning", new JsonObject { ["code"] = "live_time_limit", ["message"] = $"The screen check stopped at its limit of {limit.TotalSeconds:0} s", ["args"] = new JsonObject { ["seconds"] = $"{limit.TotalSeconds:0}" } });
             return Succeed(new JsonObject
             {
                 ["summary"] = Summary(frames, frames, boxes),
                 ["source"] = new JsonObject { ["width"] = 64, ["height"] = 48 },
-                ["warnings"] = new JsonArray(new JsonObject { ["code"] = "live_time_limit", ["message"] = $"Проверка с экрана остановлена по пределу {limit.TotalSeconds:0} с" }),
+                ["warnings"] = new JsonArray(new JsonObject { ["code"] = "live_time_limit", ["message"] = $"The screen check stopped at its limit of {limit.TotalSeconds:0} s", ["args"] = new JsonObject { ["seconds"] = $"{limit.TotalSeconds:0}" } }),
             });
         }
 

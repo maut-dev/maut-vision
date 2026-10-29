@@ -7,6 +7,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-29
+
+### Added
+
+- **Localization**: the whole interface in English besides Russian: the library, base models, project dialogs, every project section
+  (overview, variants, classes, backgrounds, images, generation, datasets, training, models, checks, analytics), error texts, job
+  progress and the training log. Catalogs live in `ui/src/locales/<language>/<namespace>.json` with keys typed by the Russian catalog;
+  each section loads its texts with its own chunk (`ui/src/i18n/sections/<namespace>.ts`), so startup does not grow.
+- **Localization**: the setting «Язык интерфейса» / "Interface language" in the header («Как в системе», «Русский», «English»), kept in
+  `host-settings.json` and applied without a restart; by default the language of Windows (Russian for `ru-*`, otherwise English);
+  `--language system|ru|en` for one run.
+- **Localization**: `npm run check-locales` (part of `npm run typecheck`) compares the languages key by key and placeholder by placeholder,
+  checks plural forms and requires a text for every error code, line code and worker message the host can send.
+- **Host**: the loading window, tray, exit question, native file dialogs and startup failures in English and Russian (`Strings.resx`);
+  the tray is relabelled when the language changes.
+- **Installer**: an English and a Russian wizard chosen by the language of Windows.
+
+### Changed
+
+- **Errors**: bridge responses carry `{ code, details }` without a text; error texts, deletion blockers, plan warnings, skip reasons and
+  hardware reasons are built by the UI from codes in the current language. Job errors stored by earlier versions keep their message as
+  a fallback for unknown codes.
+- **Progress and logs**: job progress, job labels, system lines of the training log and worker errors and warnings come from the host as
+  codes with values (`CodedText`: `{ code, args, text }`) and are shown in the interface language. `JobInfo.ProgressText` became
+  `ProgressMessage`; progress lines and labels stored by 1.0.0 are shown as they were. Console lines of Ultralytics stay raw.
+- **Python worker**: errors and warnings carry `reason` and `args` (an optional extension of protocol 1) and English messages from
+  `worker/protocol/messages.py`; all worker messages, comments and logs are in English.
+- **Russian plural forms**: counts take the right form everywhere (one, few, many: «1 фон», «2 фона», «5 фонов»), including counts that
+  were shown with a fixed form before.
+- **Formatting**: numbers, sizes, dates and durations follow the interface language through `ui/src/lib/format.ts`.
+- **Projects**: the import suffix of a copy, the fallback export file name and the name of a repeated generation preset come from the UI
+  in its language. The README.md of a model ZIP is in English.
+- **Focus**: saving or cancelling a preset edit, archiving and the dataset actions move the focus after the render that enables the
+  target button, so the focus no longer gets lost when the render comes after the next frame.
+- Core interfaces, Desktop DTOs, log messages and UI comments are written in English.
+
 ## [1.0.0] - 2026-10-27
 
 First public release.
@@ -37,5 +73,6 @@ First public release.
   resource channel for images, structured logs.
 - **Delivery**: a per-user Inno Setup installer with the WebView2 bootstrapper, bundled ffmpeg (LGPL) and Python worker.
 
-[Unreleased]: https://github.com/maut-dev/maut-vision/compare/v1.0.0...dev
+[Unreleased]: https://github.com/maut-dev/maut-vision/compare/v1.1.0...dev
+[1.1.0]: https://github.com/maut-dev/maut-vision/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/maut-dev/maut-vision/releases/tag/v1.0.0

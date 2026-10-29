@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 namespace MautVision.Core.BaseModels;
 
 /// <summary>
-/// Runtime-состояние одной модели каталога. Файл публикуется под своим именем только
-/// после проверки размера и SHA-256; загрузка идёт во временный файл в той же папке.
+/// Runtime state of one catalog model. The file is published under its own name only
+/// after the size and SHA-256 are checked; the download goes into a temporary file in the same folder.
 /// </summary>
 internal sealed class BaseModel : IBaseModel
 {
@@ -67,7 +67,7 @@ internal sealed class BaseModel : IBaseModel
         get { lock (gate) return errorCode; }
     }
 
-    /// <summary>Определяет состояние по размеру файла без чтения содержимого: полная проверка — VerifyIntegrityAsync.</summary>
+    /// <summary>Determines the state by file size without reading the content: the full check is VerifyIntegrityAsync.</summary>
     internal void InspectStoredFile()
     {
         var file = new FileInfo(filePath);

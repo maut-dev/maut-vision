@@ -1,23 +1,27 @@
 import type { KeyboardEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { i18n } from "@/i18n";
 
 export type DatasetTab = "datasets" | "build" | "verify" | "export";
 
+/** Tabs with labels in the current language (read at render time). */
 export const datasetTabs: readonly { id: DatasetTab; label: string }[] = [
-    { id: "datasets", label: "Датасеты" },
-    { id: "build", label: "Сборка" },
-    { id: "verify", label: "Проверки" },
-    { id: "export", label: "Экспорты" },
+    { id: "datasets", get label() { return i18n.t("datasets:tabs.datasets"); } },
+    { id: "build", get label() { return i18n.t("datasets:tabs.build"); } },
+    { id: "verify", get label() { return i18n.t("datasets:tabs.verify"); } },
+    { id: "export", get label() { return i18n.t("datasets:tabs.export"); } },
 ];
 
 export const tabId = (tab: DatasetTab) => `dataset-tab-${tab}`;
 export const panelId = (tab: DatasetTab) => `dataset-panel-${tab}`;
 
 /**
- * Вкладки раздела «Датасеты» по шаблону WAI-ARIA tablist: фокус только у выбранной вкладки (tabIndex), стрелки влево и вправо
- * переходят по кругу, Home и End — к первой и последней; переход выбирает вкладку и переводит на неё фокус.
+ * Tabs of the section "Datasets" by the WAI-ARIA tablist pattern: only the chosen tab takes focus (tabIndex), left and right arrows wrap
+ * around, Home and End go to the first and the last; a move chooses the tab and focuses it.
  */
 export function DatasetTabs({ tab, select }: { tab: DatasetTab; select: (tab: DatasetTab) => void }) {
+    const { t } = useTranslation("datasets");
     function onKeyDown(event: KeyboardEvent, index: number) {
         const last = datasetTabs.length - 1;
         const next = event.key === "ArrowRight" ? (index + 1) % datasetTabs.length
@@ -30,7 +34,7 @@ export function DatasetTabs({ tab, select }: { tab: DatasetTab; select: (tab: Da
     }
 
     return (
-        <div role="tablist" aria-label="Разделы датасетов" className="flex shrink-0 flex-wrap gap-1">
+        <div role="tablist" aria-label={t("tabs.label")} className="flex shrink-0 flex-wrap gap-1">
             {datasetTabs.map((item, index) => (
                 <Button
                     key={item.id}

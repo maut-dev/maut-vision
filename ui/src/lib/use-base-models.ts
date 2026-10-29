@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { baseModelsApi } from "@/api/base-models/base-models-api";
 import type { BaseModelResponseDto } from "@/api/base-models/response-dto/base-model-response-dto";
 import { subscribeBaseModelChanged } from "@/api/events/subscriptions";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 
 type Operation = "install" | "cancelInstallation" | "delete";
 
-/** Каталог базовых моделей: начальный список запросом, дальнейшие изменения — событиями baseModel.changed. */
+/** The base model catalog: the initial list by a request, later changes by baseModel.changed events. */
 export function useBaseModels() {
     const [models, setModels] = useState<readonly BaseModelResponseDto[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,7 +29,7 @@ export function useBaseModels() {
             setModels(result);
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось открыть каталог моделей. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("baseModels.loadFailed")));
         } finally {
             if (mounted.current) setLoading(false);
         }

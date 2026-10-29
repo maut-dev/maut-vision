@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { backgroundsWord } from "@/api/projects/backgrounds/background-import-rules";
+import { useTranslation } from "react-i18next";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { ImportBackgroundsRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
 import type { BackgroundImportPreviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-import-preview-response-dto";
@@ -17,11 +17,12 @@ import type { BackgroundBlurState } from "@/lib/use-background-blur";
 import { Field } from "./background-blur-settings";
 import { BackgroundCropFrame } from "./background-crop-frame";
 import { BackgroundImportSamples } from "./background-import-samples";
+import "@/i18n/sections/backgrounds";
 
 /**
- * «Нарезать из видео»: одна рамка размера набора на всё видео. Видео выбирается в нативном окне (без хеширования), кадр-
- * пример — середина видео, «Показать другой кадр» — случайная отметка. Поля проверяются теми же правилами, что у host;
- * примеры и запуск — с одним operationId. Выбор действует на один запуск: после него видео выбирается снова.
+ * "Cut from video": one frame of the set size for the whole video. The video is chosen in the native dialog (without hashing), the
+ * example frame is the middle of the video, "Show another frame" takes a random mark. The fields are checked with the same rules as the
+ * host's; samples and the run share one operationId. A choice serves one run: after it the video is chosen again.
  */
 export function BackgroundVideoImport({ projectId, set, blur, disabled, start }: {
     projectId: string;
@@ -30,6 +31,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
     disabled: boolean;
     start: (request: ImportBackgroundsRequestDto) => Promise<void>;
 }) {
+    const { t } = useTranslation("backgrounds");
     const frame = set.targetSize;
     const [video, setVideo] = useState<SelectedVideoDto>();
     const [example, setExample] = useState<BackgroundSourcePreviewResponseDto>();
@@ -41,7 +43,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
     const [error, setError] = useState<string>();
     const [started, setStarted] = useState(false);
     const alive = useRef(true);
-    /** Показанный кадр-пример: другой кадр того же размера сохраняет рамку. */
+    /** The shown example frame: another frame of the same size keeps the crop frame. */
     const shown = useRef<BackgroundSourcePreviewResponseDto | undefined>(undefined);
 
     useEffect(() => {
@@ -56,7 +58,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
     const locked = disabled || busy;
     const paramsKey = JSON.stringify([video?.selectionToken, region, range, fields.skipSimilar, blur.key, operationId]);
 
-    // Смена параметров делает примеры устаревшими.
+    // A change of the parameters makes the samples stale.
     useEffect(() => setPreview(undefined), [paramsKey]);
 
     async function act(action: () => Promise<void>) {
@@ -126,7 +128,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
         void act(async () => {
             await start(sent);
             if (!alive.current) return;
-            // Выбор привязан к запуску: следующий запуск — новое видео и новая операция.
+            // A choice belongs to a run: the next run needs a new video and a new operation.
             setVideo(undefined);
             setExample(undefined);
             setPreview(undefined);
@@ -144,22 +146,20 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
     const countValid = Number.isInteger(range.count) && range.count > 0;
 
     return (
-        <section className="space-y-4" aria-label="Нарезка из видео" data-testid="bg-video-import">
+        <section className="space-y-4" aria-label={t("video.title")} data-testid="bg-video-import">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
-                    <h4 className="text-sm font-medium">Нарезка из видео</h4>
-                    <p className="text-xs text-muted-foreground">
-                        Одна рамка {frame.width} × {frame.height} px на всё видео: из каждого взятого кадра вырезается этот участок.
-                    </p>
+                    <h4 className="text-sm font-medium">{t("video.title")}</h4>
+                    <p className="text-xs text-muted-foreground">{t("video.description", { width: frame.width, height: frame.height })}</p>
                 </div>
-                <Button variant="outline" size="sm" disabled={locked} data-testid="bg-video-choose" onClick={choose}>{video ? "Другое видео" : "Выбрать видео"}</Button>
+                <Button variant="outline" size="sm" disabled={locked} data-testid="bg-video-choose" onClick={choose}>{video ? t("video.other") : t("video.choose")}</Button>
             </div>
             <p className="min-h-5 truncate text-xs text-muted-foreground" data-testid="bg-video-info">
                 {video
-                    ? `${video.displayName} · ${video.width} × ${video.height} · ${(video.durationMs / 1000).toFixed(1)} с`
+                    ? t("video.info", { name: video.displayName, width: video.width, height: video.height, seconds: (video.durationMs / 1000).toFixed(1) })
                     : started
-                        ? "Задача запущена — ход и итог в истории подготовки. Для следующего запуска выберите видео снова."
-                        : "Выберите видео — появится кадр-пример, на котором ставится рамка."}
+                        ? t("video.started")
+                        : t("video.choosePrompt")}
             </p>
             {video && example && (
                 <div className="space-y-2">
@@ -167,43 +167,40 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
                     <div className="flex justify-center">
                         <Button variant="ghost" size="sm" disabled={locked} data-testid="bg-video-another"
                             onClick={() => void act(() => showExample(video, Math.floor(Math.random() * Math.max(1, video.durationMs - 1))))}>
-                            Показать другой кадр
+                            {t("video.another")}
                         </Button>
                     </div>
                 </div>
             )}
             <div className="grid gap-3 sm:grid-cols-2">
-                {field("count", "Сколько фонов нарезать", { min: 1, step: 1 })}
-                {field("interval", "Брать кадр раз в, с", { min: 0.001, step: "any" })}
+                {field("count", t("video.count"), { min: 1, step: 1 })}
+                {field("interval", t("video.interval"), { min: 0.001, step: "any" })}
             </div>
             <label className="flex items-start gap-2 text-sm">
                 <Checkbox className="mt-0.5" disabled={!video || locked} checked={fields.skipSimilar} data-testid="bg-video-skip-similar"
                     onCheckedChange={checked => setFields(current => ({ ...current, skipSimilar: checked === true }))} />
                 <span>
-                    Пропускать повторяющиеся кадры
-                    <span className="block text-xs text-muted-foreground">
-                        Кадр, почти не отличающийся от уже взятого (стоящая камера, пауза), не считается — вместо него берётся следующий. Если разных
-                        кадров мало, фонов получится меньше заданного.
-                    </span>
+                    {t("video.skipSimilar")}
+                    <span className="block text-xs text-muted-foreground">{t("video.skipSimilarHint")}</span>
                 </span>
             </label>
             <details className="rounded-md border px-3 py-2">
-                <summary className="cursor-pointer text-sm text-muted-foreground select-none">Дополнительно</summary>
+                <summary className="cursor-pointer text-sm text-muted-foreground select-none">{t("advanced")}</summary>
                 <div className="mt-3 grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-end">
-                    {field("start", "Начать с, с", { min: 0, step: "any" })}
-                    <p className="pb-2 text-xs text-muted-foreground">Полезно, чтобы не брать заставку или меню в начале видео.</p>
+                    {field("start", t("video.start"), { min: 0, step: "any" })}
+                    <p className="pb-2 text-xs text-muted-foreground">{t("video.startHint")}</p>
                 </div>
             </details>
             <p role={message ? "alert" : undefined} className={`min-h-5 text-xs ${message ? "text-destructive" : "text-muted-foreground"}`} data-testid="bg-video-message">
-                {message ?? (video && available ? `С таким шагом доступно до ${available} кадров.` : "")}
+                {message ?? (video && available ? t("video.available", { count: available }) : "")}
             </p>
             {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-            {busy && !preview && video && <p role="status" className="text-xs text-muted-foreground">Готовим кадры…</p>}
+            {busy && !preview && video && <p role="status" className="text-xs text-muted-foreground">{t("video.preparing")}</p>}
             <BackgroundImportSamples preview={preview} />
             <div className="flex flex-wrap gap-2">
-                <Button variant="outline" disabled={!ready || locked} data-testid="bg-video-samples" onClick={showSamples}>Показать примеры</Button>
+                <Button variant="outline" disabled={!ready || locked} data-testid="bg-video-samples" onClick={showSamples}>{t("video.samples")}</Button>
                 <Button disabled={!ready || locked} data-testid="bg-video-run" onClick={launch}>
-                    Нарезать {countValid ? range.count : ""} {backgroundsWord(countValid ? range.count : 0)}
+                    {countValid ? t("video.run", { count: range.count }) : t("video.runEmpty")}
                 </Button>
             </div>
         </section>

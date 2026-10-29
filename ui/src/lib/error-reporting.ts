@@ -7,7 +7,7 @@ const maxReportsPerMinute = 20;
 let windowStart = 0;
 let reportsInWindow = 0;
 
-/** Передаёт необработанные ошибки и отклонённые промисы в журнал host. */
+/** Passes unhandled errors and rejected promises to the host log. */
 export function installErrorReporting(): void {
     window.addEventListener("error", event => report(event.error ?? event.message, ""));
     window.addEventListener("unhandledrejection", event => report(event.reason, "Unhandled rejection: "));

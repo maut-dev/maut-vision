@@ -20,9 +20,9 @@ internal static class TrainingResponseMapper
         => new(inventory.DriverAvailable, inventory.Gpus.Select(gpu => new GpuResponseDto(gpu.Index, gpu.Name, gpu.MemoryTotalMb, gpu.DriverVersion)).ToArray(),
             inventory.CheckedAt);
 
-    internal static TrainingRunResponseDto Map(TrainingRun run, Func<string, string> messageFor) => new(
+    internal static TrainingRunResponseDto Map(TrainingRun run) => new(
         run.Id,
-        JobResponseMapper.Map(run.Job, messageFor),
+        JobResponseMapper.Map(run.Job),
         StateKey(run.State),
         Map(run.Dataset),
         run.Architecture,
@@ -36,7 +36,7 @@ internal static class TrainingResponseMapper
         run.EpochCount,
         run.LogCount,
         run.Environment,
-        run.Error is { } error ? new TrainingRunErrorDto(error.Code, TrainingErrorMessages.RunMessage(error.Code, error.Message, messageFor)) : null,
+        run.Error is { } error ? new TrainingRunErrorDto(error.Code, CodedTextDto.MapOrNull(WorkerErrors.OwnMessage("training", error.Code, error.Message, error.Worker))) : null,
         run.ResultVersionId,
         run.Revision);
 
@@ -53,7 +53,7 @@ internal static class TrainingResponseMapper
             TrainingLogKind.Warning => "warning",
             TrainingLogKind.System => "system",
             _ => "log",
-        }, entry.Message)).ToArray(), page.Total, page.NextAfter);
+        }, CodedTextDto.Map(entry.Message))).ToArray(), page.Total, page.NextAfter);
 
     internal static ModelVersionResponseDto Map(string projectId, ModelVersion version, ResourceHandles resources) => new(
         version.Id,
@@ -74,7 +74,7 @@ internal static class TrainingResponseMapper
             file.Kind == ModelFileKind.Plot
                 ? resources.Issue(projectId, new ResourceReference(ModelVersion.ResourceKind, file.ResourceId), ResourceVariant.Original)
                 : null)).ToArray(),
-        version.Notes.ToArray(),
+        version.Notes.Select(CodedTextDto.Map).ToArray(),
         version.Environment,
         version.IsWorking,
         version.Revision,

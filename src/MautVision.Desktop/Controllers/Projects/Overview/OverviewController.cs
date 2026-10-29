@@ -7,7 +7,7 @@ using MautVision.Desktop.Controllers.Projects.Overview.ResponseDto;
 namespace MautVision.Desktop.Controllers.Projects.Overview;
 
 /// <summary>The overview of an opened project, composed from its managers and the jobs of Core; it holds no logic of its own.</summary>
-internal sealed class OverviewController(IProjectsManager projects, IJobsManager jobs, Func<string, string> messageFor)
+internal sealed class OverviewController(IProjectsManager projects, IJobsManager jobs)
 {
     internal const int LatestVersions = 5;
     internal const int ActiveJobsPage = 30;
@@ -27,6 +27,6 @@ internal sealed class OverviewController(IProjectsManager projects, IJobsManager
             versions.OrderByDescending(version => version.Number).Take(LatestVersions)
                 .Select(version => new OverviewModelVersionDto(version.Id, version.Number, version.IsWorking, version.CreatedAt, version.Architecture,
                     version.Metrics, version.RunId)).ToArray(),
-            JobsController.Map(active, messageFor));
+            JobsController.Map(active));
     }
 }

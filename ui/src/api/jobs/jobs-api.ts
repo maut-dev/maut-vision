@@ -8,15 +8,15 @@ import { isJobResponseDto } from "./response-dto/job-response-dto";
 import { isListJobsResponseDto } from "./response-dto/list-jobs-response-dto";
 
 /**
- * Задачи открытого проекта. Задачи запускают методы конкретных возможностей; изменения приходят
- * событием job.changed, после переподключения состояние запрашивается заново.
+ * Jobs of the open project. Jobs are started by the methods of each feature; changes come with
+ * the job.changed event, after a reconnection the state is requested again.
  */
 export const jobsApi = {
     get available(): boolean { return nativeBridge.available; },
     list(request: ListJobsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("jobs.list", request, isListJobsResponseDto, signal);
     },
-    /** Активные задачи в порядке очереди страницами по 30 с точным total и числом по видам. */
+    /** Active jobs in queue order, in pages of 30, with the exact total and the counts by kind. */
     listActive(request: ListActiveJobsRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("jobs.listActive", request, isActiveJobsPageResponseDto, signal);
     },

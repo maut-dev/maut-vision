@@ -8,7 +8,7 @@ namespace MautVision.Desktop.Controllers.System;
 /// <summary>
 /// Closing the main window does not fire beforeunload in the page, so the host asks the UI first: it publishes
 /// <c>app.closeRequested</c> and waits for <c>system.closeDecision</c>. With unsaved changes the UI answers allow: false and
-/// shows its unsaved changes dialog; after «Уйти без сохранения» or a successful save it asks the host to close
+/// shows its unsaved changes dialog; after "Leave without saving" or a successful save it asks the host to close
 /// (<c>system.close</c>). An answer that does not come within <see cref="AnswerTimeout"/> (renderer crashed or hung) allows
 /// the close, so shutdown never waits on the page.
 /// </summary>

@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/** Предел выбора: операции над выбранным принимают до 400 элементов за вызов. */
+/** The selection limit: operations on the selection take up to 400 items per call. */
 export const selectionLimit = 400;
 
 export interface SelectionMessages {
-    /** Попытка выбрать больше предела. */
+    /** An attempt to select more than the limit. */
     limit: string;
-    /** «Выбрать все на странице», когда загружено больше предела. */
+    /** Select all on the page when more than the limit is loaded. */
     firstPage: string;
 }
 
 /**
- * Выбор плиток галереи: щелчок переключает, Shift+щелчок добавляет диапазон от последней отмеченной плитки,
- * «Выбрать все на странице» берёт загруженное (не больше предела) или снимает выделение. Смена resetKey (группа,
- * набор, фильтр) снимает выделение.
+ * The selection of gallery tiles: a click toggles, Shift+click adds the range from the last marked tile,
+ * Select all on the page takes the loaded ones (up to the limit) or clears the selection. A change of resetKey (group,
+ * set, filter) clears the selection.
  */
 export function useRangeSelection<T extends { id: string }>(items: readonly T[], resetKey: string, messages: SelectionMessages, notify: (text: string) => void) {
     const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
@@ -50,7 +50,7 @@ export function useRangeSelection<T extends { id: string }>(items: readonly T[],
         if (items.length > selectionLimit) notify(messages.firstPage);
     }
 
-    /** Убирает из выбора исчезнувшие элементы (удалены, ушли из фильтра). */
+    /** Removes items that disappeared from the selection (deleted, filtered out). */
     function forget(ids: readonly string[]) {
         setSelected(current => {
             if (!ids.some(id => current.has(id))) return current;

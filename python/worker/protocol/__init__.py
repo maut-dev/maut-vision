@@ -1,9 +1,9 @@
-"""Версионированный протокол работника: запрос, результат, коды ошибок.
+"""Versioned worker protocol: request, result, error codes.
 
-Схема одна и принадлежит worker; host (Core/Python)
-валидирует те же поля. Меняя форму запроса или результата, поднимай
-PROTOCOL_VERSION — старый работник должен отказать новому запросу, а не
-понять его наполовину.
+There is one schema and it belongs to the worker; the host (Core/Python)
+validates the same fields. When changing the shape of the request or the result, raise
+PROTOCOL_VERSION — an old worker must refuse a new request, not
+understand half of it.
 """
 from worker.protocol.errors import ErrorCode, WorkerError
 from worker.protocol.request import (

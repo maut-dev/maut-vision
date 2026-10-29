@@ -23,7 +23,9 @@ Core → Python worker (обучение, проверки) · ffmpeg (кадр�
   Controllers вызывают Core и возвращают DTO, Transport доставляет JSON-сообщения, Events пересылает события Core. Изображения идут через
   канал ресурсов по URL, а не через сообщения.
 - **UI** (`ui/`) — React, TypeScript, Tailwind, shadcn/Radix. Экраны получают состояние запросом и обновляются событиями, без опроса.
-  DTO на C# и TypeScript меняются вместе; UI и host поставляются вместе, без `protocolVersion`.
+  DTO на C# и TypeScript меняются вместе; UI и host поставляются вместе, без `protocolVersion`. Интерфейс — на русском и английском:
+  язык переключается в заголовке, по умолчанию — как в Windows; тексты лежат в каталогах `ui/src/locales/<язык>/`, Core и Desktop
+  передают коды и значения ([docs/UI/localization.md](../UI/localization.md)).
 - **Python worker** (`python/`) — отдельный процесс на одну операцию над папкой задачи: `request.json` → события JSON Lines в stdout →
   `output/result.json`. Ничего не скачивает, не поднимает сервер; дерево процессов не переживает приложение.
 

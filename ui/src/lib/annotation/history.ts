@@ -1,6 +1,6 @@
 /**
- * История правок для отмены и повтора (Ctrl+Z / Ctrl+Y). Состояния неизменяемы: каждое действие кладёт новое состояние,
- * отмена возвращает предыдущее, новое действие после отмены отбрасывает повторы. Глубина ограничена.
+ * Edit history for undo and redo (Ctrl+Z / Ctrl+Y). States are immutable: every action pushes a new state, undo returns the previous
+ * one, a new action after undo drops the redo states. The depth is limited.
  */
 export interface History<T> {
     readonly past: readonly T[];
@@ -14,7 +14,7 @@ export function createHistory<T>(present: T): History<T> {
     return { past: [], present, future: [] };
 }
 
-/** Новое состояние; то же самое значение (по ссылке) историю не меняет. */
+/** A new state; the same value (by reference) does not change the history. */
 export function record<T>(history: History<T>, next: T): History<T> {
     if (next === history.present) return history;
     const past = [...history.past, history.present];

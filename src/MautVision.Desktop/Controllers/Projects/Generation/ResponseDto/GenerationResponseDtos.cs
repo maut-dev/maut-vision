@@ -5,8 +5,8 @@ using MautVision.Desktop.Controllers.Projects.Images.ResponseDto;
 namespace MautVision.Desktop.Controllers.Projects.Generation.ResponseDto;
 
 /// <summary>
-/// Пресет генерации: настройки формы, Revision — для изменения, архива и запуска; ArchivedAt — «В архиве». Удалённые и архивные
-/// наборы, привязки и варианты UI отмечает по своим спискам.
+/// Generation preset: form settings, Revision — for editing, archiving and running; ArchivedAt — "Archived". Deleted and archived
+/// sets, bindings and variants are marked by the UI from its own lists.
 /// </summary>
 public sealed record GenerationRecipeResponseDto(
     Guid Id,
@@ -26,9 +26,9 @@ public sealed record GenerationRecipeResponseDto(
     DateTimeOffset? ArchivedAt);
 
 /// <summary>
-/// Запуск: Job — снимок задачи generation.run (состояние, прогресс processed/total — «P / R изображений», ошибка с текстом, итог);
-/// Recipe — копия пресета («Настройки этого запуска»); ProducedCount — опубликовано; MissingObjectFrames — кадров с недостающими
-/// объектами; OutputGroupId — группа результата («Открыть изображения»; null, пока запуск не подготовлен); OutputGroupName — её имя.
+/// Run: Job — snapshot of the generation.run job (state, processed/total progress — "P / R images", error with text, result);
+/// Recipe — a copy of the preset ("Settings of this run"); ProducedCount — published; MissingObjectFrames — frames with missing
+/// objects; OutputGroupId — the result group ("Open images"; null until the run is prepared); OutputGroupName — its name.
 /// </summary>
 public sealed record GenerationRunResponseDto(
     JobResponseDto Job,
@@ -40,34 +40,34 @@ public sealed record GenerationRunResponseDto(
     Guid? OutputGroupId,
     string OutputGroupName);
 
-/// <summary>Страница запусков, новые первыми; Total — «Запуски (N)».</summary>
+/// <summary>Page of runs, newest first; Total — "Runs (N)".</summary>
 public sealed record GenerationRunPageResponseDto(GenerationRunResponseDto[] Items, long Total);
 
 public sealed record GenerationRecipeDeletionResponseDto(Guid RecipeId);
 
-/// <summary>Запуск удалён; изображения группы результата сохранены.</summary>
+/// <summary>The run is deleted; the images of the result group are kept.</summary>
 public sealed record GenerationRunDeletionResponseDto(Guid RunId);
 
-/// <summary>«Настроить повтор»: настройки для формы нового пресета (имя « · повтор»), seed и количество запуска, уведомление для формы.</summary>
-public sealed record GenerationRepeatDraftResponseDto(GenerationRecipeFormDto Recipe, uint Seed, int RequestedCount, Guid SourceRunId, string Notice);
+/// <summary>"Configure repeat": settings for the new preset form (name " · repeat"), the run seed and count, a notice for the form.</summary>
+public sealed record GenerationRepeatDraftResponseDto(GenerationRecipeFormDto Recipe, uint Seed, int RequestedCount, Guid SourceRunId);
 
-/// <summary>Объект кадра: класс, привязка (её цвет рамки берётся из каталога) и рамка в долях кадра.</summary>
+/// <summary>Frame object: class, binding (its box color comes from the catalog) and box as fractions of the frame.</summary>
 public sealed record GenerationSampleObjectDto(Guid ClassId, Guid ClassVariantId, ImageBoxResponseDto Box);
 
 /// <summary>
-/// Кадр «Пример кадра»: ImageUrl — временный ресурс PNG (действует 10 минут для этой страницы), Width/Height — размер кадра,
-/// BackgroundId — фон, Objects — рамки, MissingObjects — сколько объектов не поместилось.
+/// "Sample frame" frame: ImageUrl — a temporary PNG resource (valid for 10 minutes for this page), Width/Height — frame size,
+/// BackgroundId — the background, Objects — boxes, MissingObjects — how many objects did not fit.
 /// </summary>
 public sealed record GenerationSampleResponseDto(int SampleIndex, string ImageUrl, int Width, int Height, Guid BackgroundId, GenerationSampleObjectDto[] Objects,
     int MissingObjects);
 
 public sealed record GenerationSamplesResponseDto(GenerationSampleResponseDto[] Samples);
 
-/// <summary>Изменённый или удалённый (Revision = null) пресет.</summary>
+/// <summary>Changed or deleted (Revision = null) preset.</summary>
 public sealed record GenerationEntityChangeDto(Guid Id, long? Revision);
 
 /// <summary>
-/// Событие generation.changed: Recipes — пресеты с новыми ревизиями или удалённые; Runs — запуски, у которых изменились данные
-/// помимо состояния задачи (подготовлен — появилась группа результата; удалён): перечитать их getRun. Состояние и прогресс — job.changed.
+/// The generation.changed event: Recipes — presets with new revisions or deleted ones; Runs — runs whose data changed
+/// beyond the job state (prepared — the result group appeared; deleted): reread them with getRun. State and progress — job.changed.
 /// </summary>
 public sealed record GenerationChangedEventDto(string ProjectId, GenerationEntityChangeDto[] Recipes, Guid[] Runs);

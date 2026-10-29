@@ -3,18 +3,18 @@ import { subscribeImagesChanged } from "@/api/events/subscriptions";
 import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageGroupResponseDto } from "@/api/projects/images/response-dto/image-group-response-dto";
 
-/** Группы крупнее не считаются постранично: доля проверенных для них станет известна из плана. */
+/** Larger groups are not counted page by page: their reviewed share becomes known from the plan. */
 export const reviewCountLimit = 2000;
 const pageLimit = 200;
 
-/** Проверено активных изображений группы; null — группа крупнее предела или счёт не удался. */
+/** Reviewed active images of a group; null when the group is above the limit or counting failed. */
 export type ReviewCount = { reviewed: number; active: number } | null;
 
 /**
- * Доля проверенных кадров для выбора групп сборки. В DTO группы нет счётчика проверенных, поэтому для групп до 2000 активных
- * изображений он считается страницами images.list с reviewState = reviewed (по 200). Пересчёт — при изменении группы (ревизия
- * или счётчики) и после images.changed с изменёнными изображениями (разметка), не чаще раза в секунду; без опроса. enabled —
- * считать только пока форма видна.
+ * The share of reviewed frames for choosing the groups of a build. The group DTO has no reviewed counter, so for groups up to 2000
+ * active images it is counted with pages of images.list with reviewState = reviewed (200 each). It is recounted when a group changes
+ * (revision or counters) and after images.changed with changed images (annotation), at most once a second; no polling. enabled:
+ * count only while the form is visible.
  */
 export function useGroupReviewCounts(projectId: string, groups: readonly ImageGroupResponseDto[], enabled: boolean) {
     const [counts, setCounts] = useState<Readonly<Record<string, { key: string; value: ReviewCount }>>>({});

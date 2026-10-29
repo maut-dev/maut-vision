@@ -1,6 +1,6 @@
 export interface GetImageAnnotationRequestDto {
     projectId: string;
     imageId: string;
-    /** Ревизия истории; отсутствует — текущая. */
+    /** A revision of the history; absent means the current one. */
     revision?: number;
 }

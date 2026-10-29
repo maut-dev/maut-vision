@@ -13,7 +13,7 @@ namespace MautVision.Core.Projects.Checks;
 /// <summary>
 /// An evaluation of a model version on a dataset part: preparing (job folder with the dataset linked, the weights linked after their
 /// SHA-256 matched, manifest and request) → evaluating (the worker's model.val) → the metrics are stored. It holds the GPU slot of the
-/// queue for its whole duration; there is no retry — an evaluation that ended with the application is «Прервано».
+/// queue for its whole duration; there is no retry — an evaluation that ended with the application is "Interrupted".
 /// </summary>
 internal sealed class EvaluationHandler(IProjectsManager projects) : IJobHandler<ModelEvaluationInput>
 {
@@ -35,7 +35,8 @@ internal sealed class EvaluationHandler(IProjectsManager projects) : IJobHandler
         var id = context.JobId;
         var directory = checks.EvaluationDirectory(id);
         var succeeded = false;
-        context.ReportProgress(null, "Подготовка");
+        context.ReportProgress(null, CodedText.Of("progress.preparing"));
+        CodedText? workerText = null;
         try
         {
             var version = await checks.Training.FindVersionForJobAsync(input.VersionId, token).ConfigureAwait(false)
@@ -74,7 +75,7 @@ internal sealed class EvaluationHandler(IProjectsManager projects) : IJobHandler
             await CheckFiles.WriteJsonAsync(Path.Combine(directory, "request.json"), request, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();
             await checks.SetEvaluationPhaseAsync(id, "evaluating").ConfigureAwait(false);
-            context.ReportProgress(null, "Идёт проверка");
+            context.ReportProgress(null, CodedText.Of("progress.evaluating"));
             var outcome = await checks.Python.RunAsync(directory, operationId, "evaluate", worker => OnEventAsync(worker, context), WorkerChecks.ParseEvaluateAsync, token)
                 .ConfigureAwait(false);
             if (Pause is { } pause) await pause("worker-exited", id).ConfigureAwait(false);
@@ -83,6 +84,7 @@ internal sealed class EvaluationHandler(IProjectsManager projects) : IJobHandler
                 case WorkerOutcomeKind.Cancelled:
                     throw new OperationCanceledException(token);
                 case WorkerOutcomeKind.Failed:
+                    workerText = outcome.WorkerText;
                     throw new CoreException("checks." + outcome.Code, outcome.Message ?? "");
             }
             await checks.AcceptEvaluationAsync(id, input, version, outcome.Result!).ConfigureAwait(false);
@@ -96,7 +98,7 @@ internal sealed class EvaluationHandler(IProjectsManager projects) : IJobHandler
         catch (CoreException error)
         {
             context.Logger.LogWarning("Evaluation {EvaluationId} of project {ProjectId} failed with {Code}: {Message}", id, context.ProjectId, error.Code, error.Message);
-            await checks.SetEvaluationPhaseAsync(id, "finished", error.Code, error.Message).ConfigureAwait(false);
+            await checks.SetEvaluationPhaseAsync(id, "finished", error.Code, error.Message, workerText).ConfigureAwait(false);
             throw;
         }
         catch (Exception error) when (error is not JobDataException)
@@ -119,9 +121,9 @@ internal sealed class EvaluationHandler(IProjectsManager projects) : IJobHandler
         {
             context.ReportProgress(null, stage.Stage switch
             {
-                "validating" => "Проверка датасета",
-                "loading_model" => "Загрузка модели",
-                "evaluating" => "Идёт проверка",
+                "validating" => CodedText.Of("progress.validating_dataset"),
+                "loading_model" => CodedText.Of("progress.loading_model"),
+                "evaluating" => CodedText.Of("progress.evaluating"),
                 _ => null,
             });
         }

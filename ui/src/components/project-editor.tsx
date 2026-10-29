@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Boxes } from "lucide-react";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -27,6 +28,7 @@ export function ProjectEditor({ project, initialModelId, catalog, busy, error, c
     save: (values: ProjectEditorValues) => void;
     openCatalog: () => void;
 }) {
+    const { t } = useTranslation();
     const installed = catalog.models.filter(model => model.status === "installed");
     const [baseModelId, setBaseModelId] = useState(project?.baseModelId ?? initialModelId ?? installed[0]?.id ?? "");
     const [name, setName] = useState(project?.name ?? "");
@@ -52,54 +54,54 @@ export function ProjectEditor({ project, initialModelId, catalog, busy, error, c
         <Dialog open onOpenChange={open => { if (!open && !busy) close(); }}>
             <DialogContent className="max-h-[calc(100dvh-3rem)] overflow-y-auto" onInteractOutside={event => { if (busy) event.preventDefault(); }}>
                 <DialogHeader>
-                    <DialogTitle>{project ? "Настройки проекта" : "Новый проект"}</DialogTitle>
-                    <DialogDescription>Размер входа задаёт размер фонов, кадров генерации и датасетов.</DialogDescription>
+                    <DialogTitle>{project ? t("app.projectSettings") : t("projectEditor.newTitle")}</DialogTitle>
+                    <DialogDescription>{t("projectEditor.description")}</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={submit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="project-name">Название</Label>
+                        <Label htmlFor="project-name">{t("projectEditor.name")}</Label>
                         <Input id="project-name" data-testid="project-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="project-description">Описание</Label>
+                        <Label htmlFor="project-description">{t("projectEditor.descriptionLabel")}</Label>
                         <Textarea id="project-description" className="h-24 resize-none" maxLength={2000} value={description} onChange={event => setDescription(event.target.value)} />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="project-model">Модель для обучения</Label>
+                        <Label htmlFor="project-model">{t("projectEditor.model")}</Label>
                         <Select value={baseModelId} onValueChange={setBaseModelId} disabled={busy || catalog.loading}>
-                            <SelectTrigger id="project-model" data-testid="project-model" className="w-full"><SelectValue placeholder="Выберите установленную модель" /></SelectTrigger>
+                            <SelectTrigger id="project-model" data-testid="project-model" className="w-full"><SelectValue placeholder={t("projectEditor.modelPlaceholder")} /></SelectTrigger>
                             <SelectContent>
                                 {project && !installed.some(model => model.id === project.baseModelId) && (
-                                    <SelectItem value={project.baseModelId}>{project.baseModelId} · модель проекта</SelectItem>
+                                    <SelectItem value={project.baseModelId}>{t("projectEditor.projectModel", { model: project.baseModelId })}</SelectItem>
                                 )}
                                 {installed.map(model => <SelectItem key={model.id} value={model.id}>{model.id}</SelectItem>)}
                             </SelectContent>
                         </Select>
                         {!installed.length && !project && (
-                            <p className="text-sm text-muted-foreground">Установите модель в каталоге, чтобы создать проект.</p>
+                            <p className="text-sm text-muted-foreground">{t("projectEditor.installFirst")}</p>
                         )}
-                        <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={openCatalog}><Boxes />Открыть каталог моделей</Button>
+                        <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={openCatalog}><Boxes />{t("projectEditor.openCatalog")}</Button>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="project-width">Ширина входа, px</Label>
+                            <Label htmlFor="project-width">{t("projectEditor.width")}</Label>
                             <Input id="project-width" type="number" required min={stride} step={stride} value={width} onChange={event => setWidth(event.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="project-height">Высота входа, px</Label>
+                            <Label htmlFor="project-height">{t("projectEditor.height")}</Label>
                             <Input id="project-height" type="number" required min={stride} step={stride} value={height} onChange={event => setHeight(event.target.value)} />
                         </div>
                     </div>
                     <p className={sizeValid ? "text-xs text-muted-foreground" : "text-xs text-destructive"}>
-                        Размеры кратны {stride}. Существующие датасеты сохранят свой размер.
+                        {t("projectEditor.sizeHint", { stride })}
                     </p>
                     <div className="min-h-12" aria-live="polite">
                         {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="outline" disabled={busy} onClick={close}>Отмена</Button>
+                        <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("app.cancel")}</Button>
                         <Button type="submit" data-testid="project-save" disabled={busy || !name.trim() || !modelAvailable || !sizeValid}>
-                            {busy ? "Сохранение…" : project ? "Сохранить" : "Создать"}
+                            {busy ? t("common.saving") : project ? t("common.save") : t("projectEditor.create")}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -2,15 +2,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { datasetsApi } from "@/api/projects/datasets/datasets-api";
 import type { DatasetSplit } from "@/api/projects/datasets/request-dto/dataset-request-dto";
 import type { DatasetSampleResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "@/i18n/sections/datasets";
 
 export const samplePageLimit = 100;
 
 /**
- * Образцы одной части версии постранично (datasets.listSamples с курсором). Версия неизменяема, поэтому событий нет: страницы
- * читаются по мере прокрутки сетки или перехода просмотрщика за последний загруженный образец (loadMore возвращает, удалось ли
- * дочитать). Смена версии или части начинает новое поколение — ответы прежней отбрасываются. renew перечитывает образец, если
- * URL его изображения истёк.
+ * Samples of one split of a version by pages (datasets.listSamples with a cursor). A version is immutable, so there are no events: pages
+ * are read as the grid scrolls or the viewer moves past the last loaded sample (loadMore returns whether it managed to read
+ * on). A change of the version or the split starts a new generation — answers of the previous one are dropped. renew reads a sample
+ * again when the URL of its image expired.
  */
 export function useDatasetSamples(projectId: string, versionId: string, split: DatasetSplit) {
     const [items, setItems] = useState<readonly DatasetSampleResponseDto[]>([]);
@@ -40,7 +42,7 @@ export function useDatasetSamples(projectId: string, versionId: string, split: D
                 state.current = { cursor: page.nextCursor, started: true };
                 return page.items.length > 0;
             } catch (cause) {
-                if (current === generation.current) setError(errorMessage(cause, "Не удалось загрузить примеры. Повторите загрузку."));
+                if (current === generation.current) setError(errorMessage(cause, i18n.t("datasets:loadErrors.samples")));
                 return false;
             } finally {
                 if (current === generation.current) {

@@ -13,34 +13,34 @@ import {
     isDatasetSamplePageResponseDto, isDatasetSampleResponseDto, isDatasetVersionList, isDatasetVersionResponseDto,
 } from "./response-dto/dataset-response-dto";
 
-/** План читает все изображения выбранных групп (до 120 000 кадров — несколько секунд); старт сборки сверяет источники. */
+/** The plan reads all images of the chosen groups (up to 120 000 frames — several seconds); the build start checks the sources. */
 const planTimeoutMs = 60_000;
-/** «Сохранить как» ждёт пользователя. */
+/** "Save as" waits for the user. */
 const dialogTimeoutMs = 600_000;
 
 /**
- * Датасеты открытого проекта: неизменяемые версии YOLO, планы и операции.
+ * Datasets of the open project: immutable YOLO versions, plans and operations.
  *
- * Версии: list (includeArchived — «Показать архив датасетов»), get, update / setArchived с revision, getPassport — паспорт и удалённой
- * версии. Образцы: listSamples по части (train | val | test) с курсором, getSample — для просмотрщика; imageUrl и thumbnailUrl —
- * канал ресурсов. Удаление: reviewDeletion (blockers с текстами) → delete с revision.
+ * Versions: list (includeArchived — "Show dataset archive"), get, update / setArchived with revision, getPassport — the passport of a deleted
+ * version too. Samples: listSamples by split (train | val | test) with a cursor, getSample — for the viewer; imageUrl and thumbnailUrl —
+ * the resource channel. Deletion: reviewDeletion (blockers as codes) → delete with revision.
  *
- * Сборка: plan («Проверить перед сборкой», specification из формы; dataset-rules — datasetVariantRoles, ratiosFromPercents,
- * specificationFieldError) → startBuild(plan.id, plan.hash) возвращает операцию сразу. Проверка: startVerify. Экспорт:
- * selectExportDestination (нативное «Сохранить как»; token null — окно закрыто) → startExport с token. Прогресс, состояние и итог
- * всех операций — job.changed (kind datasets.build / datasets.verify / datasets.export; parseDatasetBuildResult, parseDatasetVerifyResult,
- * parseDatasetExportResult); «Отменить» — jobsApi.cancel(projectId, operation.job.id). История — listOperations(kind), getOperation,
- * deleteOperation («Удалить из истории»). «Настроить повтор» — operation.specification сборки в форму.
+ * Build: plan ("Check before building", the specification from the form; dataset-rules — datasetVariantRoles, ratiosFromPercents,
+ * specificationFieldError) → startBuild(plan.id, plan.hash) returns the operation at once. Check: startVerify. Export:
+ * selectExportDestination (native "Save as"; token null — the dialog was closed) → startExport with the token. Progress, state and result
+ * of all operations — job.changed (kind datasets.build / datasets.verify / datasets.export; parseDatasetBuildResult, parseDatasetVerifyResult,
+ * parseDatasetExportResult); "Cancel" — jobsApi.cancel(projectId, operation.job.id). History — listOperations(kind), getOperation,
+ * deleteOperation ("Delete from history"). "Set up a repeat" — operation.specification of a build into the form.
  *
- * События: datasets.changed (subscribeDatasetsChanged) — версии с ревизиями (null — удалена); job.changed — операции.
+ * Events: datasets.changed (subscribeDatasetsChanged) — versions with revisions (null — deleted); job.changed — operations.
  *
- * Ошибки (тексты приходят готовыми в error.message): datasets.project_not_open, datasets.unavailable, datasets.revision_conflict,
+ * Errors (codes; texts in the errors catalog): datasets.project_not_open, datasets.unavailable, datasets.revision_conflict,
  * datasets.archived, datasets.corrupt, datasets.name_invalid, datasets.description_invalid, datasets.selection_invalid,
- * datasets.variants_invalid, datasets.roles_invalid, datasets.split_invalid, datasets.seed_invalid (details.field — поле формы),
+ * datasets.variants_invalid, datasets.roles_invalid, datasets.split_invalid, datasets.seed_invalid (details.field — the form field),
  * datasets.request_invalid, datasets.cursor_invalid, datasets.group_unavailable (details.groupId), datasets.class_unavailable
  * (details.classId), datasets.unselected_class, datasets.unassigned_variant, datasets.variant_role_missing, datasets.plan_stale,
  * datasets.input_size_mismatch, datasets.empty, datasets.split_collision, datasets.export_destination, datasets.export_selection_expired,
- * datasets.operation_active, datasets.deletion_blocked, datasets.deletion_revision_conflict; ошибки задач (job.error):
+ * datasets.operation_active, datasets.deletion_blocked, datasets.deletion_revision_conflict; job errors (job.error):
  * datasets.plan_stale, datasets.source_missing, datasets.source_changed, datasets.split_collision, datasets.build_failed,
  * datasets.export_failed, datasets.corrupt, datasets.disk_full, datasets.out_of_memory, jobs.interrupted.
  */
@@ -52,38 +52,38 @@ export const datasetsApi = {
     get(request: GetDatasetRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.get", request, isDatasetVersionResponseDto, signal);
     },
-    /** Паспорт версии для моделей, в том числе удалённой (deletedAt). */
+    /** The version passport for models, of a deleted version too (deletedAt). */
     getPassport(request: GetDatasetPassportRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.getPassport", request, isDatasetVersionResponseDto, signal);
     },
-    /** «Изменить»: название и описание; архивная версия — datasets.archived. */
+    /** "Edit": the name and the description; an archived version — datasets.archived. */
     update(request: UpdateDatasetRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.update", request, isDatasetVersionResponseDto, signal);
     },
-    /** «В архив» / «Восстановить». */
+    /** "Archive" / "Restore". */
     setArchived(request: SetDatasetArchivedRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.setArchived", request, isDatasetVersionResponseDto, signal);
     },
-    /** «Проверить перед сборкой»: счётчики, причины пропуска, предупреждения и hash; файлов не копирует. */
+    /** "Check before building": counters, skip reasons, warnings and the hash; copies no files. */
     plan(request: PlanDatasetRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.plan", request, isDatasetPlanResponseDto, signal, planTimeoutMs);
     },
     getPlan(request: GetDatasetPlanRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.getPlan", request, isDatasetPlanResponseDto, signal);
     },
-    /** «Собрать датасет»: проверяет, не устарел ли план, и ставит сборку; повтор с тем же operationId вернёт ту же сборку. */
+    /** "Build dataset": checks whether the plan is stale and queues the build; a repeat with the same operationId returns the same build. */
     startBuild(request: StartDatasetBuildRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.startBuild", request, isDatasetOperationResponseDto, signal, planTimeoutMs);
     },
-    /** «Проверить целостность». */
+    /** "Check integrity". */
     startVerify(request: StartDatasetVerifyRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.startVerify", request, isDatasetOperationResponseDto, signal);
     },
-    /** «Экспорт ZIP», шаг 1: окно «Сохранить как» с «<название>.zip». */
+    /** "ZIP export", step 1: the "Save as" dialog with "<name>.zip". */
     selectExportDestination(request: SelectDatasetExportRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.selectExportDestination", request, isDatasetExportSelectionResponseDto, signal, dialogTimeoutMs);
     },
-    /** «Экспорт ZIP», шаг 2: ставит экспорт в выбранный файл (перезапись подтверждена в окне). */
+    /** "ZIP export", step 2: queues the export to the chosen file (overwriting was confirmed in the dialog). */
     startExport(request: StartDatasetExportRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.startExport", request, isDatasetOperationResponseDto, signal);
     },
@@ -93,7 +93,7 @@ export const datasetsApi = {
     getOperation(request: GetDatasetOperationRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.getOperation", request, isDatasetOperationResponseDto, signal);
     },
-    /** «Удалить из истории»: только завершённая операция; готовая версия остаётся. */
+    /** "Delete from history": only a finished operation; the finished version stays. */
     deleteOperation(request: DeleteDatasetOperationRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.deleteOperation", request, isDatasetOperationDeletionResponseDto, signal);
     },
@@ -106,7 +106,7 @@ export const datasetsApi = {
     reviewDeletion(request: ReviewDatasetDeletionRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.reviewDeletion", request, isDatasetDeletionReviewResponseDto, signal);
     },
-    /** Удаляет версию; файлы удаляются в фоне, паспорт остаётся. */
+    /** Deletes a version; files are deleted in the background, the passport stays. */
     delete(request: DeleteDatasetRequestDto, signal?: AbortSignal) {
         return nativeBridge.request("datasets.delete", request, isDatasetDeletionResultResponseDto, signal);
     },

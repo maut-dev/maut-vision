@@ -60,7 +60,7 @@ internal static class BackgroundsResponseMapper
         review.SetName,
         review.WholeSet,
         review.Items,
-        review.Blockers.Select(blocker => new DeletionBlockerResponseDto(blocker.Code, blocker.Count, BackgroundErrorMessages.For(blocker))).ToArray(),
+        review.Blockers.Select(blocker => DeletionBlockerResponseDto.From(blocker)).ToArray(),
         review.Revision);
 
     internal static BackgroundDeletionResultResponseDto Map(BackgroundDeletionResult result) => new(result.SetId, result.SetDeleted, result.Items, result.CleanupPending);

@@ -2,16 +2,16 @@ import { isId } from "../../projects/catalog/catalog-guards";
 import { isLiveCheckResponseDto, type LiveCheckResponseDto } from "../../projects/checks/response-dto/live-check-response-dto";
 import { isRecord } from "../../transport/envelopes";
 
-/** Оценка с новой ревизией; revision = null — удалена (вместе с версией модели). */
+/** An evaluation with its new revision; revision = null when it was deleted (together with the model version). */
 export interface EvaluationChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в проверках проекта: evaluations — перечитать checksApi.getEvaluation, если revision больше известной; check — снимок
- * живой проверки без журнала (recentFrames пусто), не чаще 5 раз в секунду, переходы состояний — сразу; применять, только если
- * check.sequence больше известного.
+ * What changed in the checks of the project: evaluations — read checksApi.getEvaluation again when the revision is greater than the known
+ * one; check — a snapshot of a live check without the journal (recentFrames is empty), at most 5 times a second, state changes at once;
+ * apply it only when check.sequence is greater than the known one.
  */
 export interface ChecksChangedDto {
     projectId: string;

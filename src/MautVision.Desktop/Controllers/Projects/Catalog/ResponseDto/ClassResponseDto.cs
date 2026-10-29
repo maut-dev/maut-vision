@@ -1,6 +1,6 @@
 namespace MautVision.Desktop.Controllers.Projects.Catalog.ResponseDto;
 
-/// <summary>Класс. SortOrder — порядок классов: при сборке выбранные классы получают индексы от 0 в этом порядке.</summary>
+/// <summary>Class. SortOrder — class order: when building, the selected classes get indexes from 0 in this order.</summary>
 public sealed record ClassResponseDto(
     Guid Id,
     string Name,

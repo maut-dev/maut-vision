@@ -1,4 +1,5 @@
 import type { CSSProperties, MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 import { Trash2 } from "lucide-react";
 import type { ImageAnnotationResponseDto } from "@/api/projects/images/response-dto/image-annotation-response-dto";
 import type { ImageResponseDto } from "@/api/projects/images/response-dto/image-response-dto";
@@ -8,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { VirtualGrid } from "@/components/virtual-grid";
 import { roiColor } from "@/lib/variant-color";
 import type { AnnotationPalette } from "./annotation-palette";
+import "@/i18n/sections/images";
 
 export interface GalleryActions {
     toggle: (image: ImageResponseDto, index: number, range: boolean) => void;
@@ -18,7 +20,7 @@ export interface GalleryActions {
     loadMore: () => void;
 }
 
-/** Галерея группы: виртуальная сетка (VirtualGrid) плиток с миниатюрой и рамками разметки. */
+/** The gallery of a group: a virtual grid (VirtualGrid) of tiles with a thumbnail and annotation boxes. */
 export function ImageGallery({ items, annotations, selected, hasMore, loading, locked, busy, palette, actions }: {
     items: readonly ImageResponseDto[];
     annotations: Readonly<Record<string, ImageAnnotationResponseDto>>;
@@ -30,6 +32,7 @@ export function ImageGallery({ items, annotations, selected, hasMore, loading, l
     palette: AnnotationPalette;
     actions: GalleryActions;
 }) {
+    const { t } = useTranslation("images");
     return (
         <VirtualGrid
             items={items}
@@ -39,9 +42,9 @@ export function ImageGallery({ items, annotations, selected, hasMore, loading, l
             hasMore={hasMore}
             loading={loading}
             loadMore={actions.loadMore}
-            label="Галерея изображений"
+            label={t("gallery.label")}
             testId="image-gallery"
-            loadingText="Загрузка изображений…"
+            loadingText={t("section.loadingImages")}
             renderTile={(image, index, style) => (
                 <ImageTile
                     image={image}
@@ -70,13 +73,19 @@ function ImageTile({ image, index, annotation, checked, locked, busy, palette, a
     actions: GalleryActions;
     style: CSSProperties;
 }) {
-    const meta = `${image.width} × ${image.height} · ${image.objectCount ? `рамок: ${image.objectCount}` : "без рамок"}${image.reviewState === "reviewed" ? " · проверено" : ""}${image.archivedAt ? " · архив" : ""}`;
+    const { t } = useTranslation("images");
+    const meta = [
+        `${image.width} × ${image.height}`,
+        image.objectCount ? t("gallery.boxes", { number: image.objectCount }) : t("gallery.noBoxes"),
+        image.reviewState === "reviewed" ? t("gallery.reviewed") : null,
+        image.archivedAt ? t("gallery.archived") : null,
+    ].filter(Boolean).join(" · ");
     return (
         <div data-image-id={image.id} data-testid="image-tile" data-selected={checked || undefined} style={style}
             className={`flex min-w-0 flex-col rounded-md border bg-card p-2 ${checked ? "border-primary/60 bg-accent/40" : ""}`}>
             <label className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                 <Checkbox
-                    aria-label={`Выбрать изображение: ${image.displayName}`}
+                    aria-label={t("gallery.selectLabel", { name: image.displayName })}
                     checked={checked}
                     disabled={locked}
                     onClick={(event: MouseEvent) => {
@@ -84,12 +93,12 @@ function ImageTile({ image, index, annotation, checked, locked, busy, palette, a
                         actions.toggle(image, index, event.shiftKey);
                     }}
                 />
-                Выбрать
+                {t("gallery.select")}
             </label>
             <button
                 type="button"
                 className="min-w-0 rounded-md text-left outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label={`Разметить ${image.displayName}`}
+                aria-label={t("gallery.annotateLabel", { name: image.displayName })}
                 data-testid="image-open"
                 onClick={() => actions.edit(image)}
             >
@@ -101,8 +110,8 @@ function ImageTile({ image, index, annotation, checked, locked, busy, palette, a
                 <span className="block truncate text-xs text-muted-foreground" data-testid="image-meta">{meta}</span>
             </button>
             <div className="mt-auto flex gap-2 pt-2">
-                <Button size="sm" variant="outline" className="min-w-0 flex-1" aria-label={`Просмотреть ${image.displayName}`} onClick={() => actions.view(image)}>Просмотреть</Button>
-                <Button size="sm" variant="ghost" disabled={busy || locked} aria-label={`Удалить изображение: ${image.displayName}`} title="Удалить навсегда" onClick={() => actions.remove(image)}>
+                <Button size="sm" variant="outline" className="min-w-0 flex-1" aria-label={t("gallery.viewLabel", { name: image.displayName })} onClick={() => actions.view(image)}>{t("gallery.view")}</Button>
+                <Button size="sm" variant="ghost" disabled={busy || locked} aria-label={t("gallery.deleteLabel", { name: image.displayName })} title={t("gallery.deleteHint")} onClick={() => actions.remove(image)}>
                     <Trash2 />
                 </Button>
             </div>
@@ -110,7 +119,7 @@ function ImageTile({ image, index, annotation, checked, locked, busy, palette, a
     );
 }
 
-/** Рамки поверх миниатюры: viewBox в пикселях кадра и meet повторяют object-contain. */
+/** Boxes over the thumbnail: a viewBox in frame pixels with meet repeats object-contain. */
 function AnnotationOverlay({ image, annotation, palette }: { image: ImageResponseDto; annotation?: ImageAnnotationResponseDto; palette: AnnotationPalette }) {
     if (!annotation || (!annotation.objects.length && !annotation.roi)) return null;
     const { width, height } = image;

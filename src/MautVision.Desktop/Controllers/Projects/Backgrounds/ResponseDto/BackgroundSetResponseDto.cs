@@ -3,9 +3,9 @@ using MautVision.Desktop.Controllers.Projects;
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 
 /// <summary>
-/// Набор фонов. TargetSize — размер фонов (копия входа проекта при создании); MatchesProjectInput — false, если вход проекта
-/// позже изменён («Размер набора W × H отличается от входа проекта»). Revision — для изменения и архива; ContentRevision
-/// растёт при каждом изменении состава. ItemCount — активные фоны («N фонов»), RemovedCount — убранные.
+/// Background set. TargetSize — background size (a copy of the project input at creation); MatchesProjectInput — false if the project input
+/// changed later ("Set size W × H differs from the project input"). Revision — for editing and archiving; ContentRevision
+/// grows on every content change. ItemCount — active backgrounds ("N backgrounds"), RemovedCount — removed ones.
 /// </summary>
 public sealed record BackgroundSetResponseDto(
     Guid Id,

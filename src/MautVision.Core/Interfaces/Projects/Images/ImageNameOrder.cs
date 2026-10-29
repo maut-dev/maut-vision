@@ -1,8 +1,8 @@
 namespace MautVision.Core.Interfaces.Projects.Images;
 
 /// <summary>
-/// Порядок имён при импорте: без учёта регистра, числа внутри имени сравниваются как числа (frame2 раньше frame10).
-/// Так импорт раскладывает файлы папки; Desktop в том же порядке передаёт файлы, выбранные в диалоге.
+/// Name order on import: case-insensitive, numbers inside a name are compared as numbers (frame2 before frame10).
+/// This is how import orders the files of a folder; Desktop passes the files chosen in the dialog in the same order.
 /// </summary>
 public sealed class ImageNameOrder : IComparer<string>
 {

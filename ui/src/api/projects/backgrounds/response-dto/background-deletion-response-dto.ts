@@ -1,12 +1,12 @@
 import { isRecord } from "../../../transport/envelopes";
 import { isCount, isId } from "../../catalog/catalog-guards";
-import type { DeletionBlockerResponseDto } from "../../catalog/response-dto/deletion-review-response-dto";
+import { isDeletionBlockerResponseDto, type DeletionBlockerResponseDto } from "../../catalog/response-dto/deletion-review-response-dto";
 
 /**
- * Состав удаления навсегда: весь набор (wholeSet — «Удалить набор фонов навсегда?») или выбранные фоны («Удалить фоны
- * навсегда?»). items — «Будет удалено фонов: N.»; непустой blockers — «Завершите задачи или измените зависимости перед
- * удалением:» + строки message (backgrounds.import_active — подготовка в этот набор; пресеты генерации).
- * revision передаётся в удаление; при изменении состава — backgrounds.deletion_revision_conflict.
+ * The review of a permanent deletion: the whole set (wholeSet, "Delete the background set permanently?") or selected backgrounds ("Delete the backgrounds
+ * permanently?"). items gives "Backgrounds to delete: N."; non-empty blockers give "Finish the jobs or change the dependencies before
+ * deleting:" with blockerText lines (backgrounds.import_active: preparation into this set; generation presets).
+ * The revision goes to the deletion; a change of the contents gives backgrounds.deletion_revision_conflict.
  */
 export interface BackgroundDeletionReviewResponseDto {
     setId: string;
@@ -17,7 +17,7 @@ export interface BackgroundDeletionReviewResponseDto {
     revision: string;
 }
 
-/** Строки удалены; cleanupPending — файлы ещё удаляются в фоне, очистка продолжится при следующем открытии проекта. */
+/** Rows are deleted; cleanupPending: files are still being deleted in the background, cleanup continues the next time the project opens. */
 export interface BackgroundDeletionResultResponseDto {
     setId: string;
     setDeleted: boolean;
@@ -25,14 +25,9 @@ export interface BackgroundDeletionResultResponseDto {
     cleanupPending: boolean;
 }
 
-function isBlocker(value: unknown): value is DeletionBlockerResponseDto {
-    return isRecord(value) && typeof value.code === "string" && value.code.length > 0 && isCount(value.count)
-        && typeof value.message === "string" && value.message.length > 0;
-}
-
 export function isBackgroundDeletionReviewResponseDto(value: unknown): value is BackgroundDeletionReviewResponseDto {
     return isRecord(value) && isId(value.setId) && typeof value.setName === "string" && typeof value.wholeSet === "boolean"
-        && isCount(value.items) && Array.isArray(value.blockers) && value.blockers.every(isBlocker)
+        && isCount(value.items) && Array.isArray(value.blockers) && value.blockers.every(isDeletionBlockerResponseDto)
         && typeof value.revision === "string" && value.revision.length > 0;
 }
 

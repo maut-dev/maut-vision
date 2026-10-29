@@ -3,10 +3,10 @@ import { isCount, isDate, isDateOrNull, isId, isRevision } from "../../catalog/c
 import { isInputSizeDto, type InputSizeDto } from "../../input-size-dto";
 
 /**
- * Набор фонов: «N фонов · W × H[ · В архиве]» — itemCount (активные) и targetSize. matchesProjectInput — false, если вход
- * проекта изменён после создания: «Размер набора W × H отличается от входа проекта» (такие наборы не подойдут генерации
- * нового размера). revision — для updateSet и setSetArchived; contentRevision растёт при каждом изменении состава;
- * removedCount — убранные фоны. Подготовка меняет только счётчики (backgrounds.changed → itemsChangedIn).
+ * A background set: "N backgrounds · W × H[ · Archived]" from itemCount (active ones) and targetSize. matchesProjectInput is false when the
+ * project input changed after creation: "The set size W × H differs from the project input" (such sets do not fit generation
+ * of the new size). revision is for updateSet and setSetArchived; contentRevision grows with every change of the contents;
+ * removedCount counts removed backgrounds. Preparation changes only the counters (backgrounds.changed, itemsChangedIn).
  */
 export interface BackgroundSetResponseDto {
     id: string;

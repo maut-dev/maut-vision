@@ -2,19 +2,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { TrainingEpochDto, TrainingLogEntryDto, TrainingRunResponseDto } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { trainingApi } from "@/api/projects/training/training-api";
 import { isActiveTrainingRun } from "@/api/projects/training/training-parameters";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "@/i18n/sections/training";
 
-/** Сообщений в окне «Последние сообщения» и на странице «Вся история». */
+/** Messages in the window "Latest messages" and on a page of "Full history". */
 export const trainingLogWindow = 200;
 const epochPage = 1000;
 
 export type TrainingLogMode = "live" | "history";
 
 /**
- * История эпох и журнал выбранного запуска без опроса. Эпохи читаются страницами целиком, затем дочитываются с after, когда
- * epochCount снимка запуска (training.changed) больше загруженного; после итога запуска история перечитывается целиком — Core
- * заменяет её history.jsonl. Журнал: «Последние сообщения» — tailLog, затем listLog с after по росту logCount (окно последних
- * 200); «Вся история» — страницы listLog по 200 с «Следующая страница журнала».
+ * The epoch history and the log of the chosen run without polling. Epochs are read by pages in full, then read on with after when
+ * epochCount of the run snapshot (training.changed) is larger than loaded; after the run result the history is read again in full — Core
+ * replaces it with history.jsonl. The log: "Latest messages" — tailLog, then listLog with after as logCount grows (a window of the last
+ * 200); "Full history" — pages of listLog by 200 with "Next log page".
  */
 export function useTrainingRunDetails(projectId: string, run: TrainingRunResponseDto | undefined) {
     const runId = run?.id;
@@ -62,7 +64,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
             });
             setEpochsLoaded(true);
         } catch (cause) {
-            if (own === generation.current) setError(errorMessage(cause, "Не удалось загрузить историю эпох."));
+            if (own === generation.current) setError(errorMessage(cause, i18n.t("training:loadErrors.epochs")));
         } finally {
             if (own === generation.current) {
                 queue.busy = false;
@@ -76,7 +78,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
         }
     }, [projectId, runId]);
 
-    /** «Последние сообщения»: после хвоста дочитываются только новые записи. */
+    /** "Latest messages": after the tail only new entries are read. */
     const loadLiveLog = useCallback(async () => {
         if (!runId) return;
         const queue = logQueue.current;
@@ -104,7 +106,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
                 }
             }
         } catch (cause) {
-            if (own === logGeneration.current) setError(errorMessage(cause, "Не удалось загрузить журнал обучения."));
+            if (own === logGeneration.current) setError(errorMessage(cause, i18n.t("training:loadErrors.log")));
         } finally {
             if (own === logGeneration.current) {
                 queue.busy = false;
@@ -116,7 +118,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
         }
     }, [projectId, runId]);
 
-    // Новый запуск — всё с начала.
+    // A new run — everything from the start.
     useEffect(() => {
         generation.current++;
         logGeneration.current++;
@@ -142,7 +144,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
         else if (epochCount > loadedEpochs) void loadEpochs(false);
     }, [runId, epochCount, epochsLoaded, loadedEpochs, loadEpochs]);
 
-    // Итог запуска заменяет историю эпох файлом worker: перечитать её целиком один раз.
+    // The run result replaces the epoch history with the worker file: read it again in full once.
     const replaced = useRef<string | undefined>(undefined);
     useEffect(() => {
         if (!runId || !finished || !epochsLoaded || replaced.current === runId) return;
@@ -155,7 +157,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
         if (runId && logMode === "live") void loadLiveLog();
     }, [runId, logCount, logMode, loadLiveLog]);
 
-    // «Вся история»: страница с курсора; смена курсора — следующая страница.
+    // "Full history": a page from the cursor; a cursor change is the next page.
     useEffect(() => {
         if (!runId || logMode !== "history") return;
         const own = logGeneration.current;
@@ -167,7 +169,7 @@ export function useTrainingRunDetails(projectId: string, run: TrainingRunRespons
                 setLogTotal(page.total);
                 setHistoryNext(page.nextAfter);
             })
-            .catch(cause => { if (valid) setError(errorMessage(cause, "Не удалось загрузить журнал обучения.")); });
+            .catch(cause => { if (valid) setError(errorMessage(cause, i18n.t("training:loadErrors.log"))); });
         return () => { valid = false; };
     }, [projectId, runId, logMode, historyCursor]);
 

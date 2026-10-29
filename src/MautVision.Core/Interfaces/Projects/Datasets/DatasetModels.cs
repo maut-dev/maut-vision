@@ -5,7 +5,7 @@ using MautVision.Core.Interfaces.Projects.Images;
 
 namespace MautVision.Core.Interfaces.Projects.Datasets;
 
-/// <summary>Часть датасета: папки YOLO <c>train</c>, <c>val</c>, <c>test</c>.</summary>
+/// <summary>Dataset split: YOLO folders <c>train</c>, <c>val</c>, <c>test</c>.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<DatasetSplit>))]
 public enum DatasetSplit
 {
@@ -14,7 +14,7 @@ public enum DatasetSplit
     [JsonStringEnumMemberName("test")] Test,
 }
 
-/// <summary>Роль объекта без варианта класса: объект, негатив или отказ в сборке.</summary>
+/// <summary>Role of an object without a class variant: object, negative or build refusal.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<DatasetUnassignedVariantRole>))]
 public enum DatasetUnassignedVariantRole
 {
@@ -23,7 +23,7 @@ public enum DatasetUnassignedVariantRole
     [JsonStringEnumMemberName("reject")] Reject,
 }
 
-/// <summary>Роль объекта класса, не выбранного для обучения: негатив или отказ в сборке.</summary>
+/// <summary>Role of an object of a class not selected for training: negative or build refusal.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<DatasetUnselectedClassRole>))]
 public enum DatasetUnselectedClassRole
 {
@@ -31,7 +31,7 @@ public enum DatasetUnselectedClassRole
     [JsonStringEnumMemberName("reject")] Reject,
 }
 
-/// <summary>Verified — hash всех файлов проверен (при сборке или проверкой целостности); Corrupt — проверка нашла проблемы.</summary>
+/// <summary>Verified — the hash of all files is checked (at build or by an integrity check); Corrupt — the check found problems.</summary>
 [JsonConverter(typeof(JsonStringEnumConverter<DatasetIntegrityState>))]
 public enum DatasetIntegrityState
 {
@@ -41,9 +41,9 @@ public enum DatasetIntegrityState
 }
 
 /// <summary>
-/// Спецификация сборки. GroupIds — группы изображений; ClassIds — классы для обучения (индексы — по порядку каталога);
-/// TargetVariantIds и NegativeVariantIds — варианты классов (привязки), объекты которых становятся объектами или негативами.
-/// Seed — uint32; ValRatio &gt; 0, TestRatio ≥ 0, сумма &lt; 1.
+/// Build specification. GroupIds — image groups; ClassIds — classes for training (indexes follow the catalog order);
+/// TargetVariantIds and NegativeVariantIds — class variants (bindings) whose objects become objects or negatives.
+/// Seed — uint32; ValRatio &gt; 0, TestRatio ≥ 0, sum &lt; 1.
 /// </summary>
 public sealed record DatasetSpecification(
     string Name,
@@ -60,10 +60,10 @@ public sealed record DatasetSpecification(
     double ValRatio,
     double TestRatio);
 
-/// <summary>Класс версии: Index — выход модели (0..n−1 по порядку каталога), Name — название на момент сборки.</summary>
+/// <summary>Version class: Index — model output (0..n−1 in catalog order), Name — the name at build time.</summary>
 public sealed record DatasetClassEntry(int Index, Guid ClassId, string Name);
 
-/// <summary>Вариант класса (привязка) версии: название варианта проекта на момент сборки, для показа объектов и негативов.</summary>
+/// <summary>Version class variant (binding): name of the project variant at build time, for displaying objects and negatives.</summary>
 public sealed record DatasetVariantEntry(Guid ClassVariantId, Guid ClassId, string Name);
 
 public sealed record DatasetSplitCounts(int Train, int Validation, int Test)
@@ -71,14 +71,14 @@ public sealed record DatasetSplitCounts(int Train, int Validation, int Test)
     public int Total => Train + Validation + Test;
 }
 
-/// <summary>Рамок класса в версии (в порядке индексов, в том числе нули).</summary>
+/// <summary>Boxes of a class in the version (in index order, including zeros).</summary>
 public sealed record DatasetClassCount(int Index, Guid ClassId, string Name, int Boxes);
 
-/// <summary>Кадров группы-источника в версии.</summary>
+/// <summary>Frames of a source group in the version.</summary>
 public sealed record DatasetGroupCount(Guid GroupId, string Name, int Images);
 
 /// <summary>
-/// Состав: кадры по частям, кадры без рамок, ручные и сгенерированные, рамки всего и по классам, негативы, группы-источники.
+/// Composition: frames by split, frames without boxes, manual and generated, boxes in total and by class, negatives, source groups.
 /// </summary>
 public sealed record DatasetComposition(
     DatasetSplitCounts Images,
@@ -91,8 +91,8 @@ public sealed record DatasetComposition(
     IReadOnlyList<DatasetGroupCount> Groups);
 
 /// <summary>
-/// Пропущенные кадры по причинам: Unreviewed — разметка не проверена; PartialGeneration — незавершённая генерация без
-/// разрешения; WithoutTargets — нет объектов, а пустые кадры не включены; InvalidGeometry — рамка или ROI вне [0, 1].
+/// Skipped frames by reason: Unreviewed — the annotation is not reviewed; PartialGeneration — an unfinished generation without
+/// permission; WithoutTargets — no objects and empty frames are not included; InvalidGeometry — a box or ROI outside [0, 1].
 /// </summary>
 public sealed record DatasetPlanSkips(int Unreviewed, int PartialGeneration, int WithoutTargets, int InvalidGeometry)
 {
@@ -100,17 +100,17 @@ public sealed record DatasetPlanSkips(int Unreviewed, int PartialGeneration, int
 }
 
 /// <summary>
-/// Предупреждение плана: Code и Count. <c>datasets.insufficient_samples</c> — нет кадров в train, val или (при доле теста) test;
-/// <c>datasets.mixed_source_splits</c> — один источник попадает в разные части (кадров в таких источниках);
-/// <c>datasets.objects_as_negatives</c> — объектов архивных или удалённых классов и вариантов, ставших негативами;
-/// <c>datasets.split_collision</c> — кадров с одинаковыми пикселями в разных частях (сборка невозможна).
+/// Plan warning: Code and Count. <c>datasets.insufficient_samples</c> — no frames in train, val or (with a test ratio) test;
+/// <c>datasets.mixed_source_splits</c> — one source falls into different splits (frames in such sources);
+/// <c>datasets.objects_as_negatives</c> — objects of archived or deleted classes and variants that became negatives;
+/// <c>datasets.split_collision</c> — frames with identical pixels in different splits (the build is impossible).
 /// </summary>
 public sealed record DatasetPlanWarning(string Code, int Count);
 
 /// <summary>
-/// Результат «Проверить перед сборкой». Classes — индексы выбранных классов; Composition — кадры по частям и состав;
-/// Skipped — пропущенные по причинам; Warnings; SufficientSamples; Hash — передаётся в сборку. План не копирует файлов и
-/// устаревает, если изменились выбранные группы, разметка или каталог (сборка отвечает <c>datasets.plan_stale</c>).
+/// Result of "Check before build". Classes — indexes of the selected classes; Composition — frames by split and composition;
+/// Skipped — skipped frames by reason; Warnings; SufficientSamples; Hash — passed to the build. The plan copies no files and
+/// becomes stale if the selected groups, annotation or catalog change (the build answers <c>datasets.plan_stale</c>).
 /// </summary>
 public sealed record DatasetPlan(
     Guid Id,
@@ -129,9 +129,9 @@ public sealed record DatasetPlan(
 }
 
 /// <summary>
-/// Неизменяемая версия датасета (меняются только название, описание и архив). Specification — спецификация сборки, ClassMap —
-/// индексы классов, Variants — названия вариантов, Composition — состав, ManifestHash — SHA-256 manifest.json. DeletedAt —
-/// только у паспорта удалённой версии (<see cref="IDatasetsManager.GetPassportAsync"/>).
+/// Immutable dataset version (only the name, description and archive change). Specification — build specification, ClassMap —
+/// class indexes, Variants — variant names, Composition — composition, ManifestHash — SHA-256 of manifest.json. DeletedAt —
+/// only in the passport of a deleted version (<see cref="IDatasetsManager.GetPassportAsync"/>).
 /// </summary>
 public sealed record DatasetVersion(
     Guid Id,
@@ -156,16 +156,16 @@ public sealed record DatasetVersion(
     public DatasetSplitCounts Counts => Composition.Images;
 }
 
-/// <summary>Рамка YOLO: индекс класса, класс, вариант класса и центр/размер в долях кадра.</summary>
+/// <summary>YOLO box: class index, class, class variant and center/size as fractions of the frame.</summary>
 public sealed record DatasetBox(int Index, Guid ClassId, Guid? ClassVariantId, double CenterX, double CenterY, double Width, double Height);
 
-/// <summary>Негатив: объект, который не обучается (та же геометрия, без индекса).</summary>
+/// <summary>Negative: an object that is not trained (the same geometry, without an index).</summary>
 public sealed record DatasetNegative(Guid ClassId, Guid? ClassVariantId, double CenterX, double CenterY, double Width, double Height);
 
 /// <summary>
-/// Образец версии: Id — ID исходного изображения; файл <c>images/&lt;split&gt;/&lt;id&gt;.jpg|.png</c> (JPEG и PNG без поворота —
-/// жёсткая ссылка на исходный файл, иначе повёрнутый PNG), метка <c>labels/&lt;split&gt;/&lt;id&gt;.txt</c>. ImageHash и LabelHash —
-/// SHA-256 файлов, PixelHash — хеш пикселей кадра. ResourceId — ресурс вида <see cref="ResourceKind"/> (оригинал и миниатюра).
+/// Version sample: Id — ID of the source image; file <c>images/&lt;split&gt;/&lt;id&gt;.jpg|.png</c> (JPEG and PNG without rotation are
+/// a hard link to the source file, otherwise a rotated PNG), label <c>labels/&lt;split&gt;/&lt;id&gt;.txt</c>. ImageHash and LabelHash —
+/// SHA-256 of the files, PixelHash — hash of the frame pixels. ResourceId — a resource of kind <see cref="ResourceKind"/> (original and thumbnail).
 /// </summary>
 public sealed record DatasetSample(
     Guid Id,
@@ -184,11 +184,11 @@ public sealed record DatasetSample(
     Guid GroupId,
     Guid ResourceId)
 {
-    /// <summary>Вид материала в канале ресурсов (папка files/datasets): <c>new ResourceReference(ResourceKind, sample.ResourceId)</c>.</summary>
+    /// <summary>Material kind in the resource channel (folder files/datasets): <c>new ResourceReference(ResourceKind, sample.ResourceId)</c>.</summary>
     public const string ResourceKind = "datasets";
 }
 
-/// <summary>Страница образцов одной части по ID; NextCursor — null на последней странице.</summary>
+/// <summary>Page of samples of one split by ID; NextCursor — null on the last page.</summary>
 public sealed record DatasetSamplePage(IReadOnlyList<DatasetSample> Items, string? NextCursor);
 
 [JsonConverter(typeof(JsonStringEnumConverter<DatasetOperationKind>))]
@@ -200,9 +200,9 @@ public enum DatasetOperationKind
 }
 
 /// <summary>
-/// Операция датасета — задача Jobs. Build: VersionId = ID задачи, Specification и PlanId — для «Настроить повтор». Verify и
-/// Export: VersionId — проверяемая или экспортируемая версия; FileName — имя ZIP. VersionName — название версии (на момент
-/// постановки, если версия удалена); VersionAvailable — версия готова и не удалена («Открыть датасет»).
+/// Dataset operation — a Jobs job. Build: VersionId = job ID, Specification and PlanId — for "Configure repeat". Verify and
+/// Export: VersionId — the checked or exported version; FileName — ZIP name. VersionName — version name (at the time of
+/// enqueueing, if the version is deleted); VersionAvailable — the version is ready and not deleted ("Open dataset").
 /// </summary>
 public sealed record DatasetOperation(
     JobInfo Job,
@@ -214,10 +214,10 @@ public sealed record DatasetOperation(
     DatasetSpecification? Specification,
     string? FileName);
 
-/// <summary>Операции одного вида, новые первыми; Total — все операции этого вида в проекте.</summary>
+/// <summary>Operations of one kind, newest first; Total — all operations of this kind in the project.</summary>
 public sealed record DatasetOperationPage(IReadOnlyList<DatasetOperation> Items, long Total);
 
-/// <summary>Итог сборки (в JobInfo.Result): кадров всего и готово, из них жёсткие ссылки, копии и PNG после преобразования.</summary>
+/// <summary>Build result (in JobInfo.Result): frames in total and done, of them hard links, copies and PNG after conversion.</summary>
 public sealed record DatasetBuildResult(Guid VersionId, int Total, int Produced, int Linked, int Copied, int Converted, DatasetSplitCounts Counts);
 
 [JsonConverter(typeof(JsonStringEnumConverter<DatasetFileRole>))]
@@ -230,14 +230,14 @@ public enum DatasetFileRole
 }
 
 /// <summary>
-/// Проблема целостности: SampleId и Split — образец (null для manifest.json и data.yaml), Role — файл, Code —
-/// <c>datasets.file_missing</c>, <c>datasets.file_changed</c> (содержимое отличается) или <c>datasets.file_unreadable</c>.
+/// Integrity problem: SampleId and Split — the sample (null for manifest.json and data.yaml), Role — the file, Code —
+/// <c>datasets.file_missing</c>, <c>datasets.file_changed</c> (content differs) or <c>datasets.file_unreadable</c>.
 /// </summary>
 public sealed record DatasetIntegrityIssue(Guid? SampleId, DatasetSplit? Split, DatasetFileRole Role, string Code);
 
 /// <summary>
-/// Итог проверки целостности (в JobInfo.Result): файлов всего и проверено, IssueCount — все проблемы, Issues — первые
-/// <see cref="MaxIssues"/>; State — verified или corrupt (null, пока проверка не закончена); Bytes — прочитано; ElapsedMs.
+/// Integrity check result (in JobInfo.Result): files in total and checked, IssueCount — all problems, Issues — the first
+/// <see cref="MaxIssues"/>; State — verified or corrupt (null until the check finishes); Bytes — bytes read; ElapsedMs.
 /// </summary>
 public sealed record DatasetVerifyResult(Guid VersionId, int TotalFiles, int CheckedFiles, int IssueCount, IReadOnlyList<DatasetIntegrityIssue> Issues,
     DatasetIntegrityState? State, long Bytes, long ElapsedMs)
@@ -245,21 +245,21 @@ public sealed record DatasetVerifyResult(Guid VersionId, int TotalFiles, int Che
     public const int MaxIssues = 500;
 }
 
-/// <summary>Итог экспорта (в JobInfo.Result): имя файла, изображений всего и записано, байт архива, длительность.</summary>
+/// <summary>Export result (in JobInfo.Result): file name, images in total and written, archive bytes, duration.</summary>
 public sealed record DatasetExportResult(Guid VersionId, string FileName, int TotalImages, int ExportedImages, long Bytes, long ElapsedMs);
 
 /// <summary>
-/// Состав удаления версии: образцов, записей истории (сборка, проверки и экспорты версии) и блокировки (непустой список —
-/// удаление сейчас недоступно). Revision передаётся в удаление. Паспорт версии сохраняется для моделей.
+/// What a version deletion removes: samples, history records (build, checks and exports of the version) and blockers (a non-empty list —
+/// the deletion is unavailable now). Revision is passed to the deletion. The version passport is kept for models.
 /// </summary>
 public sealed record DatasetDeletionReview(Guid VersionId, string Name, long Samples, long Operations, IReadOnlyList<DeletionBlocker> Blockers, string Revision);
 
-/// <summary>Строки удалены; CleanupPending — файлы версии ещё удаляются в фоне.</summary>
+/// <summary>Rows are deleted; CleanupPending — version files are still being deleted in the background.</summary>
 public sealed record DatasetDeletionResult(Guid VersionId, long Samples, long Operations, bool CleanupPending);
 
 /// <summary>
-/// Версия для обучения: папка YOLO (Directory) с data.yaml и manifest.json, классы 0..n−1, размер кадра и части.
-/// Пути — абсолютные; у <see cref="IDatasetsManager.MaterializeAsync"/> — внутри папки задачи.
+/// Version for training: a YOLO folder (Directory) with data.yaml and manifest.json, classes 0..n−1, frame size and splits.
+/// Paths are absolute; for <see cref="IDatasetsManager.MaterializeAsync"/> — inside the job folder.
 /// </summary>
 public sealed record DatasetTrainingSource(
     Guid VersionId,
@@ -273,12 +273,12 @@ public sealed record DatasetTrainingSource(
     string DataYamlPath,
     string ManifestPath);
 
-/// <summary>Изменённая или удалённая (Revision = null) версия.</summary>
+/// <summary>Changed or deleted (Revision = null) version.</summary>
 public sealed record DatasetEntityChange(Guid Id, long? Revision);
 
 /// <summary>
-/// Что изменилось в датасетах проекта: Versions — версии с новыми ревизиями (появилась, изменились название, архив или
-/// целостность) или удалённые. Состояние и прогресс сборки, проверки и экспорта — событие JobChanged.
+/// What changed in the project datasets: Versions — versions with new revisions (appeared, changed name, archive or
+/// integrity) or deleted ones. State and progress of build, check and export — the JobChanged event.
 /// </summary>
 public sealed class DatasetsChangedEventArgs(string projectId, IReadOnlyList<DatasetEntityChange> versions) : EventArgs
 {
@@ -287,7 +287,7 @@ public sealed class DatasetsChangedEventArgs(string projectId, IReadOnlyList<Dat
 }
 
 /// <summary>
-/// Счётчики готовых версий: Ready — не в архиве и не повреждённые, Archived — в архиве (в том числе повреждённые), Corrupt — повреждённые
-/// вне архива. Собираемые и удалённые версии не считаются.
+/// Counters of ready versions: Ready — not archived and not corrupt, Archived — archived (including corrupt), Corrupt — corrupt
+/// outside the archive. Versions being built and deleted ones are not counted.
 /// </summary>
 public sealed record DatasetsSummary(int Ready, int Archived, int Corrupt);

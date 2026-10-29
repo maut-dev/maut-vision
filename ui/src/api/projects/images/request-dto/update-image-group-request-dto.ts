@@ -6,6 +6,6 @@ export interface UpdateImageGroupRequestDto {
     name: string;
     description: string;
     splitHint: ImageSplitHint;
-    /** Ревизия группы, которую видел пользователь; при расхождении — images.revision_conflict. */
+    /** The group revision the user saw; a mismatch gives images.revision_conflict. */
     revision: number;
 }

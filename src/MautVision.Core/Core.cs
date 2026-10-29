@@ -320,7 +320,7 @@ internal sealed class Core(CoreOptions options) : ICore
                 {
                     await jobsManager.CompleteInterruptedAsync(project.Id, runId).ConfigureAwait(false);
                 }
-                // Evaluations that ended with the application are «Прервано»; live checks never survive it.
+                // Evaluations that ended with the application are "Interrupted"; live checks never survive it.
                 var activeEvaluations = jobsManager.ActiveJobs(project.Id).Where(job => job.Kind == EvaluationHandler.Kind).Select(job => job.Id).ToHashSet();
                 await project.ChecksManager.RecoverAsync(activeEvaluations, cancellationToken).ConfigureAwait(false);
                 await project.FileCleanup.StartAsync(cancellationToken).ConfigureAwait(false);

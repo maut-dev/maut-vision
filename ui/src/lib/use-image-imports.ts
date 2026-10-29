@@ -2,28 +2,30 @@ import { useEffect, useMemo, useState } from "react";
 import { imagesApi } from "@/api/projects/images/images-api";
 import { importImagesJobKind } from "@/api/projects/images/response-dto/import-images-result-dto";
 import type { VideoFrameRange } from "@/api/projects/images/video-frame-range";
+import { i18n } from "@/i18n";
+import "@/i18n/sections/images";
 import { errorMessage } from "./format";
 import { useJobHistory } from "./use-job-history";
 
 export interface ImportOptions {
-    /** «Пропускать повторы в группе», по умолчанию да. */
+    /** "Skip duplicates in the group", on by default. */
     skipDuplicates: boolean;
-    /** «Включая вложенные папки» — только для папки. */
+    /** "Include subfolders": for a folder only. */
     recursive: boolean;
 }
 
 const listImports = (projectId: string) => (groupId: string, limit: number) => imagesApi.listImports({ projectId, groupId, limit });
 
-/** Импорт в группу и история импорта только этой группы (useJobHistory: images.listImports, затем job.changed). */
+/** Import into a group and the import history of this group only (useJobHistory: images.listImports, then job.changed). */
 export function useImageImports(projectId: string, groupId: string | undefined) {
     const list = useMemo(() => listImports(projectId), [projectId]);
-    const history = useJobHistory(projectId, groupId, importImagesJobKind, list, "Не удалось загрузить историю импорта.");
+    const history = useJobHistory(projectId, groupId, importImagesJobKind, list, i18n.t("images:errors.loadImports"));
     const [selecting, setSelecting] = useState(false);
     const { apply, scope, isCurrent, setError } = history;
 
     useEffect(() => setSelecting(false), [projectId, groupId]);
 
-    /** Одно действие пользователя: нативный выбор файлов или папки и одна задача images.import. */
+    /** One user action: the native choice of files or a folder and one images.import job. */
     async function start(kind: "files" | "folder", options: ImportOptions) {
         if (!groupId) return;
         const current = scope();
@@ -49,8 +51,8 @@ export function useImageImports(projectId: string, groupId: string | undefined) 
     }
 
     /**
-     * Кадры выбранного видео: одна задача images.import. Ошибка запроса (например, video.range_invalid) выбрасывается
-     * вызывающему; токен выбора после неё остаётся действительным.
+     * Frames of the chosen video: one images.import job. A request error (for example, video.range_invalid) is thrown to the caller;
+     * the selection token stays valid after it.
      */
     async function importVideo(selectionToken: string, range: VideoFrameRange, skipDuplicates: boolean) {
         if (!groupId) return;

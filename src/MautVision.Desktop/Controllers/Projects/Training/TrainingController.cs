@@ -10,6 +10,7 @@ using MautVision.Desktop.Controllers.Projects.Training.ResponseDto;
 using MautVision.Desktop.Controllers.Jobs;
 using MautVision.Desktop.Controllers.Jobs.ResponseDto;
 using MautVision.Desktop.Resources;
+using MautVision.Desktop.Host;
 
 namespace MautVision.Desktop.Controllers.Projects.Training;
 
@@ -18,7 +19,7 @@ namespace MautVision.Desktop.Controllers.Projects.Training;
 /// and progress come through job.changed, its live data through training.changed), history, log and model versions.
 /// </summary>
 internal sealed class TrainingController(IProjectsManager projects, IJobsManager jobs, ITrainingPresetsManager presets, IHardwareManager hardware,
-    IPythonRuntime runtime, ResourceHandles resources, FileSelections selections, NativeDialogs dialogs, Func<string, string> messageFor)
+    IPythonRuntime runtime, ResourceHandles resources, FileSelections selections, NativeDialogs dialogs)
 {
     public async Task<TrainingPresetResponseDto[]> ListPresetsAsync(ListTrainingPresetsRequestDto request, CancellationToken cancellationToken)
         => (await presets.ListAsync(cancellationToken)).Select(TrainingResponseMapper.Map).ToArray();
@@ -39,7 +40,7 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
     {
         var status = runtime.GetStatus();
         var code = status.Code is null ? null : "training." + status.Code;
-        return Task.FromResult(new TrainingRuntimeResponseDto(status.Configured, status.Available, status.Mode, code, code is null ? null : messageFor(code)));
+        return Task.FromResult(new TrainingRuntimeResponseDto(status.Configured, status.Available, status.Mode, code));
     }
 
     /// <summary>Checks the run and queues it; returns it at once. A repeated operation returns the same run.</summary>
@@ -49,9 +50,9 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
         var training = await Training(request.ProjectId, cancellationToken);
         var input = await training.PrepareRunAsync(new TrainingRunRequest(request.DatasetVersionId, request.Parameters, request.PresetName), request.OperationId,
             cancellationToken);
-        var job = await jobs.EnqueueAsync<ITrainingRunJob, TrainingRunInput>(input, request.ProjectId, request.OperationId, input.Dataset.Name,
+        var job = await jobs.EnqueueAsync<ITrainingRunJob, TrainingRunInput>(input, request.ProjectId, request.OperationId, JobLabels.Name(input.Dataset.Name),
             cancellationToken);
-        return TrainingResponseMapper.Map(await training.GetRunAsync(job.Id, cancellationToken), messageFor);
+        return TrainingResponseMapper.Map(await training.GetRunAsync(job.Id, cancellationToken));
     }
 
     public async Task<TrainingRunResponseDto> CancelRunAsync(CancelTrainingRunRequestDto request, CancellationToken cancellationToken)
@@ -59,17 +60,17 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
         var training = await Training(request.ProjectId, cancellationToken);
         await training.GetRunAsync(request.RunId, cancellationToken);
         await jobs.CancelAsync(request.ProjectId, request.RunId, cancellationToken);
-        return TrainingResponseMapper.Map(await training.GetRunAsync(request.RunId, cancellationToken), messageFor);
+        return TrainingResponseMapper.Map(await training.GetRunAsync(request.RunId, cancellationToken));
     }
 
     public async Task<TrainingRunPageResponseDto> ListRunsAsync(ListTrainingRunsRequestDto request, CancellationToken cancellationToken)
     {
         var page = await (await Training(request.ProjectId, cancellationToken)).ListRunsAsync(request.Limit ?? 50, request.Before, cancellationToken);
-        return new TrainingRunPageResponseDto(page.Items.Select(run => TrainingResponseMapper.Map(run, messageFor)).ToArray(), page.Total);
+        return new TrainingRunPageResponseDto(page.Items.Select(run => TrainingResponseMapper.Map(run)).ToArray(), page.Total);
     }
 
     public async Task<TrainingRunResponseDto> GetRunAsync(GetTrainingRunRequestDto request, CancellationToken cancellationToken)
-        => TrainingResponseMapper.Map(await (await Training(request.ProjectId, cancellationToken)).GetRunAsync(request.RunId, cancellationToken), messageFor);
+        => TrainingResponseMapper.Map(await (await Training(request.ProjectId, cancellationToken)).GetRunAsync(request.RunId, cancellationToken));
 
     public async Task<TrainingEpochPageResponseDto> ListEpochsAsync(ListTrainingEpochsRequestDto request, CancellationToken cancellationToken)
         => TrainingResponseMapper.Map(await (await Training(request.ProjectId, cancellationToken)).ListEpochsAsync(request.RunId, request.After,
@@ -99,7 +100,7 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
     {
         var review = await (await Training(request.ProjectId, cancellationToken)).ReviewVersionDeletionAsync(request.VersionId, cancellationToken);
         return new ModelVersionDeletionReviewResponseDto(review.VersionId, review.Number, review.IsWorking, review.Evaluations, review.Bytes,
-            review.Blockers.Select(blocker => new Catalog.ResponseDto.DeletionBlockerResponseDto(blocker.Code, blocker.Count, messageFor(blocker.Code))).ToArray());
+            review.Blockers.Select(blocker => Catalog.ResponseDto.DeletionBlockerResponseDto.From(blocker)).ToArray());
     }
 
     public async Task<ModelVersionDeletionResponseDto> DeleteVersionAsync(DeleteModelVersionRequestDto request, CancellationToken cancellationToken)
@@ -108,11 +109,11 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
         return new ModelVersionDeletionResponseDto(result.VersionId, result.Number, result.Evaluations, result.CleanupPending);
     }
 
-    /// <summary>«Сохранить как» with «model-vN.zip»; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
+    /// <summary>"Save as" with "model-vN.zip"; overwriting is confirmed in the dialog itself. Null token — the dialog was closed.</summary>
     public async Task<ModelExportSelectionResponseDto> SelectExportDestinationAsync(SelectModelExportRequestDto request, CancellationToken cancellationToken)
     {
         var version = await (await Training(request.ProjectId, cancellationToken)).GetVersionAsync(request.VersionId, cancellationToken);
-        var path = await dialogs.PickSaveFile("Выгрузка версии модели в ZIP", $"model-v{version.Number}.zip", "ZIP-архив", cancellationToken);
+        var path = await dialogs.PickSaveFile(Strings.DialogExportModel, $"model-v{version.Number}.zip", Strings.FilterZip, cancellationToken);
         if (string.IsNullOrEmpty(path)) return new ModelExportSelectionResponseDto(null, null);
         return new ModelExportSelectionResponseDto(selections.Register([path], FileSelectionKind.SaveFile), global::System.IO.Path.GetFileName(path));
     }
@@ -127,7 +128,7 @@ internal sealed class TrainingController(IProjectsManager projects, IJobsManager
             throw new CoreException("training.export_selection_expired", "The export destination is unknown, expired or belongs to another operation.");
         var input = await training.PrepareExportAsync(request.VersionId, selection.Paths[0], request.OperationId, cancellationToken);
         return JobResponseMapper.Map(await jobs.EnqueueAsync<IModelExportJob, ModelExportInput>(input, request.ProjectId, request.OperationId,
-            JobLabels.Version(input.VersionNumber), cancellationToken), messageFor);
+            JobLabels.Version(input.VersionNumber), cancellationToken));
     }
 
     private async Task<ITrainingManager> Training(string projectId, CancellationToken cancellationToken)

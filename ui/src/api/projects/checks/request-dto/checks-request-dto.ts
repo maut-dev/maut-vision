@@ -1,9 +1,9 @@
-/** Часть датасета для оценки: val «Validation» | test «Test». */
+/** The dataset split to evaluate on: val (Validation) | test (Test). */
 export type EvaluationSplit = "val" | "test";
 
 /**
- * «Проверить на датасете»: device — "cpu" или номер видеокарты (как в обучении: deviceOptions), batch 1–1024 (по умолчанию 16);
- * operationId — новый на действие (повтор вернёт ту же оценку).
+ * Check on the dataset: device is "cpu" or a GPU index (as in training: deviceOptions), batch 1–1024 (16 by default);
+ * operationId is new per action (a repeat returns the same evaluation).
  */
 export interface StartModelEvaluationRequestDto {
     projectId: string;
@@ -25,7 +25,7 @@ export interface GetModelEvaluationRequestDto {
     evaluationId: string;
 }
 
-/** «Все проверки», новые первыми; limit 1–200 (по умолчанию 50), before — id последней оценки предыдущей страницы. */
+/** All checks, newest first; limit 1–200 (50 by default), before — the id of the last evaluation of the previous page. */
 export interface ListModelEvaluationsRequestDto {
     projectId: string;
     versionId?: string;
@@ -35,7 +35,7 @@ export interface ListModelEvaluationsRequestDto {
     before?: string;
 }
 
-/** Матрица сравнения: последняя успешная оценка каждой версии на паре «датасет · часть» (без фильтров — все пары). */
+/** The comparison matrix: the latest successful evaluation of each version on a "dataset · split" pair (without filters, all pairs). */
 export interface ListLatestModelEvaluationsRequestDto {
     projectId: string;
     datasetVersionId?: string;
@@ -50,7 +50,7 @@ export interface SelectCheckVideoRequestDto {
     projectId: string;
 }
 
-/** «Показать другой кадр»: кадр выбранного видео в timestampMs, уменьшенный до maxSide (по умолчанию 1600). */
+/** Show another frame: the frame of the chosen video at timestampMs, scaled down to maxSide (1600 by default). */
 export interface PreviewCheckVideoFrameRequestDto {
     projectId: string;
     selectionToken: string;
@@ -60,20 +60,20 @@ export interface PreviewCheckVideoFrameRequestDto {
 
 export type ListMonitorsRequestDto = Record<string, never>;
 
-/** «Снять экран». */
+/** Take a screenshot. */
 export interface CaptureScreenRequestDto {
     projectId: string;
     monitor: number;
 }
 
-/** Общие поля: confidence — «Порог уверенности» (null — 0.25), maxDetections — null «Автоматически», device — "cpu" или номер видеокарты. */
+/** Shared fields: confidence — the confidence threshold (null — 0.25), maxDetections — null for Auto, device — "cpu" or a GPU index. */
 export interface CheckParametersDto {
     confidence: number | null;
     maxDetections: number | null;
     device: string;
 }
 
-/** Рамка в пикселях кадра (у экрана — от угла монитора), размером со вход версии. */
+/** The frame in frame pixels (for the screen, from the monitor corner), the size of the version input. */
 export interface CheckRegionDto {
     x: number;
     y: number;
@@ -81,7 +81,7 @@ export interface CheckRegionDto {
     height: number;
 }
 
-/** operationId — новый на действие; повтор того же запроса вернёт ту же проверку. */
+/** operationId is new per action; a repeat of the same request returns the same check. */
 export interface StartImageCheckRequestDto {
     projectId: string;
     versionId: string;
@@ -90,7 +90,7 @@ export interface StartImageCheckRequestDto {
     operationId: string;
 }
 
-/** stepMs — «Шаг» (null — 1000 мс); region — null, если видео не больше входа. */
+/** stepMs — the step (null — 1000 ms); region — null when the video is not larger than the input. */
 export interface StartVideoCheckRequestDto {
     projectId: string;
     versionId: string;
@@ -101,7 +101,7 @@ export interface StartVideoCheckRequestDto {
     operationId: string;
 }
 
-/** fps — «Кадров в секунду» (null — 3), maxDurationSec — «Остановить через» (null — 1800); region — null, если экран не больше входа. */
+/** fps — frames per second (null — 3), maxDurationSec — stop after (null — 1800); region — null when the screen is not larger than the input. */
 export interface StartScreenCheckRequestDto {
     projectId: string;
     versionId: string;
@@ -118,7 +118,7 @@ export interface StopCheckRequestDto {
     checkId: string;
 }
 
-/** journalLimit 0–200 (по умолчанию 40): последняя страница журнала в recentFrames. */
+/** journalLimit 0–200 (40 by default): the last page of the journal in recentFrames. */
 export interface GetCheckRequestDto {
     projectId: string;
     checkId: string;
@@ -129,7 +129,7 @@ export interface ListChecksRequestDto {
     projectId: string;
 }
 
-/** after — дочитать новые записи после ordinal; before — листать назад; без курсоров — последние limit (1–200, по умолчанию 100). */
+/** after — read new records after an ordinal; before — page back; without cursors — the last limit records (1–200, 100 by default). */
 export interface ListCheckJournalRequestDto {
     projectId: string;
     checkId: string;

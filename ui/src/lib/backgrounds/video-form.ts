@@ -1,8 +1,10 @@
-import { availableVideoFrames, backgroundsWord, defaultVideoImport, videoImportError } from "@/api/projects/backgrounds/background-import-rules";
+import { availableVideoFrames, defaultVideoImport, videoImportError } from "@/api/projects/backgrounds/background-import-rules";
 import type { BackgroundRegionRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
+import "@/i18n/sections/backgrounds";
+import { i18n } from "@/i18n";
 
-/** Поля «Нарезать из видео» в секундах, как их ввёл пользователь; в запрос уходят миллисекунды. */
+/** The "Cut from video" fields in seconds as the user typed them; the request gets milliseconds. */
 export interface VideoFields {
     count: string;
     interval: string;
@@ -37,14 +39,14 @@ interface VideoInfo {
     durationMs: number;
 }
 
-/** «С таким шагом доступно до K кадров.» — 0, если поля неверны. */
+/** "Up to K frames are available with this step."; 0 when the fields are wrong. */
 export function videoFramesAvailable(video: VideoInfo, range: VideoRange): number {
     return availableVideoFrames(video.durationMs, range.startMs, range.intervalMs);
 }
 
 /**
- * Сообщение проверки до отправки или null. Правило — videoImportError, то же, что у host;
- * текст уточняет, какое поле неверно.
+ * The validation message before sending, or null. The rule is videoImportError, the same as the host's; the text says which field is
+ * wrong.
  */
 export function videoFormMessage(video: VideoInfo, target: InputSizeDto, region: BackgroundRegionRequestDto, fields: VideoFields): string | null {
     const range = videoRangeOf(fields);
@@ -54,17 +56,18 @@ export function videoFormMessage(video: VideoInfo, target: InputSizeDto, region:
         case null:
             return null;
         case "backgrounds.video_too_small":
-            return `Видео ${video.width}×${video.height} меньше входа модели ${target.width}×${target.height}: рамка не помещается.`;
+            return i18n.t("backgrounds:video.errors.tooSmall", { width: video.width, height: video.height, targetWidth: target.width, targetHeight: target.height });
         case "backgrounds.region_invalid":
-            return "Рамка выходит за границы кадра.";
+            return i18n.t("backgrounds:video.errors.region");
         case "video.frames_invalid":
-            return !Number.isSafeInteger(range.intervalMs) || range.intervalMs < 1 ? "Шаг — положительное число секунд." : `Начало — от 0 до ${seconds} с.`;
+            return !Number.isSafeInteger(range.intervalMs) || range.intervalMs < 1
+                ? i18n.t("backgrounds:video.errors.interval")
+                : i18n.t("backgrounds:video.errors.start", { seconds });
         case "video.range_invalid":
-            return `Начало — от 0 до ${seconds} с.`;
+            return i18n.t("backgrounds:video.errors.start", { seconds });
         case "backgrounds.count_invalid": {
-            if (!Number.isSafeInteger(range.count) || range.count < 1) return "Количество фонов — положительное целое число.";
-            const available = videoFramesAvailable(video, range);
-            return `С шагом ${fields.interval} с из видео получится не больше ${available} ${backgroundsWord(available)}. Уменьшите шаг или количество.`;
+            if (!Number.isSafeInteger(range.count) || range.count < 1) return i18n.t("backgrounds:video.errors.count");
+            return i18n.t("backgrounds:video.errors.tooMany", { count: videoFramesAvailable(video, range), interval: fields.interval });
         }
     }
 }

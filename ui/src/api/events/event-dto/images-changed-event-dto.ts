@@ -1,16 +1,16 @@
 import { isId, isRevision } from "../../projects/catalog/catalog-guards";
 import { isRecord } from "../../transport/envelopes";
 
-/** Изменённая группа или изображение с новой ревизией; revision = null — удалено. */
+/** A changed group or image with its new revision; revision = null when it was deleted. */
 export interface ImagesEntityChangeDto {
     id: string;
     revision: number | null;
 }
 
 /**
- * Что изменилось в изображениях проекта. groups — группы с новыми ревизиями или удалённые; images — изображения, изменённые
- * явной операцией (разметка, архив, перемещение, удаление выбранных); imagesChangedIn — группы, у которых изменился состав
- * или счётчики (импорт приходит не чаще раза в 500 мс на группу): UI перечитывает их группу и загруженные страницы.
+ * What changed in the images of the project. groups — groups with new revisions or deleted ones; images — images changed by an explicit
+ * operation (annotation, archive, moving, deleting the chosen ones); imagesChangedIn — groups whose content or counters changed
+ * (an import reports at most once per 500 ms per group): the UI reads their group and the loaded pages again.
  */
 export interface ImagesChangedDto {
     projectId: string;

@@ -2,7 +2,7 @@ import { isRecord } from "../../transport/envelopes";
 
 export type HardwareStatus = "available" | "collecting" | "unavailable";
 
-/** status collecting — первый замер нагрузки; reason — текст вместо значения. */
+/** status collecting — the first load sample; reason — hardware.* code of why there is no value (errorText gives the text). */
 export interface CpuSampleDto {
     model: string | null;
     physicalCores: number | null;
@@ -18,7 +18,7 @@ export interface MemorySampleDto {
     utilizationPercent: number;
 }
 
-/** «Приложение»: хост, процессы WebView2 и идущие Python worker с дочерними процессами, в байтах. */
+/** The application: the host, the WebView2 processes and running Python workers with their child processes, in bytes. */
 export interface ApplicationMemoryDto {
     totalBytes: number;
     hostBytes: number;
@@ -28,7 +28,7 @@ export interface ApplicationMemoryDto {
     workerProcesses: number;
 }
 
-/** Значение, которое драйвер не сообщает, — null. */
+/** A value the driver does not report is null. */
 export interface GpuSampleDto {
     index: number;
     name: string;
@@ -40,8 +40,8 @@ export interface GpuSampleDto {
 }
 
 /**
- * Снимок «Ваш компьютер» по запросу (hardware.sample). ram — null, если Windows его не сообщила; gpuStatus — available или
- * unavailable с gpuReason; gpuSource — nvml или nvidia-smi; gpuSampledAt — время чтения видеокарт.
+ * A sample of the computer on request (hardware.sample). ram is null when Windows did not report it; gpuStatus is available or
+ * unavailable with the code gpuReason; gpuSource is nvml or nvidia-smi; gpuSampledAt is the time the GPUs were read.
  */
 export interface HardwareSampleResponseDto {
     timestamp: string;

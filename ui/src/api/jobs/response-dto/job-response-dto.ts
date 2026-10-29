@@ -1,10 +1,12 @@
+import { isCodedTextDto, type CodedTextDto } from "../../coded-text-dto";
 import { isRecord } from "../../transport/envelopes";
 
 export type JobStatus = "queued" | "running" | "succeeded" | "failed" | "cancelled" | "interrupted" | "blocked";
 
+/** code — what the UI translates; message — the stored text for the log, shown only for a code the catalogs do not know; may be null. */
 export interface JobErrorDto {
     code: string;
-    message: string;
+    message: string | null;
 }
 
 export interface JobResponseDto {
@@ -13,9 +15,10 @@ export interface JobResponseDto {
     projectId: string;
     operationId: string;
     status: JobStatus;
-    /** 0–100 или null, если объём работы неизвестен. */
+    /** 0–100, or null when the amount of work is unknown. */
     progress: number | null;
-    progressText: string | null;
+    /** What the job is doing: a code of the catalog progress with values ("Epoch 3 of 10"), a stored text of 1.0.0, or null. */
+    progressMessage: CodedTextDto | null;
     processed: number | null;
     total: number | null;
     error: JobErrorDto | null;
@@ -24,20 +27,20 @@ export interface JobResponseDto {
     updatedAt: string;
     startedAt: string | null;
     finishedAt: string | null;
-    /** Растёт с каждым изменением: снимок с меньшим sequence устарел. */
+    /** Grows with every change: a snapshot with a smaller sequence is stale. */
     sequence: number;
     /**
-     * Итог задачи или null; форму задаёт вид задачи. Для classes.import_assets — ImportClassAssetsResultDto
-     * (parseImportClassAssetsResult в api/projects/catalog); для images.import — ImportImagesResultDto
-     * (parseImportImagesResult в api/projects/images); для backgrounds.import — ImportBackgroundsResultDto
-     * (parseImportBackgroundsResult в api/projects/backgrounds); для generation.run — GenerationRunResultDto
-     * (parseGenerationRunResult в api/projects/generation); для datasets.build, datasets.verify, datasets.export — DatasetBuildResultDto,
-     * DatasetVerifyResultDto, DatasetExportResultDto (parseDataset*Result в api/projects/datasets); для training.run —
-     * TrainingRunResultDto (parseTrainingRunResult в api/projects/training).
+     * The outcome of the job or null; its shape depends on the job kind. classes.import_assets — ImportClassAssetsResultDto
+     * (parseImportClassAssetsResult in api/projects/catalog); images.import — ImportImagesResultDto
+     * (parseImportImagesResult in api/projects/images); backgrounds.import — ImportBackgroundsResultDto
+     * (parseImportBackgroundsResult in api/projects/backgrounds); generation.run — GenerationRunResultDto
+     * (parseGenerationRunResult in api/projects/generation); datasets.build, datasets.verify, datasets.export — DatasetBuildResultDto,
+     * DatasetVerifyResultDto, DatasetExportResultDto (parseDataset*Result in api/projects/datasets); training.run —
+     * TrainingRunResultDto (parseTrainingRunResult in api/projects/training).
      */
     result: unknown;
-    /** Подпись постановщика: группа, набор, пресет, датасет, «Версия N»; null у задач без подписи. */
-    label: string | null;
+    /** What the job works on: a name as text (group, set, preset, dataset) or a code of jobLabels ("Version N"); null without one. */
+    label: CodedTextDto | null;
 }
 
 const statuses: readonly string[] = ["queued", "running", "succeeded", "failed", "cancelled", "interrupted", "blocked"] satisfies JobStatus[];
@@ -47,7 +50,7 @@ const isDate = (value: unknown) => typeof value === "string" && Number.isFinite(
 const isCounter = (value: unknown) => value === null || (Number.isSafeInteger(value) && (value as number) >= 0);
 
 function isJobErrorDto(value: unknown): value is JobErrorDto {
-    return isRecord(value) && typeof value.code === "string" && typeof value.message === "string";
+    return isRecord(value) && typeof value.code === "string" && (value.message === null || typeof value.message === "string");
 }
 
 export function isJobResponseDto(value: unknown): value is JobResponseDto {
@@ -57,7 +60,7 @@ export function isJobResponseDto(value: unknown): value is JobResponseDto {
         && typeof value.operationId === "string" && value.operationId.length > 0
         && typeof value.status === "string" && statuses.includes(value.status)
         && (value.progress === null || (typeof value.progress === "number" && value.progress >= 0 && value.progress <= 100))
-        && (value.progressText === null || typeof value.progressText === "string")
+        && (value.progressMessage === null || isCodedTextDto(value.progressMessage))
         && isCounter(value.processed) && isCounter(value.total)
         && (value.error === null || isJobErrorDto(value.error))
         && typeof value.cancelRequested === "boolean"
@@ -66,5 +69,5 @@ export function isJobResponseDto(value: unknown): value is JobResponseDto {
         && (value.finishedAt === null || isDate(value.finishedAt))
         && Number.isSafeInteger(value.sequence) && (value.sequence as number) >= 1
         && Object.hasOwn(value, "result")
-        && (value.label === null || typeof value.label === "string");
+        && (value.label === null || isCodedTextDto(value.label));
 }

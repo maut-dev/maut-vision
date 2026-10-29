@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { projectsApi } from "@/api/projects/projects-api";
 import type { ProjectDeletionResponseDto, ProjectDeletionReviewResponseDto } from "@/api/projects/response-dto/project-lifecycle-response-dto";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
@@ -6,28 +7,30 @@ import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { CodedTextDto } from "@/api/coded-text-dto";
+import { i18n } from "@/i18n";
+import { codedText } from "@/lib/coded-text";
 import { errorMessage } from "@/lib/format";
-import { activeJobKinds } from "@/lib/overview/active-job-view";
 
-export const deletionCleanupNotice = "Проект удалён. Часть файлов пока занята; приложение повторит очистку при следующем запуске.";
-const transferActiveText = "Идёт экспорт проекта. Дождитесь его завершения и повторите.";
-
-/** «Обучение · fake:hang», «Живая проверка»; неизвестный вид — как есть. */
-function activityTitle(kind: string, label: string | null): string {
-    const name = kind === "checks.live" ? "Живая проверка" : activeJobKinds[kind]?.label ?? kind;
-    return label ? `${name} · ${label}` : name;
+/** "Training · fake:hang", "Live check"; an unknown kind as is. */
+function activityTitle(kind: string, label: CodedTextDto | null): string {
+    const key = `jobs.kinds.${kind}`;
+    const name = i18n.exists(key) ? (i18n.t as unknown as (key: string) => string)(key) : kind;
+    const text = label ? codedText(label) : "";
+    return text ? `${name} · ${text}` : name;
 }
 
 /**
- * «Удалить проект с компьютера?»: сначала reviewDeletion — идущие задачи и живая проверка (их отменит «Отменить задачи и удалить»)
- * или экспорт (удаление недоступно); затем delete с ревизией просмотра. Отказ (изменилась ревизия, появились задачи) остаётся в окне,
- * «Проверить снова» перечитывает состав. Пока идёт удаление, окно не закрывается.
+ * Delete the project from the computer: first reviewDeletion — running jobs and a live check (Cancel jobs and delete cancels them)
+ * or an export (deletion is unavailable); then delete with the review revision. A refusal (the revision changed, jobs appeared) stays in the
+ * dialog, Check again reads the content again. While the deletion runs, the dialog does not close.
  */
 export function ProjectDeletionDialog({ project, close, deleted }: {
     project: ProjectResponseDto;
     close: () => void;
     deleted: (result: ProjectDeletionResponseDto) => void;
 }) {
+    const { t } = useTranslation();
     const [review, setReview] = useState<{ value?: ProjectDeletionReviewResponseDto; error?: string; loading: boolean }>({ loading: true });
     const [attempt, setAttempt] = useState(0);
     const [busy, setBusy] = useState(false);
@@ -41,7 +44,7 @@ export function ProjectDeletionDialog({ project, close, deleted }: {
         projectsApi.reviewDeletion({ projectId: project.id }, controller.signal).then(
             value => setReview({ value, loading: false }),
             cause => {
-                if (!controller.signal.aborted) setReview({ loading: false, error: errorMessage(cause, "Не удалось проверить задачи проекта. Повторите проверку.") });
+                if (!controller.signal.aborted) setReview({ loading: false, error: errorMessage(cause, t("projectDeletion.reviewFailed")) });
             });
         return () => controller.abort();
     }, [project.id, attempt]);
@@ -74,16 +77,15 @@ export function ProjectDeletionDialog({ project, close, deleted }: {
                 onCloseAutoFocus={returnFocus}
             >
                 <DialogHeader>
-                    <DialogTitle>Удалить проект с компьютера?</DialogTitle>
+                    <DialogTitle>{t("projectDeletion.title")}</DialogTitle>
                     <DialogDescription className="break-words" data-testid="project-deletion-text">
-                        “{name}” и все его материалы, датасеты, история обучения и обученные модели будут удалены без возможности восстановления. Общие
-                        базовые YOLO и файлы других проектов сохранятся. Для сохранения копии сначала экспортируйте проект.
+                        {t("projectDeletion.text", { name })}
                     </DialogDescription>
                 </DialogHeader>
-                {review.loading && <p role="status" className="text-sm text-muted-foreground">Проверяем задачи проекта…</p>}
+                {review.loading && <p role="status" className="text-sm text-muted-foreground">{t("projectDeletion.checking")}</p>}
                 {current && !review.loading && withJobs && (
                     <div className="space-y-2 text-sm" data-testid="project-deletion-activities">
-                        <p className="font-medium">Идут фоновые задачи — удаление их отменит:</p>
+                        <p className="font-medium">{t("projectDeletion.activities")}</p>
                         <ul className="list-disc space-y-1 pl-5">
                             {current.activities.map((activity, index) => (
                                 <li key={activity.jobId ?? `${activity.kind}-${index}`} className="break-words" data-testid="project-deletion-activity">
@@ -95,17 +97,17 @@ export function ProjectDeletionDialog({ project, close, deleted }: {
                 )}
                 <div aria-live="polite">
                     {current?.transferActive && !review.loading && (
-                        <Alert variant="destructive"><AlertDescription data-testid="project-deletion-transfer">{transferActiveText}</AlertDescription></Alert>
+                        <Alert variant="destructive"><AlertDescription data-testid="project-deletion-transfer">{t("projectDeletion.transferActive")}</AlertDescription></Alert>
                     )}
                     {(review.error || deleteError) && (
                         <Alert variant="destructive"><AlertDescription data-testid="project-deletion-error">{review.error ?? deleteError}</AlertDescription></Alert>
                     )}
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>Отмена</Button>
+                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("app.cancel")}</Button>
                     {(review.error || deleteError || current?.transferActive) && (
                         <Button variant="outline" disabled={busy || review.loading} onClick={() => setAttempt(value => value + 1)} data-testid="project-deletion-retry">
-                            Проверить снова
+                            {t("common.checkAgain")}
                         </Button>
                     )}
                     <Button
@@ -114,7 +116,7 @@ export function ProjectDeletionDialog({ project, close, deleted }: {
                         disabled={busy || review.loading || !current || current.transferActive || !!deleteError}
                         onClick={() => void confirm()}
                     >
-                        {busy ? "Удаление…" : withJobs ? "Отменить задачи и удалить" : "Удалить проект"}
+                        {busy ? t("common.deleting") : withJobs ? t("projectDeletion.cancelAndDelete") : t("projectDeletion.confirm")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

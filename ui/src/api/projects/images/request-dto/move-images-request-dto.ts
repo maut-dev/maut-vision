@@ -4,9 +4,9 @@ export interface MoveImagesRequestDto {
     projectId: string;
     sourceGroupId: string;
     sourceRevision: number;
-    /** Группа того же происхождения (manual к manual); иначе images.origin_mismatch. */
+    /** A group of the same origin (manual to manual); otherwise images.origin_mismatch. */
     targetGroupId: string;
     targetRevision: number;
-    /** До 400 активных изображений исходной группы; всё или ничего. */
+    /** Up to 400 active images of the source group; all or nothing. */
     images: ImageRevisionRequestDto[];
 }

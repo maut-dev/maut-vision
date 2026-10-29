@@ -8,18 +8,19 @@ import {
     tunedDefaults,
     type TrainingParameterDefinition,
 } from "@/api/projects/training/training-parameters";
+import { locale } from "@/lib/format";
 
 /**
- * Форма «Новый запуск обучения»: поля ввода (числа, списки, устройство вручную) хранят текст как его набрал пользователь,
- * флажки и выборы — значение параметра. parseTrainingForm превращает форму в параметры запроса теми же правилами, что у Core;
- * неверные ключи подсвечиваются. Пустое поле с «Авто» — null: значение посчитает worker (tunedDefaults показывает какое).
+ * The form "New training run": input fields (numbers, lists, the manual device) keep the text as the user typed it, checkboxes and
+ * choices keep the parameter value. parseTrainingForm turns the form into request parameters by the same rules as Core; wrong keys
+ * are highlighted. An empty "Auto" field is null: the worker computes the value (tunedDefaults shows which).
  */
 export type TrainingFormValue = string | TrainingParameterValue;
 export type TrainingForm = Readonly<Record<string, TrainingFormValue>>;
 
 const textTypes = new Set(["integer", "number", "list"]);
 
-/** Поле вводится текстом (Input), а не выбирается. */
+/** The field is typed as text (Input), not chosen. */
 export function isTextParameter(parameter: TrainingParameterDefinition): boolean {
     return textTypes.has(parameter.type);
 }
@@ -30,7 +31,7 @@ function toText(value: TrainingParameterValue): string {
     return String(value);
 }
 
-/** Форма из параметров (пресет, значения по умолчанию): недостающие ключи — подобранные значения по умолчанию. */
+/** A form from parameters (a preset, defaults): missing keys get the tuned defaults. */
 export function formFromParameters(parameters: TrainingParameters = {}): TrainingForm {
     const values = trainingParametersWithDefaults(parameters);
     const form: Record<string, TrainingFormValue> = {};
@@ -41,7 +42,7 @@ export function formFromParameters(parameters: TrainingParameters = {}): Trainin
     return form;
 }
 
-/** Число из поля: запятая как десятичный разделитель, пусто — null; undefined — не число. */
+/** A number from a field: a comma as the decimal separator, empty — null; undefined — not a number. */
 export function parseNumber(text: string): number | null | undefined {
     const trimmed = text.trim().replace(",", ".");
     if (!trimmed) return null;
@@ -58,7 +59,7 @@ function parseField(parameter: TrainingParameterDefinition, input: TrainingFormV
 
 export interface ParsedTrainingForm {
     parameters: TrainingParameters;
-    /** Ключи с неверными значениями в порядке реестра. */
+    /** Keys with wrong values in the order of the registry. */
     invalid: string[];
 }
 
@@ -73,27 +74,27 @@ export function parseTrainingForm(form: TrainingForm): ParsedTrainingForm {
     return { parameters, invalid };
 }
 
-/** Форма совпадает с параметрами (пресета): все ключи реестра, недостающие — значения по умолчанию. */
+/** The form matches the parameters (of a preset): all registry keys, missing ones — defaults. */
 export function sameParameters(form: TrainingParameters, parameters: TrainingParameters): boolean {
     const expected = trainingParametersWithDefaults(parameters);
     return trainingParameters.every(parameter => JSON.stringify(form[parameter.key] ?? null) === JSON.stringify(expected[parameter.key] ?? null));
 }
 
-/** Подобранные worker значения «Авто» полей для текущих эпох и batch (неверные поля — по умолчанию). */
+/** "Auto" values the worker computes for the current epochs and batch (wrong fields — defaults). */
 export function formTunedDefaults(form: TrainingForm): ReturnType<typeof tunedDefaults> {
     const epochs = parseNumber(String(form.epochs ?? ""));
     const batch = parseNumber(String(form.batch ?? ""));
     return tunedDefaults(typeof epochs === "number" && epochs >= 1 ? epochs : 100, typeof batch === "number" ? batch : 16);
 }
 
-/** Переключатель перед полем (повороты): включён, если значение отличается от выключенного. */
+/** The switch before a field (rotation): on when the value differs from the off value. */
 export function isToggleOn(parameter: TrainingParameterDefinition, form: TrainingForm): boolean {
     if (!parameter.toggle) return true;
     const value = parseNumber(String(form[parameter.key] ?? ""));
     return value !== parameter.toggle.offValue;
 }
 
-/** Включение ставит onValue (если поле было выключено), выключение — offValue. */
+/** Switching on sets onValue (when the field was off), switching off — offValue. */
 export function setToggle(form: TrainingForm, key: string, on: boolean): TrainingForm {
     const parameter = trainingParameter(key);
     if (!parameter?.toggle) return form;
@@ -101,7 +102,7 @@ export function setToggle(form: TrainingForm, key: string, on: boolean): Trainin
     return { ...form, [key]: String(on ? parameter.toggle.onValue : parameter.toggle.offValue) };
 }
 
-/** Значение выбора в строку для Radix Select (null — «Авто»). */
+/** A choice value as a string for Radix Select (null — "Auto"). */
 export function choiceKey(value: TrainingParameterValue): string {
     return JSON.stringify(value);
 }
@@ -110,7 +111,7 @@ export function choiceFromKey(key: string): TrainingParameterValue {
     return JSON.parse(key) as TrainingParameterValue;
 }
 
-/** Число в подписи: русская запятая, до digits знаков. */
+/** A number in a caption: the decimal separator of the interface language, up to digits digits. */
 export function formatParameterNumber(value: number, digits = 6): string {
-    return value.toLocaleString("ru-RU", { maximumFractionDigits: digits, useGrouping: false });
+    return value.toLocaleString(locale(), { maximumFractionDigits: digits, useGrouping: false });
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { generationApi } from "@/api/projects/generation/generation-api";
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -18,9 +19,9 @@ export type GenerationDeletionTarget =
     | { kind: "run"; id: string; name: string };
 
 /**
- * «Удалить пресет навсегда?» / «Удалить запуск из истории?». Пресет удаляется с ревизией,
- * незавершённый запуск пресета блокирует удаление (ошибка host); у запуска удаляется только запись — группа и изображения
- * остаются. Пока идёт удаление, окно не закрывается; фокус возвращается к открывшему элементу.
+ * "Delete the preset for good?" / "Delete the run from the history?". A preset is deleted with its revision, an unfinished run of the
+ * preset blocks deletion (a host error); for a run only the record is deleted — the group and the images stay. While deletion goes
+ * the dialog does not close; the focus returns to the element that opened it.
  */
 export function GenerationDeletionDialog({ projectId, target, close, deleted }: {
     projectId: string;
@@ -28,6 +29,7 @@ export function GenerationDeletionDialog({ projectId, target, close, deleted }: 
     close: () => void;
     deleted: (target: GenerationDeletionTarget) => void;
 }) {
+    const { t } = useTranslation("generation");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string>();
     const returnFocus = useReturnFocus();
@@ -41,7 +43,7 @@ export function GenerationDeletionDialog({ projectId, target, close, deleted }: 
             else await generationApi.deleteRun({ projectId, runId: target.id });
             deleted(target);
         } catch (cause) {
-            setError(errorMessage(cause, "Не удалось удалить. Обновите список и повторите действие."));
+            setError(errorMessage(cause, t("deletion.failed")));
         } finally {
             setBusy(false);
         }
@@ -52,20 +54,18 @@ export function GenerationDeletionDialog({ projectId, target, close, deleted }: 
             <AlertDialogContent className="max-h-[85vh] overflow-auto" data-testid="generation-deletion-dialog"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onCloseAutoFocus={returnFocus}>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>{target.kind === "recipe" ? "Удалить пресет навсегда?" : "Удалить запуск из истории?"}</AlertDialogTitle>
+                    <AlertDialogTitle>{target.kind === "recipe" ? t("deletion.recipeTitle") : t("deletion.runTitle")}</AlertDialogTitle>
                     <AlertDialogDescription className="break-words">
-                        {target.name}. {target.kind === "recipe"
-                            ? "Настройки пресета будут удалены. История запусков, их сохранённые настройки и изображения сохранятся."
-                            : "Запись запуска и его настройки будут удалены. Созданная группа, изображения и разметка сохранятся."} Восстановить запись в приложении нельзя.
+                        {t(target.kind === "recipe" ? "deletion.recipeText" : "deletion.runText", { name: target.name })}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div aria-live="polite">
                     {error && <Alert variant="destructive" data-testid="generation-deletion-error"><AlertDescription>{error}</AlertDescription></Alert>}
                 </div>
                 <AlertDialogFooter>
-                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>Отмена</Button>
+                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("form.cancel")}</Button>
                     <Button variant="destructive" disabled={busy} data-testid="generation-deletion-confirm" onClick={() => void commit()}>
-                        {busy ? "Удаляем…" : "Удалить навсегда"}
+                        {busy ? t("deletion.deleting") : t("deletion.confirm")}
                     </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>

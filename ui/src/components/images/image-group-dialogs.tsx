@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import type { ImageGroupResponseDto, ImageSplitHint } from "@/api/projects/images/response-dto/image-group-response-dto";
 import { imageSplitHints } from "@/api/projects/images/response-dto/image-group-response-dto";
 import { DialogError, GuardedDialog } from "@/components/catalog/catalog-dialogs";
@@ -8,13 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-export const splitHintLabels: Record<ImageSplitHint, string> = {
-    unassigned: "Без назначения",
-    train: "Обучение",
-    validation: "Проверка",
-    test: "Тест",
-};
+import { formatNumber } from "@/lib/format";
+import { splitHintLabels } from "@/lib/images/split-hints";
+import "@/i18n/sections/images";
 
 export interface GroupValues {
     name: string;
@@ -22,7 +19,7 @@ export interface GroupValues {
     splitHint: ImageSplitHint;
 }
 
-/** Изменение группы: название (1–120), описание (до 4000) и назначение. */
+/** Editing a group: the name (1–120), the description (up to 4000) and the purpose. */
 export function ImageGroupDialog({ group, busy, error, close, save }: {
     group: ImageGroupResponseDto;
     busy: boolean;
@@ -30,6 +27,7 @@ export function ImageGroupDialog({ group, busy, error, close, save }: {
     close: () => void;
     save: (values: GroupValues) => void;
 }) {
+    const { t } = useTranslation("images");
     const [name, setName] = useState(group.name);
     const [description, setDescription] = useState(group.description);
     const [splitHint, setSplitHint] = useState<ImageSplitHint>(group.splitHint);
@@ -42,20 +40,20 @@ export function ImageGroupDialog({ group, busy, error, close, save }: {
     return (
         <GuardedDialog busy={busy} close={close} testId="image-group-dialog">
             <DialogHeader>
-                <DialogTitle>Изменить группу</DialogTitle>
-                <DialogDescription>Назначение подсказывает, в какую часть датасета пойдут кадры группы.</DialogDescription>
+                <DialogTitle>{t("groupDialog.title")}</DialogTitle>
+                <DialogDescription>{t("groupDialog.description")}</DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={submit}>
                 <div className="space-y-2">
-                    <Label htmlFor="image-group-name">Название</Label>
+                    <Label htmlFor="image-group-name">{t("groupDialog.name")}</Label>
                     <Input id="image-group-name" data-testid="image-group-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="image-group-description">Описание</Label>
+                    <Label htmlFor="image-group-description">{t("groupDialog.descriptionLabel")}</Label>
                     <Textarea id="image-group-description" className="h-24 resize-none" maxLength={4000} value={description} onChange={event => setDescription(event.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="image-group-split">Назначение</Label>
+                    <Label htmlFor="image-group-split">{t("groupDialog.split")}</Label>
                     <Select value={splitHint} onValueChange={value => setSplitHint(value as ImageSplitHint)} disabled={busy}>
                         <SelectTrigger id="image-group-split" data-testid="image-group-split" className="w-full"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -65,15 +63,15 @@ export function ImageGroupDialog({ group, busy, error, close, save }: {
                 </div>
                 <DialogError error={error} />
                 <DialogFooter>
-                    <Button type="button" variant="outline" disabled={busy} onClick={close}>Отмена</Button>
-                    <Button type="submit" data-testid="image-group-save" disabled={busy || !name.trim()}>{busy ? "Сохранение…" : "Сохранить"}</Button>
+                    <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
+                    <Button type="submit" data-testid="image-group-save" disabled={busy || !name.trim()}>{busy ? t("dialog.saving") : t("dialog.save")}</Button>
                 </DialogFooter>
             </form>
         </GuardedDialog>
     );
 }
 
-/** Перемещение выбранных изображений в другую активную группу того же происхождения; они встают в конец группы. */
+/** Moving the selected images to another active group of the same origin; they go to the end of that group. */
 export function MoveImagesDialog({ count, targets, busy, error, close, move }: {
     count: number;
     targets: readonly ImageGroupResponseDto[];
@@ -82,6 +80,7 @@ export function MoveImagesDialog({ count, targets, busy, error, close, move }: {
     close: () => void;
     move: (target: ImageGroupResponseDto) => void;
 }) {
+    const { t } = useTranslation("images");
     const [targetId, setTargetId] = useState(targets.length === 1 ? targets[0].id : "");
     const target = targets.find(item => item.id === targetId);
 
@@ -93,25 +92,25 @@ export function MoveImagesDialog({ count, targets, busy, error, close, move }: {
     return (
         <GuardedDialog busy={busy} close={close} testId="move-images-dialog">
             <DialogHeader>
-                <DialogTitle>Переместить изображения</DialogTitle>
-                <DialogDescription>Выбранные изображения ({count.toLocaleString("ru-RU")}) переместятся в конец выбранной группы вместе с разметкой.</DialogDescription>
+                <DialogTitle>{t("moveDialog.title")}</DialogTitle>
+                <DialogDescription>{t("moveDialog.description", { number: formatNumber(count) })}</DialogDescription>
             </DialogHeader>
             <form className="space-y-4" onSubmit={submit}>
                 {targets.length ? (
                     <div className="space-y-2">
-                        <Label htmlFor="move-target">Группа назначения</Label>
+                        <Label htmlFor="move-target">{t("moveDialog.target")}</Label>
                         <Select value={targetId} onValueChange={setTargetId} disabled={busy}>
-                            <SelectTrigger id="move-target" data-testid="move-target" className="w-full" autoFocus><SelectValue placeholder="Выберите группу" /></SelectTrigger>
+                            <SelectTrigger id="move-target" data-testid="move-target" className="w-full" autoFocus><SelectValue placeholder={t("moveDialog.chooseGroup")} /></SelectTrigger>
                             <SelectContent>
                                 {targets.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
-                ) : <p className="text-sm text-muted-foreground">Нет других активных групп того же происхождения.</p>}
+                ) : <p className="text-sm text-muted-foreground">{t("moveDialog.noTargets")}</p>}
                 <DialogError error={error} />
                 <DialogFooter>
-                    <Button type="button" variant="outline" disabled={busy} onClick={close}>Отмена</Button>
-                    <Button type="submit" data-testid="move-confirm" disabled={busy || !target}>{busy ? "Перемещение…" : "Переместить"}</Button>
+                    <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
+                    <Button type="submit" data-testid="move-confirm" disabled={busy || !target}>{busy ? t("moveDialog.moving") : t("moveDialog.move")}</Button>
                 </DialogFooter>
             </form>
         </GuardedDialog>

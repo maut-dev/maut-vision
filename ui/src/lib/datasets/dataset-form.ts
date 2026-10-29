@@ -8,11 +8,12 @@ import {
     type DatasetSpecificationField,
 } from "@/api/projects/datasets/dataset-rules";
 import type { DatasetSpecificationDto } from "@/api/projects/datasets/request-dto/dataset-request-dto";
+import { i18n } from "@/i18n";
 
 /**
- * Значения формы «Подготовить сборку». Проценты (Train 1–99, Test 0–98, Validation — остаток);
- * seed — строка поля, чтобы неверный ввод показывался, а не превращался в число. Роли объектов без варианта и невыбранных
- * классов, фиксированы: «Объект» и «Негатив».
+ * Values of the form "Prepare a build". Percents (Train 1–99, Test 0–98, Validation — the remainder); seed — the text of the field,
+ * so a wrong input shows instead of turning into a number. Roles of objects without a variant and of classes not chosen are fixed:
+ * "Object" and "Negative".
  */
 export interface DatasetFormValues {
     name: string;
@@ -38,7 +39,7 @@ export function emptyDatasetForm(): DatasetFormValues {
     };
 }
 
-/** Целый процент 0–99. */
+/** A whole percent 0–99. */
 export function clampPercent(value: number): number {
     return Math.max(0, Math.min(99, Math.round(Number.isFinite(value) ? value : 0)));
 }
@@ -47,12 +48,12 @@ export function validationPercent(values: Pick<DatasetFormValues, "trainPercent"
     return 100 - values.trainPercent - values.testPercent;
 }
 
-/** Seed поля или NaN, если это не целое число. */
+/** The seed of the field or NaN when it is not an integer. */
 export function parseSeed(text: string): number {
     return /^\s*\d+\s*$/.test(text) ? Number(text) : Number.NaN;
 }
 
-/** Спецификация сборки из формы: варианты — по ролям для выбранных классов (datasetVariantRoles). */
+/** The build specification from the form: variants by roles for the chosen classes (datasetVariantRoles). */
 export function toSpecification(values: DatasetFormValues, workspace: CatalogWorkspaceResponseDto | undefined): DatasetSpecificationDto {
     const roles = workspace ? datasetVariantRoles(workspace, values.classIds) : { targetVariantIds: [], negativeVariantIds: [] };
     return {
@@ -70,7 +71,7 @@ export function toSpecification(values: DatasetFormValues, workspace: CatalogWor
     };
 }
 
-/** «Настроить повтор»: спецификация сборки обратно в форму (проценты округляются до целых). */
+/** "Set up a repeat": the build specification back into the form (percents are rounded to whole numbers). */
 export function formFromSpecification(specification: DatasetSpecificationDto): DatasetFormValues {
     const testPercent = clampPercent(specification.testRatio * 100);
     const trainPercent = Math.max(1, Math.min(99 - testPercent, clampPercent((1 - specification.valRatio - specification.testRatio) * 100)));
@@ -86,7 +87,7 @@ export function formFromSpecification(specification: DatasetSpecificationDto): D
     };
 }
 
-/** Ключ спецификации: план устарел для формы, если ключи различаются. Порядок групп и классов не важен. */
+/** The key of a specification: the plan is stale for the form when keys differ. The order of groups and classes does not matter. */
 export function specificationKey(specification: DatasetSpecificationDto): string {
     const sorted = (ids: readonly string[]) => [...ids].sort();
     return JSON.stringify({
@@ -98,14 +99,14 @@ export function specificationKey(specification: DatasetSpecificationDto): string
     });
 }
 
-/** Подпись неверного поля формы: показывается под полем и в ответ на ошибку host с details.field. */
-export const datasetFieldTexts: Record<DatasetSpecificationField, string> = {
-    name: "Укажите название датасета до 120 символов.",
-    description: "Описание — до 4000 символов.",
-    groupIds: "Выберите хотя бы одну группу изображений.",
-    classIds: "Выберите хотя бы один класс для обучения.",
-    variants: "Проверьте варианты выбранных классов.",
-    roles: "Проверьте роли объектов.",
-    ratios: datasetTexts.ratiosInvalid,
-    seed: datasetTexts.seedInvalid,
+/** The text of a wrong form field: shown under the field and for a host error with details.field (read at render time). */
+export const datasetFieldTexts: Readonly<Record<DatasetSpecificationField, string>> = {
+    get name() { return i18n.t("datasets:fields.name"); },
+    get description() { return i18n.t("datasets:fields.description"); },
+    get groupIds() { return i18n.t("datasets:fields.groupIds"); },
+    get classIds() { return i18n.t("datasets:fields.classIds"); },
+    get variants() { return i18n.t("datasets:fields.variants"); },
+    get roles() { return i18n.t("datasets:fields.roles"); },
+    get ratios() { return datasetTexts.ratiosInvalid; },
+    get seed() { return datasetTexts.seedInvalid; },
 };

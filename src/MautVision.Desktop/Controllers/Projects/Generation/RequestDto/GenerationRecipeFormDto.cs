@@ -1,12 +1,12 @@
 namespace MautVision.Desktop.Controllers.Projects.Generation.RequestDto;
 
-/// <summary>Доля варианта проекта, 0–100 %.</summary>
+/// <summary>Share of a project variant, 0–100 %.</summary>
 public sealed record GenerationVariantWeightDto(Guid VariantId, double Percentage);
 
 /// <summary>
-/// Настройки пресета из формы: размер кадра (вход проекта или размер повторяемого запуска), наборы фонов в порядке выбора,
-/// привязки вариантов с долей больше 0, доли всех доступных вариантов проекта (сумма 100), объектов на кадр (целое ≥ 0), доля
-/// пустых кадров 0..1, масштаб больше 0.
+/// Preset settings from the form: frame size (the project input or the size of the repeated run), background sets in selection order,
+/// variant bindings with a share above 0, shares of all available project variants (sum 100), objects per frame (integer ≥ 0), share
+/// of empty frames 0..1, scale above 0.
 /// </summary>
 public sealed record GenerationRecipeFormDto(
     string Name,

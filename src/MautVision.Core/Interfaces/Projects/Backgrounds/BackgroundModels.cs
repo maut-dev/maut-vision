@@ -3,10 +3,10 @@ using MautVision.Core.Interfaces.Projects.Catalog;
 namespace MautVision.Core.Interfaces.Projects.Backgrounds;
 
 /// <summary>
-/// Набор фонов. TargetSize — копия размера входа проекта при создании, не меняется; MatchesProjectInput — false, если размер
-/// входа проекта позже изменился («Размер набора W × H отличается от входа проекта»). Revision растёт при изменении названия,
-/// описания и архиве; ContentRevision — при каждом изменении состава (добавление, «Убрать», «Восстановить», удаление).
-/// ItemCount — активные фоны, RemovedCount — убранные.
+/// Background set. TargetSize — a copy of the project input size at creation, never changes; MatchesProjectInput — false if the
+/// project input size changed later ("Set size W × H differs from the project input"). Revision grows on a change of name,
+/// description and archive; ContentRevision — on every content change (adding, "Remove", "Restore", deletion).
+/// ItemCount — active backgrounds, RemovedCount — removed ones.
 /// </summary>
 public sealed record BackgroundSet(
     Guid Id,
@@ -22,7 +22,7 @@ public sealed record BackgroundSet(
     DateTimeOffset? ArchivedAt,
     bool MatchesProjectInput);
 
-/// <summary>Происхождение фона: готовое изображение, фрагмент изображения или кадр видео.</summary>
+/// <summary>Background origin: a ready image, an image fragment or a video frame.</summary>
 public enum BackgroundOriginKind
 {
     Uploaded,
@@ -30,13 +30,13 @@ public enum BackgroundOriginKind
     VideoFrame,
 }
 
-/// <summary>Вырезанная область исходного кадра в его пикселях (с учётом EXIF-ориентации); размер — размер набора.</summary>
+/// <summary>Cut-out area of the source frame in its pixels (with EXIF orientation applied); the size is the set size.</summary>
 public sealed record BackgroundCropArea(int Left, int Top, int Width, int Height);
 
 /// <summary>
-/// Откуда фон. SourceName — имя файла или видео; SourceHash — SHA-256 исходного файла (у кадра — видео); поля кадра видео
-/// заполнены только у VideoFrame. Crop — вырезанная область (null — кадр взят целиком). BlurRadius — радиус размытия
-/// (0 — фон оставлен резким), null — запуск без размытия. ProcessorVersion — версия обработки кадра.
+/// Where the background comes from. SourceName — file or video name; SourceHash — SHA-256 of the source file (the video for a frame); video frame
+/// fields are filled only for VideoFrame. Crop — the cut-out area (null — the whole frame is used). BlurRadius — blur radius
+/// (0 — the background is left sharp), null — a run without blur. ProcessorVersion — version of the frame processing.
 /// </summary>
 public sealed record BackgroundOrigin(
     BackgroundOriginKind Kind,
@@ -51,9 +51,9 @@ public sealed record BackgroundOrigin(
     string ProcessorVersion);
 
 /// <summary>
-/// Фон — PNG RGBA ровно размера набора, единственный файл files/backgrounds/&lt;id&gt;.png. PixelHash — SHA-256 пикселей
-/// (точные повторы в наборе). Revision растёт при «Убрать» и «Восстановить»; RemovedAt — убран (обратимо).
-/// Порядок в наборе — порядок добавления.
+/// Background — an RGBA PNG of exactly the set size, the single file files/backgrounds/&lt;id&gt;.png. PixelHash — SHA-256 of the pixels
+/// (exact duplicates in the set). Revision grows on "Remove" and "Restore"; RemovedAt — removed (reversible).
+/// The order in the set is the order of adding.
 /// </summary>
 public sealed record BackgroundItem(
     Guid Id,
@@ -68,35 +68,35 @@ public sealed record BackgroundItem(
     DateTimeOffset? RemovedAt,
     BackgroundOrigin Origin)
 {
-    /// <summary>Вид материала в канале ресурсов: <c>new ResourceReference(ResourceKind, item.Id)</c>.</summary>
+    /// <summary>Material kind in the resource channel: <c>new ResourceReference(ResourceKind, item.Id)</c>.</summary>
     public const string ResourceKind = "backgrounds";
 }
 
-/// <summary>Removed: null — все, true — только убранные, false — только активные.</summary>
+/// <summary>Removed: null — all, true — only removed, false — only active.</summary>
 public sealed record BackgroundFilter(bool? Removed = false);
 
-/// <summary>Страница фонов набора по порядку добавления; NextCursor — null на последней странице.</summary>
+/// <summary>Page of backgrounds of a set in the order of adding; NextCursor — null on the last page.</summary>
 public sealed record BackgroundPage(IReadOnlyList<BackgroundItem> Items, string? NextCursor);
 
 /// <summary>
-/// Страница активных фонов набора для генерации: ContentRevision и TargetSize прочитаны вместе со страницей. Если ревизия
-/// состава между страницами изменилась, состав набора менялся во время чтения.
+/// Page of active backgrounds of a set for generation: ContentRevision and TargetSize are read together with the page. If the content
+/// revision differs between pages, the set content changed during reading.
 /// </summary>
 public sealed record BackgroundActivePage(Guid SetId, InputSize TargetSize, long ContentRevision, IReadOnlyList<BackgroundItem> Items, string? NextCursor);
 
-/// <summary>Фон с ревизией, которую видел пользователь.</summary>
+/// <summary>Background with the revision the user saw.</summary>
 public sealed record BackgroundRevision(Guid Id, long Revision);
 
 /// <summary>
-/// Состав удаления навсегда: весь набор (WholeSet) или выбранные фоны. Revision передаётся в удаление; непустой Blockers —
-/// удаление сейчас недоступно (<c>backgrounds.import_active</c>, пресеты генерации).
+/// What a permanent deletion removes: the whole set (WholeSet) or the selected backgrounds. Revision is passed to the deletion; non-empty Blockers —
+/// the deletion is unavailable now (<c>backgrounds.import_active</c>, generation presets).
 /// </summary>
 public sealed record BackgroundDeletionReview(Guid SetId, string SetName, bool WholeSet, long Items, IReadOnlyList<DeletionBlocker> Blockers, string Revision);
 
-/// <summary>Строки удалены; CleanupPending — файлы ещё удаляются в фоне.</summary>
+/// <summary>Rows are deleted; CleanupPending — files are still being deleted in the background.</summary>
 public sealed record BackgroundDeletionResult(Guid SetId, bool SetDeleted, long Items, bool CleanupPending);
 
-/// <summary>Как файл подходит набору: ровно нужного размера, больше (можно вырезать рамкой), меньше или нечитаемый.</summary>
+/// <summary>How a file fits the set: exactly the right size, larger (can be cut with a frame), smaller or unreadable.</summary>
 public enum BackgroundSourceFit
 {
     Exact,
@@ -105,20 +105,20 @@ public enum BackgroundSourceFit
     Unreadable,
 }
 
-/// <summary>Заголовок выбранного файла: имя без пути, размер с учётом EXIF-ориентации (null у нечитаемого) и пригодность.</summary>
+/// <summary>Header of a chosen file: name without path, size with EXIF orientation (null if unreadable) and fit.</summary>
 public sealed record BackgroundSourceInfo(string Name, int? Width, int? Height, BackgroundSourceFit Fit);
 
-/// <summary>Закодированное изображение для показа (PNG или JPEG); не хранится в проекте.</summary>
+/// <summary>Encoded image for display (PNG or JPEG); not stored in the project.</summary>
 public sealed record BackgroundPreviewImage(byte[] Content, string ContentType, int Width, int Height);
 
-/// <summary>Кадр для рамки: размер исходного кадра (с ориентацией) и уменьшенная копия не больше заданной стороны.</summary>
+/// <summary>Frame for the crop frame: source frame size (with orientation) and a reduced copy no larger than the given side.</summary>
 public sealed record BackgroundSourcePreview(int Width, int Height, BackgroundPreviewImage Preview);
 
 /// <summary>
-/// Пример будущего фона. SourceIndex — номер источника запуска (у видео — номер кадра диапазона), TimestampMs — отметка кадра.
-/// Reason — код причины пропуска (тогда Image null): <c>backgrounds.wrong_size</c>, <c>backgrounds.crop_out_of_bounds</c>
-/// (с ActualWidth/ActualHeight), <c>backgrounds.image_unreadable</c>, <c>backgrounds.similar</c>, <c>backgrounds.duplicate</c>,
-/// <c>video.frame_unavailable</c>. Image — PNG ровно размера набора, те же пиксели, что даст запуск с этой операцией.
+/// Sample of a future background. SourceIndex — index of the run source (for video — index of the frame in the range), TimestampMs — frame mark.
+/// Reason — skip reason code (then Image is null): <c>backgrounds.wrong_size</c>, <c>backgrounds.crop_out_of_bounds</c>
+/// (with ActualWidth/ActualHeight), <c>backgrounds.image_unreadable</c>, <c>backgrounds.similar</c>, <c>backgrounds.duplicate</c>,
+/// <c>video.frame_unavailable</c>. Image — a PNG of exactly the set size, the same pixels a run with this operation produces.
 /// </summary>
 public sealed record BackgroundImportSample(
     int SourceIndex,
@@ -131,5 +131,5 @@ public sealed record BackgroundImportSample(
     double? BlurRadius,
     BackgroundPreviewImage? Image);
 
-/// <summary>Примеры запуска: размер набора, размытие с выбранным seed (null — без размытия) и до 6 примеров.</summary>
+/// <summary>Run samples: set size, blur with the chosen seed (null — no blur) and up to 6 samples.</summary>
 public sealed record BackgroundImportPreview(InputSize TargetSize, BackgroundBlur? Blur, IReadOnlyList<BackgroundImportSample> Samples);

@@ -1,1 +1,1 @@
-"""Инфраструктура процесса: папка задачи, потоки вывода, события, офлайн-режим."""
+"""Process infrastructure: job folder, output streams, events, offline mode."""

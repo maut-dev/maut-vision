@@ -1,34 +1,39 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { blockerText, type Blocker, type BlockerArea } from "@/lib/errors";
 import { errorMessage } from "@/lib/format";
 
 export interface DeletionReview {
-    blockers: readonly { code: string; message: string }[];
+    blockers: readonly Blocker[];
 }
 
 /**
- * Удаление навсегда в две фазы (изображения, фоны): просмотр состава и блокировок, затем удаление с ревизией просмотра.
- * Ошибка удаления (например, изменился состав) требует «Проверить снова». Пока идёт удаление, окно не закрывается;
- * фокус после закрытия возвращается к открывшему элементу.
+ * Permanent deletion in two phases (images, backgrounds): a review of the content and the blockers, then the deletion with the review revision.
+ * A deletion error (for example, the content changed) requires Check again. While the deletion runs, the dialog does not close;
+ * after closing, focus returns to the element that opened it.
  */
-export function ReviewDeletionDialog<R extends DeletionReview, D>({ title, description, testId, review, remove, deleted, close, renderReview, blockersTitle, blockersNote, busyText }: {
+export function ReviewDeletionDialog<R extends DeletionReview, D>({ area, title, description, testId, review, remove, deleted, close, renderReview, blockersTitle, blockersNote, busyText }: {
+    /** Which dialog lists the blockers: the same code reads differently in each. */
+    area: BlockerArea;
     title: string;
     description: ReactNode;
     testId: string;
-    /** Чтение состава; меняется — перечитывается. */
+    /** Reads the content; when it changes, the content is read again. */
     review: (signal: AbortSignal) => Promise<R>;
     remove: (review: R) => Promise<D>;
     deleted: (result: D) => void;
     close: () => void;
     renderReview: (review: R) => ReactNode;
     blockersTitle: ReactNode;
-    /** Пояснение после списка блокировок. */
+    /** The explanation after the list of blockers. */
     blockersNote?: ReactNode;
     busyText: string;
 }) {
+    const { t } = useTranslation();
     const [state, setState] = useState<{ review?: R; error?: string; loading: boolean }>({ loading: true });
     const [attempt, setAttempt] = useState(0);
     const [busy, setBusy] = useState(false);
@@ -42,7 +47,7 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ title, descr
         review(controller.signal).then(
             value => setState({ review: value, loading: false }),
             cause => {
-                if (!controller.signal.aborted) setState({ loading: false, error: errorMessage(cause, "Не удалось проверить зависимости. Повторите проверку.") });
+                if (!controller.signal.aborted) setState({ loading: false, error: errorMessage(cause, t("deletion.reviewFailed")) });
             });
         return () => controller.abort();
     }, [review, attempt]);
@@ -77,7 +82,7 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ title, descr
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription className="break-words">{description}</DialogDescription>
                 </DialogHeader>
-                {state.loading && <p role="status" className="text-sm text-muted-foreground">Проверяем материалы и зависимости…</p>}
+                {state.loading && <p role="status" className="text-sm text-muted-foreground">{t("deletion.checking")}</p>}
                 {current && !state.loading && (
                     <div className="space-y-3 text-sm">
                         {renderReview(current)}
@@ -86,7 +91,7 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ title, descr
                                 <AlertDescription>
                                     {blockersTitle}
                                     <ul className="mt-2 list-disc space-y-1 pl-5">
-                                        {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blocker.message}</li>)}
+                                        {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText(area, blocker)}</li>)}
                                     </ul>
                                     {blockersNote}
                                 </AlertDescription>
@@ -98,15 +103,15 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ title, descr
                     {(state.error || deleteError) && <Alert variant="destructive"><AlertDescription>{state.error ?? deleteError}</AlertDescription></Alert>}
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>Отмена</Button>
-                    <Button variant="outline" disabled={busy || state.loading} onClick={() => setAttempt(value => value + 1)}>Проверить снова</Button>
+                    <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("app.cancel")}</Button>
+                    <Button variant="outline" disabled={busy || state.loading} onClick={() => setAttempt(value => value + 1)}>{t("common.checkAgain")}</Button>
                     <Button
                         variant="destructive"
                         data-testid={`${testId.replace(/-dialog$/, "")}-confirm`}
                         disabled={busy || state.loading || !current || blocked || !!deleteError}
                         onClick={() => void confirm()}
                     >
-                        {busy ? busyText : "Удалить навсегда"}
+                        {busy ? busyText : t("deletion.confirm")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

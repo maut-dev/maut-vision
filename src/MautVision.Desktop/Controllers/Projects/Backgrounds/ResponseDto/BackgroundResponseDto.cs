@@ -1,12 +1,12 @@
 namespace MautVision.Desktop.Controllers.Projects.Backgrounds.ResponseDto;
 
-/// <summary>Вырезанная область исходного кадра в его пикселях.</summary>
+/// <summary>Cut-out area of the source frame in its pixels.</summary>
 public sealed record BackgroundCropAreaDto(int Left, int Top, int Width, int Height);
 
 /// <summary>
-/// Происхождение фона. Kind: uploaded («Готовое изображение»), image-crop («Фрагмент изображения»), video-frame («Кадр видео»).
-/// SourceName — имя файла или видео; поля кадра (VideoName, TimestampMs, FrameIndex) — только у video-frame. Crop — область
-/// («вырезан из x L, y T»), null — кадр целиком. BlurRadius — радиус размытия, 0 — резкий, null — запуск без размытия.
+/// Background origin. Kind: uploaded ("Ready image"), image-crop ("Image fragment"), video-frame ("Video frame").
+/// SourceName — file or video name; frame fields (VideoName, TimestampMs, FrameIndex) — only for video-frame. Crop — the area
+/// ("cut from x L, y T"), null — the whole frame. BlurRadius — blur radius, 0 — sharp, null — a run without blur.
 /// </summary>
 public sealed record BackgroundOriginResponseDto(
     string Kind,
@@ -20,8 +20,8 @@ public sealed record BackgroundOriginResponseDto(
     string ProcessorVersion);
 
 /// <summary>
-/// Фон: PNG ровно размера набора. Revision передаётся в «Убрать»/«Восстановить»; RemovedAt — убран. OriginalUrl (PNG) и
-/// ThumbnailUrl (JPEG до 256 px) — URL канала ресурсов на ограниченное время.
+/// Background: PNG of exactly the set size. Revision is passed to "Remove"/"Restore"; RemovedAt — removed. OriginalUrl (PNG) and
+/// ThumbnailUrl (JPEG up to 256 px) — resource channel URLs valid for a limited time.
 /// </summary>
 public sealed record BackgroundResponseDto(
     Guid Id,
@@ -36,5 +36,5 @@ public sealed record BackgroundResponseDto(
     string OriginalUrl,
     string ThumbnailUrl);
 
-/// <summary>Страница по порядку добавления; NextCursor — значение after для следующей страницы того же фильтра, null на последней.</summary>
+/// <summary>Page in the order of adding; NextCursor — the after value for the next page of the same filter, null on the last one.</summary>
 public sealed record BackgroundPageResponseDto(BackgroundResponseDto[] Items, string? NextCursor);

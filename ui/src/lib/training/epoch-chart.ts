@@ -6,7 +6,7 @@ export interface EpochPoint {
     value: number;
 }
 
-/** Серия графика: цвет — из фиксированной палитры; val-потери берут цвет своей train-серии и рисуются пунктиром. */
+/** A chart series: the color comes from a fixed palette; val losses take the color of their train series and are dashed. */
 export interface EpochSeries {
     key: string;
     label: string;
@@ -15,7 +15,7 @@ export interface EpochSeries {
     points: EpochPoint[];
 }
 
-/** Цвета серий паспорта запуска. */
+/** Series colors of the run passport. */
 export const seriesColors = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc"] as const;
 
 const qualityKeys = ["precision", "recall", "mAP50", "mAP50_95"] as const;
@@ -33,14 +33,14 @@ function pick(epochs: readonly TrainingEpochDto[], read: (epoch: TrainingEpochDt
     return points;
 }
 
-/** «Качество по эпохам»: precision, recall, mAP50, mAP50-95 — только присланные worker. */
+/** "Quality by epoch": precision, recall, mAP50, mAP50-95 — only those the worker sent. */
 export function qualitySeries(epochs: readonly TrainingEpochDto[]): EpochSeries[] {
     return qualityKeys
         .map((key, index) => ({ key, label: label(key), color: seriesColors[index], points: pick(epochs, entry => entry.metrics[key]) }))
         .filter(series => series.points.length > 0);
 }
 
-/** «Потери по эпохам»: потери train сплошной линией, те же потери val пунктиром того же цвета. */
+/** "Losses by epoch": train losses as solid lines, the same val losses dashed in the same color. */
 export function lossSeries(epochs: readonly TrainingEpochDto[]): EpochSeries[] {
     const result: EpochSeries[] = [];
     lossKeys.forEach((key, index) => {
@@ -55,9 +55,9 @@ export function lossSeries(epochs: readonly TrainingEpochDto[]): EpochSeries[] {
 }
 
 /**
- * Прореживание длинной серии для отрисовки: точки делятся на корзины по ширине графика, в каждой остаются минимум и максимум
- * (пики не теряются), первая и последняя точки сохраняются. Короткая серия возвращается как есть. Подсказка по эпохе берёт
- * значения из полной серии.
+ * Thinning of a long series for drawing: points are split into buckets by the chart width, each keeps its minimum and maximum
+ * (peaks are not lost), the first and the last points stay. A short series returns as is. The tooltip by epoch takes values
+ * from the full series.
  */
 export function thinPoints(points: readonly EpochPoint[], maxPoints: number): readonly EpochPoint[] {
     if (points.length <= maxPoints || maxPoints < 4) return points;
@@ -88,7 +88,7 @@ export interface ChartDomain {
     yMax: number;
 }
 
-/** Ось X — эпохи всех серий; ось Y — 0..1 для качества, иначе от 0 (или минимума ниже нуля) до максимума с запасом 8 %. */
+/** Axis X — epochs of all series; axis Y — 0..1 for quality, otherwise from 0 (or a minimum below zero) to the maximum plus 8 %. */
 export function chartDomain(series: readonly EpochSeries[], unit: boolean): ChartDomain {
     let minEpoch = Infinity;
     let maxEpoch = -Infinity;
@@ -109,14 +109,14 @@ export function chartDomain(series: readonly EpochSeries[], unit: boolean): Char
     return unit ? { minEpoch, maxEpoch, yMin: 0, yMax: 1 } : { minEpoch, maxEpoch, yMin: minValue, yMax: maxValue * 1.08 };
 }
 
-/** Равномерные деления от min до max включительно. */
+/** Even ticks from min to max inclusive. */
 export function ticks(min: number, max: number, count: number): number[] {
     if (max <= min || count < 1) return [min];
     const step = (max - min) / count;
     return Array.from({ length: count + 1 }, (_, index) => min + step * index);
 }
 
-/** Деления эпох: круглый шаг 1, 2, 5 · 10ⁿ, не больше 8 подписей, первая и последняя эпохи всегда подписаны. */
+/** Epoch ticks: a round step 1, 2, 5 · 10ⁿ, at most 8 labels, the first and the last epochs are always labelled. */
 export function epochTicks(minEpoch: number, maxEpoch: number): number[] {
     if (maxEpoch <= minEpoch) return [minEpoch];
     const rough = (maxEpoch - minEpoch) / 6;
@@ -128,7 +128,7 @@ export function epochTicks(minEpoch: number, maxEpoch: number): number[] {
     return result;
 }
 
-/** Ближайшая эпоха из отсортированного списка к дробной эпохе указателя. */
+/** The nearest epoch of a sorted list to the fractional epoch of the pointer. */
 export function nearestEpoch(sortedEpochs: readonly number[], target: number): number | null {
     if (!sortedEpochs.length) return null;
     let low = 0;
@@ -143,7 +143,7 @@ export function nearestEpoch(sortedEpochs: readonly number[], target: number): n
     return Math.abs(before - target) <= Math.abs(after - target) ? before : after;
 }
 
-/** Эпохи всех серий по возрастанию без повторов. */
+/** Epochs of all series ascending without repeats. */
 export function seriesEpochs(series: readonly EpochSeries[]): number[] {
     return [...new Set(series.flatMap(line => line.points.map(point => point.epoch)))].sort((left, right) => left - right);
 }

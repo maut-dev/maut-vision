@@ -2,19 +2,18 @@ import type { BackgroundCropRequestDto } from "@/api/projects/backgrounds/reques
 import type { BackgroundSourceFileResponseDto } from "@/api/projects/backgrounds/response-dto/background-selection-response-dto";
 import type { FramePosition } from "./crop-frame";
 
-/** Решение по файлу «Нарезки фонов из изображений». */
+/** The decision on a file of "Cutting backgrounds from images". */
 export type CropDecision =
     | { kind: "crop"; left: number; top: number }
     | { kind: "whole" }
     | { kind: "skip" }
     | { kind: "small"; width: number; height: number }
-    | { kind: "invalid"; message: string };
-
-export const unreadableText = "Не удалось прочитать изображение";
+    /** message: why the file could not be read; none when its header was unreadable. */
+    | { kind: "invalid"; message?: string };
 
 /**
- * Решение без участия пользователя по заголовку файла: ровно размера набора — целиком, меньше — пропуск, нечитаемый —
- * в список «Не прочитано»; больший файл (null) требует рамки.
+ * A decision without the user by the file header: exactly the set size is taken whole, a smaller one is skipped, an unreadable one
+ * goes to the "Not read" list; a larger file (null) needs a frame.
  */
 export function automaticDecision(file: BackgroundSourceFileResponseDto): CropDecision | null {
     switch (file.fit) {
@@ -23,14 +22,14 @@ export function automaticDecision(file: BackgroundSourceFileResponseDto): CropDe
         case "smaller":
             return { kind: "small", width: file.width ?? 0, height: file.height ?? 0 };
         case "unreadable":
-            return { kind: "invalid", message: unreadableText };
+            return { kind: "invalid" };
         case "larger":
             return null;
     }
 }
 
 export interface CropPlan {
-    /** Файлы запуска по порядку выбора: взятые по рамке и целиком. */
+    /** Files of the run in the order of choice: taken by a frame and whole. */
     sourceIndices: number[];
     crops: BackgroundCropRequestDto[];
     counts: Record<CropDecision["kind"], number>;
@@ -52,7 +51,7 @@ export function cropPlan(decisions: ReadonlyMap<number, CropDecision>): CropPlan
     return { sourceIndices, crops, counts };
 }
 
-/** Прежнее решение рамкой для файла, к которому вернулись «Назад». */
+/** The earlier frame decision for a file reached again with "Back". */
 export function previousRegion(decision: CropDecision | undefined): FramePosition | undefined {
     return decision?.kind === "crop" ? { left: decision.left, top: decision.top } : undefined;
 }

@@ -1,55 +1,73 @@
 import type { ActiveJobResponseDto } from "@/api/jobs/response-dto/active-jobs-page-response-dto";
-import { formatBytes } from "@/lib/training/run-view";
+import type { CodedTextDto } from "@/api/coded-text-dto";
+import { i18n } from "@/i18n";
+import "@/i18n/sections/overview";
+import { codedText } from "@/lib/coded-text";
+import { formatBytes, formatNumber } from "@/lib/format";
 
-/** Раздел проекта, куда ведёт «Открыть» у задачи; training.run открывает свой запуск, checks.evaluate — режим «Датасет». */
+/** The project section «Open» of a job leads to; training.run opens its run, checks.evaluate the Dataset mode of checks. */
 export type JobSection = "images" | "backgrounds" | "classes" | "generation" | "datasets" | "training" | "models" | "checks";
 
-/** Вид задачи для «Сейчас выполняется»: подпись, раздел (null — у задачи нет раздела, «Открыть» не показывается) и единица счётчиков (bytes — размер файла). */
+/** The counter unit of a job: what processed and total count; bytes is a file size. */
+export type ActiveJobUnit = "images" | "files" | "frames" | "epochs" | "bytes";
+
+/**
+ * A job kind of the running jobs: the section (null when the job has no section and «Open» is not shown) and the counter unit. The label
+ * is the text common:jobs.kinds.<kind>.
+ */
 export interface ActiveJobKind {
-    label: string;
     section: JobSection | null;
-    unit: string | null;
+    unit: ActiveJobUnit | null;
 }
 
-/** Карта «вид → раздел, единица»; хранится в UI, Core о разделах не знает. */
+/** Map "kind → section, unit"; it lives in the UI, Core does not know the sections. */
 export const activeJobKinds: Readonly<Record<string, ActiveJobKind>> = {
-    "images.import": { label: "Импорт изображений", section: "images", unit: "изображений" },
-    "backgrounds.import": { label: "Подготовка фонов", section: "backgrounds", unit: "файлов" },
-    "classes.import_assets": { label: "Импорт материалов", section: "classes", unit: "файлов" },
-    "generation.run": { label: "Генерация", section: "generation", unit: "изображений" },
-    "datasets.build": { label: "Сборка датасета", section: "datasets", unit: "кадров" },
-    "datasets.verify": { label: "Проверка датасета", section: "datasets", unit: "файлов" },
-    "datasets.export": { label: "Экспорт датасета", section: "datasets", unit: "кадров" },
-    "training.run": { label: "Обучение", section: "training", unit: "эпох" },
-    "training.export": { label: "Выгрузка модели", section: "models", unit: "bytes" },
-    "checks.evaluate": { label: "Проверка модели", section: "checks", unit: null },
-    "projects.export": { label: "Экспорт проекта", section: null, unit: "файлов" },
+    "images.import": { section: "images", unit: "images" },
+    "backgrounds.import": { section: "backgrounds", unit: "files" },
+    "classes.import_assets": { section: "classes", unit: "files" },
+    "generation.run": { section: "generation", unit: "images" },
+    "datasets.build": { section: "datasets", unit: "frames" },
+    "datasets.verify": { section: "datasets", unit: "files" },
+    "datasets.export": { section: "datasets", unit: "frames" },
+    "training.run": { section: "training", unit: "epochs" },
+    "training.export": { section: "models", unit: "bytes" },
+    "checks.evaluate": { section: "checks", unit: null },
+    "projects.export": { section: null, unit: "files" },
 };
 
-const count = (value: number) => value.toLocaleString("ru-RU");
+/** Job kind texts are keys known only at run time; the typed t accepts literal keys, so lookups by kind go through this signature. */
+const translate = i18n.t.bind(i18n) as unknown as (key: string, options?: Record<string, unknown>) => string;
 
-/** «Сборка датасета · Датасет 1»; неизвестный вид — как есть. */
+/** The label of a job kind in the current language; an unknown kind as is. */
+export function jobKindLabel(kind: string): string {
+    const key = `jobs.kinds.${kind}`;
+    return i18n.exists(key) && typeof i18n.t(key as never, { returnObjects: true } as never) === "string" ? translate(key) : kind;
+}
+
+/** "Dataset build · Dataset 1"; an unknown kind as is. Call during render. */
 export function activeJobTitle(item: ActiveJobResponseDto): string {
-    const kind = activeJobKinds[item.job.kind]?.label ?? item.job.kind;
-    return item.job.label ? `${kind} · ${item.job.label}` : kind;
+    const kind = jobKindLabel(item.job.kind);
+    const label = item.job.label ? codedText(item.job.label) : "";
+    return label ? `${kind} · ${label}` : kind;
 }
 
 /**
- * Состояние: «Отмена…», в очереди — «В очереди» или «Ожидает видеокарту», идущая — текст прогресса задачи («Подготовка», «Эпоха 3 из
- * 10», «Сохранение версии модели»), без него — «Выполняется» со счётчиками «processed / total единица».
+ * The state: Cancelling…, a queued job is Queued or Waiting for the GPU, a running one shows its progress text (Preparing, Epoch 3 of 10,
+ * Saving the model version), without one Running with the counters "processed / total unit". Call during render.
  */
 export function activeJobState(item: ActiveJobResponseDto): string {
     const { job } = item;
-    if (job.cancelRequested) return "Отмена…";
-    if (job.status === "queued") return item.waitingForGpu ? "Ожидает видеокарту" : "В очереди";
-    if (job.progressText) return job.progressText;
-    if (job.processed === null) return "Выполняется";
+    if (job.cancelRequested) return i18n.t("jobs.cancelling");
+    if (job.status === "queued") return item.waitingForGpu ? i18n.t("overview:jobs.waitingForGpu") : i18n.t("jobs.status.queued");
+    if (job.progressMessage) return codedText(job.progressMessage);
+    if (job.processed === null) return i18n.t("overview:jobs.running");
     const unit = activeJobKinds[job.kind]?.unit ?? null;
-    if (unit === "bytes") return `Выполняется · ${formatBytes(job.processed)}${job.total !== null ? ` / ${formatBytes(job.total)}` : ""}`;
-    return `Выполняется · ${count(job.processed)}${job.total !== null ? ` / ${count(job.total)}` : ""}${unit ? ` ${unit}` : ""}`;
+    const format = unit === "bytes" ? formatBytes : (value: number) => formatNumber(value);
+    const progress = job.total !== null ? `${format(job.processed)} / ${format(job.total)}` : format(job.processed);
+    return i18n.t(unit && unit !== "bytes" ? `overview:jobs.counter.${unit}` : "overview:jobs.counter.plain", { progress });
 }
 
-/** Процент полосы: progress задачи, иначе по счётчикам; null — объём неизвестен (полоса пульсирует). */
+/** The bar percent: the job progress, otherwise by the counters; null when the amount is unknown (the bar pulses). */
 export function activeJobPercent(item: ActiveJobResponseDto): number | null {
     const { job } = item;
     if (job.status === "queued") return 0;
@@ -57,8 +75,12 @@ export function activeJobPercent(item: ActiveJobResponseDto): number | null {
     return job.total ? Math.min(100, ((job.processed ?? 0) / job.total) * 100) : null;
 }
 
-/** «Версия N» из подписи выгрузки модели: по номеру «Открыть» находит версию. */
-export function exportedVersionNumber(label: string | null): number | null {
-    const match = label ? /^Версия (\d+)/.exec(label) : null;
+/**
+ * The version number of a model export label (jobLabels.version): «Open» finds the version by it. A label stored by 1.0.0 is the Russian
+ * text "Версия N" (data, matched as stored).
+ */
+export function exportedVersionNumber(label: CodedTextDto | null): number | null {
+    if (label?.code === "jobLabels.version" && label.args?.number && /^\d+$/.test(label.args.number)) return Number(label.args.number);
+    const match = label?.text ? /^Версия (\d+)/.exec(label.text) : null;
     return match ? Number(match[1]) : null;
 }

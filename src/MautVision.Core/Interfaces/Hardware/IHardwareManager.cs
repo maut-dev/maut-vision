@@ -1,32 +1,32 @@
 namespace MautVision.Core.Interfaces.Hardware;
 
-/// <summary>Видеокарта NVIDIA: Index — номер для device, память в МиБ.</summary>
+/// <summary>NVIDIA GPU: Index — the number for device, memory in MiB.</summary>
 public sealed record GpuInfo(int Index, string Name, long MemoryTotalMb, string DriverVersion);
 
-/// <summary>DriverAvailable — драйвер NVIDIA ответил (NVML или nvidia-smi); без драйвера список пуст (выбор устройства вводится вручную).</summary>
+/// <summary>DriverAvailable — the NVIDIA driver answered (NVML or nvidia-smi); without a driver the list is empty (the device is entered manually).</summary>
 public sealed record GpuInventory(bool DriverAvailable, IReadOnlyList<GpuInfo> Gpus, DateTimeOffset CheckedAt);
 
 /// <summary>
-/// Железо компьютера: видеокарты для выбора устройства обучения («Процессор» / «Видеокарта N» / «Автовыбор») и снимок нагрузки для
-/// обзора проекта. Сам ничего не опрашивает по таймеру: каждый снимок делается по запросу.
+/// Computer hardware: GPUs for choosing the training device ("Processor" / "GPU N" / "Auto") and a load snapshot for
+/// the project overview. It polls nothing on a timer: each snapshot is taken on request.
 /// </summary>
 public interface IHardwareManager
 {
     /// <summary>
-    /// Видеокарты по NVML, без него — по nvidia-smi с ограничением времени; ответ кешируется, refresh — опросить заново. Ошибки
-    /// опроса не выбрасываются: результат — пустой список с DriverAvailable = false.
+    /// GPUs via NVML, without it via nvidia-smi with a time limit; the answer is cached, refresh polls again. Polling errors
+    /// are not thrown: the result is an empty list with DriverAvailable = false.
     /// </summary>
     Task<GpuInventory> ListGpusAsync(bool refresh = false, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Снимок CPU, RAM и видеокарт. CPU и RAM читаются функциями Windows без процессов; видеокарты — NVML, без него nvidia-smi
-    /// (ответ кешируется на 5 с, одновременные запросы ждут один запуск). Ошибки чтения не выбрасываются, а становятся статусом.
+    /// Snapshot of CPU, RAM and GPUs. CPU and RAM are read by Windows functions without processes; GPUs by NVML, without it nvidia-smi
+    /// (the answer is cached for 5 s, concurrent requests wait for one launch). Read errors are not thrown but become a status.
     /// </summary>
     Task<HardwareSnapshot> SampleAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Память процессов по ID в байтах: приватный рабочий набор, где Windows его сообщает, иначе рабочий набор. Завершившиеся и
-    /// недоступные процессы пропускаются.
+    /// Process memory by ID in bytes: the private working set where Windows reports it, otherwise the working set. Exited and
+    /// inaccessible processes are skipped.
     /// </summary>
     long MeasureProcessMemory(IEnumerable<int> processIds);
 }

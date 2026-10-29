@@ -1,4 +1,5 @@
 import { useState, type FormEvent, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { imagesApi } from "@/api/projects/images/images-api";
 import { isSelectedVideo, type SelectedVideoDto } from "@/api/projects/images/response-dto/video-selection-response-dto";
@@ -7,13 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { errorMessage } from "@/lib/format";
+import "@/i18n/sections/images";
 
-const rangeTexts = {
-    "video.range_invalid": "Последний кадр выходит за длительность видео. Уменьшите количество или интервал.",
-    "video.frames_invalid": "Укажите начало не меньше 0 с, интервал не меньше 0,001 с и количество кадров не меньше 1.",
-} as const;
-
-/** Поля формы в секундах; в запрос уходят миллисекунды. */
+/** Form fields in seconds; the request gets milliseconds. */
 interface Fields {
     start: string;
     interval: string;
@@ -29,8 +26,8 @@ const rangeOf = (fields: Fields): VideoFrameRange => ({
 });
 
 /**
- * «Кадры из видео»: выбор видео в нативном диалоге, отметки (начало, интервал, количество) и одна задача импорта. Ход и итог
- * показывает история импорта группы. Выбор действует для одного запуска: после него видео выбирается снова.
+ * "Frames from video": choosing a video in the native dialog, the marks (start, interval, count) and one import job. The import history
+ * of the group shows the progress and the result. A choice serves one run: after it the video is chosen again.
  */
 export function VideoFrameImport({ disabled, skipDuplicates, setSkipDuplicates, importFrames, close }: {
     disabled: boolean;
@@ -39,6 +36,7 @@ export function VideoFrameImport({ disabled, skipDuplicates, setSkipDuplicates, 
     importFrames: (selectionToken: string, range: VideoFrameRange, skipDuplicates: boolean) => Promise<void>;
     close: () => void;
 }) {
+    const { t } = useTranslation("images");
     const [video, setVideo] = useState<SelectedVideoDto>();
     const [fields, setFields] = useState<Fields>(fieldsOf(defaultVideoFrameRange(0)));
     const [busy, setBusy] = useState(false);
@@ -96,37 +94,37 @@ export function VideoFrameImport({ disabled, skipDuplicates, setSkipDuplicates, 
     );
 
     return (
-        <section className="shrink-0 space-y-2 rounded-md border bg-card p-3" aria-label="Кадры из видео" data-testid="video-frame-import">
+        <section className="shrink-0 space-y-2 rounded-md border bg-card p-3" aria-label={t("video.title")} data-testid="video-frame-import">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                <h3 className="text-sm font-medium">Кадры из видео</h3>
+                <h3 className="text-sm font-medium">{t("video.title")}</h3>
                 <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground" data-testid="video-info">
                     {video
-                        ? `${video.displayName} · ${video.width} × ${video.height} · ${(video.durationMs / 1000).toFixed(1)} с`
+                        ? t("video.info", { name: video.displayName, width: video.width, height: video.height, seconds: (video.durationMs / 1000).toFixed(1) })
                         : started
-                            ? "Задача запущена — ход и итог в истории импорта. Для следующего запуска выберите видео снова."
-                            : "Выберите видео, затем задайте какие кадры извлечь."}
+                            ? t("video.started")
+                            : t("video.choosePrompt")}
                 </p>
                 <Button size="sm" variant="outline" disabled={locked} data-testid="video-choose" onClick={() => void choose()}>
-                    {video ? "Другое видео" : "Выбрать видео"}
+                    {video ? t("video.other") : t("video.choose")}
                 </Button>
-                <Button size="icon-sm" variant="ghost" aria-label="Закрыть «Кадры из видео»" disabled={busy} onClick={close}><X /></Button>
+                <Button size="icon-sm" variant="ghost" aria-label={t("video.close")} disabled={busy} onClick={close}><X /></Button>
             </div>
             <form className="space-y-2" onSubmit={event => void submit(event)}>
                 <div className="grid items-end gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
-                    {field("start", "Начало, с", { min: 0, step: 0.001 })}
-                    {field("interval", "Интервал, с", { min: 0.001, step: 0.001 })}
-                    {field("count", "Количество кадров", { min: 1, step: 1 })}
-                    <Button type="submit" disabled={!video || locked || !!rangeError} data-testid="video-extract">Извлечь кадры</Button>
+                    {field("start", t("video.start"), { min: 0, step: 0.001 })}
+                    {field("interval", t("video.interval"), { min: 0.001, step: 0.001 })}
+                    {field("count", t("video.count"), { min: 1, step: 1 })}
+                    <Button type="submit" disabled={!video || locked || !!rangeError} data-testid="video-extract">{t("video.extract")}</Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span>Кадры сохраняют исходный размер видео; разметку можно добавить после импорта.</span>
+                    <span>{t("video.sizeNote")}</span>
                     <label className="flex items-center gap-2">
                         <Checkbox checked={skipDuplicates} disabled={locked} onCheckedChange={value => setSkipDuplicates(value === true)} data-testid="video-skip-duplicates" />
-                        Пропускать повторы в группе
+                        {t("section.skipDuplicates")}
                     </label>
                 </div>
                 <p role={rangeError || error ? "alert" : undefined} className="min-h-4 text-xs text-destructive" data-testid="video-alert">
-                    {rangeError ? rangeTexts[rangeError] : error ?? ""}
+                    {rangeError ? t(`video.rangeErrors.${rangeError === "video.range_invalid" ? "range_invalid" : "frames_invalid"}`) : error ?? ""}
                 </p>
             </form>
         </section>

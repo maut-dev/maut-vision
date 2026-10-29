@@ -5,17 +5,20 @@ export type CatalogTargetKind = "variant" | "class" | "classVariant" | "asset";
 
 const kinds: readonly string[] = ["variant", "class", "classVariant", "asset"] satisfies CatalogTargetKind[];
 
-/** Причина, по которой удаление недоступно; message — строка списка в диалоге. code: jobs.active, images.annotations, generation.preset_reference. */
+/**
+ * Why deletion is unavailable: code (jobs.active, images.annotations, generation.preset_reference…), count and examples — names that
+ * illustrate it. The line of the dialog is built by blockerText (lib/errors.ts).
+ */
 export interface DeletionBlockerResponseDto {
     code: string;
     count: number;
-    message: string;
+    examples: string[];
 }
 
 /**
- * Состав удаления навсегда: счётчики «Классы / Варианты классов / Исходные изображения», блокирующие причины и
- * revision — её передают в удаление; при изменении состава удаление вернёт *.deletion_revision_conflict.
- * targetName — название цели (у изображения пусто).
+ * The review of a permanent deletion: the counters "Classes / Class variants / Source images", blocking reasons and
+ * revision, which goes to the deletion; when the contents change the deletion returns *.deletion_revision_conflict.
+ * targetName is the name of the target (empty for an image).
  */
 export interface DeletionReviewResponseDto {
     targetKind: CatalogTargetKind;
@@ -30,7 +33,7 @@ export interface DeletionReviewResponseDto {
 
 export function isDeletionBlockerResponseDto(value: unknown): value is DeletionBlockerResponseDto {
     return isRecord(value) && typeof value.code === "string" && value.code.length > 0 && isCount(value.count)
-        && typeof value.message === "string" && value.message.length > 0;
+        && Array.isArray(value.examples) && value.examples.every(item => typeof item === "string");
 }
 
 export function isDeletionReviewResponseDto(value: unknown): value is DeletionReviewResponseDto {
@@ -42,9 +45,9 @@ export function isDeletionReviewResponseDto(value: unknown): value is DeletionRe
 }
 
 /**
- * Итог удаления: строки уже удалены. cleanupPending — файлы ещё удаляются в фоне (их много или часть занята):
- * «Материал удалён. Файлы удаляются в фоне; если приложение закроется раньше, удаление продолжится при следующем
- * открытии проекта.»
+ * The result of a deletion: the rows are already deleted. cleanupPending: files are still being deleted in the background (many of them, or some in use):
+ * "The material is deleted. Files are deleted in the background; if the application closes earlier, deletion continues the next time
+ * the project opens."
  */
 export interface DeletionResultResponseDto {
     classes: number;
