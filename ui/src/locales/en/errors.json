@@ -352,6 +352,7 @@
     "image_unreadable": "The file is not an image the application can read.",
     "internal_error": "An unexpected error occurred in the application. Details are in the application log.",
     "invalid_arguments": "The tool arguments are invalid. Check the parameters and their values against the tool schema.",
+    "no_files": "No image files were found at the given paths.",
     "path_access_denied": "Windows denied access to the path.",
     "path_invalid": "The path must be an absolute Windows path, for example D:\\data\\frames.",
     "path_not_allowed": "The path is outside the folders the user allowed for AI assistants: {{path}}.",

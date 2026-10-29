@@ -8,7 +8,8 @@ namespace MautVision.Desktop.Mcp;
 /// tool reads or writes them, otherwise an AI client could lift its own restrictions.
 /// </summary>
 /// <param name="Enabled">The server runs; off until the user turns it on.</param>
-/// <param name="Port">The TCP port on 127.0.0.1; a busy port is reported, another one is never chosen silently.</param>
+/// <param name="Port">The TCP port on 127.0.0.1; only the first enable moves from an unavailable default port to a free one of
+/// <see cref="FallbackPorts"/>; later a busy port is reported, another one is never chosen silently.</param>
 /// <param name="AccessLevel">read_only, read_write or full (<see cref="McpAccessLevels"/>).</param>
 /// <param name="Token">The Bearer token clients send; generated with a CSPRNG on the first enable.</param>
 /// <param name="RestrictFolders">Paths are accepted only inside <paramref name="AllowedFolders"/>; off by default.</param>
@@ -17,6 +18,9 @@ internal sealed record McpSettings(bool Enabled, int Port, string AccessLevel, s
     bool LaunchOnRequest)
 {
     internal const int DefaultPort = 46100;
+
+    /// <summary>Ports the first enable tries, in order, when <see cref="DefaultPort"/> cannot be bound (end exclusive).</summary>
+    internal static readonly Range FallbackPorts = 39100..40000;
     internal const int MaxAllowedFolders = 64;
 
     internal static McpSettings Default { get; } = new(false, DefaultPort, McpAccessLevels.Full, null, false, [], true);

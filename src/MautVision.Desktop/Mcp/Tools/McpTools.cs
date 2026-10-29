@@ -32,6 +32,15 @@ internal sealed partial class McpTools(McpToolDependencies dependencies)
         .. FileTools(),
         .. ViewTools(),
         .. ProjectTools(),
+        .. BaseModelTools(),
+        .. CatalogTools(),
+        .. ImageTools(),
+    ];
+
+    /// <summary>Ready scenarios (prompts/get), grouped by area like the tools.</summary>
+    internal IReadOnlyList<McpPromptDefinition> CreatePrompts() =>
+    [
+        .. ImagePrompts(),
     ];
 
     /// <summary>A project ready for work, prepared in the background: the user's current project and live checks are not touched.</summary>

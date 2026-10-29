@@ -30,8 +30,8 @@ internal sealed class McpServerHost : IAsyncDisposable
     private McpServerHost(WebApplication application) => this.application = application;
 
     /// <param name="sessionEnded">A stateful session ended (its uploads go).</param>
-    internal static async Task<McpServerHost> StartAsync(int port, string token, McpToolbox toolbox, McpResources resources, ILoggerFactory loggers,
-        Action<string> sessionEnded, CancellationToken cancellationToken)
+    internal static async Task<McpServerHost> StartAsync(int port, string token, McpToolbox toolbox, McpResources resources,
+        IReadOnlyList<McpPromptDefinition> prompts, ILoggerFactory loggers, Action<string> sessionEnded, CancellationToken cancellationToken)
     {
         var builder = WebApplication.CreateEmptyBuilder(new WebApplicationOptions { ApplicationName = "MautVision.Mcp", ContentRootPath = AppContext.BaseDirectory });
         builder.WebHost.UseKestrelCore().ConfigureKestrel(options =>
@@ -53,8 +53,46 @@ internal sealed class McpServerHost : IAsyncDisposable
                 {
                     Tools = new ToolsCapability { ListChanged = false },
                     Resources = new ResourcesCapability { ListChanged = false, Subscribe = false },
+                    Prompts = new PromptsCapability { ListChanged = false },
                 };
                 var handlers = options.Handlers;
+                handlers.ListPromptsHandler = (_, _) => ValueTask.FromResult(new ListPromptsResult
+                {
+                    Prompts = prompts.Select(prompt => new Prompt
+                    {
+                        Name = prompt.Name, Title = prompt.Title, Description = prompt.Description,
+                        Arguments = prompt.Arguments.Select(argument => new PromptArgument
+                        {
+                            Name = argument.Name, Description = argument.Description, Required = argument.Required,
+                        }).ToList(),
+                    }).ToList(),
+                });
+                handlers.GetPromptHandler = async (request, cancellation) =>
+                {
+                    var name = request.Params?.Name ?? "";
+                    var prompt = prompts.FirstOrDefault(item => item.Name == name)
+                        ?? throw new McpProtocolException($"mcp.prompt_unknown: There is no prompt “{name}”.", McpErrorCode.InvalidParams);
+                    var arguments = new Dictionary<string, string>(StringComparer.Ordinal);
+                    foreach (var (key, value) in request.Params?.Arguments ?? new Dictionary<string, JsonElement>())
+                    {
+                        if (value.ValueKind == JsonValueKind.String) arguments[key] = value.GetString()!;
+                        else if (value.ValueKind is not (JsonValueKind.Null or JsonValueKind.Undefined)) arguments[key] = value.GetRawText();
+                    }
+                    try
+                    {
+                        var text = await prompt.Render(arguments, cancellation);
+                        return new GetPromptResult
+                        {
+                            Description = prompt.Description,
+                            Messages = [new PromptMessage { Role = Role.User, Content = new TextContentBlock { Text = text } }],
+                        };
+                    }
+                    catch (Exception error) when (error is not OperationCanceledException)
+                    {
+                        var failure = McpErrors.From(error, loggers.CreateLogger<McpServerHost>(), "prompts/get");
+                        throw new McpProtocolException($"{failure.Code}: {failure.Message}", McpErrorCode.InvalidParams);
+                    }
+                };
                 handlers.ListToolsHandler = (_, _) => ValueTask.FromResult(new ListToolsResult { Tools = toolbox.Tools.Select(Map).ToList() });
                 handlers.CallToolHandler = async (request, cancellation) => await CallAsync(toolbox, request, cancellation);
                 handlers.ListResourcesHandler = async (_, cancellation) => new ListResourcesResult

@@ -91,6 +91,14 @@ internal sealed class McpService : IAsyncDisposable
         {
             ObjectDisposedException.ThrowIf(disposed, this);
             var previous = Settings;
+            // The first enable (no token yet) with the default port that cannot be bound moves to a free port of a stable range once;
+            // later a busy saved port is reported as port_busy and never changed silently.
+            if (next.Enabled && previous.Token is null && next.Port == McpSettings.DefaultPort && !CanBind(next.Port)
+                && FirstFreePort() is { } free)
+            {
+                logger.LogInformation("MCP default port {Port} cannot be bound; the first enable uses port {Free}.", next.Port, free);
+                next = next with { Port = free };
+            }
             if (next.Enabled && next.Token is null) next = next with { Token = McpSettings.NewToken() };
             Volatile.Write(ref settings, next);
             if (next != previous || hostSettings.Mcp is null) hostSettings.SaveMcp(next);
@@ -134,7 +142,8 @@ internal sealed class McpService : IAsyncDisposable
             var tools = new McpTools(context);
             var toolbox = new McpToolbox(tools.Create(), () => Settings, Confirmations, CallLog, logger);
             var resources = new McpResources(context, tools);
-            server = await McpServerHost.StartAsync(current.Port, current.Token!, toolbox, resources, loggers, Uploads.EndSession, cancellationToken);
+            server = await McpServerHost.StartAsync(current.Port, current.Token!, toolbox, resources, tools.CreatePrompts(), loggers, Uploads.EndSession,
+                cancellationToken);
             logger.LogInformation("MCP server listens on http://127.0.0.1:{Port}{Path}.", current.Port, McpServerHost.Path);
             return new McpStatus("running", current.Port, null);
         }
@@ -148,6 +157,32 @@ internal sealed class McpService : IAsyncDisposable
             logger.LogError(error, "MCP server did not start on port {Port}.", current.Port);
             return new McpStatus("failed", current.Port, "mcp.server_failed");
         }
+    }
+
+    /// <summary>Whether a listener can take the loopback port now (another program or a Windows reservation may hold it).</summary>
+    internal static bool CanBind(int port)
+    {
+        try
+        {
+            var listener = new TcpListener(System.Net.IPAddress.Loopback, port);
+            listener.Start();
+            listener.Stop();
+            return true;
+        }
+        catch (SocketException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>The first port of <see cref="McpSettings.FallbackPorts"/> that can be bound; null when none can.</summary>
+    internal static int? FirstFreePort()
+    {
+        for (var port = McpSettings.FallbackPorts.Start.Value; port < McpSettings.FallbackPorts.End.Value; port++)
+        {
+            if (CanBind(port)) return port;
+        }
+        return null;
     }
 
     private static bool IsAddressInUse(Exception error)
