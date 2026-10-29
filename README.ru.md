@@ -89,16 +89,16 @@
 ## Установка
 
 > [!IMPORTANT]
-> **Скачать:** [MautVision-Setup-1.0.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.0.0/MautVision-Setup-1.0.0.exe) (1,83 ГБ)
+> **Скачать:** [MautVision-Setup-1.1.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.1.0/MautVision-Setup-1.1.0.exe) (1,83 ГБ)
 >
 > Все версии и описание изменений: [выпуски на GitHub](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `8f72bf8ac1b06f8f891cea2eab1c9675bedb55fb70cbb6a3b2461a72403d66d7`
+> SHA-256: `29597c8fe95bc8a574fba9e55075c67125b155cd1517f73750df3dc975fa4abf`
 
 **Проверьте файл.** Сравните SHA-256 установщика с хешем, опубликованным рядом со ссылкой:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.0.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.1.0.exe -Algorithm SHA256
 ```
 
 Установщик пока не подписан, поэтому Windows SmartScreen может попросить подтверждение («Подробнее» → «Выполнить в любом случае»).
