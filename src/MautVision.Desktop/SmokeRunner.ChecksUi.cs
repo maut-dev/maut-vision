@@ -81,6 +81,8 @@ internal static partial class SmokeRunner
             if (!$('[data-testid="checks-section"]')) await openSection('checks', 'checks-section');
             return $('[data-testid="checks-section"]');
           };
+          // «1 кадр», «2 кадра», «5 кадров»: Russian plural forms of a count.
+          const russianPlural = (count, one, few, many) => count + ' ' + ({one, few, many}[new Intl.PluralRules('ru').select(count)] ?? few);
           const metricBest = (versions, key) => {
             const numbers = versions.map(version => version.metrics[key]).filter(value => typeof value === 'number');
             if (numbers.length < 2) return null;
@@ -343,7 +345,7 @@ internal static partial class SmokeRunner
           await pick($('[data-testid="evaluation-dataset"]'), 'Проверка smoke · ');
           const part = smoke.counts.test > 0 ? 'Test' : 'Validation';
           await wait(() => text('[data-testid="evaluation-split"]') === part, 'Default part');
-          assert(text('[data-testid="evaluation-hint"]').startsWith(smoke.counts[part === 'Test' ? 'test' : 'val'] + ' кадров в части ' + part + '.'),
+          assert(text('[data-testid="evaluation-hint"]').startsWith(russianPlural(smoke.counts[part === 'Test' ? 'test' : 'val'], 'кадр', 'кадра', 'кадров') + ' в части ' + part + '.'),
             'The form takes the Test part when it has frames, otherwise Validation, and counts its frames');
           if (smoke.counts.test === 0) {
             await pick($('[data-testid="evaluation-split"]'), 'Test');
@@ -375,7 +377,8 @@ internal static partial class SmokeRunner
           const done = await wait(() => $('[data-evaluation-id="' + evaluationId + '"]')?.dataset.state === 'succeeded' && $('[data-evaluation-id="' + evaluationId + '"]'),
             'Evaluation done', () => $('[data-evaluation-id="' + evaluationId + '"]')?.dataset.state);
           assert($('[data-testid="evaluation-row-state"]', done).textContent === 'Готово' && done.textContent.includes('Версия ' + working.number)
-            && done.textContent.includes('Проверка smoke · Validation · ' + smoke.counts.val + ' кадров') && done.textContent.includes('0.600') && done.textContent.includes('0.800'),
+            && done.textContent.includes('Проверка smoke · Validation · ' + russianPlural(smoke.counts.val, 'кадр', 'кадра', 'кадров')) && done.textContent.includes('0.600')
+            && done.textContent.includes('0.800'),
             '«Все проверки» follow the evaluation to «Готово» with its metrics');
           $('[data-testid="evaluation-classes-toggle"]', done).click();
           await wait(() => $('[data-testid="evaluation-classes"]') && $('[data-testid="evaluation-classes-toggle"]', done).textContent === 'Скрыть классы', 'Classes shown');

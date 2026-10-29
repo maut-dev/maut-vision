@@ -132,7 +132,8 @@ internal static partial class SmokeRunner
             'CPU load and two samples', () => $('[data-testid="overview-load-chart"]')?.dataset.points);
           const sample = (await request('hardware.sample', {})).data;
           assert(/^\d+(,\d)?%$/.test(text('[data-testid="overview-cpu-load-value"]')) && $('[data-testid="overview-cpu-load"] [role="progressbar"]')
-            && text('[data-testid="overview-cpu-threads"]').endsWith(sample.cpu.logicalThreads + ' потоков') && $('h3', $('[data-testid="overview-cpu"]')).textContent === (sample.cpu.model ?? 'Процессор'),
+            && text('[data-testid="overview-cpu-threads"]').endsWith(russianPlural(sample.cpu.logicalThreads, 'поток', 'потока', 'потоков'))
+            && $('h3', $('[data-testid="overview-cpu"]')).textContent === (sample.cpu.model ?? 'Процессор'),
             'CPU shows its model, threads and the load in percent: ' + text('[data-testid="overview-cpu"]'));
           assert(/^\d+(,\d{1,2})? ГБ занято из \d+(,\d{1,2})? ГБ$/.test(text('[data-testid="overview-ram-detail"]')) && /^\d+(,\d)?%$/.test(text('[data-testid="overview-ram-value"]')),
             'RAM shows the percent and «X ГБ занято из Y ГБ»: ' + text('[data-testid="overview-ram"]'));

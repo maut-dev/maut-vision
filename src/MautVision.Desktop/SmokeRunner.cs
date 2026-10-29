@@ -89,6 +89,7 @@ internal static partial class SmokeRunner
                             await CheckChecksUiAsync(web, root, id, final, token);
                             await CheckOverviewAsync(web, id, core, jobsSeen.Values.ToArray(), setMinimized, final, token);
                             await CheckOverviewUiAsync(web, id, final, token);
+                            await CheckInsightsLanguageAsync(web, id, host, final, token);
                             await CheckLifecycleAsync(web, root, id, host, final, token);
                             await CheckLanguageAsync(web, root, id, host, final, token);
                             await CheckLayoutAsync(web, id, layout, final, token);
