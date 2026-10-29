@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { datasetsApi } from "@/api/projects/datasets/datasets-api";
 import { specificationFieldError, type DatasetSpecificationField } from "@/api/projects/datasets/dataset-rules";
 import type { DatasetOperationKind } from "@/api/projects/datasets/request-dto/dataset-request-dto";
@@ -10,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { emptyDatasetForm, formFromSpecification, specificationKey, toSpecification, type DatasetFormValues } from "@/lib/datasets/dataset-form";
 import { matchesSearch, operationTitles } from "@/lib/datasets/dataset-view";
-import { errorMessage, locale } from "@/lib/format";
+import { errorMessage, formatNumber } from "@/lib/format";
 import { useCatalog } from "@/lib/use-catalog";
 import { operationPageLimit, useDatasetOperations, type DatasetOperationsState } from "@/lib/use-dataset-operations";
 import { useDatasetVersions } from "@/lib/use-dataset-versions";
@@ -31,19 +32,13 @@ interface Notice {
 
 const fields: readonly DatasetSpecificationField[] = ["name", "description", "groupIds", "classIds", "variants", "roles", "ratios", "seed"];
 
-const emptyTexts: Record<DatasetOperationKind, string> = {
-    build: "Здесь появятся результаты и ошибки сборок. Повтор создаёт новую проверку исходников.",
-    verify: "Откройте датасет во вкладке «Датасеты» и запустите проверку целостности.",
-    export: "Откройте датасет во вкладке «Датасеты» и выберите «Экспорт ZIP». Место сохранения выбирается для каждого запуска.",
-};
-
 /**
- * Раздел «Датасеты»: вкладки «Датасеты» (список с поиском и архивом, паспорт выбранной версии и примеры), «Сборка» (форма,
- * план, история сборок), «Проверки» и «Экспорты» (карточки операций). Без опроса: datasets.changed, job.changed,
- * images.changed, catalog.changed. Все вкладки остаются смонтированными: форма и план переживают переключение, карточки
- * получают события и скрытыми.
+ * The section "Datasets": tabs "Datasets" (the list with search and archive, the passport of the chosen version and samples), "Build"
+ * (the form, the plan, the build history), "Checks" and "Exports" (operation cards). No polling: datasets.changed, job.changed,
+ * images.changed, catalog.changed. All tabs stay mounted: the form and the plan survive switching, cards get events while hidden.
  */
 export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
+    const { t } = useTranslation("datasets");
     const projectId = project.id;
     const catalog = useCatalog(projectId);
     const groups = useImageGroups(projectId);
@@ -60,7 +55,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
     const [form, setForm] = useState<DatasetFormValues>(emptyDatasetForm);
     const [fieldError, setFieldError] = useState<DatasetFieldError>();
     const [repeatNotice, setRepeatNotice] = useState(false);
-    /** План и ключ спецификации, с которой он запрошен: другая спецификация формы делает план устаревшим. */
+    /** The plan and the key of the specification it was requested with: another form specification makes the plan stale. */
     const [plan, setPlan] = useState<DatasetPlanResponseDto>();
     const [planKey, setPlanKey] = useState<string>();
     const [action, setAction] = useState<"plan" | "build" | "other">();
@@ -92,7 +87,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
         setFieldError(undefined);
     }
 
-    /** Текст ошибки host; неверное поле спецификации подсвечивается в форме. */
+    /** The text of a host error; a wrong specification field is highlighted in the form. */
     function describe(cause: unknown): string {
         const message = errorMessage(cause);
         if (cause instanceof BridgeError) {
@@ -142,7 +137,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
             const operation = await datasetsApi.startBuild({ projectId, planId: plan.id, planHash: plan.hash, operationId: crypto.randomUUID() });
             builds.apply(operation);
             setPlan(undefined);
-            setNotice({ tone: "info", text: `Сборка «${operation.versionName}» поставлена в очередь. Ход сборки — в истории ниже.` });
+            setNotice({ tone: "info", text: t("section.buildQueued", { name: operation.versionName }) });
         });
     }
 
@@ -169,7 +164,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
         void run("other", async () => {
             const saved = await datasetsApi.setArchived({ projectId, versionId: version.id, archived: !version.archivedAt, revision: version.revision });
             versions.apply(saved);
-            setNotice({ tone: "info", text: saved.archivedAt ? `Датасет «${saved.name}» перенесён в архив.` : `Датасет «${saved.name}» восстановлен.` });
+            setNotice({ tone: "info", text: saved.archivedAt ? t("section.archived", { name: saved.name }) : t("section.restored", { name: saved.name }) });
             focusLater(() => document.querySelector<HTMLElement>(saved.archivedAt && !showArchived ? '[data-testid="dataset-search"]' : '[data-testid="dataset-archive"]'));
         });
     }
@@ -229,7 +224,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                 <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="datasets-notice">
                     <AlertDescription>
                         <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>Скрыть</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -237,7 +232,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                 <Alert variant="destructive" className="shrink-0">
                     <AlertDescription>
                         <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void catalog.refresh(); void groups.refresh(); void versions.refresh(); }}>Повторить</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void catalog.refresh(); void groups.refresh(); void versions.refresh(); }}>{t("section.retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -245,8 +240,8 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                 className={tab === "datasets" ? "grid min-h-0 flex-1 grid-cols-[minmax(220px,0.75fr)_minmax(0,1.7fr)] gap-3" : undefined}>
                 <DatasetList versions={versions.versions} loading={versions.loading} selectedId={selected?.id} select={setSelectedId}
                     search={search} setSearch={setSearch} showArchived={showArchived} setShowArchived={setShowArchived} />
-                <section className="flex min-h-0 flex-col rounded-md border bg-card" aria-label="Выбранный датасет">
-                    <div className="border-b p-3"><h2 className="font-medium break-words" data-testid="dataset-title">{selected?.name ?? "Выберите датасет"}</h2></div>
+                <section className="flex min-h-0 flex-col rounded-md border bg-card" aria-label={t("section.selected")}>
+                    <div className="border-b p-3"><h2 className="font-medium break-words" data-testid="dataset-title">{selected?.name ?? t("section.choose")}</h2></div>
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
                         {selected ? (
                             <DatasetDetails
@@ -259,13 +254,13 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                                 toggleArchive={() => toggleArchive(selected)}
                                 remove={() => setDeleting(selected)}
                             />
-                        ) : <p className="text-sm text-muted-foreground">Выберите готовую версию в списке слева.</p>}
+                        ) : <p className="text-sm text-muted-foreground">{t("section.chooseHint")}</p>}
                     </div>
                 </section>
             </div>
             <div id={panelId("build")} role="tabpanel" aria-labelledby={tabId("build")} hidden={tab !== "build"}
                 className={tab === "build" ? "grid min-h-0 flex-1 grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-5" : undefined}>
-                <section className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-2" aria-label="Новая сборка">
+                <section className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-2" aria-label={t("section.newBuild")}>
                     <DatasetBuildForm
                         values={form}
                         setValues={updateForm}
@@ -304,7 +299,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                         for (const state of Object.values(operations)) {
                             for (const operation of state.operations) if (operation.versionId === result.versionId) state.remove(operation.job.id);
                         }
-                        setNotice({ tone: "info", text: result.cleanupPending ? "Удалено. Файлы датасета удаляются в фоне." : "Удалено." });
+                        setNotice({ tone: "info", text: result.cleanupPending ? t("section.deletedPending") : t("section.deleted") });
                         focusLater(() => document.querySelector<HTMLElement>('[data-testid="dataset-search"]'));
                     }}
                 />
@@ -335,15 +330,16 @@ function OperationList({ kind, state, versionOf, busy, cancel, repeat, remove, o
     remove: (operation: DatasetOperationResponseDto, name: string) => void;
     openDataset: (versionId: string) => void;
 }) {
-    const label = kind === "build" ? "История сборок" : kind === "verify" ? "Проверки целостности" : "Экспорты";
+    const { t } = useTranslation("datasets");
+    const label = t(`section.operations.${kind}`);
     return (
         <section className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-2" aria-label={label} data-testid={`dataset-operations-${kind}`}>
-            {kind === "build" && <h2 className="font-medium">История сборок</h2>}
+            {kind === "build" && <h2 className="font-medium">{label}</h2>}
             {state.error && (
                 <Alert variant="destructive">
                     <AlertDescription>
                         <p>{state.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void state.refresh()}>Повторить</Button>
+                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void state.refresh()}>{t("section.retry")}</Button>
                     </AlertDescription>
                 </Alert>
             )}
@@ -364,10 +360,10 @@ function OperationList({ kind, state, versionOf, busy, cancel, repeat, remove, o
                 );
             })}
             {state.total > state.operations.length && (
-                <p className="text-xs text-muted-foreground">Показаны последние {Math.max(operationPageLimit, state.operations.length)} из {state.total.toLocaleString(locale())}.</p>
+                <p className="text-xs text-muted-foreground">{t("section.lastOperations", { shown: Math.max(operationPageLimit, state.operations.length), total: formatNumber(state.total) })}</p>
             )}
-            {state.loading && !state.operations.length && <p role="status" className="text-sm text-muted-foreground">Загрузка…</p>}
-            {!state.loading && !state.error && !state.operations.length && <Empty testId={`dataset-operations-${kind}-empty`}>{emptyTexts[kind]}</Empty>}
+            {state.loading && !state.operations.length && <p role="status" className="text-sm text-muted-foreground">{t("section.loading")}</p>}
+            {!state.loading && !state.error && !state.operations.length && <Empty testId={`dataset-operations-${kind}-empty`}>{t(`section.empty.${kind}`)}</Empty>}
         </section>
     );
 }

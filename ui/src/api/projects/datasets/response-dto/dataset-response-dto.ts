@@ -7,21 +7,21 @@ import type { DatasetSpecificationDto, DatasetSplit } from "../request-dto/datas
 
 export type DatasetIntegrityState = "verified" | "corrupt" | "unverified";
 
-/** Класс версии: index — выход модели (0..n−1), name — название на момент сборки («Сохранённый порядок классов: 0: A, 1: B»). */
+/** A class of the version: index — the model output (0..n−1), name — the name at build time ("Saved class order: 0: A, 1: B"). */
 export interface DatasetClassEntryDto {
     index: number;
     classId: string;
     name: string;
 }
 
-/** Вариант класса версии с названием варианта проекта на момент сборки — подпись объектов и негативов вместо id. */
+/** A class variant of the version with the name of the project variant at build time — the label of objects and negatives instead of the id. */
 export interface DatasetVariantEntryDto {
     classVariantId: string;
     classId: string;
     name: string;
 }
 
-/** «Готовые кадры · Train / Validation / Test». */
+/** "Finished frames · Train / Validation / Test". */
 export interface DatasetSplitCountsDto {
     train: number;
     val: number;
@@ -42,7 +42,7 @@ export interface DatasetGroupCountDto {
     images: number;
 }
 
-/** Состав: части, без рамок, ручные и сгенерированные, рамки всего и по классам (все классы, и с нулём), негативы, группы-источники. */
+/** Composition: splits, without boxes, manual and generated, boxes in total and by class (all classes, with zero too), negatives, source groups. */
 export interface DatasetCompositionDto {
     images: DatasetSplitCountsDto;
     withoutBoxes: number;
@@ -54,7 +54,7 @@ export interface DatasetCompositionDto {
     groups: DatasetGroupCountDto[];
 }
 
-/** Пропущено по причинам: не проверены, незавершённая генерация, без объектов (пустые не включены), рамка или ROI вне кадра. */
+/** Skipped by reason: not reviewed, unfinished generation, without objects (empty ones not included), box or ROI outside the frame. */
 export interface DatasetPlanSkipsDto {
     unreviewed: number;
     partialGeneration: number;
@@ -64,8 +64,8 @@ export interface DatasetPlanSkipsDto {
 }
 
 /**
- * Предупреждение плана с готовым текстом. code: datasets.insufficient_samples (count 0), datasets.mixed_source_splits (кадров),
- * datasets.objects_as_negatives (объектов), datasets.split_collision (кадров; сборка невозможна).
+ * A plan warning as a code. code: datasets.insufficient_samples (count 0), datasets.mixed_source_splits (frames),
+ * datasets.objects_as_negatives (objects), datasets.split_collision (frames; the build is impossible).
  */
 export interface DatasetPlanWarningDto {
     code: string;
@@ -73,9 +73,9 @@ export interface DatasetPlanWarningDto {
 }
 
 /**
- * План «Проверить перед сборкой»: counts — «Train / Validation / Test», skipped — «пропущено N» с причинами, warnings,
- * sufficientSamples; buildable — кнопка «Собрать датасет» доступна (есть кадры, нет одинаковых пикселей в разных частях); hash —
- * передаётся в startBuild. План устаревает при изменении групп, разметки или каталога: startBuild ответит datasets.plan_stale.
+ * The plan of "Check before building": counts — "Train / Validation / Test", skipped — "skipped N" with reasons, warnings,
+ * sufficientSamples; buildable — the button "Build dataset" is available (there are frames, no identical pixels in different splits); hash —
+ * is passed to startBuild. The plan goes stale when groups, annotation or the catalog change: startBuild answers datasets.plan_stale.
  */
 export interface DatasetPlanResponseDto {
     id: string;
@@ -94,9 +94,9 @@ export interface DatasetPlanResponseDto {
 }
 
 /**
- * Версия датасета. integrityState — «Целостность: проверена / нарушена / не проверена»; inputSizeMatches — иначе «Размер отличается
- * от входа проекта» (обучение недоступно); archivedAt — «name · В архиве»; createdAt — «Собран …»; specification.groupIds —
- * «Групп-источников …», specification.seed — «Seed …»; revision — для update и setArchived; deletedAt — только у паспорта.
+ * A dataset version. integrityState — "Integrity: verified / corrupt / not verified"; inputSizeMatches — otherwise "The size differs
+ * from the project input" (training is unavailable); archivedAt — "name · Archived"; createdAt — "Built …"; specification.groupIds —
+ * "Source groups …", specification.seed — "Seed …"; revision — for update and setArchived; deletedAt — only in a passport.
  */
 export interface DatasetVersionResponseDto {
     id: string;
@@ -121,7 +121,7 @@ export interface DatasetVersionResponseDto {
     deletedAt: string | null;
 }
 
-/** Рамка YOLO в долях кадра: центр (centerX, centerY) и размер; index — класс версии (рисуется #5fb3ff). */
+/** A YOLO box in frame fractions: the center (centerX, centerY) and the size; index — the version class (drawn #5fb3ff). */
 export interface DatasetBoxDto {
     index: number;
     classId: string;
@@ -132,7 +132,7 @@ export interface DatasetBoxDto {
     height: number;
 }
 
-/** Негатив: та же геометрия без индекса (рисуется #f6b44c пунктиром). */
+/** A negative: the same geometry without an index (drawn #f6b44c dashed). */
 export interface DatasetNegativeDto {
     classId: string;
     classVariantId: string | null;
@@ -143,8 +143,8 @@ export interface DatasetNegativeDto {
 }
 
 /**
- * Образец: id — ID исходного изображения; «W × H · n объектов · m негативов» — width, height, boxes.length, negatives.length; roi —
- * область (#69d3a2) в долях от левого верхнего угла или null; imageUrl и thumbnailUrl — файл образца (уже ориентированный кадр).
+ * A sample: id — the ID of the source image; "W × H · n objects · m negatives" — width, height, boxes.length, negatives.length; roi —
+ * the area (#69d3a2) in fractions from the top left corner or null; imageUrl and thumbnailUrl — the sample file (an already oriented frame).
  */
 export interface DatasetSampleResponseDto {
     id: string;
@@ -165,19 +165,19 @@ export interface DatasetSampleResponseDto {
     thumbnailUrl: ResourceUrl;
 }
 
-/** Страница образцов части; nextCursor — null на последней странице. */
+/** A page of samples of a split; nextCursor — null on the last page. */
 export interface DatasetSamplePageResponseDto {
     items: DatasetSampleResponseDto[];
     nextCursor: string | null;
 }
 
-/** «Сохранить как»: token и fileName — оба null, если окно закрыто без выбора. */
+/** "Save as": token and fileName — both null when the dialog was closed without a choice. */
 export interface DatasetExportSelectionResponseDto {
     token: string | null;
     fileName: string | null;
 }
 
-/** Состав удаления: образцов, записей истории; непустой blockers — удаление недоступно (строки — blockerText). */
+/** What deletion removes: samples, history records; a non-empty blockers means deletion is unavailable (lines — blockerText). */
 export interface DatasetDeletionReviewResponseDto {
     versionId: string;
     name: string;
@@ -187,7 +187,7 @@ export interface DatasetDeletionReviewResponseDto {
     revision: string;
 }
 
-/** Удалено; cleanupPending — файлы ещё удаляются в фоне. Паспорт версии сохранён для моделей. */
+/** Deleted; cleanupPending — files are still being deleted in the background. The version passport stays for models. */
 export interface DatasetDeletionResultResponseDto {
     versionId: string;
     samples: number;

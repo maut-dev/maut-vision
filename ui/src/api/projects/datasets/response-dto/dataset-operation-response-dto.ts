@@ -4,15 +4,15 @@ import { isCount, isId } from "../../catalog/catalog-guards";
 import type { DatasetOperationKind, DatasetSpecificationDto, DatasetSplit } from "../request-dto/dataset-request-dto";
 import { isDatasetSpecificationDto, isDatasetSplit, isDatasetSplitCountsDto, type DatasetIntegrityState, type DatasetSplitCountsDto } from "./dataset-response-dto";
 
-/** Виды задач операций датасетов: их снимки приходят в job.changed. */
+/** Job kinds of dataset operations: their snapshots arrive in job.changed. */
 export const datasetJobKinds = { build: "datasets.build", verify: "datasets.verify", export: "datasets.export" } as const satisfies Record<DatasetOperationKind, string>;
 
 /**
- * Операция (карточка во вкладках «Сборка», «Проверки», «Экспорты»): job — снимок задачи (status queued / running / succeeded /
- * failed / cancelled / interrupted, cancelRequested, error с русским текстом, processed / total — «Собрано / Проверено файлов /
- * Экспортировано изображений: p из t», startedAt / finishedAt — длительность, result); versionId и versionName — «Открыть датасет»
- * при versionAvailable; specification и planId — у сборки («Настроить повтор»: копия спецификации в форму); fileName — у экспорта.
- * «Отменить» — jobsApi.cancel(projectId, job.id); «Повторить» / «Сохранить ещё раз» — новый startVerify / selectExportDestination.
+ * An operation (a card in the tabs "Build", "Checks", "Exports"): job — the job snapshot (status queued / running / succeeded /
+ * failed / cancelled / interrupted, cancelRequested, error by code, processed / total — "Images built / Files checked /
+ * Images exported: p of t", startedAt / finishedAt — duration, result); versionId and versionName — "Open dataset"
+ * with versionAvailable; specification and planId — of a build ("Set up a repeat": a copy of the specification into the form); fileName — of an export.
+ * "Cancel" — jobsApi.cancel(projectId, job.id); "Retry" / "Save again" — a new startVerify / selectExportDestination.
  */
 export interface DatasetOperationResponseDto {
     job: JobResponseDto;
@@ -25,7 +25,7 @@ export interface DatasetOperationResponseDto {
     fileName: string | null;
 }
 
-/** Операции вида, новые первыми; total — «Проверки (N)». */
+/** Operations of a kind, newest first; total — "Checks (N)". */
 export interface DatasetOperationPageResponseDto {
     items: DatasetOperationResponseDto[];
     total: number;
@@ -35,7 +35,7 @@ export interface DatasetOperationDeletionResponseDto {
     operationId: string;
 }
 
-/** Итог сборки (job.result, есть и у отменённой): кадров total, produced — готово; linked / copied / converted — как получены файлы. */
+/** The build result (job.result, a cancelled build has it too): frames total, produced — done; linked / copied / converted — how files were obtained. */
 export interface DatasetBuildResultDto {
     versionId: string;
     total: number;
@@ -47,8 +47,8 @@ export interface DatasetBuildResultDto {
 }
 
 /**
- * Проблема целостности: sampleId и split — кадр (null у manifest.json и data.yaml); role — «Описание датасета» (manifest, dataYaml),
- * «Изображение» (image), «Разметка» (label); code — datasets.file_missing | datasets.file_changed | datasets.file_unreadable; the text is errorText(code).
+ * An integrity issue: sampleId and split — the frame (null for manifest.json and data.yaml); role — "Dataset description" (manifest, dataYaml),
+ * "Image" (image), "Annotation" (label); code — datasets.file_missing | datasets.file_changed | datasets.file_unreadable; the text is errorText(code).
  */
 export interface DatasetIntegrityIssueDto {
     sampleId: string | null;
@@ -58,8 +58,8 @@ export interface DatasetIntegrityIssueDto {
 }
 
 /**
- * Итог проверки целостности: «Проверено файлов: checkedFiles из totalFiles»; issueCount — «Обнаруженные проблемы (n)», issues — первые
- * 500; state — verified | corrupt (null, пока не закончена или если отменена); bytes / elapsedMs — скорость чтения.
+ * The result of an integrity check: "Files checked: checkedFiles of totalFiles"; issueCount — "Issues found (n)", issues — the first
+ * 500; state — verified | corrupt (null until finished or when cancelled); bytes / elapsedMs — the read speed.
  */
 export interface DatasetVerifyResultDto {
     versionId: string;
@@ -72,7 +72,7 @@ export interface DatasetVerifyResultDto {
     elapsedMs: number;
 }
 
-/** Итог экспорта: «Экспортировано изображений: exportedImages из totalImages», fileName, bytes — размер ZIP, elapsedMs. */
+/** The export result: "Images exported: exportedImages of totalImages", fileName, bytes — the ZIP size, elapsedMs. */
 export interface DatasetExportResultDto {
     versionId: string;
     fileName: string;
@@ -121,17 +121,17 @@ export function isDatasetExportResultDto(value: unknown): value is DatasetExport
         && isCount(value.bytes) && isCount(value.elapsedMs);
 }
 
-/** Итог сборки из снимка задачи; null — задача другого вида или итога ещё нет. */
+/** The build result from a job snapshot; null — a job of another kind or no result yet. */
 export function parseDatasetBuildResult(job: JobResponseDto): DatasetBuildResultDto | null {
     return job.kind === datasetJobKinds.build && isDatasetBuildResultDto(job.result) ? job.result : null;
 }
 
-/** Итог проверки целостности из снимка задачи; null — задача другого вида или итога ещё нет. */
+/** The integrity check result from a job snapshot; null — a job of another kind or no result yet. */
 export function parseDatasetVerifyResult(job: JobResponseDto): DatasetVerifyResultDto | null {
     return job.kind === datasetJobKinds.verify && isDatasetVerifyResultDto(job.result) ? job.result : null;
 }
 
-/** Итог экспорта из снимка задачи; null — задача другого вида или итога ещё нет. */
+/** The export result from a job snapshot; null — a job of another kind or no result yet. */
 export function parseDatasetExportResult(job: JobResponseDto): DatasetExportResultDto | null {
     return job.kind === datasetJobKinds.export && isDatasetExportResultDto(job.result) ? job.result : null;
 }

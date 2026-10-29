@@ -3,15 +3,17 @@ import { subscribeDatasetsChanged } from "@/api/events/subscriptions";
 import { datasetsApi } from "@/api/projects/datasets/datasets-api";
 import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
+import "./datasets/locale";
 
 const newestFirst = (left: DatasetVersionResponseDto, right: DatasetVersionResponseDto) =>
     right.createdAt.localeCompare(left.createdAt) || right.id.localeCompare(left.id);
 
 /**
- * Готовые версии датасетов открытого проекта, включая архивные (фильтр «Показать архив датасетов» — на экране): datasets.list
- * при открытии, затем datasets.changed. Перечитываются только названные событием версии с ревизией новее известной; null —
- * версия удалена. Ответ операции (update, setArchived) применяется сразу; более старая ревизия не заменяет новую.
+ * Finished dataset versions of the open project, archived ones too (the filter "Show dataset archive" is on the screen): datasets.list
+ * on opening, then datasets.changed. Only the versions named by the event with a revision newer than known are read again; null —
+ * the version was deleted. The answer of an operation (update, setArchived) applies at once; an older revision does not replace a newer one.
  */
 export function useDatasetVersions(projectId: string) {
     const [versions, setVersions] = useState<readonly DatasetVersionResponseDto[]>([]);
@@ -55,7 +57,7 @@ export function useDatasetVersions(projectId: string) {
             setVersions([...list].sort(newestFirst));
             setError(undefined);
         } catch (cause) {
-            if (mounted.current) setError(errorMessage(cause, "Не удалось загрузить датасеты. Повторите загрузку."));
+            if (mounted.current) setError(errorMessage(cause, i18n.t("datasets:loadErrors.versions")));
         } finally {
             if (mounted.current) setLoading(false);
         }

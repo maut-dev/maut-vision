@@ -1,4 +1,5 @@
 import { Archive, ArchiveRestore, Download, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { datasetTexts, integrityLabels } from "@/api/projects/datasets/dataset-rules";
 import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { Button } from "@/components/ui/button";
@@ -7,9 +8,9 @@ import { formatDate } from "@/lib/format";
 import { DatasetSamples } from "./dataset-samples";
 
 /**
- * Паспорт выбранной версии: части, целостность, сборка, порядок классов, состав, примечание о
- * неизменяемости; действия «Проверить целостность», «Экспорт ZIP», «Изменить», «В архив» / «Восстановить», «Удалить датасет».
- * Архивную версию нельзя проверить, экспортировать и изменить; повреждённую — экспортировать. Ниже — примеры по частям.
+ * The passport of the chosen version: splits, integrity, build, class order, composition, a note on immutability; actions "Check
+ * integrity", "ZIP export", "Edit", "Archive" / "Restore", "Delete dataset". An archived version cannot be checked, exported or
+ * edited; a corrupt one cannot be exported. Below — samples by split.
  */
 export function DatasetDetails({ projectId, version, busy, verify, exportZip, edit, toggleArchive, remove }: {
     projectId: string;
@@ -21,51 +22,57 @@ export function DatasetDetails({ projectId, version, busy, verify, exportZip, ed
     toggleArchive: () => void;
     remove: () => void;
 }) {
+    const { t } = useTranslation("datasets");
     const archived = !!version.archivedAt;
     const corrupt = version.integrityState === "corrupt";
+    const integrityValues = {
+        state: integrityLabels[version.integrityState],
+        date: version.verifiedAt ? formatDate(version.verifiedAt) : "",
+        status: archived ? datasetTexts.archived : t("details.active"),
+    };
     const { composition } = version;
     return (
         <div className="space-y-4" data-testid="dataset-details" data-dataset-details-id={version.id} data-integrity={version.integrityState}>
             <div className="space-y-2 text-sm text-muted-foreground" data-testid="dataset-passport">
                 {version.description && <p className="whitespace-pre-wrap break-words text-foreground">{version.description}</p>}
                 <p data-testid="dataset-counts">
-                    Готовые кадры · Train {count(version.counts.train)} · Validation {count(version.counts.val)} · Test {count(version.counts.test)}
+                    {t("details.counts", { train: count(version.counts.train), val: count(version.counts.val), test: count(version.counts.test) })}
                 </p>
                 <p data-testid="dataset-integrity">
-                    Целостность: <span className={corrupt ? "text-destructive" : undefined}>{integrityLabels[version.integrityState]}</span>
-                    {version.verifiedAt && ` (${formatDate(version.verifiedAt)})`} · {archived ? datasetTexts.archived : "Активен"}
+                    <Trans t={t} i18nKey={version.verifiedAt ? "details.integrityDate" : "details.integrity"} values={integrityValues}
+                        components={{ state: <span className={corrupt ? "text-destructive" : undefined} /> }} />
                 </p>
                 <p data-testid="dataset-built">
-                    Собран {formatDate(version.createdAt)} · Групп-источников: {version.specification.groupIds.length} · Seed {version.specification.seed}
+                    {t("details.built", { date: formatDate(version.createdAt), groups: version.specification.groupIds.length, seed: version.specification.seed })}
                 </p>
-                <p data-testid="dataset-class-order">Сохранённый порядок классов: {classOrderText(version)}</p>
+                <p data-testid="dataset-class-order">{t("details.classOrder", { order: classOrderText(version) })}</p>
                 <p>
-                    Размер кадра: {version.width} × {version.height}
+                    {t("details.frameSize", { width: version.width, height: version.height })}
                     {!version.inputSizeMatches && <span className="text-amber-700 dark:text-amber-400" data-testid="dataset-details-size-mismatch"> · {datasetTexts.sizeMismatch}</span>}
                 </p>
                 <details className="rounded-md border px-3 py-2" data-testid="dataset-composition">
-                    <summary className="cursor-pointer text-foreground">Состав</summary>
+                    <summary className="cursor-pointer text-foreground">{t("details.composition")}</summary>
                     <div className="mt-2 space-y-1 text-xs">
                         <p>
-                            Кадров без рамок: {count(composition.withoutBoxes)} · из исходных изображений: {count(composition.fromManual)} · сгенерированных: {count(composition.fromGenerated)}
+                            {t("details.frames", { withoutBoxes: count(composition.withoutBoxes), manual: count(composition.fromManual), generated: count(composition.fromGenerated) })}
                         </p>
-                        <p>Рамок: {count(composition.boxes)} · негативов: {count(composition.negatives)}</p>
-                        <p>Рамок по классам: {composition.boxesPerClass.map(item => `${item.index}: ${item.name} — ${count(item.boxes)}`).join(", ") || "—"}</p>
-                        <p className="break-words">Группы-источники: {composition.groups.map(item => `${item.name} — ${count(item.images)}`).join(", ") || "—"}</p>
+                        <p>{t("details.boxes", { boxes: count(composition.boxes), negatives: count(composition.negatives) })}</p>
+                        <p>{t("details.boxesPerClass", { list: composition.boxesPerClass.map(item => `${item.index}: ${item.name} — ${count(item.boxes)}`).join(", ") || "—" })}</p>
+                        <p className="break-words">{t("details.groups", { list: composition.groups.map(item => `${item.name} — ${count(item.images)}`).join(", ") || "—" })}</p>
                     </div>
                 </details>
-                <p>Датасет содержит неизменяемые копии кадров и разметки. Изменения исходных классов и изображений не меняют эту версию.</p>
-                {archived && <p data-testid="dataset-archived-note">Датасет в архиве: восстановите его, чтобы проверить целостность, экспортировать или изменить.</p>}
+                <p>{t("details.immutable")}</p>
+                {archived && <p data-testid="dataset-archived-note">{t("details.archivedNote")}</p>}
                 {corrupt && <p className="text-destructive" data-testid="dataset-corrupt-note">{datasetTexts.integrityHelp}</p>}
             </div>
             <div className="flex flex-wrap gap-2">
-                <Button variant="outline" disabled={busy || archived} data-testid="dataset-verify" onClick={verify}><ShieldCheck />Проверить целостность</Button>
-                <Button disabled={busy || archived || corrupt} data-testid="dataset-export" onClick={exportZip}><Download />Экспорт ZIP</Button>
-                <Button variant="outline" disabled={busy || archived} data-testid="dataset-edit" onClick={edit}><Pencil />Изменить</Button>
+                <Button variant="outline" disabled={busy || archived} data-testid="dataset-verify" onClick={verify}><ShieldCheck />{t("details.verify")}</Button>
+                <Button disabled={busy || archived || corrupt} data-testid="dataset-export" onClick={exportZip}><Download />{t("details.export")}</Button>
+                <Button variant="outline" disabled={busy || archived} data-testid="dataset-edit" onClick={edit}><Pencil />{t("details.edit")}</Button>
                 <Button variant="ghost" disabled={busy} data-testid="dataset-archive" onClick={toggleArchive}>
-                    {archived ? <><ArchiveRestore />Восстановить</> : <><Archive />В архив</>}
+                    {archived ? <><ArchiveRestore />{t("details.restore")}</> : <><Archive />{t("details.archive")}</>}
                 </Button>
-                <Button variant="destructive" size="sm" className="self-center" disabled={busy} data-testid="dataset-delete" onClick={remove}><Trash2 />Удалить датасет</Button>
+                <Button variant="destructive" size="sm" className="self-center" disabled={busy} data-testid="dataset-delete" onClick={remove}><Trash2 />{t("details.delete")}</Button>
             </div>
             <DatasetSamples key={version.id} projectId={projectId} version={version} />
         </div>

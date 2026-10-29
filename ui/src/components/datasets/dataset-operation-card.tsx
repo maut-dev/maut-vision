@@ -1,4 +1,5 @@
 import { FolderOpen, Loader2, RotateCcw, Trash2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { datasetTexts, integrityLabels } from "@/api/projects/datasets/dataset-rules";
 import {
     parseDatasetBuildResult,
@@ -23,10 +24,10 @@ import { formatDate, megabytes } from "@/lib/format";
 import { errorText } from "@/lib/errors";
 
 /**
- * Карточка операции во вкладках «Сборка», «Проверки», «Экспорты»: состояние, датасет, дата, «Собрано изображений / Проверено
- * файлов / Экспортировано изображений: p из t» с полосой по событиям job.changed, длительность, «Обнаруженные проблемы (n)»,
- * файл экспорта; «Отменить» у идущей, «Настроить повтор» / «Повторить» / «Сохранить ещё раз» и «Удалить из истории» у
- * завершённой, «Открыть датасет», если версия есть в списке. version — текущая версия (название, архив, целостность).
+ * An operation card in the tabs "Build", "Checks", "Exports": state, dataset, date, "Images built / Files checked / Images exported:
+ * p of t" with a bar by job.changed events, duration, "Issues found (n)", the export file; "Cancel" for a running one, "Set up a
+ * repeat" / "Retry" / "Save again" and "Delete from history" for a finished one, "Open dataset" when the version is in the list.
+ * version — the current version (name, archive, integrity).
  */
 export function DatasetOperationCard({ operation, version, busy, cancel, repeat, remove, openDataset }: {
     operation: DatasetOperationResponseDto;
@@ -37,10 +38,11 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
     remove: () => void;
     openDataset: () => void;
 }) {
+    const { t } = useTranslation("datasets");
     const { job, kind } = operation;
     const active = isOperationActive(job);
     const progress = operationProgress(operation);
-    const status = job.cancelRequested && active ? "Отмена…" : jobStatusLabels[job.status];
+    const status = job.cancelRequested && active ? t("operation.cancelling") : jobStatusLabels[job.status];
     const name = version?.name ?? operation.versionName;
     const elapsed = duration(job);
     const endText = operationEndText(operation);
@@ -49,7 +51,11 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
     const exported = parseDatasetExportResult(job);
     const fileName = exported?.fileName ?? operation.fileName;
     const archived = !!version?.archivedAt;
-    const repeatLabel = kind === "build" ? "Настроить повтор" : kind === "export" && job.status === "succeeded" ? "Сохранить ещё раз" : "Повторить";
+    const repeatLabel = kind === "build" ? t("operation.repeatBuild") : kind === "export" && job.status === "succeeded" ? t("operation.saveAgain") : t("operation.retry");
+    const subtitle = [kind === "build" ? operationTitles.build : name, ...(!version && !active && job.status === "succeeded" ? [t("operation.versionMissing")] : []),
+        formatDate(job.createdAt)];
+    const times = job.startedAt ? [t("operation.started", { date: formatDate(job.startedAt) }),
+        ...(job.finishedAt ? [t("operation.finished", { date: formatDate(job.finishedAt) })] : []), ...(elapsed ? [t("operation.duration", { duration: elapsed })] : [])] : [];
     const repeatBlocked = kind === "build" ? !operation.specification : !version || archived || (kind === "export" && version.integrityState === "corrupt");
     const canOpen = !!version && (kind !== "build" || job.status === "succeeded");
     return (
@@ -62,92 +68,95 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
                         {kind === "build" ? name : operationTitles[kind]} · {status}
                     </h3>
                     <p className="mt-1 text-sm break-words text-muted-foreground">
-                        {kind === "build" ? operationTitles.build : name}{!version && !active && job.status === "succeeded" && " · версия удалена или недоступна"} · {formatDate(job.createdAt)}
+                        {subtitle.join(" · ")}
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     {canOpen && (
-                        <Button variant="outline" size="sm" data-testid="operation-open-dataset" aria-label={`Открыть датасет: ${name}`} onClick={openDataset}>
-                            <FolderOpen />Открыть датасет
+                        <Button variant="outline" size="sm" data-testid="operation-open-dataset" aria-label={t("operation.openDatasetLabel", { name })} onClick={openDataset}>
+                            <FolderOpen />{t("operation.openDataset")}
                         </Button>
                     )}
                     {active ? (
                         <Button variant="outline" size="sm" disabled={busy || job.cancelRequested} data-testid="operation-cancel" onClick={cancel}>
-                            {job.cancelRequested ? "Отменяем…" : "Отменить"}
+                            {job.cancelRequested ? t("operation.cancellingAction") : t("operation.cancel")}
                         </Button>
                     ) : (
                         <>
                             <Button variant="outline" size="sm" disabled={busy || repeatBlocked} data-testid="operation-repeat" aria-label={`${repeatLabel}: ${name}`} onClick={repeat}>
                                 <RotateCcw />{repeatLabel}
                             </Button>
-                            <Button variant="ghost" size="sm" disabled={busy} data-testid="operation-delete" aria-label={`Удалить из истории: ${name}`} onClick={remove}>
-                                <Trash2 />Удалить из истории
+                            <Button variant="ghost" size="sm" disabled={busy} data-testid="operation-delete" aria-label={t("operation.deleteLabel", { name })} onClick={remove}>
+                                <Trash2 />{t("operation.delete")}
                             </Button>
                         </>
                     )}
                 </div>
             </header>
             <p className="text-sm tabular-nums" data-testid="operation-progress-text">
-                {progress.label}: {count(progress.processed)}{progress.total !== null && ` из ${count(progress.total)}`}
+                {progress.total !== null
+                    ? t("operation.progressOf", { label: progress.label, processed: count(progress.processed), total: count(progress.total) })
+                    : t("operation.progress", { label: progress.label, processed: count(progress.processed) })}
                 {progress.percent !== null && active && ` · ${progress.percent}%`}
             </p>
             {(active || job.status === "succeeded") && (
-                <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={`Прогресс: ${operationTitles[kind]}`}
+                <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("operation.progressLabel", { title: operationTitles[kind] })}
                     aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent ?? undefined} data-testid="operation-progress">
                     <div className={progress.percent === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"}
                         style={progress.percent === null ? undefined : { width: `${progress.percent}%` }} />
                 </div>
             )}
             {kind === "export" && fileName && (
-                <p className="text-sm break-all" data-testid="operation-file">Файл: {fileName}{exported && exported.bytes > 0 && ` · ${megabytes(exported.bytes)}`}</p>
+                <p className="text-sm break-all" data-testid="operation-file">{t("operation.file", { name: fileName })}{exported && exported.bytes > 0 && ` · ${megabytes(exported.bytes)}`}</p>
             )}
-            {kind === "export" && active && <p role="status" className="text-xs text-muted-foreground">Изображения добавляются в ZIP. Файл будет готов после завершения экспорта.</p>}
+            {kind === "export" && active && <p role="status" className="text-xs text-muted-foreground">{t("operation.exportRunning")}</p>}
             {kind === "verify" && verify?.state && (
-                <p className={`text-sm ${verify.state === "corrupt" ? "text-destructive" : ""}`} data-testid="operation-integrity">Целостность: {integrityLabels[verify.state]}</p>
+                <p className={`text-sm ${verify.state === "corrupt" ? "text-destructive" : ""}`} data-testid="operation-integrity">{t("operation.integrity", { state: integrityLabels[verify.state] })}</p>
             )}
-            {job.startedAt && (
-                <p className="text-xs text-muted-foreground">
-                    Начало: {formatDate(job.startedAt)}{job.finishedAt && ` · Завершение: ${formatDate(job.finishedAt)}`}{elapsed && ` · Длительность: ${elapsed}`}
-                </p>
-            )}
+            {times.length > 0 && <p className="text-xs text-muted-foreground">{times.join(" · ")}</p>}
             {verify && verify.issueCount > 0 && (
                 <div className="space-y-2 rounded-md border p-3 text-sm" data-testid="operation-issues">
-                    <h4 className="font-medium">Обнаруженные проблемы ({count(verify.issueCount)})</h4>
-                    <ul className="max-h-40 space-y-1 overflow-auto" aria-label="Проблемы целостности">
+                    <h4 className="font-medium">{t("operation.issues", { number: count(verify.issueCount) })}</h4>
+                    <ul className="max-h-40 space-y-1 overflow-auto" aria-label={t("operation.issuesLabel")}>
                         {verify.issues.map((issue, index) => (
                             <li key={`${issue.role}:${issue.sampleId}:${index}`} className="break-words">
-                                {issueRoleLabels[issue.role]}{issue.sampleId && ` · кадр ${issue.sampleId}`}{issue.split && ` · ${splitLabel(issue.split)}`} · {errorText(issue.code)}
+                                {[issueRoleLabels[issue.role], ...(issue.sampleId ? [t("operation.issueFrame", { id: issue.sampleId })] : []),
+                                    ...(issue.split ? [splitLabel(issue.split)] : []), errorText(issue.code)].join(" · ")}
                             </li>
                         ))}
                     </ul>
-                    {verify.issueCount > verify.issues.length && <p className="text-xs text-muted-foreground">Показаны первые {count(verify.issues.length)}.</p>}
+                    {verify.issueCount > verify.issues.length && <p className="text-xs text-muted-foreground">{t("operation.issuesShown", { number: count(verify.issues.length) })}</p>}
                     <p className="text-xs text-muted-foreground">{datasetTexts.integrityHelp}</p>
                 </div>
             )}
             {endText && <p role="alert" className="text-sm break-words text-destructive" data-testid="operation-error">{endText}</p>}
             <details className="text-xs text-muted-foreground">
-                <summary className="cursor-pointer">{kind === "build" ? "Настройки и результат" : "Результат и детали"}</summary>
+                <summary className="cursor-pointer">{kind === "build" ? t("operation.buildDetails") : t("operation.details")}</summary>
                 <div className="mt-2 space-y-2">
                     {kind === "build" && operation.specification && (
                         <>
                             <p>
-                                Seed {operation.specification.seed} · групп {operation.specification.groupIds.length} · классов {operation.specification.classIds.length}
-                                · Validation {Math.round(operation.specification.valRatio * 100)}% · Test {Math.round(operation.specification.testRatio * 100)}%
+                                {t("operation.buildSpec", {
+                                    seed: operation.specification.seed, groups: operation.specification.groupIds.length, classes: operation.specification.classIds.length,
+                                    val: Math.round(operation.specification.valRatio * 100), test: Math.round(operation.specification.testRatio * 100),
+                                })}
                             </p>
-                            <p>Повтор переносит настройки в форму. Состав текущих исходников проверяется заново.</p>
+                            <p>{t("operation.repeatNote")}</p>
                         </>
                     )}
                     {build && (
                         <p>
-                            Train {count(build.counts.train)} · Validation {count(build.counts.val)} · Test {count(build.counts.test)} · ссылок на файлы проекта: {count(build.linked)}
-                            · копий: {count(build.copied)} · преобразовано в PNG: {count(build.converted)}
+                            {t("operation.buildResult", {
+                                train: count(build.counts.train), val: count(build.counts.val), test: count(build.counts.test),
+                                linked: count(build.linked), copied: count(build.copied), converted: count(build.converted),
+                            })}
                         </p>
                     )}
-                    {kind === "verify" && <p>Счётчик включает manifest.json, data.yaml и пару файлов (изображение и разметка) каждого кадра.</p>}
-                    {kind === "export" && <p>ZIP записывается в выбранное вами место. «Сохранить ещё раз» создаёт новый экспорт и позволяет выбрать новое место.</p>}
-                    {job.status === "succeeded" && kind === "verify" && <p>Проверка завершена. Состояние целостности версии обновлено.</p>}
-                    {job.status === "succeeded" && kind === "export" && <p>Экспорт завершён в выбранное место. Наличие внешнего ZIP-файла после завершения не проверяется.</p>}
-                    <p className="break-all">Версия: {operation.versionId}</p>
+                    {kind === "verify" && <p>{t("operation.verifyNote")}</p>}
+                    {kind === "export" && <p>{t("operation.exportNote")}</p>}
+                    {job.status === "succeeded" && kind === "verify" && <p>{t("operation.verifyDone")}</p>}
+                    {job.status === "succeeded" && kind === "export" && <p>{t("operation.exportDone")}</p>}
+                    <p className="break-all">{t("operation.version", { id: operation.versionId })}</p>
                 </div>
             </details>
         </article>
