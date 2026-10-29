@@ -64,8 +64,8 @@ internal static partial class SmokeRunner
             names.push(...(await request('jobs.list', {projectId, limit: 200})).data.map(item => item.label && !item.label.code ? item.label.text : null));
             return names.filter(Boolean).sort((left, right) => right.length - left.length);
           };
-          // Text a user reads in the scope (text nodes and the labels of controls) without user names. skip: selectors of elements the
-          // sections borrow from other sections (the device list of training, the crop frame of backgrounds, the epoch chart of training).
+          // Text a user reads in the scope (text nodes and the labels of controls) without user names. skip: selectors of elements whose
+          // text is not read as such.
           const sectionText = async (scope, skip) => {
             const names = await userNames();
             const outside = node => !skip || !(node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest(skip);
@@ -85,8 +85,8 @@ internal static partial class SmokeRunner
             const found = all.match(cyrillic);
             assert(!found, label + (found ? ': ' + all.slice(Math.max(0, found.index - 60), found.index + 60) : ''));
           };
-          // Hidden native selects mirror the options of the visible triggers (the device list of training among them).
-          const borrowed = 'select, [data-testid$="-device"], [data-testid="crop-position"], [aria-label="Положение рамки на кадре"], [data-chart], [data-row="device"]';
+          // Hidden native selects mirror the options of the visible triggers.
+          const borrowed = 'select';
           const toEnglish = async () => {
             if (document.documentElement.lang === 'en') return;
             const english = await request('settings.setLanguage', {language: 'en'});

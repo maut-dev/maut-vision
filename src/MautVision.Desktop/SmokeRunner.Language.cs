@@ -24,6 +24,7 @@ internal static partial class SmokeRunner
         RequireStoredLanguage(root, "en");
         checks.Add("English relabels the tray and is kept in host-settings.json");
         await CheckProductionSectionsInEnglishAsync(web, projectId, checks, token);
+        await RunLifecycleUiStepAsync(web, LanguageHelpers + AllSectionsEnglishScript, new { projectId }, checks, token);
         await RunLifecycleUiStepAsync(web, LanguageRussianScript, new { projectId }, checks, token);
         await WaitForTrayAsync(host, ("Открыть Maut Vision", "Выйти"), token);
         RequireStoredLanguage(root, "ru");
@@ -141,6 +142,81 @@ internal static partial class SmokeRunner
             return found.some(line => /^Model version \d+ created\.$/.test(line)) && found;
           }, 'English system line of the training log', () => $$('[data-testid="training-log-lines"] p').map(item => item.textContent).slice(-3).join(' | '));
           assert(!lines.some(line => cyrillic.test(line)), 'The training log has no Cyrillic in English: system lines are translated, console lines are raw');
+          await toEnglishLibrary();
+          return {checks};
+        """;
+
+    /// <summary>
+    /// Every section of a project once, in its first view, with no exclusions: the whole page has no Cyrillic outside the data the host
+    /// returns (names, descriptions, file names, job labels stored as text and the values of coded lines). Hidden native selects are
+    /// skipped: they mirror the options of the visible triggers.
+    /// </summary>
+    private const string AllSectionsEnglishScript = """
+          const {projectId} = input;
+          const userData = new Set();
+          const collect = (value, key = '') => {
+            if (typeof value === 'string') { if (/name|description|path/i.test(key) && cyrillic.test(value)) userData.add(value); return; }
+            if (Array.isArray(value)) { value.forEach(item => collect(item, key)); return; }
+            if (!value || typeof value !== 'object') return;
+            if ('code' in value && 'text' in value) {
+              // A coded line: the text is data only without a code; the values are data either way.
+              if (!value.code && value.text) userData.add(value.text);
+              for (const item of Object.values(value.args ?? {})) if (typeof item === 'string') userData.add(item);
+              return;
+            }
+            for (const [name, item] of Object.entries(value)) collect(item, name);
+          };
+          for (const [method, payload] of [
+            ['projects.list', {}], ['classes.getWorkspace', {projectId}], ['images.listGroups', {projectId}], ['backgrounds.listSets', {projectId}],
+            ['generation.listRecipes', {projectId}], ['generation.listRuns', {projectId}], ['datasets.list', {projectId}],
+            ['datasets.listOperations', {projectId, kind: 'build'}], ['datasets.listOperations', {projectId, kind: 'verify'}],
+            ['datasets.listOperations', {projectId, kind: 'export'}], ['training.listPresets', {}], ['training.listRuns', {projectId}],
+            ['training.listModelVersions', {projectId}], ['checks.list', {projectId}], ['checks.listEvaluations', {projectId, limit: 200}],
+            ['jobs.list', {projectId, limit: 200}],
+          ]) {
+            const reply = await request(method, payload);
+            if (reply.ok) collect(reply.data);
+          }
+          const names = [...userData].filter(item => item.length > 0).sort((left, right) => right.length - left.length);
+          const fileNames = /[^\s|·/:()«»“”"]+\.(png|jpe?g|webp|bmp|mp4|mkv|avi|mov|webm|m4v|pt|onnx|zip)/gi;
+          const pageText = () => {
+            const outside = node => !(node.nodeType === Node.TEXT_NODE ? node.parentElement : node).closest('select');
+            const parts = [];
+            const root = $('#root');
+            const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+            for (let node = walker.nextNode(); node; node = walker.nextNode()) if (outside(node)) parts.push(node.textContent);
+            for (const element of root.querySelectorAll('*')) {
+              if (!outside(element)) continue;
+              for (const name of ['aria-label', 'title', 'placeholder', 'alt']) if (element.getAttribute(name)) parts.push(element.getAttribute(name));
+            }
+            let all = parts.join(' | ');
+            for (const name of names) all = all.split(name).join('');
+            return all.replace(fileNames, '');
+          };
+
+          if (!$('[data-section]')) {
+            $('[data-testid="open-project"]', row(projectId)).click();
+            await wait(() => $('[data-section="overview"]')?.getAttribute('aria-current') === 'page', 'Project opened');
+          }
+          const sections = $$('aside nav [data-section]').filter(item => !item.disabled).map(item => item.dataset.section);
+          assert(sections.length >= 10, 'Every section is listed: ' + sections.join(', '));
+          const found = [];
+          for (const id of sections) {
+            $('[data-section="' + id + '"]').click();
+            // The section is settled when its markup stops growing: lists and lazy chunks have arrived.
+            let last = -1, stable = 0;
+            await wait(() => {
+              if ($('[data-section="' + id + '"]')?.getAttribute('aria-current') !== 'page') return false;
+              const size = $('main').querySelectorAll('*').length;
+              stable = size === last ? stable + 1 : 0;
+              last = size;
+              return stable >= 5;
+            }, 'Section settled: ' + id);
+            const all = pageText();
+            const match = all.match(cyrillic);
+            if (match) found.push(id + ': ' + all.slice(Math.max(0, match.index - 60), match.index + 60));
+          }
+          assert(!found.length, 'Every section in English has no Cyrillic outside user data' + (found.length ? ': ' + found.join(' || ') : ' (' + sections.join(', ') + ')'));
           await toEnglishLibrary();
           return {checks};
         """;
