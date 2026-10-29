@@ -28,6 +28,12 @@ Microsoft Edge WebView2 SDK (Microsoft.Web.WebView2 1.0.4258.31)
     WebView2 Runtime устанавливается отдельно (Evergreen) по условиям Microsoft:
     https://developer.microsoft.com/microsoft-edge/webview2/
 
+ASP.NET Core 10 (Kestrel, Microsoft.AspNetCore.App) и Microsoft.Extensions.AI.Abstractions — локальный сервер MCP
+    © .NET Foundation and Contributors. MIT License. https://github.com/dotnet/aspnetcore, https://github.com/dotnet/extensions
+
+Model Context Protocol C# SDK (ModelContextProtocol, ModelContextProtocol.Core, ModelContextProtocol.AspNetCore 2.3.0)
+    © Model Context Protocol a Series of LF Projects, LLC. Apache License 2.0. https://github.com/modelcontextprotocol/csharp-sdk
+
 SkiaSharp 4.153.1 и Skia
     SkiaSharp © Microsoft Corporation, MIT License. https://github.com/mono/SkiaSharp
     Skia © Google Inc., BSD 3-Clause License. https://skia.org/

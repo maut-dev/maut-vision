@@ -25,7 +25,8 @@ Work directory/
     projects/.import-<guid>/    unfinished import; removed after the library is shown
     projects/.deleted-<id>-<guid>/   a deleted project whose files were locked
     last-project.json           the last opened project
-    host-settings.json          host facts: the tray notification was shown, the interface language
+    host-settings.json          host facts: the tray notification was shown, the interface language, MCP settings (mcp.md)
+    mcp-uploads/                files sent by AI clients with upload_file; removed with their session and on server start and stop
     BaseModels/weights/<fileName>
     training/presets.json       training parameter presets shared by projects
     logs/                       application log

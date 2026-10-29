@@ -7,6 +7,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **MCP server**: a local Model Context Protocol server in the host for AI clients on this computer (Claude Code, Claude Desktop,
+  Cursor): Streamable HTTP on `127.0.0.1` (port 46100 by default) with the official C# SDK, a Bearer token and Host/Origin checks against
+  DNS rebinding. Off by default; turned on, restarted on a new port or token and turned off at runtime. ASP.NET Core and the SDK are not
+  loaded while it is off.
+- **MCP settings**: the dialog «Подключение ИИ (MCP)» / "AI assistants (MCP)" in the header: state, port, access level (read only, read
+  and change, full — the default), the token with copy and regeneration, ready configurations for Claude Code and Claude Desktop, an
+  optional allowed-folders restriction, launch on request, a privacy note and the log of the last 500 calls.
+- **MCP tools** (first set): `get_app_info`, `get_hardware`, `set_interface_language`, `list_jobs`, `get_job`, `wait_job`, `cancel_job`,
+  `preview_folder`, `upload_file`, `view`, `view_many`, `list_projects`, `get_project`, `create_project`, `update_project`,
+  `archive_project`, `open_project_in_app`, `delete_project`, and the resources `maut://projects` and `maut://projects/{id}`. Every tool
+  has input and output schemas and MCP annotations; errors carry a code and the English text of the UI catalog.
+- **MCP confirmations**: deleting a project asks the user in the window («Разрешить» / «Отклонить», two minutes).
+- **Core**: `IProjectsManager.PrepareAsync` prepares a project for background work without switching to it.
+
 ## [1.1.0] - 2026-10-29
 
 ### Added
