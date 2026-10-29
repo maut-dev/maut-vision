@@ -3,16 +3,17 @@ import { subscribeBackgroundsChanged, subscribeProjectChanged } from "@/api/even
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import "@/components/backgrounds/locale";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 
 const byCreation = (left: BackgroundSetResponseDto, right: BackgroundSetResponseDto) =>
     left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id);
 
 /**
- * Наборы фонов открытого проекта: backgrounds.listSets при открытии, затем backgrounds.changed — перечитываются только
- * названные событием наборы (новая ревизия, удаление, изменение состава и счётчиков). project.changed перечитывает
- * список: признак matchesProjectInput зависит от входа проекта. Ответ, начатый раньше следующего чтения того же набора,
- * отбрасывается.
+ * Background sets of the open project: backgrounds.listSets on opening, then backgrounds.changed rereads only the sets named by the
+ * event (a new revision, deletion, a change of contents and counters). project.changed rereads the list: matchesProjectInput depends
+ * on the project input. An answer started before the next read of the same set is dropped.
  */
 export function useBackgroundSets(projectId: string) {
     const [sets, setSets] = useState<readonly BackgroundSetResponseDto[]>([]);
@@ -27,7 +28,7 @@ export function useBackgroundSets(projectId: string) {
         setSets(current => current.filter(item => item.id !== setId));
     }, []);
 
-    /** Ответ операции или чтения; более старая ревизия не заменяет новую (счётчики меняются без ревизии набора). */
+    /** The answer of an operation or a read; an older revision does not replace a newer one (counters change without a set revision). */
     const apply = useCallback((set: BackgroundSetResponseDto) => {
         setSets(current => {
             const known = current.find(item => item.id === set.id);
@@ -57,7 +58,7 @@ export function useBackgroundSets(projectId: string) {
             setSets([...list].sort(byCreation));
             setError(undefined);
         } catch (cause) {
-            if (mounted.current && read === listing.current) setError(errorMessage(cause, "Не удалось загрузить наборы фонов. Повторите загрузку."));
+            if (mounted.current && read === listing.current) setError(errorMessage(cause, i18n.t("backgrounds:errors.loadSets")));
         } finally {
             if (mounted.current && read === listing.current) setLoading(false);
         }

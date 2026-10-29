@@ -7,6 +7,7 @@ import type trainingLog from "@/locales/ru/trainingLog.json";
 import type worker from "@/locales/ru/worker.json";
 import type images from "@/locales/ru/images.json";
 import type catalog from "@/locales/ru/catalog.json";
+import type backgrounds from "@/locales/ru/backgrounds.json";
 
 // Keys are typed by the Russian catalogs: a missing key fails the typecheck; scripts/check-locales.ts keeps English in step.
 declare module "i18next" {
@@ -21,6 +22,7 @@ declare module "i18next" {
             worker: typeof worker;
             images: typeof images;
             catalog: typeof catalog;
+            backgrounds: typeof backgrounds;
         };
         returnNull: false;
     }

@@ -4,15 +4,17 @@ import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { BackgroundRemovedFilter } from "@/api/projects/backgrounds/request-dto/list-backgrounds-request-dto";
 import type { BackgroundResponseDto } from "@/api/projects/backgrounds/response-dto/background-response-dto";
 import { BridgeError } from "@/api/transport/errors";
+import "@/components/backgrounds/locale";
+import { i18n } from "@/i18n";
 import { errorMessage } from "./format";
 
 export const backgroundPageSize = 100;
-/** Предел страницы API: хвост перечитывается одной страницей. */
+/** The page limit of the API: the tail is reread with one page. */
 const tailLimit = 200;
 
 interface GalleryState {
     items: readonly BackgroundResponseDto[];
-    /** Курсор следующей страницы; null — загружено до конца. */
+    /** The cursor of the next page; null when everything is loaded. */
     nextCursor: string | null;
     loading: boolean;
     error?: string;
@@ -25,7 +27,7 @@ export function matchesRemovedFilter(item: BackgroundResponseDto, setId: string,
     return filter === "all" || (filter === "removed") === !!item.removedAt;
 }
 
-/** Добавляет или заменяет фоны в порядке ответа; новые встают в конец. */
+/** Adds or replaces backgrounds in the order of the answer; new ones go to the end. */
 function merge(items: readonly BackgroundResponseDto[], incoming: readonly BackgroundResponseDto[]) {
     const index = new Map(items.map((item, position) => [item.id, position]));
     const next = [...items];
@@ -40,16 +42,16 @@ function merge(items: readonly BackgroundResponseDto[], incoming: readonly Backg
 }
 
 /**
- * Галерея набора: страницы по курсору в порядке добавления, загруженное хранится целиком, рисует виртуальная сетка.
- * Без опроса: backgrounds.changed с itemsChangedIn этого набора перечитывает только хвост (новые фоны встают в конец),
- * фоны явных операций из события перечитываются поштучно, удалённые убираются. Смена набора или фильтра начинает новое
- * поколение: ответы прежнего отбрасываются.
+ * The gallery of a set: pages by cursor in the order of adding; everything loaded is kept and the virtual grid draws it.
+ * No polling: backgrounds.changed with itemsChangedIn of this set rereads only the tail (new backgrounds go to the end), backgrounds of
+ * explicit operations in the event are reread one by one, deleted ones are removed. A change of the set or the filter starts a new
+ * generation: answers of the old one are dropped.
  */
 export function useBackgroundGallery(projectId: string, setId: string | undefined, filter: BackgroundRemovedFilter) {
     const [state, setState] = useState<GalleryState>(emptyState);
     const generation = useRef(0);
     const mounted = useRef(true);
-    /** Курсор, с которого загружена последняя страница (undefined — с начала). */
+    /** The cursor the last page was loaded from (undefined: from the start). */
     const tailAfter = useRef<string | undefined>(undefined);
     const loadingMore = useRef<Promise<BackgroundResponseDto[]> | null>(null);
     const rereadingTail = useRef<Promise<void> | null>(null);
@@ -61,7 +63,7 @@ export function useBackgroundGallery(projectId: string, setId: string | undefine
 
     const fail = useCallback((current: number, cause: unknown) => {
         if (mounted.current && current === generation.current) {
-            setState(value => ({ ...value, loading: false, error: errorMessage(cause, "Не удалось загрузить фоны. Повторите загрузку.") }));
+            setState(value => ({ ...value, loading: false, error: errorMessage(cause, i18n.t("backgrounds:errors.loadBackgrounds")) }));
         }
     }, []);
 
@@ -88,7 +90,7 @@ export function useBackgroundGallery(projectId: string, setId: string | undefine
         }
     }, [setId, readPage, fail]);
 
-    /** Следующая страница; повторный вызов во время загрузки ждёт ту же страницу. */
+    /** The next page; a repeated call during loading waits for the same page. */
     const loadMore = useCallback((): Promise<BackgroundResponseDto[]> => {
         const after = latest.current.nextCursor;
         if (!after) return Promise.resolve([]);
@@ -103,8 +105,8 @@ export function useBackgroundGallery(projectId: string, setId: string | undefine
     }, [readPage, fail]);
 
     /**
-     * Новые фоны набора встают в конец: перечитывается хвост, если список уже загружен до конца. Подготовка сообщает
-     * о наборе часто, поэтому чтения не накладываются: событие во время чтения повторяет его один раз.
+     * New backgrounds of the set go to the end: the tail is reread when the list is loaded to the end. Preparation reports on the set
+     * often, so reads do not overlap: an event during a read repeats it once.
      */
     const rereadTail = useCallback(() => {
         if (rereadingTail.current) {
@@ -129,7 +131,7 @@ export function useBackgroundGallery(projectId: string, setId: string | undefine
         rereadingTail.current = work;
     }, [readPage, fail]);
 
-    /** Перечитывает фоны поштучно: удалённые или ушедшие из фильтра убираются. */
+    /** Rereads backgrounds one by one: deleted ones or ones out of the filter are removed. */
     const rereadItems = useCallback(async (ids: readonly string[]) => {
         if (!setId || !ids.length) return;
         const current = generation.current;
@@ -173,7 +175,7 @@ export function useBackgroundGallery(projectId: string, setId: string | undefine
         });
     }, [projectId, setId, rereadItems, rereadTail]);
 
-    /** Ответ операции: фон заменяется, или убирается, если больше не подходит под фильтр. */
+    /** The answer of an operation: the background is replaced, or removed when it no longer matches the filter. */
     const applyItems = useCallback((items: readonly BackgroundResponseDto[]) => {
         if (!setId) return;
         const keep = items.filter(item => matchesRemovedFilter(item, setId, filter));
@@ -189,7 +191,7 @@ export function useBackgroundGallery(projectId: string, setId: string | undefine
         setState(value => ({ ...value, items: value.items.filter(item => !gone.has(item.id)) }));
     }, []);
 
-    /** Истёкшие URL миниатюр: фоны, сообщившие об ошибке почти одновременно, перечитываются одной пачкой. */
+    /** Expired thumbnail URLs: backgrounds that reported an error almost at once are reread in one batch. */
     const renew = useCallback((itemId: string) => {
         renewQueue.current.add(itemId);
         window.clearTimeout(renewTimer.current);

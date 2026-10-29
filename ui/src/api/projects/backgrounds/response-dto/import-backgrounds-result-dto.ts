@@ -4,14 +4,14 @@ import { isCount } from "../../catalog/catalog-guards";
 import { isInputSizeDto, type InputSizeDto } from "../../input-size-dto";
 import { isBackgroundBlurResponseDto, type BackgroundBlurResponseDto } from "./background-import-preview-response-dto";
 
-/** Вид задачи подготовки фонов. */
+/** The job kind of background preparation. */
 export const importBackgroundsJobKind = "backgrounds.import";
 
 /**
- * Причина пропуска («Причины пропуска»): sourceIndex — место источника в запуске (у видео — номер кадра), name — имя файла или
- * видео, reason — код, message — текст («Размер a×b, нужен W×H», «Рамка W×H не помещается в кадр a×b», «Не удалось прочитать
- * изображение», «Почти не отличается от уже взятого кадра», «Такой кадр уже есть в наборе»), width/height — размер файла или
- * кадра, timestampMs — кадр видео.
+ * A skip reason ("Skip reasons"): sourceIndex is the place of the source in the run (for a video the frame number), name the name of the file or
+ * the video, reason a code, message a text ("Size a×b, W×H needed", "The W×H frame does not fit into a×b", "Could not read
+ * the image", "Almost the same as a shot already taken", "This frame is already in the set"), width/height the size of the file or
+ * the frame, timestampMs the video frame.
  */
 export interface BackgroundImportIssueDto {
     sourceIndex: number;
@@ -23,10 +23,10 @@ export interface BackgroundImportIssueDto {
 }
 
 /**
- * Итог подготовки в job.result (есть и у отменённой, прерванной или неудачной задачи): total — источников (файлов или кадров),
- * processed — рассмотрено («обработано / всего»), added, duplicates (точные повторы), similar (почти одинаковые), rejected;
- * requestedCount — цель запуска («из N»); targetSize — размер набора; blur — с выбранным seed или null; issues — первые 100.
- * Прогресс по ходу — job.progress, job.processed и job.total.
+ * The preparation result in job.result (a cancelled, interrupted or failed job has it too): total counts sources (files or frames),
+ * processed the considered ones ("processed / total"), added, duplicates (exact repeats), similar (almost identical), rejected;
+ * requestedCount is the target of the run ("of N"); targetSize the set size; blur with the chosen seed or null; issues the first 100.
+ * Progress along the way is job.progress, job.processed and job.total.
  */
 export interface ImportBackgroundsResultDto {
     total: number;
@@ -54,7 +54,7 @@ export function isImportBackgroundsResultDto(value: unknown): value is ImportBac
         && (value.blur === null || isBackgroundBlurResponseDto(value.blur)) && Array.isArray(value.issues) && value.issues.every(isIssue);
 }
 
-/** Итог подготовки из снимка задачи; null — задача другого вида или итога ещё нет. */
+/** The preparation result from a job snapshot; null for a job of another kind or without a result yet. */
 export function parseImportBackgroundsResult(job: JobResponseDto): ImportBackgroundsResultDto | null {
     return job.kind === importBackgroundsJobKind && isImportBackgroundsResultDto(job.result) ? job.result : null;
 }

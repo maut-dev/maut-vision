@@ -4,7 +4,7 @@ import { isCount } from "../../catalog/catalog-guards";
 import { isInputSizeDto, type InputSizeDto } from "../../input-size-dto";
 import { isBackgroundCropAreaDto, type BackgroundCropAreaDto } from "./background-response-dto";
 
-/** Размытие запуска с выбранным seed: «размытие a–b px, seed S». */
+/** The blur of a run with the chosen seed: "blur a–b px, seed S". */
 export interface BackgroundBlurResponseDto {
     minRadius: number;
     maxRadius: number;
@@ -12,10 +12,10 @@ export interface BackgroundBlurResponseDto {
 }
 
 /**
- * Пример будущего фона. sourceIndex — index файла выбора (у видео — номер кадра от начала), timestampMs — отметка кадра видео.
- * Пропуск: reason — код (backgrounds.wrong_size, backgrounds.crop_out_of_bounds, backgrounds.image_unreadable,
+ * A sample of a future background. sourceIndex is the index of a file of the selection (for a video the frame number from the start), timestampMs the mark of a video frame.
+ * A skip: reason is a code (backgrounds.wrong_size, backgrounds.crop_out_of_bounds, backgrounds.image_unreadable,
  * backgrounds.similar, backgrounds.duplicate, video.frame_unavailable; the text is backgroundReasonText,
- * imageUrl — null. Иначе imageUrl — PNG будущего фона ровно размера набора (временный URL).
+ * imageUrl is null. Otherwise imageUrl is a PNG of the future background of exactly the set size (a temporary URL).
  */
 export interface BackgroundSampleResponseDto {
     sourceIndex: number;
@@ -29,7 +29,7 @@ export interface BackgroundSampleResponseDto {
     imageUrl: ResourceUrl | null;
 }
 
-/** «Примеры будущих фонов W × H · размытие a–b px, seed S» (blur null — «без размытия») и до 6 примеров. */
+/** "Samples of future backgrounds W × H · blur a–b px, seed S" (blur null: "no blur") and up to 6 samples. */
 export interface BackgroundImportPreviewResponseDto {
     targetSize: InputSizeDto;
     blur: BackgroundBlurResponseDto | null;

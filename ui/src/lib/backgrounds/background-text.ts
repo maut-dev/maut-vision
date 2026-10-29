@@ -1,47 +1,55 @@
-import { backgroundsWord } from "@/api/projects/backgrounds/background-import-rules";
 import type { BackgroundOriginKind, BackgroundResponseDto } from "@/api/projects/backgrounds/response-dto/background-response-dto";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
+import "@/components/backgrounds/locale";
+import { i18n } from "@/i18n";
+import { formatNumber } from "@/lib/format";
 import { formatRadius } from "./blur-form";
-import { locale } from "@/lib/format";
 
-export const originLabels: Record<BackgroundOriginKind, string> = {
-    "uploaded": "Готовое изображение",
-    "image-crop": "Фрагмент изображения",
-    "video-frame": "Кадр видео",
+// Lines of the backgrounds section built from values. They are called during render, so a language change renders them again.
+
+/** Labels of the origins in the current language. */
+export const originLabels: Readonly<Record<BackgroundOriginKind, string>> = {
+    get "uploaded"() { return i18n.t("backgrounds:origin.uploaded"); },
+    get "image-crop"() { return i18n.t("backgrounds:origin.image-crop"); },
+    get "video-frame"() { return i18n.t("backgrounds:origin.video-frame"); },
 };
 
-const number = (value: number) => value.toLocaleString(locale());
-
-/** «N фонов · W × H[ · В архиве]». */
+/** "N backgrounds · W × H[ · Archived]". */
 export function setSummary(set: BackgroundSetResponseDto): string {
-    return `${number(set.itemCount)} ${backgroundsWord(set.itemCount)} · ${set.targetSize.width} × ${set.targetSize.height}${set.archivedAt ? " · В архиве" : ""}`;
+    const summary = i18n.t("backgrounds:summary.set", { count: set.itemCount, width: set.targetSize.width, height: set.targetSize.height });
+    return set.archivedAt ? `${summary} · ${i18n.t("backgrounds:summary.archived")}` : summary;
 }
 
-/** «Размер набора W × H отличается от входа проекта». */
+/** "The set size W × H differs from the project input". */
 export function sizeMismatchText(set: BackgroundSetResponseDto): string {
-    return `Размер набора ${set.targetSize.width} × ${set.targetSize.height} отличается от входа проекта`;
+    return i18n.t("backgrounds:summary.sizeMismatch", { width: set.targetSize.width, height: set.targetSize.height });
 }
 
-/** Подпись карточки: «W × H · вырезан из x L, y T · размытие r px». */
+/** The card caption: "W × H · cropped at x L, y T · blur r px". */
 export function backgroundMeta(item: BackgroundResponseDto): string {
-    const crop = item.origin.crop ? ` · вырезан из x ${item.origin.crop.left}, y ${item.origin.crop.top}` : "";
-    const blur = item.origin.blurRadius !== null ? ` · размытие ${formatRadius(item.origin.blurRadius)} px` : "";
-    return `${item.width} × ${item.height}${crop}${blur}`;
+    const parts = [`${item.width} × ${item.height}`];
+    if (item.origin.crop) parts.push(i18n.t("backgrounds:meta.cropped", { left: item.origin.crop.left, top: item.origin.crop.top }));
+    if (item.origin.blurRadius !== null) parts.push(i18n.t("backgrounds:meta.blur", { radius: formatRadius(item.origin.blurRadius) }));
+    return parts.join(" · ");
 }
 
-/** Строки сведений просмотрщика. */
+/** Detail lines of the viewer. */
 export function backgroundDetails(item: BackgroundResponseDto): string[] {
     const { origin } = item;
-    const lines = [`Источник: ${originLabels[origin.kind]} · ${(item.byteSize / 1024).toLocaleString(locale(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} КБ`];
+    const kilobytes = formatNumber(item.byteSize / 1024, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const lines = [i18n.t("backgrounds:details.source", { origin: originLabels[origin.kind], kilobytes })];
     if (origin.kind === "video-frame" && origin.timestampMs !== null) {
-        lines.push(`${origin.videoName ?? origin.sourceName} · ${(origin.timestampMs / 1000).toFixed(3)} с${origin.frameIndex !== null ? ` · кадр ${origin.frameIndex}` : ""}`);
+        const values = { name: origin.videoName ?? origin.sourceName, seconds: (origin.timestampMs / 1000).toFixed(3) };
+        lines.push(origin.frameIndex !== null
+            ? i18n.t("backgrounds:details.videoFrame", { ...values, frame: origin.frameIndex })
+            : i18n.t("backgrounds:details.video", values));
     }
-    if (origin.crop) lines.push(`Область: x ${origin.crop.left}, y ${origin.crop.top} · ${origin.crop.width} × ${origin.crop.height} px`);
-    if (origin.blurRadius !== null) lines.push(`Размытие: ${formatRadius(origin.blurRadius)} px`);
+    if (origin.crop) lines.push(i18n.t("backgrounds:details.region", { ...origin.crop }));
+    if (origin.blurRadius !== null) lines.push(i18n.t("backgrounds:details.blur", { radius: formatRadius(origin.blurRadius) }));
     return lines;
 }
 
-/** «размытие a–b px, seed S». */
+/** "blur a–b px, seed S". */
 export function blurSummary(blur: { minRadius: number; maxRadius: number; seed: number }): string {
-    return `размытие ${formatRadius(blur.minRadius)}–${formatRadius(blur.maxRadius)} px, seed ${blur.seed}`;
+    return i18n.t("backgrounds:blur.summary", { min: formatRadius(blur.minRadius), max: formatRadius(blur.maxRadius), seed: blur.seed });
 }

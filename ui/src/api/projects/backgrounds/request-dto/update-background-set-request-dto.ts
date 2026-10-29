@@ -3,6 +3,6 @@ export interface UpdateBackgroundSetRequestDto {
     setId: string;
     name: string;
     description: string;
-    /** Ревизия набора, которую видел пользователь. */
+    /** The set revision the user saw. */
     revision: number;
 }

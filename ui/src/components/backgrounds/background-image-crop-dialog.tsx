@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { backgroundsWord, maxCropSources } from "@/api/projects/backgrounds/background-import-rules";
+import { useTranslation } from "react-i18next";
+import { maxCropSources } from "@/api/projects/backgrounds/background-import-rules";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { ImportBackgroundsRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
 import type { BackgroundImportPreviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-import-preview-response-dto";
@@ -11,20 +12,22 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { automaticDecision, cropPlan, previousRegion, type CropDecision } from "@/lib/backgrounds/crop-plan";
 import { defaultRegion, type FramePosition, type LastRegion } from "@/lib/backgrounds/crop-frame";
+import { i18n } from "@/i18n";
 import { errorMessage } from "@/lib/format";
 import type { BackgroundBlurState } from "@/lib/use-background-blur";
 import { BackgroundBlurSettings } from "./background-blur-settings";
 import { BackgroundCropFrame } from "./background-crop-frame";
 import { BackgroundImportSamples } from "./background-import-samples";
+import "./locale";
 
-/** Превью кадра — временный URL на 10 минут; повторный показ файла берёт его, пока до конца срока далеко. */
+/** A frame preview is a temporary URL for 10 minutes; showing the file again reuses it while the expiry is far. */
 const previewReuseMs = 5 * 60_000;
 
 /**
- * «Нарезка фонов из изображений»: файлы по одному. Ровно нужного размера берутся целиком, меньшие пропускаются,
- * нечитаемые показываются — по заголовкам выбора, без загрузки кадра. На больших пользователь ставит рамку размера
- * набора: «Взять область», «Пропустить файл», «Назад». Затем проверка со счётчиками, размытием и примерами (те же
- * operationId и пиксели, что у запуска) и «Импортировать N фонов».
+ * "Cutting backgrounds from images": files one by one. Files of exactly the needed size are taken whole, smaller ones are skipped,
+ * unreadable ones are listed, all by the headers of the selection without loading the image. On larger ones the user places a frame of
+ * the set size: "Take region", "Skip file", "Back". Then a review with counters, blur and samples (the same operationId and pixels as
+ * the run) and "Import N backgrounds".
  */
 export function BackgroundImageCropDialog({ projectId, set, selection, blur, start, close }: {
     projectId: string;
@@ -34,6 +37,7 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
     start: (request: ImportBackgroundsRequestDto) => Promise<void>;
     close: () => void;
 }) {
+    const { t } = useTranslation("backgrounds");
     const frame = set.targetSize;
     const files = selection.files;
     const [operationId] = useState(() => crypto.randomUUID());
@@ -51,7 +55,7 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
     const cache = useRef(new Map<number, { preview: BackgroundSourcePreviewResponseDto; at: number }>());
     const last = useRef<LastRegion | undefined>(undefined);
     const alive = useRef(true);
-    // Номер прохода advance: устаревший проход (двойной эффект, «Назад» во время загрузки) молча выходит.
+    // The pass number of advance: a stale pass (a double effect, "Back" during loading) quietly stops.
     const pass = useRef(0);
     const returnFocus = useReturnFocus();
 
@@ -63,7 +67,7 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
         return loaded;
     }
 
-    /** Идёт вперёд, сам решая за файлы точного размера, меньшие и нечитаемые, до первого файла, где нужна рамка. */
+    /** Goes forward, deciding itself for files of the exact size, smaller and unreadable ones, up to the first file that needs a frame. */
     async function advance(from: number, known: ReadonlyMap<number, CropDecision>) {
         const token = ++pass.current;
         const current = () => alive.current && token === pass.current;
@@ -85,7 +89,7 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
                 loaded = await load(file.index);
             } catch (cause) {
                 if (!current()) return;
-                decided.set(file.index, { kind: "invalid", message: errorMessage(cause, "Не удалось прочитать изображение") });
+                decided.set(file.index, { kind: "invalid", message: errorMessage(cause, i18n.t("backgrounds:crop.unreadable")) });
                 setDecisions(new Map(decided));
                 continue;
             }
@@ -141,7 +145,7 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
     }), [projectId, set.id, selection.selectionToken, operationId, plan, blur.value]);
     const requestKey = JSON.stringify(request);
 
-    // Примеры пересчитываются при смене решений и размытия: пользователь видит ровно то, что будет импортировано.
+    // Samples are recomputed when decisions or the blur change: the user sees exactly what will be imported.
     useEffect(() => {
         if (stage !== "review" || !included.length || tooMany || !blur.valid) return;
         const controller = new AbortController();
@@ -188,18 +192,18 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
                 onCloseAutoFocus={returnFocus}
             >
                 <DialogHeader>
-                    <DialogTitle>Нарезка фонов из изображений</DialogTitle>
+                    <DialogTitle>{t("crop.title")}</DialogTitle>
                     <DialogDescription>
                         {stage === "pick"
-                            ? `Файл ${position + 1} из ${files.length}. Перетащите рамку ${frame.width} × ${frame.height} px на нужный участок: размер рамки равен входу модели и не меняется. Стрелки двигают рамку на 1 px, с Shift — на 10 px.`
-                            : "Проверьте примеры и запустите импорт. Нарезанные фоны появятся в наборе по мере обработки."}
+                            ? t("crop.pickHint", { position: position + 1, total: files.length, width: frame.width, height: frame.height })
+                            : t("crop.reviewHint")}
                     </DialogDescription>
                 </DialogHeader>
                 {stage === "pick" ? (
                     <div className="space-y-3">
                         <p className="min-h-5 truncate text-sm" data-testid="crop-file">{files[position]?.name}</p>
                         {loading || !source ? (
-                            <div role="status" className="flex h-72 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">Загрузка кадра…</div>
+                            <div role="status" className="flex h-72 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">{t("crop.loading")}</div>
                         ) : (
                             <BackgroundCropFrame source={source} frame={frame} value={region} onChange={setRegion} autoFocus />
                         )}
@@ -207,41 +211,41 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
                 ) : (
                     <div className="space-y-4" data-testid="crop-review">
                         <ul className="space-y-1 text-sm">
-                            <li data-testid="crop-count-crop">Нарезать по рамке: {plan.counts.crop}</li>
-                            <li data-testid="crop-count-whole">Взять целиком (ровно {frame.width} × {frame.height}): {plan.counts.whole}</li>
-                            <li className="text-muted-foreground" data-testid="crop-count-skip">Пропущено вами: {plan.counts.skip}</li>
+                            <li data-testid="crop-count-crop">{t("crop.countCrop", { number: plan.counts.crop })}</li>
+                            <li data-testid="crop-count-whole">{t("crop.countWhole", { width: frame.width, height: frame.height, number: plan.counts.whole })}</li>
+                            <li className="text-muted-foreground" data-testid="crop-count-skip">{t("crop.countSkip", { number: plan.counts.skip })}</li>
                         </ul>
                         {small.length > 0 && (
                             <details className="rounded-md border px-3 py-2 text-xs text-muted-foreground" data-testid="crop-small">
-                                <summary className="cursor-pointer select-none">Меньше входа модели, пропущено: {small.length}</summary>
+                                <summary className="cursor-pointer select-none">{t("crop.small", { number: small.length })}</summary>
                                 {small.map(([index, decision]) => decision.kind === "small" && (
                                     <p key={index} className="mt-1 break-words">
-                                        {name(index)} · размер {decision.width}×{decision.height}, нужен не меньше {frame.width}×{frame.height}
+                                        {t("crop.smallFile", { name: name(index), width: decision.width, height: decision.height, targetWidth: frame.width, targetHeight: frame.height })}
                                     </p>
                                 ))}
                             </details>
                         )}
                         {invalid.length > 0 && (
                             <details className="rounded-md border px-3 py-2 text-xs text-destructive" data-testid="crop-invalid">
-                                <summary className="cursor-pointer select-none">Не прочитано: {invalid.length}</summary>
+                                <summary className="cursor-pointer select-none">{t("crop.invalid", { number: invalid.length })}</summary>
                                 {invalid.map(([index, decision]) => decision.kind === "invalid" && (
-                                    <p key={index} className="mt-1 break-words">{name(index)} · {decision.message}</p>
+                                    <p key={index} className="mt-1 break-words">{name(index)} · {decision.message ?? t("crop.unreadable")}</p>
                                 ))}
                             </details>
                         )}
                         <BackgroundBlurSettings blur={blur} disabled={busy} />
                         {tooMany ? (
                             <p role="alert" className="text-sm text-destructive">
-                                За один запуск можно нарезать до {maxCropSources} файлов. Пропустите часть файлов или запустите нарезку несколько раз.
+                                {t("crop.tooMany", { count: maxCropSources })}
                             </p>
                         ) : included.length ? (
                             <div aria-busy={samplesState.busy}>
                                 {samplesState.error && <Alert variant="destructive"><AlertDescription>{samplesState.error}</AlertDescription></Alert>}
-                                {samplesState.busy && !preview && <p role="status" className="text-xs text-muted-foreground">Готовим примеры…</p>}
+                                {samplesState.busy && !preview && <p role="status" className="text-xs text-muted-foreground">{t("crop.preparingSamples")}</p>}
                                 <BackgroundImportSamples preview={preview} />
                             </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground">Нечего импортировать: ни один файл не выбран.</p>
+                            <p className="text-sm text-muted-foreground">{t("crop.nothing")}</p>
                         )}
                     </div>
                 )}
@@ -251,15 +255,15 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
                 <DialogFooter>
                     {stage === "pick" ? (
                         <>
-                            <Button variant="ghost" disabled={loading || !history.length} onClick={back}>Назад</Button>
-                            <Button variant="outline" disabled={loading} data-testid="crop-skip" onClick={() => decide({ kind: "skip" })}>Пропустить файл</Button>
-                            <Button disabled={loading || !source} data-testid="crop-take" onClick={() => decide({ kind: "crop", ...region })}>Взять область</Button>
+                            <Button variant="ghost" disabled={loading || !history.length} onClick={back}>{t("crop.back")}</Button>
+                            <Button variant="outline" disabled={loading} data-testid="crop-skip" onClick={() => decide({ kind: "skip" })}>{t("crop.skip")}</Button>
+                            <Button disabled={loading || !source} data-testid="crop-take" onClick={() => decide({ kind: "crop", ...region })}>{t("crop.take")}</Button>
                         </>
                     ) : (
                         <>
-                            <Button variant="ghost" disabled={busy || !history.length} onClick={back}>Назад</Button>
+                            <Button variant="ghost" disabled={busy || !history.length} onClick={back}>{t("crop.back")}</Button>
                             <Button disabled={busy || !included.length || tooMany || !blur.valid} data-testid="crop-import" onClick={() => void importAll()}>
-                                Импортировать {included.length} {backgroundsWord(included.length)}
+                                {t("import", { count: included.length })}
                             </Button>
                         </>
                     )}

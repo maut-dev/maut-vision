@@ -1,6 +1,6 @@
 export interface DeleteBackgroundSetRequestDto {
     projectId: string;
     setId: string;
-    /** revision из reviewSetDeletion. */
+    /** The revision from reviewSetDeletion. */
     reviewRevision: string;
 }

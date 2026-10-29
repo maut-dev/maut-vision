@@ -1,17 +1,17 @@
-/** Рамка файла выбора: sourceIndex — index из selectFiles, left/top — левый верхний угол в пикселях файла. */
+/** A frame on a file of the selection: sourceIndex is an index from selectFiles, left/top the top left corner in pixels of the file. */
 export interface BackgroundCropRequestDto {
     sourceIndex: number;
     left: number;
     top: number;
 }
 
-/** Одна рамка на всё видео: левый верхний угол в пикселях кадра. */
+/** One frame for the whole video: the top left corner in pixels of the frame. */
 export interface BackgroundRegionRequestDto {
     left: number;
     top: number;
 }
 
-/** «Размывать фоны»: радиус от/до 0–1000 px; seed 0–4 294 967 295 или null («Из операции»). */
+/** "Blur backgrounds": the radius from/to 0–1000 px; seed 0–4 294 967 295 or null ("From the operation"). */
 export interface BackgroundBlurRequestDto {
     minRadius: number;
     maxRadius: number;
@@ -19,30 +19,30 @@ export interface BackgroundBlurRequestDto {
 }
 
 /**
- * Запуск подготовки (backgrounds.import) и его примеры (backgrounds.previewImport) — одна форма: примеры с тем же operationId
- * совпадают с будущими фонами. import привязывает selectionToken к operationId (выбор действует на один запуск), previewImport — нет.
+ * A preparation run (backgrounds.import) and its samples (backgrounds.previewImport) share one form: samples with the same operationId
+ * match the future backgrounds. import binds selectionToken to operationId (a choice serves one run), previewImport does not.
  *
- * «Готовые кадры»: без sourceIndices и crops — все файлы выбора, нужного размера берутся как есть, остальные пропускаются.
- * «Нарезать из изображений»: sourceIndices — включённые файлы по порядку (до 500), crops — рамки для файлов больше набора;
- * файл без рамки должен быть ровно размера набора.
- * «Нарезать из видео»: region, startMs, intervalMs и count («Сколько фонов нарезать», 1…availableVideoFrames) обязательны.
+ * "Ready frames": without sourceIndices and crops, all files of the selection; those of the right size are taken as they are, the rest are skipped.
+ * "Cut from images": sourceIndices are the included files in order (up to 500), crops are frames for files larger than the set;
+ * a file without a frame must be exactly the set size.
+ * "Cut from video": region, startMs, intervalMs and count ("Backgrounds to cut", 1…availableVideoFrames) are required.
  */
 export interface ImportBackgroundsRequestDto {
     projectId: string;
     setId: string;
     selectionToken: string;
-    /** Создаётся UI на один запуск; повтор import с тем же значением вернёт ту же задачу. */
+    /** Created by the UI for one run; a repeat of import with the same value returns the same job. */
     operationId: string;
     sourceIndices?: number[];
     crops?: BackgroundCropRequestDto[];
     region?: BackgroundRegionRequestDto;
-    /** Видео: «Начать с», мс. */
+    /** Video: "Start at", ms. */
     startMs?: number;
-    /** Видео: «Брать кадр раз в», мс (≥ 1). */
+    /** Video: "Take a shot every", ms (≥ 1). */
     intervalMs?: number;
-    /** Видео — сколько фонов нарезать; файлы — необязательный предел добавленных. */
+    /** Video: how many backgrounds to cut; files: an optional limit of added ones. */
     count?: number;
-    /** «Пропускать повторяющиеся кадры»: почти одинаковые (≤ 3/255) с набором и уже взятыми кадрами. По умолчанию false. */
+    /** "Skip repeated shots": almost identical (≤ 3/255) to the set and to shots already taken. False by default. */
     skipSimilar?: boolean;
     blur?: BackgroundBlurRequestDto | null;
 }

@@ -2,7 +2,7 @@ import { centeredRegion } from "@/api/projects/backgrounds/background-import-rul
 import type { BackgroundRegionRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
 
-/** Левый верхний угол рамки в пикселях исходного кадра. */
+/** The top left corner of the frame in pixels of the source image. */
 export type FramePosition = BackgroundRegionRequestDto;
 
 interface Size {
@@ -10,12 +10,12 @@ interface Size {
     height: number;
 }
 
-/** Последняя взятая область: позиция по умолчанию для следующего файла того же размера. */
+/** The last taken region: the default position for the next file of the same size. */
 export interface LastRegion extends Size {
     at: FramePosition;
 }
 
-/** Рамка целиком внутри кадра, координаты — целые пиксели. */
+/** The frame entirely inside the image, coordinates in whole pixels. */
 export function clampRegion(position: FramePosition, source: Size, target: InputSizeDto): FramePosition {
     return {
         left: Math.min(Math.max(0, Math.round(position.left)), Math.max(0, source.width - target.width)),
@@ -23,7 +23,7 @@ export function clampRegion(position: FramePosition, source: Size, target: Input
     };
 }
 
-/** Позиция по умолчанию: прежнее решение для этого файла → последняя позиция для файла того же размера → центр. */
+/** The default position: the earlier decision for this file, then the last position for a file of the same size, then the center. */
 export function defaultRegion(source: Size, target: InputSizeDto, previous?: FramePosition, last?: LastRegion): FramePosition {
     if (previous) return clampRegion(previous, source, target);
     if (last && last.width === source.width && last.height === source.height) return clampRegion(last.at, source, target);
@@ -37,7 +37,7 @@ const arrows: Readonly<Record<string, readonly [number, number]>> = {
     ArrowDown: [0, 1],
 };
 
-/** Стрелки двигают рамку на 1 px, с Shift — на 10 px; другая клавиша — null. */
+/** Arrows move the frame by 1 px, with Shift by 10 px; another key gives null. */
 export function nudgeRegion(position: FramePosition, key: string, shift: boolean, source: Size, target: InputSizeDto): FramePosition | null {
     const move = arrows[key];
     if (!move) return null;
@@ -46,8 +46,8 @@ export function nudgeRegion(position: FramePosition, key: string, shift: boolean
 }
 
 /**
- * Рамка с центром под указателем. Кадр на экране может быть уменьшенной копией, поэтому указатель переводится в пиксели
- * исходного кадра долями экранного прямоугольника.
+ * The frame centered under the pointer. The image on screen may be a reduced copy, so the pointer is converted to pixels of the
+ * source image by fractions of the on-screen rectangle.
  */
 export function pointerRegion(clientX: number, clientY: number, box: { left: number; top: number; width: number; height: number }, source: Size,
     target: InputSizeDto): FramePosition | null {

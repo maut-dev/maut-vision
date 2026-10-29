@@ -19,6 +19,7 @@ internal static partial class SmokeRunner
         var checks = report["checks"]!.AsArray();
         if (host.Tray.Texts != ("Открыть Maut Vision", "Выйти")) throw new InvalidOperationException("The smoke run does not start in Russian: " + host.Tray.Texts);
         await RunLifecycleUiStepAsync(web, LanguageEnglishScript, new { projectId }, checks, token);
+        await CheckImagesCatalogBackgroundsEnglishAsync(web, projectId, checks, token);
         await WaitForTrayAsync(host, ("Open Maut Vision", "Exit"), token);
         RequireStoredLanguage(root, "en");
         checks.Add("English relabels the tray and is kept in host-settings.json");
