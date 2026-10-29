@@ -165,6 +165,7 @@ internal static partial class SmokeRunner
         await CheckMcpViewAsync(client, core, root, projectId, checks, token);
         await CheckMcpJobsAsync(web, client, projectId, checks, token);
         await CheckMcpCatalogAndImagesAsync(client, core, root, projectId, checks, token);
+        await CheckMcpDatasetChainAsync(client, core, root, projectId, checks, token);
         await CheckMcpLogAsync(web, checks, token);
         await CheckMcpPortAsync(web, mcp, endpoint, secret, checks, token);
     }
