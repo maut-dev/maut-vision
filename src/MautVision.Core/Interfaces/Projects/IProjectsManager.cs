@@ -58,6 +58,12 @@ public interface IProjectsManager
     /// </summary>
     Task<IProject> OpenAsync(string projectId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Prepares a project for work like <see cref="OpenAsync"/> (storage, job recovery, child managers) without moving into it: the last
+    /// project stays and live checks of other projects keep running. For work in the background, such as the tools of an AI client.
+    /// </summary>
+    Task<IProject> PrepareAsync(string projectId, CancellationToken cancellationToken = default);
+
     /// <summary>Creates a project; the chosen base model must be installed.</summary>
     Task<IProject> CreateAsync(ProjectSettings settings, CancellationToken cancellationToken = default);
 
