@@ -20,10 +20,26 @@ internal sealed partial class McpTools
     internal const int MaxScreenCheckSeconds = 300;
 
     /// <summary>
-    /// Live checks started through MCP: the session that started them, the project and the video path (for frame views). They stop with
-    /// stop_check, when another project is opened (Core), when their MCP session ends and when the server stops.
+    /// Live checks started through MCP: the session that started them, the project, the video path (for frame views) and the last request that
+    /// touched them. They stop with stop_check, when another project is opened (Core), when their MCP session ends, when no MCP request touched
+    /// them for <see cref="McpCleanup.CheckIdle"/> (clients served per request have no session end) and when the server stops.
     /// </summary>
-    private readonly ConcurrentDictionary<Guid, (string Session, string ProjectId, string? Path)> mcpChecks = new();
+    private readonly ConcurrentDictionary<Guid, McpCheckOwner> mcpChecks = new();
+
+    private sealed class McpCheckOwner(string session, string projectId, string? path)
+    {
+        private long touched = Environment.TickCount64;
+
+        internal string Session { get; } = session;
+
+        internal string ProjectId { get; } = projectId;
+
+        internal string? Path { get; } = path;
+
+        internal long Touched => Volatile.Read(ref touched);
+
+        internal void Touch() => Volatile.Write(ref touched, Environment.TickCount64);
+    }
 
     private ChecksController? checksController;
 
@@ -176,7 +192,7 @@ internal sealed partial class McpTools
                 var token = importSelections.Register([path], FileSelectionKind.Files, null, [FileStamp.Of(path)]);
                 var started = await ChecksApi.StartImageAsync(new StartImageCheckRequestDto(project.Id, arguments.Guid("versionId"), token, parameters,
                     OperationId(arguments)), call.CancellationToken);
-                mcpChecks[started.Id] = (call.SessionKey, project.Id, path);
+                mcpChecks[started.Id] = new McpCheckOwner(call.SessionKey, project.Id, path);
                 var (check, finished) = await WaitCheckAsync(project, started.Id, TimeSpan.FromSeconds(waitSeconds), call);
                 var detections = check.LastFrame?.Detections ?? [];
                 var structured = new JsonObject
@@ -241,7 +257,7 @@ internal sealed partial class McpTools
                 var token = importSelections.Register([path], FileSelectionKind.Video, video, [FileStamp.Of(path)]);
                 var started = await ChecksApi.StartVideoAsync(new StartVideoCheckRequestDto(project.Id, arguments.Guid("versionId"), token, parameters, stepMs,
                     region, OperationId(arguments)), call.CancellationToken);
-                mcpChecks[started.Id] = (call.SessionKey, project.Id, path);
+                mcpChecks[started.Id] = new McpCheckOwner(call.SessionKey, project.Id, path);
                 return await CheckResultAsync(project, started.Id, waitSeconds, 50, call);
             });
 
@@ -374,7 +390,7 @@ internal sealed partial class McpTools
                 });
                 var started = await ChecksApi.StartScreenAsync(new StartScreenCheckRequestDto(project.Id, versionId, monitor, parameters, fps, duration, region,
                     OperationId(arguments)), call.CancellationToken);
-                mcpChecks[started.Id] = (call.SessionKey, project.Id, null);
+                mcpChecks[started.Id] = new McpCheckOwner(call.SessionKey, project.Id, null);
                 return await CheckResultAsync(project, started.Id, waitSeconds, 20, call);
             });
 
@@ -412,6 +428,29 @@ internal sealed partial class McpTools
             if (owner.Session != session || !mcpChecks.TryRemove(checkId, out _)) continue;
             _ = StopMcpCheckAsync(checkId, owner.ProjectId);
         }
+    }
+
+    /// <summary>An MCP request named the check (get_check, stop_check, view): it is still followed.</summary>
+    internal void TouchCheck(Guid checkId)
+    {
+        if (mcpChecks.TryGetValue(checkId, out var owner)) owner.Touch();
+    }
+
+    /// <summary>
+    /// The sweep of the server: a running check no MCP request touched for <paramref name="idle"/> stops (session_ended) — its client is gone
+    /// or forgot it. Returns how many were stopped.
+    /// </summary>
+    internal int StopIdleChecks(TimeSpan idle)
+    {
+        var limit = Environment.TickCount64 - (long)idle.TotalMilliseconds;
+        var stopped = 0;
+        foreach (var (checkId, owner) in mcpChecks.ToArray())
+        {
+            if (owner.Touched > limit || !mcpChecks.TryRemove(checkId, out _)) continue;
+            _ = StopMcpCheckAsync(checkId, owner.ProjectId);
+            stopped++;
+        }
+        return stopped;
     }
 
     /// <summary>The server stops: every live check started through it stops.</summary>
@@ -551,9 +590,11 @@ internal sealed partial class McpTools
     /// <summary>The answer of the live check tools: the snapshot (without window URLs) and frames with detections after waiting.</summary>
     private async Task<McpToolResult> CheckResultAsync(IProject project, Guid checkId, int waitSeconds, int frameLimit, McpToolCall call)
     {
+        TouchCheck(checkId);
         var (check, finished) = await WaitCheckAsync(project, checkId, TimeSpan.FromSeconds(waitSeconds), call);
         // Finished checks stay registered (a few bytes) so get_check can still name the video of their frames; stopping skips them.
         var path = mcpChecks.TryGetValue(checkId, out var owner) ? owner.Path : null;
+        owner?.Touch();
         var snapshot = McpToolResult.Object(ChecksResponseMapper.Map(check with { RecentFrames = [] }, null));
         snapshot.Remove("recentFrames");
         snapshot["preview"] = check.Preview is { } preview

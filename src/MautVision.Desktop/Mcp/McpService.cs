@@ -11,6 +11,16 @@ namespace MautVision.Desktop.Mcp;
 internal sealed record McpStatus(string State, int? Port, string? ErrorCode);
 
 /// <summary>
+/// Cleanup by time while the server runs, for clients served per request (revision 2026-07-28), whose session never ends: uploads older than
+/// <paramref name="UploadAge"/> are removed and live checks no MCP request touched for <paramref name="CheckIdle"/> stop. The sweep runs every
+/// <paramref name="Interval"/>.
+/// </summary>
+internal sealed record McpCleanup(TimeSpan UploadAge, TimeSpan CheckIdle, TimeSpan Interval)
+{
+    internal static McpCleanup Default { get; } = new(TimeSpan.FromHours(1), TimeSpan.FromMinutes(10), TimeSpan.FromMinutes(1));
+}
+
+/// <summary>
 /// The MCP server of the application: its settings (host-settings.json), its state, the call log, confirmations and uploads. It starts and
 /// stops Kestrel when the user changes the settings, without restarting the application. Without MCP enabled nothing of ASP.NET Core or the
 /// SDK is loaded: <see cref="McpServerHost"/> is touched only in <see cref="StartHostAsync"/>, and the server starts only after the library
@@ -29,6 +39,9 @@ internal sealed class McpService : IAsyncDisposable
     private IAsyncDisposable? server;
     private McpTools? tools;
     private McpStatus status = new("stopped", null, null);
+    private McpCleanup cleanup = McpCleanup.Default;
+    private CancellationTokenSource? sweep;
+    private TaskCompletionSource cleanupChanged = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private bool disposed;
 
     /// <param name="dependencies">What the tools work with; built on the first start.</param>
@@ -57,6 +70,17 @@ internal sealed class McpService : IAsyncDisposable
     internal McpUploads Uploads { get; }
 
     internal McpPaths Paths { get; }
+
+    /// <summary>The cleanup rules; the smoke shortens them (a change wakes the sweep at once).</summary>
+    internal McpCleanup Cleanup
+    {
+        get => Volatile.Read(ref cleanup);
+        set
+        {
+            Volatile.Write(ref cleanup, value);
+            Interlocked.Exchange(ref cleanupChanged, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)).TrySetResult();
+        }
+    }
 
     /// <summary>Settings or state changed; may come from any thread.</summary>
     internal event Action? Changed;
@@ -150,6 +174,8 @@ internal sealed class McpService : IAsyncDisposable
                 created.EndSession(session);
             }, cancellationToken);
             tools = created;
+            sweep = new CancellationTokenSource();
+            _ = SweepAsync(created, sweep.Token);
             logger.LogInformation("MCP server listens on http://127.0.0.1:{Port}{Path}.", current.Port, McpServerHost.Path);
             return new McpStatus("running", current.Port, null);
         }
@@ -201,8 +227,39 @@ internal sealed class McpService : IAsyncDisposable
         return false;
     }
 
+    /// <summary>Every <see cref="McpCleanup.Interval"/> while the server runs: old uploads go, idle live checks stop.</summary>
+    private async Task SweepAsync(McpTools owner, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            var rules = Cleanup;
+            try
+            {
+                await Task.WhenAny(Task.Delay(rules.Interval, cancellationToken), Volatile.Read(ref cleanupChanged).Task).WaitAsync(cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+            rules = Cleanup;
+            try
+            {
+                var uploads = Uploads.RemoveOlderThan(rules.UploadAge);
+                var checks = owner.StopIdleChecks(rules.CheckIdle);
+                if (uploads + checks > 0) logger.LogInformation("MCP cleanup: {Uploads} old uploads removed, {Checks} idle live checks released (running ones stop).", uploads, checks);
+            }
+            catch (Exception error)
+            {
+                logger.LogWarning(error, "MCP cleanup failed.");
+            }
+        }
+    }
+
     private async Task StopHostAsync()
     {
+        // Not disposed: the sweep may still be reading its token; the source holds no timer.
+        sweep?.Cancel();
+        sweep = null;
         if (server is not { } running) return;
         server = null;
         Confirmations.DenyAll();

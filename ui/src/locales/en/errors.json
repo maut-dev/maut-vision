@@ -366,7 +366,7 @@
     "server_failed": "The MCP server could not start. Details are in the application log.",
     "tool_unknown": "There is no tool “{{tool}}”.",
     "upload_name_invalid": "The file name of the upload is empty or invalid.",
-    "upload_not_found": "The upload is unknown or was removed when its session ended.",
+    "upload_not_found": "The upload is unknown or was removed: its session ended or it is older than an hour.",
     "upload_quota_exceeded": "The session has already sent the maximum of {{limitMb}} MB.",
     "upload_too_large": "The file is larger than {{limitMb}} MB.",
     "destination_exists": "The file already exists: {{path}}. Pass overwrite: true to replace it."

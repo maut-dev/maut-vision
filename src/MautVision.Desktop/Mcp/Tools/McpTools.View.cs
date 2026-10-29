@@ -399,9 +399,10 @@ internal sealed partial class McpTools
         return new McpViewSource(await ReadAsync(project, ModelVersion.ResourceKind, file.ResourceId, cancellationToken), [], metadata);
     }
 
-    private static async Task<McpViewSource> CheckSourceAsync(IProject project, McpArguments target, CancellationToken cancellationToken)
+    private async Task<McpViewSource> CheckSourceAsync(IProject project, McpArguments target, CancellationToken cancellationToken)
     {
         target.Only("check");
+        TouchCheck(target.Guid("check"));
         var check = await project.Checks.GetCheckAsync(target.Guid("check"), 0, cancellationToken);
         var preview = project.Checks.GetPreview(check.Id)
             ?? throw new McpToolException("mcp.check_preview_missing", "The check has no frame to show yet.");

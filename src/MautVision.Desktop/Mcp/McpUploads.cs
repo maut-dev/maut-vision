@@ -4,13 +4,14 @@ using Microsoft.Extensions.Logging;
 
 namespace MautVision.Desktop.Mcp;
 
-/// <summary>A file an AI client sent with upload_file: its ID, the stored file and its size.</summary>
-internal sealed record McpUpload(Guid Id, string SessionKey, string Name, string Path, long Bytes);
+/// <summary>A file an AI client sent with upload_file: its ID, the stored file, its size and when it came (Environment.TickCount64).</summary>
+internal sealed record McpUpload(Guid Id, string SessionKey, string Name, string Path, long Bytes, long Received);
 
 /// <summary>
 /// Files sent by content (upload_file) for clients without access to the disk. A file is at most 10 MB, a session at most 50 MB in total.
 /// Files live in <c>mcp-uploads/&lt;session&gt;/&lt;uploadId&gt;/&lt;name&gt;</c> of the work directory; a session's files are removed
-/// when the session ends, all of them when the server starts or stops and after the application starts.
+/// when the session ends, a file older than an hour by the sweep of the server (clients served per request have no session end), all of them
+/// when the server starts or stops and after the application starts.
 /// </summary>
 internal sealed class McpUploads(string directory, ILogger logger)
 {
@@ -37,7 +38,7 @@ internal sealed class McpUploads(string directory, ILogger logger)
                 throw new McpToolException("mcp.upload_quota_exceeded", "The session has sent more than 50 MB.", new Dictionary<string, string> { ["limitMb"] = "50" });
             var id = Guid.NewGuid();
             var folder = System.IO.Path.Combine(Directory, SessionFolder(sessionKey), id.ToString("N"));
-            upload = new McpUpload(id, sessionKey, fileName, System.IO.Path.Combine(folder, fileName), content.LongLength);
+            upload = new McpUpload(id, sessionKey, fileName, System.IO.Path.Combine(folder, fileName), content.LongLength, Environment.TickCount64);
             uploads[id] = upload;
         }
         try
@@ -56,7 +57,7 @@ internal sealed class McpUploads(string directory, ILogger logger)
     /// <summary>An upload of this server run; an unknown one is mcp.upload_not_found.</summary>
     internal McpUpload Get(Guid id) => uploads.TryGetValue(id, out var upload) && File.Exists(upload.Path)
         ? upload
-        : throw new McpToolException("mcp.upload_not_found", "The upload is unknown or was removed when its session ended.");
+        : throw new McpToolException("mcp.upload_not_found", "The upload is unknown or was removed: its session ended or it is older than an hour.");
 
     internal long SessionBytes(string sessionKey) => uploads.Values.Where(item => item.SessionKey == sessionKey).Sum(item => item.Bytes);
 
@@ -65,6 +66,20 @@ internal sealed class McpUploads(string directory, ILogger logger)
     {
         foreach (var upload in uploads.Values.Where(item => item.SessionKey == sessionKey).ToArray()) uploads.TryRemove(upload.Id, out _);
         Delete(System.IO.Path.Combine(Directory, SessionFolder(sessionKey)));
+    }
+
+    /// <summary>Removes the uploads older than <paramref name="age"/>; returns how many went.</summary>
+    internal int RemoveOlderThan(TimeSpan age)
+    {
+        var limit = Environment.TickCount64 - (long)age.TotalMilliseconds;
+        var removed = 0;
+        foreach (var upload in uploads.Values.Where(item => item.Received <= limit).ToArray())
+        {
+            if (!uploads.TryRemove(upload.Id, out _)) continue;
+            Delete(System.IO.Path.GetDirectoryName(upload.Path)!);
+            removed++;
+        }
+        return removed;
     }
 
     /// <summary>Removes every upload (server start and stop, after the application starts).</summary>

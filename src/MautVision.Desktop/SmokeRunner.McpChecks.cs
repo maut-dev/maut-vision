@@ -150,6 +150,50 @@ internal static partial class SmokeRunner
             await Task.Delay(100, token);
         }
         checks.Add("A live check started by an MCP session stops (session_ended) when that session ends");
+        await CheckMcpCleanupAsync(web, client, mcp, core, projectId, versionId, monitor, checks, token);
+    }
+
+    /// <summary>
+    /// Cleanup by time with shortened limits (the default is an hour for uploads and ten minutes for checks): this client is served per request
+    /// and has no session end, yet its old upload goes and its screen check stops once no request touches it; get_check keeps it alive.
+    /// </summary>
+    private static async Task CheckMcpCleanupAsync(CoreWebView2 web, McpClient client, McpService mcp, ICore core, string projectId, string versionId, int monitor,
+        JsonArray checks, CancellationToken token)
+    {
+        var uploadId = Ok(await CallAsync(client, "upload_file", new { name = "old.png", base64 = Convert.ToBase64String(McpPicture(32, 24, SkiaSharp.SKColors.Navy)) }, token),
+            "upload_file").GetProperty("uploadId").GetString()!;
+        var upload = mcp.Uploads.Get(Guid.Parse(uploadId)).Path;
+        var started = Ok(await ConfirmMcpAsync(web, CallAsync(client, "start_screen_check", new { projectId, versionId, monitor, fps = 2, durationSeconds = 120, device = "cpu" },
+            token), "start_screen_check", "mcp-confirmation-allow", checks, token), "start_screen_check");
+        var checkId = started.GetProperty("checkId").GetString()!;
+        var idle = TimeSpan.FromSeconds(3);
+        mcp.Cleanup = new McpCleanup(TimeSpan.FromSeconds(2), idle, TimeSpan.FromMilliseconds(200));
+        try
+        {
+            // Touched every second for twice the idle limit: it keeps running.
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            while (watch.Elapsed < idle * 2)
+            {
+                var state = Ok(await CallAsync(client, "get_check", new { projectId, checkId, frameLimit = 0 }, token), "get_check").GetProperty("state").GetString();
+                if (state is not ("preparing" or "running")) throw new InvalidOperationException("A touched check stopped: " + state);
+                await Task.Delay(1000, token);
+            }
+            Error(await CallAsync(client, "view", new { target = new { uploadId } }, token), "mcp.upload_not_found", null);
+            if (File.Exists(upload) || Directory.Exists(Path.GetDirectoryName(upload))) throw new InvalidOperationException("The old upload stayed on disk: " + upload);
+            var project = await core.Projects.GetAsync(projectId, token);
+            for (var attempt = 0; ; attempt++)
+            {
+                var check = await project.Checks.GetCheckAsync(Guid.Parse(checkId), 0, token);
+                if (check is { State: LiveCheckState.Cancelled, StopReason: LiveCheckStopReason.SessionEnded }) break;
+                if (attempt > 150) throw new TimeoutException($"An idle MCP check is {check.State} ({check.StopReason}).");
+                await Task.Delay(100, token);
+            }
+        }
+        finally
+        {
+            mcp.Cleanup = McpCleanup.Default;
+        }
+        checks.Add("Without a session end, an upload older than the limit is removed from disk (mcp.upload_not_found) and a live check no MCP request touched for the idle limit stops (session_ended); get_check keeps it running");
     }
 
     /// <summary>Answers the confirmation of a tool call in the window with the button (mcp-confirmation-allow or mcp-confirmation-deny).</summary>
