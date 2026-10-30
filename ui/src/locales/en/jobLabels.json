@@ -1,5 +1,7 @@
 {
   "version": "Version {{number}}",
   "version_dataset": "Version {{number}} · {{dataset}}",
-  "class_variant": "{{class}} · {{variant}}"
+  "class_variant": "{{class}} · {{variant}}",
+  "ai": "AI: {{client}}",
+  "ai_label": "AI ({{client}}) · {{label}}"
 }

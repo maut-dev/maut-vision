@@ -100,7 +100,7 @@ function baseKeys(keys: Map<string, string>): Map<string, string> {
 // Error codes of the host. Areas are the Core blocks and the transport; a literal "<area>.<reason>" in lower snake_case is a code unless
 // it is a job kind or a file name.
 const areas = ["projects", "base_models", "jobs", "images", "backgrounds", "video", "variants", "classes", "generation", "datasets", "training",
-    "checks", "screen", "hardware", "bridge", "resources"];
+    "checks", "screen", "hardware", "bridge", "resources", "mcp"];
 // CatalogContext, CatalogSql, CatalogDeletion and NamedRows throw $"{area}.<reason>" for these areas.
 const catalogAreas = ["variants", "classes"];
 // Worker outcomes get the prefix of their consumer ("training." + code, "checks." + code); artifacts come from training runs only.

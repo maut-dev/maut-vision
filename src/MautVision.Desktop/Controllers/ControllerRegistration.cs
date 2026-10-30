@@ -41,12 +41,18 @@ using MautVision.Desktop.Controllers.System.ResponseDto;
 using MautVision.Desktop.Controllers.Settings;
 using MautVision.Desktop.Controllers.Settings.RequestDto;
 using MautVision.Desktop.Controllers.Settings.ResponseDto;
+using MautVision.Desktop.Controllers.Mcp;
+using MautVision.Desktop.Controllers.Mcp.RequestDto;
+using MautVision.Desktop.Controllers.Mcp.ResponseDto;
 using MautVision.Desktop.Host;
 using MautVision.Desktop.Resources;
 using MautVision.Desktop.Transport;
 using Microsoft.Extensions.Logging;
 
 namespace MautVision.Desktop.Controllers;
+
+/// <summary>Controllers the host uses besides the bridge: the projects controller (a new page resets its order of opens) and those the MCP tools share with the UI.</summary>
+internal sealed record RegisteredControllers(ProjectsController Projects, JobsController Jobs, OverviewController Overview, HardwareController Hardware);
 
 internal static class ControllerRegistration
 {
@@ -57,8 +63,8 @@ internal static class ControllerRegistration
     /// <param name="dialogs">Native file and folder dialogs of the main window.</param>
     /// <param name="webViewProcessIds">IDs of the WebView2 processes of the window, for the memory of the application.</param>
     /// <param name="language">The interface language setting (settings.getLanguage, settings.setLanguage).</param>
-    /// <returns>The projects controller: a new page resets its order of opens.</returns>
-    internal static ProjectsController Register(BridgeTransport transport, ICore core, ILoggerFactory loggers, ResourceHandles resources, Action uiReady, CloseGuard closeGuard,
+    /// <returns>The controllers the host and the MCP tools share with the page.</returns>
+    internal static RegisteredControllers Register(BridgeTransport transport, ICore core, ILoggerFactory loggers, ResourceHandles resources, Action uiReady, CloseGuard closeGuard,
         FileSelections selections, NativeDialogs dialogs, Func<IReadOnlyList<int>> webViewProcessIds, HostLanguage language)
     {
         ArgumentNullException.ThrowIfNull(resources);
@@ -237,6 +243,19 @@ internal static class ControllerRegistration
         var settings = new SettingsController(language);
         transport.Register<GetLanguageRequestDto, LanguageResponseDto>("settings.getLanguage", settings.GetLanguageAsync);
         transport.Register<SetLanguageRequestDto, LanguageResponseDto>("settings.setLanguage", settings.SetLanguageAsync);
-        return projects;
+        return new RegisteredControllers(projects, jobs, overview, hardware);
+    }
+
+    /// <summary>The settings dialog "AI assistants (MCP)": settings, state, call log and confirmations.</summary>
+    internal static void RegisterMcp(BridgeTransport transport, McpController mcp)
+    {
+        transport.Register<GetMcpStateRequestDto, McpStateResponseDto>("mcp.getState", mcp.GetStateAsync);
+        transport.Register<UpdateMcpSettingsRequestDto, McpStateResponseDto>("mcp.update", mcp.UpdateAsync);
+        transport.Register<RegenerateMcpTokenRequestDto, McpStateResponseDto>("mcp.regenerateToken", mcp.RegenerateTokenAsync);
+        transport.Register<AddMcpAllowedFolderRequestDto, McpStateResponseDto>("mcp.addAllowedFolder", mcp.AddAllowedFolderAsync);
+        transport.Register<RemoveMcpAllowedFolderRequestDto, McpStateResponseDto>("mcp.removeAllowedFolder", mcp.RemoveAllowedFolderAsync);
+        transport.Register<ListMcpCallsRequestDto, McpCallResponseDto[]>("mcp.listCalls", mcp.ListCallsAsync);
+        transport.Register<ListMcpConfirmationsRequestDto, McpConfirmationResponseDto[]>("mcp.listConfirmations", mcp.ListConfirmationsAsync);
+        transport.Register<AnswerMcpConfirmationRequestDto, McpConfirmationAnswerResponseDto>("mcp.answerConfirmation", mcp.AnswerConfirmationAsync);
     }
 }

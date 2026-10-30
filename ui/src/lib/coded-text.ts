@@ -29,8 +29,31 @@ export function hasCodedText(code: string | null): boolean {
  * itself as the last resort. Call during render: a language change renders it again.
  */
 export function codedText(value: CodedTextDto): string {
+    if (value.code === aiLabelCode && value.args && hasCodedText(value.code)) {
+        const inner = innerLabel(value);
+        return translate(keyOf(value.code)!, { client: value.args.client ?? "", label: inner ? codedText(inner) : "" });
+    }
     if (value.code && hasCodedText(value.code)) return translate(keyOf(value.code)!, values(value.args));
     return value.text ?? value.code ?? "";
+}
+
+/** A job label of a job an AI client started through MCP: «ИИ (Claude Code) · <label>»; the label is flattened into its args. */
+const aiLabelCode = "jobLabels.ai_label";
+const innerArgPrefix = "label.";
+
+/** The label inside jobLabels.ai_label (labelCode, labelText and label.* args); the label itself for any other line. */
+export function innerLabel(value: CodedTextDto): CodedTextDto | null {
+    if (value.code !== aiLabelCode || !value.args) return value;
+    const args: Record<string, string> = {};
+    let any = false;
+    for (const [name, item] of Object.entries(value.args)) {
+        if (!name.startsWith(innerArgPrefix)) continue;
+        args[name.slice(innerArgPrefix.length)] = item;
+        any = true;
+    }
+    const code = value.args.labelCode ?? null;
+    const text = value.args.labelText ?? null;
+    return code === null && text === null ? null : { code, args: any ? args : null, text };
 }
 
 /** The code of the worker inside worker.<code>[.<reason>] ("amp_disabled"); null for other codes. */

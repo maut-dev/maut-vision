@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.1.0-cefa1e?style=flat-square" alt="Версия 1.1.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.2.0-cefa1e?style=flat-square" alt="Версия 1.2.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="Лицензия AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows 10/11 x64">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
@@ -89,16 +89,16 @@
 ## Установка
 
 > [!IMPORTANT]
-> **Скачать:** [MautVision-Setup-1.1.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.1.0/MautVision-Setup-1.1.0.exe) (1,83 ГБ)
+> **Скачать:** [MautVision-Setup-1.2.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.2.0/MautVision-Setup-1.2.0.exe) (1,93 ГБ)
 >
 > Все версии и описание изменений: [выпуски на GitHub](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `29597c8fe95bc8a574fba9e55075c67125b155cd1517f73750df3dc975fa4abf`
+> SHA-256: `966c3a23e646910893a1806a02430b72a500d4a5bdaca31aeb5516977ff6509d`
 
 **Проверьте файл.** Сравните SHA-256 установщика с хешем, опубликованным рядом со ссылкой:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.1.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.2.0.exe -Algorithm SHA256
 ```
 
 Установщик пока не подписан, поэтому Windows SmartScreen может попросить подтверждение («Подробнее» → «Выполнить в любом случае»).
@@ -129,6 +129,51 @@ Get-FileHash .\MautVision-Setup-1.1.0.exe -Algorithm SHA256
 6. **Обучите** модель в разделе «Обучение»: датасет, устройство и параметры (или пресет), эпохи видны вживую.
 7. **Проверьте модель** в разделе «Проверки» на датасете, изображении, видео или экране, сравните версии в «Аналитике» и выгрузите
    `best.pt` / `best.onnx` из «Моделей».
+
+## ИИ-ассистенты (MCP)
+
+В Maut Vision есть локальный сервер [Model Context Protocol](https://modelcontextprotocol.io): ИИ-ассистент на этом же компьютере —
+Claude Code, Claude Desktop, Cursor и другие клиенты MCP — может работать с вашими проектами: создавать классы и импортировать изображения,
+смотреть кадры и исправлять разметку, собирать фоны, генерировать и собирать датасеты, обучать, оценивать и сравнивать модели, запускать
+проверки на изображении, видео и экране. Он работает с тем же Core, что и окно, поэтому всё, что делает ассистент, сразу видно в
+программе, а запущенные им задачи помечены «ИИ (клиент) · …».
+
+**Как включить**: кнопка с роботом в заголовке открывает «Подключение ИИ (MCP)». Включите сервер: он слушает только `127.0.0.1` (порт 46100
+или свободный порт 39100–39999, если Windows его резервирует) и создаёт секретный токен. Кнопки **Скопировать** в окне дают готовые
+конфигурации с вашим портом, токеном и путями.
+
+- **Claude Code** (Streamable HTTP):
+
+  ```powershell
+  claude mcp add --transport http maut-vision http://127.0.0.1:46100/mcp --header "Authorization: Bearer <токен>"
+  ```
+
+  или тот же сервер в `.mcp.json` проекта:
+
+  ```json
+  { "mcpServers": { "maut-vision": { "type": "http", "url": "http://127.0.0.1:46100/mcp", "headers": { "Authorization": "Bearer <токен>" } } } }
+  ```
+
+- **Claude Desktop** запускает команды, поэтому использует stdio-прокси `maut-vision-mcp.exe`, который ставится рядом с программой.
+  Добавьте в `%APPDATA%\Claude\claude_desktop_config.json`:
+
+  ```json
+  { "mcpServers": { "maut-vision": { "command": "C:\Users\<вы>\AppData\Local\Programs\MautVision\maut-vision-mcp.exe", "args": [] } } }
+  ```
+
+  Прокси берёт порт и токен из настроек программы (в конфигурации токена нет). Если Maut Vision закрыта, он запускает её в области
+  уведомлений (настройка «Запускать приложение по запросу ИИ», по умолчанию включена).
+
+**Уровни доступа**: *Только чтение* (списки, подробности, просмотр), *Чтение и изменение* (ещё создание, импорт, генерация, обучение) и
+*Полный доступ* (ещё удаление и перезапись файлов; по умолчанию). Удаление проекта, снимок экрана и запуск проверки экрана всегда ждут вашего
+«Разрешить» в окне. Пути можно ограничить выбранными папками; в окне также виден журнал последних 500 вызовов.
+
+> [!IMPORTANT]
+> **Приватность.** Сервер не выходит за пределы компьютера, но всё, что читает ассистент, — названия, метрики и **изображения, которые он
+> смотрит** через `view`, `predict_image` или `capture_screen`, — уходит провайдеру ИИ-модели, которой вы пользуетесь, на его условиях.
+> Если это важно, выберите уровень *Только чтение* или ограничьте папки.
+
+Инструменты, ресурсы, сценарии и правила сервера (на английском): [docs/Desktop/mcp.md](docs/Desktop/mcp.md).
 
 ## Технологии
 

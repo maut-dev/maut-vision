@@ -28,6 +28,10 @@ Core → Python worker (обучение, проверки) · ffmpeg (кадр�
   передают коды и значения ([docs/UI/localization.md](../UI/localization.md)).
 - **Python worker** (`python/`) — отдельный процесс на одну операцию над папкой задачи: `request.json` → события JSON Lines в stdout →
   `output/result.json`. Ничего не скачивает, не поднимает сервер; дерево процессов не переживает приложение.
+- **MCP** (`src/MautVision.Desktop/Mcp`) — локальный сервер Model Context Protocol для ИИ-ассистентов: Streamable HTTP на `127.0.0.1`
+  внутри хоста, с токеном и уровнями доступа, через те же контроллеры и Core, что и окно. По умолчанию выключен. Для клиентов, которые
+  запускают команду (Claude Desktop), рядом с программой ставится stdio-прокси `maut-vision-mcp.exe` (`src/MautVision.McpProxy`).
+  Правила — [docs/Desktop/mcp.md](../Desktop/mcp.md).
 
 ## Где что лежит
 
@@ -35,6 +39,7 @@ Core → Python worker (обучение, проверки) · ffmpeg (кадр�
 |---|---|
 | `src/MautVision.Core` | Core: проекты, каталог, изображения, фоны, генерация, датасеты, обучение, проверки, Jobs |
 | `src/MautVision.Desktop` | WPF-хост, контроллеры, транспорт, события, канал ресурсов, smoke-проверки |
+| `src/MautVision.McpProxy` | stdio-прокси MCP `maut-vision-mcp.exe` для Claude Desktop |
 | `ui/` | интерфейс React |
 | `python/` | Python worker, тесты, сборка PyInstaller |
 | `catalog/` | каталог базовых моделей (адреса, размеры, SHA-256) |

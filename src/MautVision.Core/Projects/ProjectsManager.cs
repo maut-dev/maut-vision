@@ -187,6 +187,9 @@ internal sealed class ProjectsManager : IProjectsManager
     public async Task<IProject> OpenAsync(string projectId, CancellationToken cancellationToken = default)
         => await OpenCoreAsync(projectId, switching: true, cancellationToken).ConfigureAwait(false);
 
+    public async Task<IProject> PrepareAsync(string projectId, CancellationToken cancellationToken = default)
+        => await OpenCoreAsync(projectId, switching: false, cancellationToken).ConfigureAwait(false);
+
     /// <param name="switching">The user goes to the project (projects.open): the latest such open is remembered as the last project and
     /// stops the live checks of the others. An export opens the store without a switch.</param>
     private async Task<Project> OpenCoreAsync(string projectId, bool switching, CancellationToken cancellationToken)

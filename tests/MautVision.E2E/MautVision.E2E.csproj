@@ -8,5 +8,7 @@
   <ItemGroup>
     <!-- Only the public Core API: the E2E runs Core as the installed application does, through CoreFactory. -->
     <ProjectReference Include="../../src/MautVision.Core/MautVision.Core.csproj" />
+    <!-- The official MCP client for the run through MCP (the mcp switch): Streamable HTTP and the stdio proxy of the installation. -->
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.3.0" />
   </ItemGroup>
 </Project>

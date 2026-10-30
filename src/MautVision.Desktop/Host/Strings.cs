@@ -46,6 +46,7 @@ internal static class Strings
     internal static string DialogExportModel => Get(nameof(DialogExportModel));
     internal static string DialogExportProject => Get(nameof(DialogExportProject));
     internal static string DialogImportProject => Get(nameof(DialogImportProject));
+    internal static string DialogMcpFolder => Get(nameof(DialogMcpFolder));
     internal static string FilterImages => Get(nameof(FilterImages));
     internal static string FilterVideos => Get(nameof(FilterVideos));
     internal static string FilterProjectArchive => Get(nameof(FilterProjectArchive));

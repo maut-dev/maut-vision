@@ -13,7 +13,9 @@
     "cancel": "Cancel",
     "archiveTitle": "Move to the archive?",
     "archiveText": "The project “{{name}}” will be hidden from the list and cannot be opened or changed. The data is kept; the project can be restored at any time.",
-    "toArchive": "Archive"
+    "toArchive": "Archive",
+    "aiAssistants": "AI assistants (MCP)",
+    "aiAssistantsRunning": "AI assistants (MCP): the server is running"
   },
   "common": {
     "hide": "Hide",

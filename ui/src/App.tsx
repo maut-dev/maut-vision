@@ -24,6 +24,7 @@ import { BridgeError } from "@/api/transport/errors";
 import { ProjectDeletionDialog } from "@/components/project-deletion-dialog";
 import { ProjectEditor, type ProjectEditorValues } from "@/components/project-editor";
 import { LanguageSelect } from "@/components/language-select";
+import { McpHeader } from "@/components/mcp/mcp-header";
 import { ProjectLibrary } from "@/components/project-library";
 import { OverviewSection, type OverviewTarget } from "@/components/overview/overview-section";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -245,6 +246,7 @@ export function App() {
                     <Button size="sm" variant={view.kind === "catalog" ? "secondary" : "ghost"} onClick={showCatalog} disabled={busy} aria-current={view.kind === "catalog" ? "page" : undefined}>
                         <Boxes />{t("app.baseModels")}
                     </Button>
+                    <McpHeader disabled={busy} openProject={projectId => guard(() => void openProject(projectId))} />
                     <LanguageSelect disabled={busy} failed={setNotice} />
                     <span className="hidden text-xs text-muted-foreground lg:block">{t("app.localStorage")}</span>
                 </div>

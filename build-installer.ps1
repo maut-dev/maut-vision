@@ -71,6 +71,50 @@ if ($Composite) { $taskProperties += '-p:PublishReadyToRunComposite=true' }
 dotnet publish $taskProject --configuration Release --runtime win-x64 --output $taskPublish @taskProperties
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 
+# The stdio MCP proxy (maut-vision-mcp.exe) runs on the self-contained runtime of the application: only its own files join the payload, and
+# every assembly it shares with the application must already be there in the same or a newer version.
+$taskProxyPublish = Join-Path $taskPublishRoot ('proxy-' + [Guid]::NewGuid().ToString('N'))
+dotnet publish (Join-Path $PSScriptRoot 'src/MautVision.McpProxy/MautVision.McpProxy.csproj') --configuration Release --runtime win-x64 --output $taskProxyPublish -p:SelfContained=true
+if ($LASTEXITCODE -ne 0) { throw 'Publish of the MCP proxy failed.' }
+$taskProxyAdded = @()
+foreach ($taskFile in Get-ChildItem -LiteralPath $taskProxyPublish -Recurse -File)
+{
+    $taskRelative = $taskFile.FullName.Substring($taskProxyPublish.Length + 1)
+    $taskTarget = Join-Path $taskPublish $taskRelative
+    if (-not (Test-Path -LiteralPath $taskTarget))
+    {
+        New-Item -ItemType Directory -Path (Split-Path -Parent $taskTarget) -Force | Out-Null
+        Copy-Item -LiteralPath $taskFile.FullName -Destination $taskTarget
+        $taskProxyAdded += $taskRelative
+        continue
+    }
+    if ($taskFile.Extension -ne '.dll') { continue }
+    try { $taskNeeded = [Reflection.AssemblyName]::GetAssemblyName($taskFile.FullName).Version } catch { continue }
+    $taskShipped = [Reflection.AssemblyName]::GetAssemblyName($taskTarget).Version
+    if ($taskShipped -lt $taskNeeded) { throw "MCP proxy needs $taskRelative $taskNeeded, the application ships $taskShipped." }
+}
+Remove-Item -LiteralPath $taskProxyPublish -Recurse -Force
+$taskUnexpected = @($taskProxyAdded | Where-Object { $_ -notlike 'maut-vision-mcp.*' })
+if ($taskUnexpected.Count -gt 0) { throw ("MCP proxy brought files the application does not have: " + ($taskUnexpected -join ', ')) }
+$taskProxyBytes = ($taskProxyAdded | ForEach-Object { (Get-Item -LiteralPath (Join-Path $taskPublish $_)).Length } | Measure-Object -Sum).Sum
+Write-Output ("MCP proxy: {0} ({1:N0} KB)" -f ($taskProxyAdded -join ', '), ($taskProxyBytes / 1KB))
+# It must start on that runtime: with an empty work directory it reports that MCP is off and ends with code 1.
+$taskProxyWork = Join-Path ([IO.Path]::GetTempPath()) ('maut-proxy-start-' + [Guid]::NewGuid().ToString('N'))
+$taskProxyError = Join-Path ([IO.Path]::GetTempPath()) ('maut-proxy-start-' + [Guid]::NewGuid().ToString('N') + '.txt')
+try
+{
+    $taskProxy = Start-Process -FilePath (Join-Path $taskPublish 'maut-vision-mcp.exe') -ArgumentList @('--work-directory', "`"$taskProxyWork`"") -NoNewWindow -PassThru `
+        -RedirectStandardError $taskProxyError
+    $null = $taskProxy.Handle
+    if (-not $taskProxy.WaitForExit(30000)) { $taskProxy.Kill(); throw 'The MCP proxy did not end within 30 s.' }
+    $taskProxyText = Get-Content -LiteralPath $taskProxyError -Raw
+    if ($taskProxy.ExitCode -ne 1 -or $taskProxyText -notmatch 'turned off') { throw "The MCP proxy did not start: exit code $($taskProxy.ExitCode), $taskProxyText" }
+}
+finally
+{
+    Remove-Item -LiteralPath $taskProxyError -Force -ErrorAction SilentlyContinue
+}
+
 # The published host must start: --exit-when-ready leaves after the main window is shown, in a throwaway work directory.
 $taskStartWork = Join-Path ([IO.Path]::GetTempPath()) ('maut-publish-start-' + [Guid]::NewGuid().ToString('N'))
 try
@@ -85,7 +129,7 @@ finally
 }
 
 # start.ps1 fetched the pinned ffmpeg; the payload must carry it, the web build and the licences.
-$taskRequired = @('MautVision.Desktop.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.txt', 'web/index.html', 'catalog/yolo-catalog.json')
+$taskRequired = @('MautVision.Desktop.exe', 'maut-vision-mcp.exe', 'LICENSE', 'THIRD-PARTY-NOTICES.txt', 'web/index.html', 'catalog/yolo-catalog.json')
 $taskRequired += @('ffmpeg.exe', 'ffprobe.exe', 'avcodec-62.dll', 'avdevice-62.dll', 'avfilter-11.dll', 'avformat-62.dll', 'avutil-60.dll',
     'swresample-6.dll', 'swscale-9.dll', 'LICENSE.txt', 'VERSION.txt') | ForEach-Object { "tools/ffmpeg/$_" }
 foreach ($taskFile in $taskRequired)

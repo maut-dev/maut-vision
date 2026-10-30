@@ -6,6 +6,7 @@ ML work as a separate process.
 ```text
 React → API → WebView2 → Transport → Controllers → ICore
 React ← events ← WebView2 ← Transport ← Events ← Core
+AI client → MCP (127.0.0.1) → Mcp tools → Controllers → ICore
 Core → Python worker (training, checks) · ffmpeg (video frames)
 ```
 
@@ -21,7 +22,7 @@ Core → Python worker (training, checks) · ffmpeg (video frames)
 ## Desktop
 
 - [Desktop host](Desktop/architecture.md), [API and transport](Desktop/transport.md), [events](Desktop/events.md),
-  [resource channel](Desktop/resources.md)
+  [resource channel](Desktop/resources.md), [MCP server for AI clients](Desktop/mcp.md)
 - [Directories, packaging and installer](Desktop/appdata-and-packaging.md)
 
 ## UI

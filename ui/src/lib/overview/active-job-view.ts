@@ -2,7 +2,7 @@ import type { ActiveJobResponseDto } from "@/api/jobs/response-dto/active-jobs-p
 import type { CodedTextDto } from "@/api/coded-text-dto";
 import { i18n } from "@/i18n";
 import "@/i18n/sections/overview";
-import { codedText } from "@/lib/coded-text";
+import { codedText, innerLabel } from "@/lib/coded-text";
 import { formatBytes, formatNumber } from "@/lib/format";
 
 /** The project section «Open» of a job leads to; training.run opens its run, checks.evaluate the Dataset mode of checks. */
@@ -79,7 +79,9 @@ export function activeJobPercent(item: ActiveJobResponseDto): number | null {
  * The version number of a model export label (jobLabels.version): «Open» finds the version by it. A label stored by 1.0.0 is the Russian
  * text "Версия N" (data, matched as stored).
  */
-export function exportedVersionNumber(label: CodedTextDto | null): number | null {
+export function exportedVersionNumber(wrapped: CodedTextDto | null): number | null {
+    // A job an AI client started carries its label inside jobLabels.ai_label.
+    const label = wrapped ? innerLabel(wrapped) : null;
     if (label?.code === "jobLabels.version" && label.args?.number && /^\d+$/.test(label.args.number)) return Number(label.args.number);
     const match = label?.text ? /^Версия (\d+)/.exec(label.text) : null;
     return match ? Number(match[1]) : null;

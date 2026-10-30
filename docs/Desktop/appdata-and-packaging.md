@@ -25,7 +25,8 @@ Work directory/
     projects/.import-<guid>/    unfinished import; removed after the library is shown
     projects/.deleted-<id>-<guid>/   a deleted project whose files were locked
     last-project.json           the last opened project
-    host-settings.json          host facts: the tray notification was shown, the interface language
+    host-settings.json          host facts: the tray notification was shown, the interface language, MCP settings (mcp.md)
+    mcp-uploads/                files sent by AI clients with upload_file; removed with their session and on server start and stop
     BaseModels/weights/<fileName>
     training/presets.json       training parameter presets shared by projects
     logs/                       application log
@@ -63,7 +64,7 @@ currently empty (`.gitkeep` is not part of the build).
 ```
 
 Desktop accepts the override `--work-directory`, and for the Python worker `--python` with `--python-source` or `--worker-executable`;
-`--base-model-catalog` is allowed only in smoke checks. Scripts pass paths in quotes and double trailing `\`, otherwise `"D:\"` escapes
+`--tray` starts hidden in the notification area (the stdio MCP proxy uses it); `--base-model-catalog` is allowed only in smoke checks. Scripts pass paths in quotes and double trailing `\`, otherwise `"D:\"` escapes
 the closing quote. The installer places the whole publish directory and the worker in the application directory; the work directory
 belongs to the user and by default stays after uninstallation. Publish and installation checks run separately.
 
@@ -78,6 +79,10 @@ one program version — `Version` in `Directory.Build.props`: it goes into assem
 .\build-installer.ps1 -PublishOnly          # publish only, into .dev/publish/<guid>
 dotnet publish ... -p:PublishReadyToRun=false   # a variant for measurements; a global property overrides the project
 ```
+
+The stdio MCP proxy `maut-vision-mcp.exe` is published separately and only its own files (`maut-vision-mcp.*`) join the payload: it runs
+on the self-contained runtime and the SDK assemblies of the application next to it, and the script stops when it would need another file
+or a newer assembly ([stdio proxy](mcp.md#stdio-proxy)).
 
 Native libraries of packages are published only for win-x64 next to the exe (for example, `libSkiaSharp.dll` for images). Symbols of
 native libraries are not shipped: `Directory.Build.targets` excludes `libSkiaSharp.pdb` (about 96 MB) from build and publish.

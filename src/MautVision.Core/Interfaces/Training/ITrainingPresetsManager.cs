@@ -32,4 +32,10 @@ public interface ITrainingPresetsManager
 
     /// <summary>"Delete preset".</summary>
     Task DeleteAsync(Guid presetId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Every supported parameter key with its tuned default, in registry order; null — the worker computes the value (lr0, warmupEpochs,
+    /// patience, workers) or the setting is off.
+    /// </summary>
+    IReadOnlyDictionary<string, JsonElement> Defaults { get; }
 }

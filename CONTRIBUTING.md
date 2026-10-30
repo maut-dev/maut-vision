@@ -105,6 +105,8 @@ Versions follow [Semantic Versioning](https://semver.org/) `MAJOR.MINOR.PATCH`; 
    git switch master
    git merge --no-ff dev -m "chore(Repo): release 1.1.0"
    git tag -a v1.1.0 -m "Maut Vision 1.1.0"
+   git switch dev
+   git merge --ff-only master     # dev takes the release merge, so `git log dev..master` stays empty
    git push origin dev master v1.1.0
    ```
 

@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/MautVision.Core/MautVision.Core.csproj" />
     <Project Path="src/MautVision.Desktop/MautVision.Desktop.csproj" />
+    <Project Path="src/MautVision.McpProxy/MautVision.McpProxy.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MautVision.Core.Smoke/MautVision.Core.Smoke.csproj" />

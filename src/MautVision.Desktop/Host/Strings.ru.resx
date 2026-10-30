@@ -106,6 +106,9 @@
   <data name="DialogExportProject" xml:space="preserve">
     <value>Экспорт проекта</value>
   </data>
+  <data name="DialogMcpFolder" xml:space="preserve">
+    <value>Папка, которую может читать ИИ-ассистент</value>
+  </data>
   <data name="DialogImportProject" xml:space="preserve">
     <value>Импорт проекта</value>
   </data>

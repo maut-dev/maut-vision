@@ -21,7 +21,7 @@ internal sealed record SmokeCloseProbe(CloseGuard Guard, Func<int> CloseRequests
 internal static partial class SmokeRunner
 {
     public static async Task<bool> RunAsync(CoreWebView2 web, string report, string root, ICore core, ResourceHandles handles,
-        FileSelections selections, SmokeCloseProbe close, Action<bool> setMinimized, SmokeHostProbe host, SmokeLayoutProbe layout, CancellationToken token)
+        FileSelections selections, MautVision.Desktop.Mcp.McpService mcp, SmokeCloseProbe close, Action<bool> setMinimized, SmokeHostProbe host, SmokeLayoutProbe layout, CancellationToken token)
     {
         // Every job snapshot of the run: later checks delete some jobs (generation runs, dataset history), their labels stay known here.
         var jobsSeen = new System.Collections.Concurrent.ConcurrentDictionary<Guid, MautVision.Core.Interfaces.Jobs.JobInfo>();
@@ -92,6 +92,9 @@ internal static partial class SmokeRunner
                             await CheckInsightsLanguageAsync(web, id, host, final, token);
                             await CheckLifecycleAsync(web, root, id, host, final, token);
                             await CheckLanguageAsync(web, root, id, host, final, token);
+                            // Checked before CheckMcpAsync is compiled: its code refers to the MCP client of the SDK.
+                            RequireMcpNotLoaded(final);
+                            await CheckMcpAsync(web, root, id, core, mcp, final, token);
                             await CheckLayoutAsync(web, id, layout, final, token);
                             serialized = final.ToJsonString();
                             await using var image = File.Create(Path.ChangeExtension(report, ".png"));

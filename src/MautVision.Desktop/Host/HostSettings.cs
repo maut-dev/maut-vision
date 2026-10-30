@@ -7,7 +7,7 @@ namespace MautVision.Desktop.Host;
 
 /// <summary>
 /// Small facts of the host kept between launches in the work directory (host-settings.json): whether the notice about the notification
-/// area was shown and the interface language. It is read before the log exists (the loading window needs the language); a file that
+/// area was shown, the interface language and the settings of the MCP server (<see cref="Mcp.McpSettings"/>). It is read before the log exists (the loading window needs the language); a file that
 /// cannot be read counts as empty; a failed write is logged.
 /// </summary>
 internal sealed class HostSettings(string workDirectory)
@@ -30,6 +30,11 @@ internal sealed class HostSettings(string workDirectory)
     internal void MarkTrayNoticeShown() => Save(Load() with { TrayNoticeShown = true });
 
     internal void SaveLanguage(string language) => Save(Load() with { Language = language });
+
+    /// <summary>The stored MCP settings; null when they were never saved (the server is off).</summary>
+    internal Mcp.McpSettings? Mcp => Load().Mcp;
+
+    internal void SaveMcp(Mcp.McpSettings settings) => Save(Load() with { Mcp = settings });
 
     private void Save(Values next)
     {
@@ -80,5 +85,7 @@ internal sealed class HostSettings(string workDirectory)
         public bool TrayNoticeShown { get; init; }
 
         public string? Language { get; init; }
+
+        public Mcp.McpSettings? Mcp { get; init; }
     }
 }

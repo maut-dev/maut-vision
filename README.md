@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.1.0-cefa1e?style=flat-square" alt="Version 1.1.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.2.0-cefa1e?style=flat-square" alt="Version 1.2.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Platform Windows 10/11 x64">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
@@ -91,16 +91,16 @@ Maut Vision is built to stay fast on large libraries:
 ## Installation
 
 > [!IMPORTANT]
-> **Download:** [MautVision-Setup-1.1.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.1.0/MautVision-Setup-1.1.0.exe) (1.83 GB)
+> **Download:** [MautVision-Setup-1.2.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.2.0/MautVision-Setup-1.2.0.exe) (1.93 GB)
 >
 > All versions and release notes: [GitHub Releases](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `29597c8fe95bc8a574fba9e55075c67125b155cd1517f73750df3dc975fa4abf`
+> SHA-256: `966c3a23e646910893a1806a02430b72a500d4a5bdaca31aeb5516977ff6509d`
 
 **Verify the download.** Compare the SHA-256 of the installer with the hash published next to the download link:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.1.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.2.0.exe -Algorithm SHA256
 ```
 
 The installer is not code-signed yet, so Windows SmartScreen may ask for confirmation ("More info" → "Run anyway"). Install only a file
@@ -131,6 +131,51 @@ The installer works per user without administrator rights, installs into `%LOCAL
 6. **Train** in "Training": pick the dataset, the device and parameters (or a preset) and follow the epochs live.
 7. **Check the model** in "Checks" on a dataset split, an image, a video or a screen region, compare versions in "Analytics" and export
    `best.pt` / `best.onnx` from "Models".
+
+## Use with AI assistants (MCP)
+
+Maut Vision has a local [Model Context Protocol](https://modelcontextprotocol.io) server, so an AI assistant on the same computer — Claude
+Code, Claude Desktop, Cursor and other MCP clients — can work with your projects: create classes and import images, look at frames and fix
+annotation, build backgrounds, generate and build datasets, train, evaluate and compare models, and run image, video and screen checks. It
+uses the same Core as the window, so everything the assistant does appears in the application as it happens, and jobs it starts are marked
+"AI (client) · …".
+
+**Turn it on**: the robot button in the header opens "AI assistants (MCP)". Switch the server on; it listens only on `127.0.0.1` (port 46100,
+or a free port of 39100–39999 when Windows reserves it) and generates a secret token. The dialog has **Copy** buttons with ready
+configurations that already contain your port, token and paths.
+
+- **Claude Code** (Streamable HTTP):
+
+  ```powershell
+  claude mcp add --transport http maut-vision http://127.0.0.1:46100/mcp --header "Authorization: Bearer <token>"
+  ```
+
+  or the same server in a project's `.mcp.json`:
+
+  ```json
+  { "mcpServers": { "maut-vision": { "type": "http", "url": "http://127.0.0.1:46100/mcp", "headers": { "Authorization": "Bearer <token>" } } } }
+  ```
+
+- **Claude Desktop** starts commands, so it uses the stdio proxy `maut-vision-mcp.exe` installed next to the application. Add to
+  `%APPDATA%\Claude\claude_desktop_config.json`:
+
+  ```json
+  { "mcpServers": { "maut-vision": { "command": "C:\Users\<you>\AppData\Local\Programs\MautVision\maut-vision-mcp.exe", "args": [] } } }
+  ```
+
+  The proxy reads the port and token from the settings of the application (no token in the config). When Maut Vision is closed, it starts
+  it in the notification area ("Start the application when the AI asks", on by default).
+
+**Access levels**: *Read only* (lists, details, views), *Read and change* (also creating, importing, generating, training) and *Full
+access* (also deleting and overwriting files; the default). Deleting a project, capturing the screen and starting a screen check always wait for
+your «Allow» in the window. Paths can be limited to chosen folders; the dialog also shows the log of the last 500 calls.
+
+> [!IMPORTANT]
+> **Privacy.** The server never leaves your computer, but whatever the assistant reads — names, metrics and the **images it views** with
+> `view`, `predict_image` or `capture_screen` — is sent to the provider of the AI model you use, under that provider's terms. Use the
+> *Read only* level or the folder restriction when that matters.
+
+Tools, resources, prompts and the rules of the server: [docs/Desktop/mcp.md](docs/Desktop/mcp.md).
 
 ## Tech stack
 

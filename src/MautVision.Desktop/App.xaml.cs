@@ -59,7 +59,8 @@ public partial class App : Application
             if (!switching) cancellation.Cancel();
         };
         MainWindow = loading;
-        loading.Show();
+        // Started for an AI client (--tray): nothing appears but the icon in the notification area.
+        if (!options.Tray) loading.Show();
         // The log opens later, so the time of this stage is kept and written once it exists.
         var loadingShown = StartupTimings.ElapsedMilliseconds;
         try

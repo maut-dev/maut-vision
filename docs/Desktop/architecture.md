@@ -39,6 +39,7 @@ relabels the tray at once ([localization](../UI/localization.md#language)).
 
 ```text
 window close button        → window hidden, page hidden
+started with --tray        → no loading window; the main window stays minimized out of the taskbar and goes to the tray once the library is shown
 tray: click, "Open"        → window and page visible
 tray: "Exit"               → window shown → question if background work runs → unsaved changes guard → cancel transfers → exit
 Windows session end, Restart Manager, closing the hidden window → cancel transfers → exit

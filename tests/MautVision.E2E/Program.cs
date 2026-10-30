@@ -27,9 +27,11 @@ var arguments = Arguments.Parse(args);
 if (arguments is null)
 {
     Console.Error.WriteLine("Usage: MautVision.E2E --app-dir <installed application> --work-directory <empty or missing folder> "
-        + "[--base-model-weights <yolo26n.pt>] [--device 0] [--keep]");
+        + "[--base-model-weights <yolo26n.pt>] [--device 0] [--keep] [--mcp]");
     return 2;
 }
+// --mcp: the same application driven only through its MCP server (McpRun.cs).
+if (arguments.Mcp) return await McpRun.RunAsync(arguments);
 var appDir = Path.GetFullPath(arguments.AppDir);
 var work = Path.GetFullPath(arguments.WorkDirectory);
 if (Directory.Exists(work) && Directory.EnumerateFileSystemEntries(work).Any())
@@ -486,12 +488,13 @@ static CheckSourceFile Source(string path)
     return new CheckSourceFile(path, info.Length, new DateTimeOffset(info.LastWriteTimeUtc, TimeSpan.Zero));
 }
 
-internal sealed record Arguments(string AppDir, string WorkDirectory, string? BaseModelWeights, string Device, bool Keep)
+internal sealed record Arguments(string AppDir, string WorkDirectory, string? BaseModelWeights, string Device, bool Keep, bool Mcp)
 {
     internal static Arguments? Parse(string[] args)
     {
         string? app = null, work = null, weights = null, device = "0";
         var keep = false;
+        var mcp = false;
         for (var index = 0; index < args.Length; index++)
         {
             string Next() => index + 1 < args.Length ? args[++index] : throw new ArgumentException($"{args[index]} needs a value.");
@@ -502,10 +505,11 @@ internal sealed record Arguments(string AppDir, string WorkDirectory, string? Ba
                 case "--base-model-weights": weights = Next(); break;
                 case "--device": device = Next(); break;
                 case "--keep": keep = true; break;
+                case "--mcp": mcp = true; break;
                 default: return null;
             }
         }
-        return app is null || work is null ? null : new Arguments(app, work, weights is null ? null : Path.GetFullPath(weights), device, keep);
+        return app is null || work is null ? null : new Arguments(app, work, weights is null ? null : Path.GetFullPath(weights), device, keep, mcp);
     }
 }
 

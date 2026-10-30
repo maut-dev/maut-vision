@@ -25,6 +25,7 @@ Catalogs are JSON files `ui/src/locales/<language>/<namespace>.json`. A key name
 | `jobLabels` | labels of jobs with words around data: «Версия {{number}}», «{{class}} · {{variant}}» | with the page |
 | `worker` | errors and warnings of the Python worker, keys `<code>` or `<code>.<reason>` of `python/worker/protocol/messages.py` | with the page |
 | a section (`images`, `training`…) | texts of one section | with the chunk of the section (`registerSection`) |
+| `mcp` | the dialog «Подключение ИИ (MCP)» and confirmations asked by AI clients ([MCP](../Desktop/mcp.md)) | with the chunk of the dialog |
 
 A section namespace has one module `ui/src/i18n/sections/<namespace>.ts` that adds its Russian and English catalogs with
 `registerSection` of `ui/src/i18n/sections.ts`. Every module that reads the namespace imports that module for its side effect, so the texts

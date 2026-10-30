@@ -26,6 +26,8 @@ internal sealed class TrainingPresetsManager(string workDirectory, ILogger logge
 
     public event EventHandler<TrainingPresetsChangedEventArgs>? PresetsChanged;
 
+    public IReadOnlyDictionary<string, JsonElement> Defaults { get; } = TrainingParameterRules.Complete(null);
+
     private string FilePath => Path.Combine(workDirectory, "training", "presets.json");
 
     public async Task<IReadOnlyList<TrainingPreset>> ListAsync(CancellationToken cancellationToken = default)
