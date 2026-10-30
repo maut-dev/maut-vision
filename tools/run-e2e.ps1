@@ -10,6 +10,8 @@ param(
     # Оставить рабочую папку прогона (проект, журнал Core, архивы); при ошибке она остаётся всегда.
     [switch]$Keep,
     [switch]$SkipBuild,
+    # Тот же сценарий только через MCP: stdio-прокси запускает программу в трее, затем официальный клиент по HTTP (tests/MautVision.E2E/McpRun.cs).
+    [switch]$Mcp,
     [int]$TimeoutSeconds = 900
 )
 
@@ -70,6 +72,7 @@ try
     $taskE2EArguments = @('--app-dir', $taskAppDir, '--work-directory', $taskWork, '--device', $Device)
     if ($BaseModelWeights) { $taskE2EArguments += @('--base-model-weights', $BaseModelWeights) }
     if ($Keep) { $taskE2EArguments += '--keep' }
+    if ($Mcp) { $taskE2EArguments += '--mcp' }
     & $taskE2E @taskE2EArguments
     if ($LASTEXITCODE -ne 0) { throw "Сквозной прогон не прошёл (код $LASTEXITCODE)." }
     $taskPassed = $true
