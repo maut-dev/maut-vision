@@ -7,6 +7,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-30
+
 ### Added
 
 - **MCP server**: a local Model Context Protocol server in the host for AI clients on this computer (Claude Code, Claude Desktop,
@@ -110,6 +112,7 @@ First public release.
   resource channel for images, structured logs.
 - **Delivery**: a per-user Inno Setup installer with the WebView2 bootstrapper, bundled ffmpeg (LGPL) and Python worker.
 
-[Unreleased]: https://github.com/maut-dev/maut-vision/compare/v1.1.0...dev
+[Unreleased]: https://github.com/maut-dev/maut-vision/compare/v1.2.0...dev
+[1.2.0]: https://github.com/maut-dev/maut-vision/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/maut-dev/maut-vision/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/maut-dev/maut-vision/releases/tag/v1.0.0
