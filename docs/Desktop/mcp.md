@@ -55,7 +55,39 @@ Kestrel listens on `127.0.0.1` only. Every request passes a guard before the SDK
 - `Authorization: Bearer <token>` must match, compared in constant time; otherwise `401` with `WWW-Authenticate: Bearer`.
 
 The SDK serves Streamable HTTP in `StatefulForInitializeClients` mode: clients with the initialize handshake get a session (its uploads
-are removed when it ends), clients of the 2026-07-28 revision are served per request.
+are removed and its live checks stop when it ends), clients of the 2026-07-28 revision are served per request and never end a session, so
+the server also cleans up by time (see [Cleanup by time](#cleanup-by-time)).
+
+## stdio proxy
+
+Clients that only start a command (Claude Desktop) use `maut-vision-mcp.exe`, a small console program next to `MautVision.Desktop.exe`
+(project `src/MautVision.McpProxy`). It is not a second server: it speaks MCP over stdio to the client and passes every request to the
+Streamable HTTP endpoint of the running application, so the one Core of the application still serves everything.
+
+```json
+{ "mcpServers": { "maut-vision": { "command": "C:\Users\<you>\AppData\Local\Programs\MautVision\maut-vision-mcp.exe", "args": [] } } }
+```
+
+- Both sides are the official SDK: `StdioServerTransport` towards the client, `McpClient` with `HttpClientTransport` towards the application.
+  The stdio server takes the identity, instructions and capabilities of the application; its handlers forward `tools/*`, `resources/*`
+  and `prompts/*` unchanged, results included (structured and image content), and `notifications/progress` of the application go back with
+  the client's own token. Each side negotiates its protocol revision with its peer; per-request `_meta` fields of the 2026-07-28 revision
+  are not copied across.
+- The endpoint and the token are read from `host-settings.json` of the work directory (`%LOCALAPPDATA%\MautVision`, or
+  `--work-directory <folder>`), never from the command line, so the token does not appear in process lists or client configurations.
+- When the application is closed (its single-instance mutex is absent) and `launchOnRequest` is on (default), the proxy starts
+  `MautVision.Desktop.exe --tray` through the shell, so the application does not inherit the client's pipes, and waits up to 60 s for the
+  endpoint. With `--tray` nothing but the tray icon appears: the loading window is not shown and the main window goes to the tray once the
+  library is shown (it needs WebView2 for that).
+- The upstream client is named after the downstream one, so jobs read «ИИ (claude-ai) · …». A refused connection (the application was
+  closed meanwhile) reconnects — starting it again when allowed — and repeats the request once; other failures are returned as they are.
+- Everything for people goes to stderr, which clients keep in their logs: MCP turned off («Turn it on in the "AI assistants (MCP)" dialog»),
+  the application not running with `launchOnRequest` off, or no answer within 60 s. The proxy ends with code 1 then, and when stdin
+  closes otherwise.
+
+`build-installer.ps1` publishes the proxy self-contained into a separate folder and adds only its own files (`maut-vision-mcp.*`, about
+300 KB with symbols) to the payload: the runtime and the SDK assemblies of the application serve it. The script fails when the proxy would need a newer
+assembly than the application ships or a file the application does not have, and checks that the proxy starts on that runtime.
 
 ## Tools
 
@@ -214,8 +246,8 @@ finished, check, frames }` and are followed with `get_check`.
 Live checks hold the GPU slot: while training, an evaluation or another check holds it, a start is refused at once with
 `checks.gpu_busy_training`, `checks.gpu_busy_evaluation` or `checks.gpu_busy_prediction`, as in the window. A check started through MCP
 stops with `stop_check`, at its time limit, when the user opens another project (Core), when the page reloads, when its MCP session ends
-(`McpTools.EndSession`, stop reason `session_ended`) and when the server stops. Clients of the 2026-07-28 revision are served per request
-and have no session; their screen checks end at the time limit, which is therefore at most 300 s.
+(`McpTools.EndSession`, stop reason `session_ended`), when no MCP request touched it for 10 minutes ([Cleanup by time](#cleanup-by-time),
+also `session_ended`) and when the server stops. The time limit of a screen check is at most 300 s.
 
 IDs of these tools are `view` targets: `{ trainingPlot: name, runId }` (names from `get_training_run.plots` or the passport) and
 `{ check: checkId }` — the latest analyzed frame of a live check with its boxes.
@@ -252,9 +284,22 @@ Paths are absolute Windows paths. `McpPaths` normalizes a path and resolves it t
 file dialog. With the optional restriction the final path must lie inside an allowed folder, also resolved, so `..` and junctions cannot
 leave it (`mcp.path_not_allowed`). Missing paths give `mcp.path_not_found`, relative ones `mcp.path_invalid`.
 
-`upload_file` takes a file in base64 for clients without disk access: at most 10 MB per file and 50 MB per session. Files go to
-`mcp-uploads/<session>/<uploadId>/` in the work directory; a session's files are removed when it ends, all of them when the server starts
-or stops and after the application starts.
+`upload_file` takes a file in base64 for clients without disk access: at most 10 MB per file and 50 MB per session (clients served per
+request share one quota). Files go to `mcp-uploads/<session>/<uploadId>/` in the work directory; a session's files are removed when it
+ends, a file older than an hour by the cleanup, all of them when the server starts or stops and after the application starts.
+
+## Cleanup by time
+
+Clients of the 2026-07-28 revision have no session end, so `McpService` sweeps every minute while the server runs (`McpCleanup`):
+
+| What | Limit | Then |
+|---|---|---|
+| an upload | older than 1 hour | removed from disk and forgotten (`mcp.upload_not_found`) |
+| a live check started through MCP | no MCP request touched it for 10 minutes | stopped with `stopReason` `session_ended`, its record forgotten |
+
+A request touches a check when it names it: `start_*`, `get_check`, `stop_check` and `view { check }`. A client that follows its check with
+`get_check` keeps it running; a screen check also ends at its own limit of at most 300 s. Uploads also go when the server starts, so a run
+that ended abnormally leaves nothing. The smoke shortens the limits through `McpService.Cleanup`; a change wakes the sweep at once.
 
 ## Viewing images
 
@@ -307,3 +352,11 @@ background, a generation sample and a dataset sample, the manifest resource, the
 `SmokeRunner.McpTraining.cs` and `SmokeRunner.McpChecks.cs` run training → version → working → export (the ZIP on disk) → evaluation →
 image check with its picture → video check with frame views → comparison with the fake worker, the screen tools with «Разрешить» and
 «Отклонить», a busy GPU, `stop_check`, a check stopped by the end of its session, the resources and the prompt.
+`CheckMcpCleanupAsync` shortens the cleanup limits: an old upload of a client without a session goes from disk and its idle screen check
+stops, while `get_check` keeps it running.
+
+`tools/run-e2e.ps1 -Mcp` installs the test build and drives it only through MCP (`tests/MautVision.E2E/McpRun.cs`): the proxy refuses with
+MCP off and with `launchOnRequest` off, then starts the closed application in the tray and serves tools, resources, prompts and a `view`
+with image content; the official client over HTTP runs project → classes and images → backgrounds → recipe → generation → dataset plan,
+build and verification → training with the packaged worker on the GPU → version → evaluation through the proxy with progress →
+`predict_image` with its picture → model ZIP → `view_many`; the application then closes from the tray.

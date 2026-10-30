@@ -10,18 +10,39 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - **MCP server**: a local Model Context Protocol server in the host for AI clients on this computer (Claude Code, Claude Desktop,
-  Cursor): Streamable HTTP on `127.0.0.1` (port 46100 by default) with the official C# SDK, a Bearer token and Host/Origin checks against
-  DNS rebinding. Off by default; turned on, restarted on a new port or token and turned off at runtime. ASP.NET Core and the SDK are not
-  loaded while it is off.
+  Cursor): Streamable HTTP on `127.0.0.1` (port 46100 by default, a free port of 39100–39999 on the first enable when Windows reserves it)
+  with the official C# SDK, a Bearer token and Host/Origin checks against DNS rebinding. Off by default; turned on, restarted on a new port
+  or token and turned off at runtime. ASP.NET Core and the SDK are not loaded while it is off.
 - **MCP settings**: the dialog «Подключение ИИ (MCP)» / "AI assistants (MCP)" in the header: state, port, access level (read only, read
-  and change, full — the default), the token with copy and regeneration, ready configurations for Claude Code and Claude Desktop, an
-  optional allowed-folders restriction, launch on request, a privacy note and the log of the last 500 calls.
-- **MCP tools** (first set): `get_app_info`, `get_hardware`, `set_interface_language`, `list_jobs`, `get_job`, `wait_job`, `cancel_job`,
-  `preview_folder`, `upload_file`, `view`, `view_many`, `list_projects`, `get_project`, `create_project`, `update_project`,
-  `archive_project`, `open_project_in_app`, `delete_project`, and the resources `maut://projects` and `maut://projects/{id}`. Every tool
-  has input and output schemas and MCP annotations; errors carry a code and the English text of the UI catalog.
-- **MCP confirmations**: deleting a project asks the user in the window («Разрешить» / «Отклонить», two minutes).
-- **Core**: `IProjectsManager.PrepareAsync` prepares a project for background work without switching to it.
+  and change, full — the default), the token with copy and regeneration, ready configurations for Claude Code (`claude mcp add`,
+  `.mcp.json`) and Claude Desktop, an optional allowed-folders restriction, starting the application on request, a privacy note and the
+  log of the last 500 calls.
+- **MCP tools** (96) by area, each with input and output schemas, MCP annotations and errors with a code and the English text of the UI:
+  - system, jobs and files: application and hardware info, the interface language, jobs with `wait_job` and progress notifications,
+    folder preview, `upload_file` for clients without disk access;
+  - projects, base models, variants, classes and class images, image groups, imports of files, folders and video frames, annotation
+    (`get_annotations`, `set_annotations`, review);
+  - backgrounds (images, crops, video frames), generation recipes and runs, dataset plan, build, verification, export and archive;
+  - training (defaults, presets, runs, log), model versions (passport, working version, ZIP export), evaluation, image and video checks,
+    screen capture and screen checks, the comparison of versions.
+- **MCP viewing**: `view` and `view_many` return pictures for the model — frames with boxes, class images, backgrounds, generation and
+  dataset samples, training plots, the latest frame of a live check, files, uploads and video frames — fitted, cropped and numbered.
+- **MCP resources and prompts**: the library, a project, the composition of a dataset version, the whole training log and a model
+  passport as resources; prompts for reviewing annotation, preparing a dataset from a folder, a synthetic dataset, generation from a video,
+  and training and comparing a version.
+- **MCP confirmations**: deleting a project, capturing the screen and starting a screen check ask the user in the window («Разрешить» /
+  «Отклонить», two minutes) at every access level. Jobs an AI client starts are marked «ИИ (клиент) · …» in the job lists.
+- **stdio proxy** `maut-vision-mcp.exe` next to the application for clients that start a command (Claude Desktop): it reads the endpoint
+  and the token from the settings, forwards tools, resources, prompts, images and progress to the running application, and starts the
+  application in the notification area when it is closed.
+- **MCP cleanup by time**: uploads older than an hour are removed and live checks no MCP request touched for ten minutes stop, for
+  clients served per request without a session end.
+- **Core**: `IProjectsManager.PrepareAsync` prepares a project for background work without switching to it; training parameter defaults
+  are exposed for clients.
+
+### Changed
+
+- **Startup**: `--tray` starts the application hidden in the notification area (used by the stdio proxy).
 
 ## [1.1.0] - 2026-10-29
 
