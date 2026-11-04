@@ -59,6 +59,9 @@ const AnalyticsSection = lazy(() => import("@/components/analytics/analytics-sec
 
 type SectionId = "overview" | "variants" | "classes" | "backgrounds" | "generation" | "images" | "datasets" | "training" | "models" | "checks" | "analytics";
 
+/** A screen button of the header: the current screen is raised like a navigation item. */
+const headerNavClasses = "aria-[current=page]:border-line aria-[current=page]:bg-glass-fill-hover aria-[current=page]:shadow-highlight";
+
 /** A section of the project; its label and description come from the common catalog (sections.<id>). */
 interface Section {
     id: SectionId;
@@ -216,18 +219,19 @@ export function App() {
     }
 
     return (
-        <div className="flex h-full flex-col bg-background text-foreground">
-            <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b bg-card px-4">
+        <div className="flex h-full flex-col text-foreground">
+            {/* The shell (header and sidebar) is the only glass of the page; the content stays on the canvas. */}
+            <header className="glass relative z-10 flex h-14 shrink-0 items-center justify-between gap-4 border-x-0 border-t-0 px-4">
                 <div className="flex min-w-0 items-center gap-3">
                     <img src="./brand/logo-mark.png" alt="Maut Vision" className="size-8 shrink-0 object-contain" draggable={false} />
                     <span className="hidden font-semibold tracking-tight sm:inline">Maut Vision</span>
-                    <div className="h-6 border-l" />
-                    <Button size="sm" variant="ghost" onClick={() => navigate({ kind: "library" })} disabled={busy} aria-current={view.kind === "library" ? "page" : undefined}>
+                    <div className="h-6 border-l border-line-strong" />
+                    <Button size="sm" variant="ghost" className={headerNavClasses} onClick={() => navigate({ kind: "library" })} disabled={busy} aria-current={view.kind === "library" ? "page" : undefined}>
                         <FolderOpen />{t("app.allProjects")}
                     </Button>
                     {project && (
                         <>
-                            <span className="text-muted-foreground" aria-hidden>/</span>
+                            <span className="text-text-3" aria-hidden>/</span>
                             <Select value={project.id} onValueChange={id => guard(() => void openProject(id))} disabled={busy}>
                                 <SelectTrigger aria-label={t("app.switchProject")} className="w-44 sm:w-64"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -243,40 +247,40 @@ export function App() {
                             <Settings />
                         </Button>
                     )}
-                    <Button size="sm" variant={view.kind === "catalog" ? "secondary" : "ghost"} onClick={showCatalog} disabled={busy} aria-current={view.kind === "catalog" ? "page" : undefined}>
+                    <Button size="sm" variant="ghost" className={headerNavClasses} onClick={showCatalog} disabled={busy} aria-current={view.kind === "catalog" ? "page" : undefined}>
                         <Boxes />{t("app.baseModels")}
                     </Button>
                     <McpHeader disabled={busy} openProject={projectId => guard(() => void openProject(projectId))} />
                     <LanguageSelect disabled={busy} failed={setNotice} />
-                    <span className="hidden text-xs text-muted-foreground lg:block">{t("app.localStorage")}</span>
+                    <span className="hidden text-xs text-text-3 lg:block">{t("app.localStorage")}</span>
                 </div>
             </header>
             <div className="flex min-h-0 flex-1">
                 {project && view.kind === "project" && (
-                    <aside className="flex min-h-0 w-16 shrink-0 flex-col overflow-y-auto border-r bg-card p-2 md:w-52 md:p-3">
-                        <nav aria-label={t("app.projectSections")} className="space-y-1">
+                    <aside className="glass flex min-h-0 w-16 shrink-0 flex-col overflow-y-auto overscroll-contain border-y-0 border-l-0 p-2 shadow-none md:w-52 md:p-3">
+                        <nav aria-label={t("app.projectSections")} className="grid gap-0.5">
                             {sections.map(({ id, icon: Icon, available }) => { const label = t(`sections.${id}.label`); return (
-                                <Button
+                                <button
                                     key={id}
+                                    type="button"
                                     data-section={id}
                                     aria-current={view.section === id ? "page" : undefined}
                                     title={available ? label : t("app.comingLater", { label })}
                                     aria-label={label}
-                                    variant={view.section === id ? "secondary" : "ghost"}
-                                    className="w-full justify-center gap-3 md:justify-start"
+                                    className="nav-item w-full justify-center md:justify-start"
                                     disabled={busy || !available}
                                     onClick={() => { if (view.section !== id) navigate({ kind: "project", projectId: project.id, section: id }); }}
                                 >
-                                    <Icon className="size-4" />
-                                    <span className="hidden md:inline">{label}</span>
-                                    {!available && <span className="ml-auto hidden text-[11px] text-muted-foreground md:inline">{t("app.soon")}</span>}
-                                </Button>
+                                    <Icon />
+                                    <span className="hidden truncate md:inline">{label}</span>
+                                    {!available && <span className="ml-auto hidden text-[11px] text-text-3 md:inline">{t("app.soon")}</span>}
+                                </button>
                             ); })}
                         </nav>
                     </aside>
                 )}
                 <main className={`min-h-0 min-w-0 flex-1 overscroll-contain ${bounded ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`} aria-busy={busy}>
-                    <div className={`mx-auto w-full px-5 py-6 md:px-8 ${bounded ? "flex min-h-0 flex-1 flex-col gap-5 overflow-hidden max-w-7xl" : `space-y-5 ${project ? "max-w-6xl" : "max-w-5xl"}`}`}>
+                    <div className={`mx-auto w-full max-w-7xl px-5 py-6 md:px-8 ${bounded ? "flex min-h-0 flex-1 flex-col gap-5 overflow-hidden" : "space-y-5"}`}>
                         {view.kind === "library" && (
                             <ProjectLibrary
                                 library={library}
@@ -299,8 +303,8 @@ export function App() {
                         {project && view.kind === "project" && (
                             <>
                                 <div className="shrink-0">
-                                    <h1 className="text-2xl font-semibold break-words" data-testid="active-project-name">{project.name}</h1>
-                                    <p className="mt-2 max-w-prose text-sm text-muted-foreground">{t(`sections.${section.id}.label`)} · {t(`sections.${section.id}.description`)}</p>
+                                    <h1 className="text-2xl font-semibold tracking-[-0.025em] break-words" data-testid="active-project-name">{project.name}</h1>
+                                    <p className="mt-2 max-w-prose text-sm text-text-2">{t(`sections.${section.id}.label`)} · {t(`sections.${section.id}.description`)}</p>
                                 </div>
                                 {section.id === "overview" && (
                                     <OverviewSection
@@ -391,7 +395,7 @@ export function App() {
             </div>
             <div className="fixed bottom-4 right-4 z-40 max-w-sm" aria-live="polite">
                 {notice && !editor && (
-                    <Alert variant="destructive" className="bg-card">
+                    <Alert variant="destructive" className="shadow-glass-3">
                         <AlertDescription>
                             <p>{notice}</p>
                             <Button variant="ghost" size="sm" className="mt-2" onClick={() => setNotice(undefined)}>{t("app.close")}</Button>

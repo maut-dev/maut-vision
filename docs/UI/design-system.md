@@ -1,0 +1,72 @@
+# Design system in the UI
+
+The interface follows the Maut Vision Glass design system, dark theme only. Its tokens are CSS variables in `ui/src/index.css`; the
+shadcn variables (`--background`, `--card`, `--primary`, `--border`…) point to them, so `bg-card` or `text-muted-foreground` already
+use the palette. New code uses the token classes directly: `bg-ink-2`, `text-text-2`, `text-ok`, `border-line`, `shadow-glass-3`.
+
+| Token | Meaning |
+|---|---|
+| `ink-0`…`ink-3` | the canvas, the solid content surface, raised solid (fields), hover and tracks |
+| `text-1`…`text-3` | main, secondary and the quietest text (≥ 4.5:1 on `ink-0` and `ink-1`) |
+| `brand`, `brand-strong`, `brand-soft`, `on-brand` | the lime of the mark and text on it |
+| `ok`, `warn`, `danger`, `info` | states, always with a word or an icon |
+| `line`, `line-strong`, `glass-*`, `focus` | lines, glass fills and edges, the focus ring |
+| `series-1`…`series-8` | chart series and classes by number |
+
+Radii: `rounded-md` 8 px (buttons, fields), `rounded-lg` 12 px (cards), `rounded-xl` 18 px (glass panels, dialogs), `rounded-2xl` 26 px.
+Motion: 120 ms for press and hover, 220 ms for a state change, 420 ms for progress, `ease-glass`; only transform, opacity and colour
+animate, and reduced motion makes everything instant. Fonts are Geist and Geist Mono bundled with the page (Latin and Cyrillic), Segoe UI
+otherwise; numbers use `tabular-nums`.
+
+## Layers
+
+There are three layers and glass never nests in glass. Blur is computed every frame for everything under the layer, so content that
+repeats or redraws stays solid.
+
+| Class | Where |
+|---|---|
+| `.surface` | content: lists, galleries, tables, forms, the annotation canvas, charts |
+| `.glass` | the shell: the header and the sidebar; a floating panel over the viewer |
+| `.glass-raised` | overlays: dialogs, Select lists, menus, popovers, toasts, tooltips |
+
+Without `backdrop-filter` and with `prefers-contrast: more` both glass classes become solid `ink-2`. The main area stays on the canvas: a
+section never wraps itself in glass. Depth comes from 1 px lines and the top highlight; shadows belong only to floating layers.
+
+## Brand colour
+
+Lime is a rare signal: at most one primary action of a view (`Button variant="brand"`), progress, the active navigation item and the
+"ready" state. The main action inside a form or a dialog is the white `default` button; the rest are `glass`/`outline`, `ghost` or
+`destructive`. `.corners` marks a selected or focused object with the viewfinder corners of the logo (`aria-selected="true"`).
+
+## Layout primitives
+
+Shared pieces live in `ui/src/components/layout/`: `SectionLayout`, `Pane`, `MasterDetail`, `Panel`, `Collapsible`, `EmptyState`,
+`Notice`, `Progress`, `Tabs`, `Toolbar`. Components of `components/ui/` keep the shadcn API with the design system variants (`Button`
+`brand` and `glass`, `Badge` `ok`/`warn`/`danger`/`info`/`brand`/`plain`, `Card` `surface` and `glass`).
+
+## One scroll per region
+
+A bounded section fits the window: the page never scrolls, and each region that can grow has exactly one scroll of its own. The root is
+`SectionLayout`; a region that scrolls is a `Pane`; its ancestors up to the root carry `min-h-0` and no overflow of their own. A dialog that
+can grow puts its content in `DialogBody`: the header and the footer stay, only the body scrolls.
+
+```tsx
+<SectionLayout>
+    <Toolbar>{actions}</Toolbar>
+    <MasterDetail>
+        <Pane surface aria-label={t("section.sets")}>{list}</Pane>
+        <Pane>{details}</Pane>
+    </MasterDetail>
+</SectionLayout>
+```
+
+```tsx
+<DialogContent>
+    <DialogHeader>…</DialogHeader>
+    <DialogBody>{longContent}</DialogBody>
+    <DialogFooter>…</DialogFooter>
+</DialogContent>
+```
+
+Grids that hold truncated or `nowrap` text use `minmax(0, 1fr)` columns, and flex children `min-w-0`: otherwise the longest line widens
+the region and the window scrolls horizontally. The smoke layout check verifies this at the 1080p and the minimum window sizes.

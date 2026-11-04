@@ -1,5 +1,115 @@
 @import "tailwindcss";
 
+/* The application has only the dark theme: dark: variants always apply, whatever the Windows colour scheme is. */
+@custom-variant dark (&:where(:root, :root *));
+
+/* Design system tokens (docs/UI/design-system.md). The values come from the Maut Vision Glass design system, dark theme. */
+:root {
+    color-scheme: dark;
+
+    /* Ink: the canvas and solid surfaces, tinted slightly green toward the lime identity. */
+    --ink-0: #07090a;
+    --ink-1: #0d1011;
+    --ink-2: #14181a;
+    --ink-3: #1d2326;
+
+    /* Text on ink. text-3 is the quietest allowed text (>= 4.5:1 on ink-0 and ink-1). */
+    --text-1: #f3f6f1;
+    --text-2: #aab2ab;
+    --text-3: #838c85;
+
+    /* The light green center of the Maut Vision mark; used sparingly: one primary action per view, progress, active and ready states. */
+    --brand: #cdf91e;
+    --brand-strong: #dcff55;
+    --brand-soft: rgb(205 249 30 / 0.12);
+    --on-brand: #0b1100;
+
+    /* Status. Always paired with a word or an icon, never colour alone. */
+    --ok: #4ade80;
+    --warn: #f5b83d;
+    --danger: #ff7a7a;
+    --info: #6aa8ff;
+
+    /* Comparison series and classes of model checks: a color by the version number or the class index. series-6 stays darker than the
+       design system's for contrast with series-3 on the canvas. */
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --metric-best: var(--ok);
+
+    /* Lines and glass. */
+    --line: rgb(255 255 255 / 0.08);
+    --line-strong: rgb(255 255 255 / 0.16);
+    --glass-fill: rgb(255 255 255 / 0.045);
+    --glass-fill-hover: rgb(255 255 255 / 0.075);
+    --glass-fill-raised: rgb(20 24 26 / 0.62);
+    --glass-edge: rgb(255 255 255 / 0.11);
+    --glass-highlight: inset 0 1px 0 rgb(255 255 255 / 0.09);
+    --glass-blur: 22px;
+    --glass-blur-raised: 36px;
+    --glass-saturate: 1.35;
+    --focus: #e4ff7a;
+
+    /* Aurora: the light the glass refracts, fixed behind the canvas. */
+    --aurora-1: rgb(205 249 30 / 0.1);
+    --aurora-2: rgb(57 135 229 / 0.16);
+    --aurora-3: rgb(144 133 233 / 0.13);
+
+    /* Elevation: shadows only on floating layers. */
+    --shadow-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-2: 0 8px 24px -8px rgb(0 0 0 / 0.55), 0 2px 6px rgb(0 0 0 / 0.35);
+    --shadow-3: 0 28px 64px -16px rgb(0 0 0 / 0.7), 0 6px 18px rgb(0 0 0 / 0.4);
+
+    /* Spacing, 4 px base (Tailwind spacing uses the same step). */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 32px;
+    --space-7: 48px;
+    --space-8: 72px;
+    --space-9: 112px;
+
+    /* Motion: 120 ms for press and hover, 220 ms for a state change, 420 ms for progress. */
+    --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+    --dur-fast: 120ms;
+    --dur: 220ms;
+    --dur-slow: 420ms;
+
+    /* shadcn variables, re-pointed to the tokens so every component adopts the palette. */
+    --background: var(--ink-0);
+    --foreground: var(--text-1);
+    --card: var(--ink-1);
+    --popover: var(--ink-2);
+    --primary: var(--text-1);
+    --primary-foreground: var(--ink-0);
+    --secondary: var(--ink-3);
+    --muted: var(--ink-2);
+    --muted-foreground: var(--text-2);
+    --accent: var(--ink-3);
+    --border: var(--line);
+    --input: var(--line-strong);
+    --ring: var(--focus);
+    --destructive: var(--danger);
+}
+
+@media (prefers-contrast: more) {
+    :root {
+        --glass-fill: rgb(20 24 26 / 0.92);
+        --glass-fill-raised: rgb(20 24 26 / 0.98);
+        --glass-edge: rgb(255 255 255 / 0.4);
+        --line: rgb(255 255 255 / 0.22);
+        --text-2: #d0d6d0;
+        --text-3: #b2bab3;
+    }
+}
+
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -9,85 +119,279 @@
     --color-primary-foreground: var(--primary-foreground);
     --color-secondary: var(--secondary);
     --color-secondary-foreground: var(--foreground);
-    --color-muted: var(--secondary);
+    --color-muted: var(--muted);
     --color-muted-foreground: var(--muted-foreground);
-    --color-accent: var(--secondary);
+    --color-accent: var(--accent);
     --color-accent-foreground: var(--foreground);
     --color-border: var(--border);
-    --color-input: var(--border);
-    --color-ring: var(--primary);
-    --color-destructive: #f87171;
-    --color-popover: var(--card);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-destructive: var(--destructive);
+    --color-popover: var(--popover);
     --color-popover-foreground: var(--foreground);
+
+    --color-ink-0: var(--ink-0);
+    --color-ink-1: var(--ink-1);
+    --color-ink-2: var(--ink-2);
+    --color-ink-3: var(--ink-3);
+    --color-text-1: var(--text-1);
+    --color-text-2: var(--text-2);
+    --color-text-3: var(--text-3);
     --color-brand: var(--brand);
+    --color-brand-strong: var(--brand-strong);
+    --color-brand-soft: var(--brand-soft);
+    --color-on-brand: var(--on-brand);
+    --color-ok: var(--ok);
+    --color-warn: var(--warn);
+    --color-danger: var(--danger);
+    --color-info: var(--info);
+    --color-focus: var(--focus);
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+    --color-glass-fill: var(--glass-fill);
+    --color-glass-fill-hover: var(--glass-fill-hover);
+    --color-glass-edge: var(--glass-edge);
+    --color-series-1: var(--series-1);
+    --color-series-2: var(--series-2);
+    --color-series-3: var(--series-3);
+    --color-series-4: var(--series-4);
+    --color-series-5: var(--series-5);
+    --color-series-6: var(--series-6);
+    --color-series-7: var(--series-7);
+    --color-series-8: var(--series-8);
+
+    --shadow-glass-1: var(--shadow-1);
+    --shadow-glass-2: var(--shadow-2);
+    --shadow-glass-3: var(--shadow-3);
+    --shadow-highlight: var(--glass-highlight);
+
+    --ease-glass: var(--ease);
+
+    /* Progress: the running shimmer of a live job and the sweep of an indeterminate one. */
+    --animate-progress-shimmer: progress-shimmer 2.4s linear infinite;
+    --animate-progress-sweep: progress-sweep 1.6s var(--ease) infinite;
+
+    @keyframes progress-shimmer {
+        to {
+            background-position: -200% 0;
+        }
+    }
+
+    @keyframes progress-sweep {
+        from {
+            transform: translateX(-100%);
+        }
+
+        to {
+            transform: translateX(250%);
+        }
+    }
+}
+
+/* Radii and type are theme values (rounded-*, font-sans, font-mono) and CSS variables for the component classes below. The design system
+   names them by size: sm 8 (buttons, fields) is rounded-md, md 12 (cards) is rounded-lg, lg 18 (glass panels) is rounded-xl, xl 26 is
+   rounded-2xl. */
+@theme static {
+    --radius-xs: 4px;
     --radius-sm: 6px;
     --radius-md: 8px;
-    --radius-lg: 8px;
-    --radius-xl: 12px;
+    --radius-lg: 12px;
+    --radius-xl: 18px;
+    --radius-2xl: 26px;
+
+    /* Geist when it is loaded, the Segoe UI of Windows otherwise. */
+    --font-sans: "Geist", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "Geist Mono", "Cascadia Mono", Consolas, monospace;
 }
 
-:root {
-    color-scheme: dark;
-    --background: #09090b;
-    --foreground: #fafafa;
-    --card: #101012;
-    --primary: #fafafa;
-    --primary-foreground: #18181b;
-    --secondary: #27272a;
-    --muted-foreground: #a1a1aa;
-    --border: #27272a;
-    /* The light green center of the Maut Vision mark; used sparingly: progress and the active state. */
-    --brand: #cdf91e;
-    /* Comparison series and classes of model checks: a color by the version number or the class index. */
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --series-5: #d55181;
-    --series-6: #008300;
-    --series-7: #9085e9;
-    --series-8: #e66767;
-    --metric-best: #4ade80;
+@layer base {
+    html,
+    body,
+    #root {
+        height: 100%;
+    }
+
+    body {
+        margin: 0;
+        background: var(--ink-0);
+        color: var(--text-1);
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-feature-settings: "ss01", "cv11";
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* The aurora is one fixed layer, painted once and never animated; glass samples it through backdrop-filter. */
+    body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(46vmax 38vmax at 82% -8%, var(--aurora-2), transparent 70%),
+            radial-gradient(40vmax 34vmax at -6% 24%, var(--aurora-3), transparent 70%),
+            radial-gradient(36vmax 30vmax at 62% 104%, var(--aurora-1), transparent 70%);
+    }
+
+    * {
+        border-color: var(--border);
+        scrollbar-color: var(--line-strong) transparent;
+    }
+
+    button {
+        cursor: pointer;
+    }
+
+    button:disabled {
+        cursor: default;
+    }
+
+    ::selection {
+        background: var(--brand);
+        color: var(--on-brand);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--focus);
+        outline-offset: 2px;
+    }
+
+    input,
+    textarea {
+        caret-color: var(--brand);
+    }
+
+    input[type="number"] {
+        font-variant-numeric: tabular-nums;
+    }
 }
 
-html,
-body,
-#root {
-    height: 100%;
-}
+@layer components {
+    /* Three layers: .surface for content, .glass for the shell and floating panels, .glass-raised for dialogs, menus and popovers. Glass
+       never nests in glass; without backdrop-filter or with more contrast it is solid ink-2. */
+    .glass,
+    .glass-raised {
+        border: 1px solid var(--glass-edge);
+        box-shadow: var(--glass-highlight), var(--shadow-2);
+        background: var(--ink-2);
+    }
 
-body {
-    margin: 0;
-    background: var(--background);
-    color: var(--foreground);
-    font-family: "Segoe UI", sans-serif;
-    font-size: 14px;
-}
+    @supports (backdrop-filter: blur(1px)) {
+        .glass {
+            background: var(--glass-fill);
+            backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        }
 
-* {
-    border-color: var(--border);
-}
+        .glass-raised {
+            background: var(--glass-fill-raised);
+            backdrop-filter: blur(var(--glass-blur-raised)) saturate(var(--glass-saturate));
+            box-shadow: var(--glass-highlight), var(--shadow-3);
+        }
+    }
 
-button {
-    cursor: pointer;
-}
+    @media (prefers-contrast: more) {
+        .glass,
+        .glass-raised {
+            background: var(--ink-2);
+            backdrop-filter: none;
+        }
+    }
 
-button:disabled {
-    cursor: default;
-}
+    .surface {
+        background: var(--ink-1);
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+    }
 
-::selection {
-    background: #3f3f46;
-    color: #fafafa;
-}
+    /* Viewfinder corners from the logo: mark a focused or selected object (hover, aria-selected="true" or data-selected="true"). */
+    .corners {
+        position: relative;
+    }
 
-input,
-textarea {
-    caret-color: var(--foreground);
-}
+    .corners::before,
+    .corners::after {
+        content: "";
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        pointer-events: none;
+        border: 2px solid var(--brand);
+        opacity: 0;
+        transition: opacity var(--dur) var(--ease);
+    }
 
-input[type="number"] {
-    font-variant-numeric: tabular-nums;
+    .corners::before {
+        top: -1px;
+        left: -1px;
+        border-right: 0;
+        border-bottom: 0;
+        border-top-left-radius: inherit;
+    }
+
+    .corners::after {
+        right: -1px;
+        bottom: -1px;
+        border-top: 0;
+        border-left: 0;
+        border-bottom-right-radius: inherit;
+    }
+
+    .corners:hover::before,
+    .corners:hover::after,
+    .corners[aria-selected="true"]::before,
+    .corners[aria-selected="true"]::after,
+    .corners[data-selected="true"]::before,
+    .corners[data-selected="true"]::after {
+        opacity: 1;
+    }
+
+    /* A navigation item of the shell: the current one is raised glass with its icon in the brand colour. */
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        height: 36px;
+        padding: 0 var(--space-3);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-2);
+        border: 1px solid transparent;
+        border-radius: var(--radius-md);
+        outline: none;
+        transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+    }
+
+    .nav-item svg {
+        width: 16px;
+        height: 16px;
+        flex: none;
+    }
+
+    .nav-item:hover:not(:disabled) {
+        color: var(--text-1);
+        background: var(--glass-fill);
+    }
+
+    .nav-item:focus-visible {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 28%, transparent);
+    }
+
+    .nav-item:disabled {
+        opacity: 0.45;
+    }
+
+    .nav-item[aria-current="page"] {
+        color: var(--text-1);
+        background: var(--glass-fill-hover);
+        border-color: var(--line);
+        box-shadow: var(--glass-highlight);
+    }
+
+    .nav-item[aria-current="page"] svg {
+        color: var(--brand);
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {

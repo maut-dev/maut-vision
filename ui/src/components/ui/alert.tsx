@@ -2,14 +2,17 @@ import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
+// A notice on a solid surface with a status accent on the left; the status is also said by the text or an icon, never by colour alone.
 const alertVariants = cva(
-    "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 rounded-lg border px-4 py-3 text-sm has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
+    "relative grid w-full grid-cols-[0_1fr] items-start gap-y-0.5 overflow-hidden rounded-lg border border-line bg-ink-1 py-3 pr-4 pl-5 text-[13px] text-text-1 before:absolute before:inset-y-0 before:left-0 before:w-[3px] has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] has-[>svg]:gap-x-3 [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
     {
         variants: {
             variant: {
-                default: "bg-card text-card-foreground",
+                default: "before:bg-info [&>svg]:text-info",
                 destructive:
-                    "bg-card text-destructive *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
+                    "text-destructive before:bg-danger *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
+                warn: "before:bg-warn [&>svg]:text-warn",
+                ok: "before:bg-ok [&>svg]:text-ok",
             },
         },
         defaultVariants: {
@@ -62,4 +65,4 @@ function AlertDescription({
     )
 }
 
-export { Alert, AlertTitle, AlertDescription }
+export { Alert, AlertTitle, AlertDescription, alertVariants }

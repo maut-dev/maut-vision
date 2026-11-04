@@ -9,6 +9,7 @@ import { applyLanguage, browserLanguage, currentLanguage, initLocalization, type
 import { installErrorReporting } from "./lib/error-reporting";
 import { codedText } from "./lib/coded-text";
 import { backgroundReasonText, blockerText, errorText, planWarningText } from "./lib/errors";
+import "./fonts.css";
 import "./index.css";
 
 declare global {

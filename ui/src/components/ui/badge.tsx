@@ -3,20 +3,24 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 import { Slot } from "radix-ui"
 
+// A 22 px pill with a status dot. It never widens its parent: long text wraps inside max-w-full.
 const badgeVariants = cva(
-    "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden rounded-full border border-transparent px-2 py-0.5 text-xs font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none [&>svg]:size-3",
+    "inline-flex min-h-[22px] w-fit max-w-full shrink-0 items-center gap-1.5 rounded-full border border-line bg-glass-fill px-2 py-[3px] text-left text-[11px] leading-[14px] font-medium tracking-[0.01em] text-text-2 [overflow-wrap:anywhere] transition-[color,box-shadow] outline-none before:size-1.5 before:shrink-0 before:rounded-full before:bg-text-3 has-[>svg]:before:hidden focus-visible:border-focus focus-visible:ring-[3px] focus-visible:ring-focus/30 [&>svg]:pointer-events-none [&>svg]:size-3 [&>svg]:shrink-0",
     {
         variants: {
             variant: {
-                default: "bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
-                secondary:
-                    "bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
-                destructive:
-                    "bg-destructive text-white focus-visible:ring-destructive/20 dark:bg-destructive/60 dark:focus-visible:ring-destructive/40 [a&]:hover:bg-destructive/90",
-                outline:
-                    "border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
-                ghost: "[a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
-                link: "text-primary underline-offset-4 [a&]:hover:underline",
+                default: "border-transparent bg-text-1 text-ink-0 before:bg-ink-0 [a&]:hover:bg-text-2",
+                secondary: "[a&]:hover:bg-glass-fill-hover",
+                destructive: "border-danger/35 bg-danger/10 text-danger before:bg-danger [a&]:hover:bg-danger/15",
+                outline: "border-line-strong bg-transparent [a&]:hover:bg-glass-fill",
+                ghost: "border-transparent bg-transparent [a&]:hover:bg-glass-fill",
+                link: "border-transparent bg-transparent text-primary underline-offset-4 before:hidden [a&]:hover:underline",
+                ok: "before:bg-ok",
+                warn: "before:bg-warn",
+                danger: "before:bg-danger",
+                info: "before:bg-info",
+                brand: "border-transparent bg-brand-soft text-brand before:bg-brand before:shadow-[0_0_8px_var(--brand)]",
+                plain: "before:hidden",
             },
         },
         defaultVariants: {

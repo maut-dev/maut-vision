@@ -25,7 +25,9 @@ Core → Python worker (обучение, проверки) · ffmpeg (кадр�
 - **UI** (`ui/`) — React, TypeScript, Tailwind, shadcn/Radix. Экраны получают состояние запросом и обновляются событиями, без опроса.
   DTO на C# и TypeScript меняются вместе; UI и host поставляются вместе, без `protocolVersion`. Интерфейс — на русском и английском:
   язык переключается в заголовке, по умолчанию — как в Windows; тексты лежат в каталогах `ui/src/locales/<язык>/`, Core и Desktop
-  передают коды и значения ([docs/UI/localization.md](../UI/localization.md)).
+  передают коды и значения ([docs/UI/localization.md](../UI/localization.md)). Оформление — тёмная тема дизайн-системы Maut Vision
+  Glass: токены в `ui/src/index.css`, стекло только у оболочки и наложений, общие блоки раскладки в `ui/src/components/layout/`
+  ([docs/UI/design-system.md](../UI/design-system.md)).
 - **Python worker** (`python/`) — отдельный процесс на одну операцию над папкой задачи: `request.json` → события JSON Lines в stdout →
   `output/result.json`. Ничего не скачивает, не поднимает сервер; дерево процессов не переживает приложение.
 - **MCP** (`src/MautVision.Desktop/Mcp`) — локальный сервер Model Context Protocol для ИИ-ассистентов: Streamable HTTP на `127.0.0.1`
