@@ -197,7 +197,7 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
                     )}
                 </div>
                 {(source.metadata || !!source.overlays?.length) && (
-                    <div className="max-h-32 shrink-0 overflow-auto text-xs text-muted-foreground">
+                    <div className="max-h-[30%] min-h-0 shrink-0 overflow-y-auto overscroll-contain text-xs text-text-2" data-testid="viewer-metadata">
                         {source.metadata}
                         {!!source.overlays?.length && (
                             <div className="mt-2 flex flex-wrap gap-2" aria-label={t("viewer.legend")}>

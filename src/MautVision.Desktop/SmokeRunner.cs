@@ -511,6 +511,12 @@ internal static partial class SmokeRunner
           };
           const tiles = () => $$('[data-testid="image-tile"]');
           const alertText = () => $('[data-testid="video-alert"]').textContent;
+          // A Radix tab activates on the primary mouse button going down, not on click.
+          const selectTab = async testId => {
+            const trigger = await wait(() => enabled($('[data-testid="' + testId + '"]')), 'Tab ' + testId);
+            trigger.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true, button: 0}));
+            return wait(() => trigger.getAttribute('aria-selected') === 'true' && trigger, 'Tab ' + testId + ' selected');
+          };
 
           if ($('[data-testid="annotation-editor"]')) {
             $('[data-testid="editor-back"]').click();
@@ -519,10 +525,11 @@ internal static partial class SmokeRunner
           setValue($('[data-testid="image-group-new-name"]'), 'Улица из видео');
           (await wait(() => enabled($('[data-testid="image-group-create"]')), 'Create enabled')).click();
           await wait(() => $('[data-testid="image-group-title"]')?.textContent === 'Улица из видео' && $('[data-testid="images-empty"]'), 'Video group selected');
-          (await wait(() => enabled($('[data-testid="video-open"]')), 'Video button')).click();
+          $$('[data-testid="images-empty"] button').find(item => item.textContent === 'Кадры из видео').click();
+          await wait(() => $('[data-testid="image-tab-video"]').getAttribute('aria-selected') === 'true', 'Video tab');
           const panel = await wait(() => $('[data-testid="video-frame-import"]'), 'Video panel');
           assert(panel.textContent.includes('Кадры из видео') && $('[data-testid="video-info"]').textContent === 'Выберите видео, затем задайте какие кадры извлечь.'
-            && $('[data-testid="video-extract"]').disabled && $('[data-testid="video-start"]').disabled, '«Кадры из видео» opens a panel waiting for a video');
+            && $('[data-testid="video-extract"]').disabled && $('[data-testid="video-start"]').disabled, '«Кадры из видео» of the empty gallery opens its tab waiting for a video');
           $('[data-testid="video-choose"]').click();
           await wait(() => $('[data-testid="video-info"]').textContent.startsWith('улица.mp4'), 'Video chosen');
           assert($('[data-testid="video-info"]').textContent === 'улица.mp4 · 640 × 360 · 5.0 с' && $('[data-testid="video-start"]').value === '0'
@@ -534,7 +541,11 @@ internal static partial class SmokeRunner
             'A count past the end shows the alert and disables «Извлечь кадры»');
           setValue($('[data-testid="video-count"]'), '5');
           (await wait(() => alertText() === '' && enabled($('[data-testid="video-extract"]')), 'Range valid')).click();
-          await wait(() => $$('[data-testid="import-summary"]').some(item => item.textContent.includes('Добавлено 5 / 5 · пропущено 0 · ошибок 0')), 'Video import result');
+          await wait(() => $('[data-testid="video-info"]').textContent.startsWith('Задача запущена') && $('[data-testid="image-tab-imports"]').textContent === 'Импорт1', 'Video import started');
+          await selectTab('image-tab-imports');
+          await wait(() => $$('[data-testid="image-imports"] [data-testid="import-summary"]').some(item => item.textContent.includes('Добавлено 5 / 5 · пропущено 0 · ошибок 0')), 'Video import result');
+          assert(true, 'The video import counts in the «Импорт» tab and shows its result there');
+          await selectTab('image-tab-images');
           await wait(() => tiles().length === 5 && tiles().every(tile => tile.querySelector('[data-status="loaded"] img')?.naturalWidth > 0), 'Frame thumbnails');
           assert(tiles()[0].textContent.includes('улица.mp4-frame-0.png') && tiles()[4].textContent.includes('улица.mp4-frame-4000.png')
             && tiles()[0].textContent.includes('640 × 360'), 'Five frames appear in the gallery with thumbnails');
@@ -949,6 +960,12 @@ internal static partial class SmokeRunner
           const near = (value, expected) => Math.abs(parseFloat(value) - expected) < 0.6;
           const status = () => $('[data-testid="editor-status"]')?.textContent;
           const tiles = () => $$('[data-testid="image-tile"]');
+          // A Radix tab activates on the primary mouse button going down, not on click.
+          const selectTab = async testId => {
+            const trigger = await wait(() => enabled($('[data-testid="' + testId + '"]')), 'Tab ' + testId);
+            trigger.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true, button: 0}));
+            return wait(() => trigger.getAttribute('aria-selected') === 'true' && trigger, 'Tab ' + testId + ' selected');
+          };
 
           (await wait(() => enabled($('[data-section="images"]')), 'Images section enabled')).click();
           await wait(() => $('[data-testid="images-section"]') && !$('[data-testid="image-groups"] [role="status"]'), 'Images section opened');
@@ -966,7 +983,7 @@ internal static partial class SmokeRunner
 
           button('Импорт файлов').click();
           await wait(() => enabled(button('Импорт файлов')), 'Cancelled selection');
-          assert(!$('[data-testid="image-imports"] [role="alert"]') && !tiles().length, 'A cancelled file choice starts no import');
+          assert(!$('[data-testid="image-imports-error"]') && !tiles().length && $('[data-testid="image-tab-imports"]').textContent === 'Импорт0', 'A cancelled file choice starts no import');
           assert($('[data-testid="import-skip-duplicates"]').getAttribute('aria-checked') === 'true' && $('[data-testid="import-recursive"]').getAttribute('aria-checked') === 'false',
             'Import options default to skipping duplicates without subfolders');
 
@@ -975,8 +992,12 @@ internal static partial class SmokeRunner
           await wait(() => tiles().length === 4 && tiles().every(tile => tile.querySelector('[data-status="loaded"] img')?.naturalWidth > 0), 'Thumbnails rendered');
           assert($('[data-testid="image-group-count"]').textContent === 'Кадров: 4' && tiles()[0].textContent.includes('640 × 480 · без рамок'),
             'Gallery shows thumbnails with counts after images.changed');
+          await selectTab('image-tab-imports');
           await wait(() => $('[data-testid="import-summary"]')?.textContent.includes('Добавлено 4 / 4 · пропущено 0 · ошибок 0'), 'Import history');
-          assert($$('[data-testid="image-imports"] [data-job-id]').length === 1, 'Import history of the group shows the result from job.changed');
+          assert($$('[data-testid="image-imports"] [data-job-id]').length === 1 && $('[data-testid="image-tab-imports"]').textContent === 'Импорт1',
+            'Import history of the group shows the result from job.changed in the «Импорт» tab');
+          await selectTab('image-tab-images');
+          await wait(() => tiles().length === 4, 'Gallery tab again');
 
           labelled('Изменить группу: Двор').click();
           const groupDialog = await wait(() => $('[data-testid="image-group-dialog"]'), 'Group dialog');
@@ -1200,6 +1221,13 @@ internal static partial class SmokeRunner
           const finished = row => row && ['succeeded', 'failed', 'cancelled'].includes(row.dataset.status) ? row : null;
           const setButton = name => $$('[data-background-set-id]').find(item => item.querySelector('span')?.textContent === name);
           const mode = id => $('[data-import-mode="' + id + '"]');
+          // A Radix tab activates on the primary mouse button going down, not on click.
+          const selectTab = async testId => {
+            const trigger = await wait(() => enabled($('[data-testid="' + testId + '"]')), 'Tab ' + testId);
+            trigger.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true, button: 0}));
+            return wait(() => trigger.getAttribute('aria-selected') === 'true' && trigger, 'Tab ' + testId + ' selected');
+          };
+          const tabText = testId => text('[data-testid="' + testId + '"]');
 
         """;
 
@@ -1214,12 +1242,17 @@ internal static partial class SmokeRunner
           setValue($('[data-testid="background-set-new-name"]'), 'Улица UI');
           (await wait(() => enabled($('[data-testid="background-set-create"]')), 'Create enabled')).click();
           const created = await wait(() => setButton('Улица UI')?.getAttribute('aria-pressed') === 'true' && setButton('Улица UI'), 'Set created and selected');
-          assert(created.textContent.includes('0 фонов · 320 × 256') && !$('[data-testid="set-size-mismatch"]', created)
-            && $('[data-testid="backgrounds-empty"]').textContent.includes('Фонов пока нет.'), 'A set created in the form takes the project input size');
-          assert($('[data-testid="background-add-toggle"]').getAttribute('aria-expanded') === 'true'
+          assert(created.textContent.includes('0 фонов · 320 × 256') && !$('[data-testid="set-size-mismatch"]', created),
+            'A set created in the form takes the project input size');
+          assert($('[data-testid="background-tab-add"]').getAttribute('aria-selected') === 'true'
+            && $$('[role="tablist"][aria-label="Содержимое набора"] [role="tab"]').map(item => item.textContent).join() === 'Фоны0,Добавить,Подготовка0'
             && $('[role="radiogroup"][aria-label="Способ добавления фонов"]') && mode('ready').getAttribute('aria-checked') === 'true'
             && $('[data-testid="background-add"]').textContent.includes('Каждый фон — картинка ровно 320 × 256 px'),
-            '«Добавить фоны» is open for an empty set with «Готовые кадры» chosen');
+            'An empty set opens on «Добавить» with «Готовые кадры» chosen; the tabs count backgrounds and runs');
+          await selectTab('background-tab-backgrounds');
+          await wait(() => $('[data-testid="backgrounds-empty"]')?.textContent.includes('Фонов пока нет.'), 'Empty gallery');
+          await selectTab('background-tab-add');
+          assert(true, 'The «Фоны» tab of an empty set shows the empty gallery');
           key(mode('ready'), 'ArrowRight');
           await wait(() => mode('images').getAttribute('aria-checked') === 'true' && document.activeElement === mode('images'), 'Arrow moves the mode');
           key(mode('images'), 'ArrowLeft');
@@ -1231,17 +1264,23 @@ internal static partial class SmokeRunner
           assert($('[data-testid="ready-exact"]').textContent === '2' && summary.textContent.includes('Выбрано файлов: 4.')
             && $('[data-testid="ready-skipped"]').textContent.includes('Будут пропущены: 2 (больше — 1, меньше — 1, не читаются — 0).')
             && $('[data-testid="ready-import"]').textContent === 'Импортировать 2 фона', 'The pre-import summary counts fitting and skipped files from the headers');
+          await selectTab('background-tab-backgrounds');
+          await selectTab('background-tab-add');
+          assert($('[data-testid="ready-summary"]') === summary, '«Добавить» keeps the chosen files while another tab is shown');
           $('[data-testid="ready-import"]').click();
-          await wait(() => thumbnailsLoaded(2), 'Ready thumbnails', () => tiles().length + ' tiles');
-          assert(tiles()[0].textContent.includes('готовый-1.png') && $('[data-testid="background-meta"]', tiles()[0]).textContent === '320 × 256'
-            && setButton('Улица UI').textContent.includes('2 фона · 320 × 256'), 'Imported backgrounds appear with thumbnails from the resource channel');
           const readyRun = await wait(() => finished(runs()[0]), 'Ready run finished');
           assert(readyRun.dataset.status === 'succeeded' && $('[data-testid="run-summary"]', readyRun).textContent.includes('добавлено 2, повторов 0, отклонено 2')
-            && $('[data-testid="background-runs-toggle"]').getAttribute('aria-expanded') === 'true', 'The run history of the set shows the result');
-          const issues = $('[data-testid="run-issues"]', readyRun);
-          issues.open = true;
+            && $('[data-testid="background-tab-add"]').getAttribute('aria-selected') === 'true' && $('[data-testid="background-add-runs"]')?.contains(readyRun)
+            && tabText('background-tab-runs') === 'Подготовка1', 'The started run shows its result in the task column of «Добавить» and counts in «Подготовка»');
+          $('[data-testid="run-issues-toggle"]', readyRun).click();
+          const issues = await wait(() => $('[data-testid="run-issues"] li', readyRun) && $('[data-testid="run-issues"]', readyRun), 'Skip reasons unfolded');
           assert(issues.textContent.includes('Причины пропуска (2)') && issues.textContent.includes('крупный.jpg · Размер 680×532, нужен 320×256')
             && issues.textContent.includes('малый.png · Размер 160×128, нужен 320×256'), 'Skip reasons name the files with their size');
+          await selectTab('background-tab-backgrounds');
+          await wait(() => thumbnailsLoaded(2), 'Ready thumbnails', () => tiles().length + ' tiles');
+          assert(tiles()[0].textContent.includes('готовый-1.png') && $('[data-testid="background-meta"]', tiles()[0]).textContent === '320 × 256'
+            && setButton('Улица UI').textContent.includes('2 фона · 320 × 256') && tabText('background-tab-backgrounds') === 'Фоны2',
+            'Imported backgrounds appear with thumbnails from the resource channel');
           return {checks};
         """;
 
@@ -1249,6 +1288,7 @@ internal static partial class SmokeRunner
           const frame = () => $('[data-testid="crop-dialog"] [data-testid="crop-frame"]');
           const at = () => frame() && frame().dataset.left + ',' + frame().dataset.top;
           const dialog = () => $('[data-testid="crop-dialog"]');
+          await selectTab('background-tab-add');
           mode('images').click();
           (await wait(() => enabled($('[data-testid="images-choose"]')), 'Images mode')).click();
           await wait(() => dialog() && $('[data-testid="crop-image"]', dialog())?.naturalWidth > 0, 'First frame to crop');
@@ -1297,19 +1337,21 @@ internal static partial class SmokeRunner
           const importButton = await wait(() => enabled($('[data-testid="crop-import"]')), 'Import enabled');
           assert(importButton.textContent === 'Импортировать 2 фона', 'The import button names the count');
           importButton.click();
-          await wait(() => !dialog() && thumbnailsLoaded(4), 'Cropped thumbnails', () => tiles().length + ' tiles');
+          const cropRun = await wait(() => !dialog() && runs().length === 2 && finished(runs()[0]), 'Crop run');
+          assert(cropRun.dataset.status === 'succeeded' && $('[data-testid="run-summary"]', cropRun).textContent.includes('размытие 1–3 px, seed 42')
+            && $('[data-testid="background-tab-add"]').getAttribute('aria-selected') === 'true', 'The crop run keeps the seed in the history and the user stays on «Добавить»');
+          await selectTab('background-tab-backgrounds');
+          await wait(() => thumbnailsLoaded(4), 'Cropped thumbnails', () => tiles().length + ' tiles');
           const cropped = tiles().find(tile => tile.textContent.includes('скрин-1.png'));
           assert(/^320 × 256 · вырезан из x 191, y 132 · размытие [\d,]+ px$/.test($('[data-testid="background-meta"]', cropped).textContent),
             'The cropped background shows its region and blur radius');
-          const cropRun = await wait(() => finished(runs()[0]), 'Crop run');
-          assert(cropRun.dataset.status === 'succeeded' && runs().length === 2 && $('[data-testid="run-summary"]', cropRun).textContent.includes('размытие 1–3 px, seed 42'),
-            'The crop run keeps the seed in the history');
           return {checks};
         """;
 
     private const string BackgroundsUiRestScript = """
           const video = () => $('[data-testid="bg-video-import"]');
           const message = () => text('[data-testid="bg-video-message"]');
+          await selectTab('background-tab-add');
           mode('video').click();
           (await wait(() => enabled($('[data-testid="bg-video-choose"]')), 'Video mode')).click();
           await wait(() => $('[data-testid="crop-image"]', video())?.naturalWidth > 0, 'Example frame');
@@ -1339,6 +1381,12 @@ internal static partial class SmokeRunner
           const added = Number(/добавлено (\d+) из 3/.exec($('[data-testid="run-summary"]', videoRun)?.textContent ?? '')?.[1]);
           assert(videoRun.dataset.status === 'succeeded' && added >= 1 && text('[data-testid="bg-video-info"]').startsWith('Задача запущена'),
             'The video run adds frames until the requested count and asks for the video again');
+          await selectTab('background-tab-runs');
+          await wait(() => runs().length === 3 && !$('[data-testid="background-add-runs"]')
+            && $('[data-testid="background-runs"]').closest('[role="tabpanel"]')?.id === $('[data-testid="background-tab-runs"]').getAttribute('aria-controls'), 'Runs tab');
+          assert(tabText('background-tab-runs') === 'Подготовка3' && runs().every(row => row.dataset.status === 'succeeded'),
+            '«Подготовка» lists every run of the set with the count in the tab');
+          await selectTab('background-tab-backgrounds');
           await wait(() => thumbnailsLoaded(4 + added), 'Video thumbnails');
 
           const first = tiles()[0];
@@ -1366,12 +1414,16 @@ internal static partial class SmokeRunner
           await wait(() => !$('[data-image-viewer]') && document.activeElement === labelled('Открыть фон: скрин-1.png'), 'Viewer closed');
           assert(true, 'Closing the viewer returns focus to the tile');
 
+          await selectTab('background-tab-add');
           labelled('В архив: Улица UI').click();
-          await wait(() => setButton('Улица UI')?.textContent.includes('· В архиве') && $('[data-testid="background-add-toggle"]').getAttribute('aria-expanded') === 'false', 'Archived');
-          assert(labelled('Убрать фон: ' + firstName).disabled && $('[data-testid="bg-video-choose"]').disabled, 'An archived set is read-only');
+          await wait(() => setButton('Улица UI')?.textContent.includes('· В архиве') && $('[data-testid="background-tab-add"]').disabled
+            && $('[data-testid="background-tab-backgrounds"]').getAttribute('aria-selected') === 'true' && tiles().length, 'Archived');
+          assert(labelled('Убрать фон: ' + firstName).disabled && $('[data-testid="bg-video-choose"]').disabled, 'An archived set is read-only: «Добавить» is closed and the gallery shows');
           labelled('Восстановить: Улица UI').click();
-          await wait(() => !setButton('Улица UI')?.textContent.includes('В архиве') && !labelled('Убрать фон: ' + firstName).disabled, 'Restored set');
-          assert(true, 'The set is restored from the archive');
+          await wait(() => !setButton('Улица UI')?.textContent.includes('В архиве') && $('[data-testid="background-tab-add"]').getAttribute('aria-selected') === 'true', 'Restored set');
+          await selectTab('background-tab-backgrounds');
+          await wait(() => labelled('Убрать фон: ' + firstName) && !labelled('Убрать фон: ' + firstName).disabled, 'Restored gallery');
+          assert(true, 'The set is restored from the archive and returns to «Добавить»');
 
           labelled('Изменить набор фонов: Улица UI').click();
           const setDialog = await wait(() => $('[data-testid="background-set-dialog"]'), 'Set dialog');
@@ -1410,10 +1462,7 @@ internal static partial class SmokeRunner
           assert(mismatch.title === 'Размер набора 320 × 256 отличается от входа проекта'
             && text('[data-testid="set-size-mismatch-note"]').includes('Размер набора 320 × 256 отличается от входа проекта 320 × 320'),
             'A set made for another input size is marked after project.changed');
-          $('[data-testid="background-add-toggle"]').click();
-          $('[data-testid="background-runs-toggle"]').click();
-          await wait(() => $('[data-testid="background-add-toggle"]').getAttribute('aria-expanded') === 'false'
-            && $('[data-testid="background-runs-toggle"]').getAttribute('aria-expanded') === 'false' && thumbnailsLoaded(2 + added), 'Final gallery');
+          await wait(() => $('[data-testid="background-tab-backgrounds"]').getAttribute('aria-selected') === 'true' && thumbnailsLoaded(2 + added), 'Final gallery');
           await sleep(300);
           return {checks};
         """;

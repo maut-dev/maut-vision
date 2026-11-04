@@ -6,7 +6,7 @@ import type { BackgroundImportPreviewResponseDto } from "@/api/projects/backgrou
 import type { BackgroundSourcePreviewResponseDto } from "@/api/projects/backgrounds/response-dto/background-selection-response-dto";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import { isSelectedVideo, type SelectedVideoDto } from "@/api/projects/images/response-dto/video-selection-response-dto";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -150,7 +150,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                     <h4 className="text-sm font-medium">{t("video.title")}</h4>
-                    <p className="text-xs text-muted-foreground">{t("video.description", { width: frame.width, height: frame.height })}</p>
+                    <p className="text-xs text-text-2">{t("video.description", { width: frame.width, height: frame.height })}</p>
                 </div>
                 <Button variant="outline" size="sm" disabled={locked} data-testid="bg-video-choose" onClick={choose}>{video ? t("video.other") : t("video.choose")}</Button>
             </div>
@@ -163,7 +163,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
             </p>
             {video && example && (
                 <div className="space-y-2">
-                    <BackgroundCropFrame source={example} frame={frame} value={region} onChange={setRegion} disabled={locked} maxHeight="40vh" />
+                    <BackgroundCropFrame source={example} frame={frame} value={region} onChange={setRegion} disabled={locked} maxHeight="36vh" />
                     <div className="flex justify-center">
                         <Button variant="ghost" size="sm" disabled={locked} data-testid="bg-video-another"
                             onClick={() => void act(() => showExample(video, Math.floor(Math.random() * Math.max(1, video.durationMs - 1))))}>
@@ -172,7 +172,7 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
                     </div>
                 </div>
             )}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 @md:grid-cols-2">
                 {field("count", t("video.count"), { min: 1, step: 1 })}
                 {field("interval", t("video.interval"), { min: 0.001, step: "any" })}
             </div>
@@ -184,9 +184,9 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
                     <span className="block text-xs text-muted-foreground">{t("video.skipSimilarHint")}</span>
                 </span>
             </label>
-            <details className="rounded-md border px-3 py-2">
+            <details className="rounded-md border border-line px-3 py-2">
                 <summary className="cursor-pointer text-sm text-muted-foreground select-none">{t("advanced")}</summary>
-                <div className="mt-3 grid gap-3 sm:grid-cols-[12rem_minmax(0,1fr)] sm:items-end">
+                <div className="mt-3 grid gap-3 @md:grid-cols-[12rem_minmax(0,1fr)] @md:items-end">
                     {field("start", t("video.start"), { min: 0, step: "any" })}
                     <p className="pb-2 text-xs text-muted-foreground">{t("video.startHint")}</p>
                 </div>
@@ -194,12 +194,12 @@ export function BackgroundVideoImport({ projectId, set, blur, disabled, start }:
             <p role={message ? "alert" : undefined} className={`min-h-5 text-xs ${message ? "text-destructive" : "text-muted-foreground"}`} data-testid="bg-video-message">
                 {message ?? (video && available ? t("video.available", { count: available }) : "")}
             </p>
-            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+            {error && <Notice variant="destructive">{error}</Notice>}
             {busy && !preview && video && <p role="status" className="text-xs text-muted-foreground">{t("video.preparing")}</p>}
             <BackgroundImportSamples preview={preview} />
             <div className="flex flex-wrap gap-2">
                 <Button variant="outline" disabled={!ready || locked} data-testid="bg-video-samples" onClick={showSamples}>{t("video.samples")}</Button>
-                <Button disabled={!ready || locked} data-testid="bg-video-run" onClick={launch}>
+                <Button variant="brand" disabled={!ready || locked} data-testid="bg-video-run" onClick={launch}>
                     {countValid ? t("video.run", { count: range.count }) : t("video.runEmpty")}
                 </Button>
             </div>

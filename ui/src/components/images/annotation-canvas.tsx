@@ -183,7 +183,7 @@ export function AnnotationCanvas({ image, draft, selection, tool, classId, class
             role="region"
             aria-label={t("canvas.label")}
             tabIndex={0}
-            className="relative h-[min(68dvh,720px)] min-h-72 overflow-auto overscroll-contain rounded-md border bg-muted/30 outline-none select-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="relative h-full min-h-0 overflow-auto overscroll-contain rounded-lg border border-line bg-ink-1 outline-none select-none focus-visible:ring-[3px] focus-visible:ring-focus/30"
             style={{ touchAction: "none", cursor }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}

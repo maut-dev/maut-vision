@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Archive, ArchiveRestore, EyeOff, Pencil, Trash2, TriangleAlert } from "lucide-react";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
@@ -8,10 +8,17 @@ import type { BackgroundResponseDto } from "@/api/projects/backgrounds/response-
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { BridgeError } from "@/api/transport/errors";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CollectionCreateForm, CollectionItem, CollectionList } from "@/components/collections/collection-list";
+import { ActiveJobs } from "@/components/jobs/job-history";
+import { EmptyState } from "@/components/layout/empty-state";
+import { MasterDetail } from "@/components/layout/master-detail";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { SectionLayout } from "@/components/layout/section-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/layout/tabs";
+import { Toolbar } from "@/components/layout/toolbar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { backgroundDetails, setSummary, sizeMismatchText } from "@/lib/backgrounds/background-text";
 import { errorMessage, formatNumber } from "@/lib/format";
@@ -20,22 +27,26 @@ import { useBackgroundGallery } from "@/lib/use-background-gallery";
 import { useBackgroundRuns } from "@/lib/use-background-runs";
 import { useBackgroundSets } from "@/lib/use-background-sets";
 import { selectionLimit, useRangeSelection } from "@/lib/use-range-selection";
+import { cn } from "@/lib/utils";
 import { BackgroundAddPanel, type FileSelection } from "./background-add-panel";
 import { BackgroundGallery } from "./background-gallery";
 import { BackgroundImageCropDialog } from "./background-image-crop-dialog";
-import { BackgroundRunsPanel } from "./background-runs-panel";
+import { BackgroundRuns } from "./background-runs-panel";
 import { BackgroundSetDialog, type BackgroundSetValues } from "./background-set-dialog";
 import { BackgroundsDeletionDialog, type BackgroundsDeletionTarget } from "./backgrounds-deletion-dialog";
 import "@/i18n/sections/backgrounds";
 
 const conflictCodes = /\.(revision_conflict|deletion_revision_conflict)$/;
 
-type Notice = { tone: "info" | "error"; text: string };
+type NoticeState = { tone: "info" | "error"; text: string };
+
+/** Tabs of a set: the gallery, the add form with the running tasks beside it, the preparation history. */
+type SetTab = "backgrounds" | "add" | "runs";
 
 /**
- * The backgrounds section: sets on the left, the contents of the chosen set on the right: actions, "Add backgrounds" (three ways and a
- * shared blur), the virtual gallery and the preparation history of this set. No polling: backgrounds.changed, job.changed and
- * project.changed (the size mismatch mark).
+ * The backgrounds section: sets on the left, the chosen set on the right: a header with its actions and three tabs: the virtual gallery,
+ * "Add" (three ways and a shared blur, the running tasks of the set beside the form) and the preparation history. No polling:
+ * backgrounds.changed, job.changed and project.changed (the size mismatch mark).
  */
 export function BackgroundsSection({ project }: { project: ProjectResponseDto }) {
     const { t } = useTranslation("backgrounds");
@@ -48,7 +59,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
     const gallery = useBackgroundGallery(projectId, set?.id, filter);
     const runs = useBackgroundRuns(projectId, set?.id);
     const blur = useBackgroundBlur();
-    const [notice, setNotice] = useState<Notice>();
+    const [notice, setNotice] = useState<NoticeState>();
     const items = gallery.items;
     const selection = useRangeSelection(items, `${setId}:${filter}`, {
         limit: t("selection.limit", { count: selectionLimit }),
@@ -57,8 +68,7 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
     const selected = selection.selected;
     const [busy, setBusy] = useState(false);
     const [name, setName] = useState("");
-    const [addOpen, setAddOpen] = useState(true);
-    const [runsOpen, setRunsOpen] = useState(false);
+    const [tab, setTab] = useState<SetTab>("backgrounds");
     const [crop, setCrop] = useState<FileSelection>();
     const [viewerId, setViewerId] = useState<string>();
     const [viewerBusy, setViewerBusy] = useState(false);
@@ -78,14 +88,6 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
             setCrop(undefined);
         }
     }, [setId, set, sets.loading]);
-
-    // Adding is expanded for an empty set and folded for a set with backgrounds, so the gallery is visible.
-    const emptySet = set ? set.itemCount + set.removedCount === 0 : true;
-    useEffect(() => {
-        setAddOpen(emptySet);
-        setRunsOpen(false);
-        // Only the choice of set decides the initial state; later counts do not fold the panel under the user.
-    }, [setId]);
 
     function describe(cause: unknown): string {
         const message = errorMessage(cause);
@@ -110,23 +112,22 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         }
     }
 
-    function selectSet(id: string) {
-        if (id === setId) return;
-        setSetId(id);
+    /** A chosen set opens on "Add" when it is empty and on the gallery otherwise; later counts do not switch the tab under the user. */
+    function selectSet(target: BackgroundSetResponseDto) {
+        if (target.id === setId) return;
+        setSetId(target.id);
+        setTab(target.itemCount + target.removedCount === 0 ? "add" : "backgrounds");
         setViewerId(undefined);
         setNotice(undefined);
     }
 
-    function createSet(event: FormEvent) {
-        event.preventDefault();
-        const value = name.trim();
-        if (!value || busy) return;
+    function createSet(value: string) {
         setNotice(undefined);
         void mutate(async () => {
             const created = await backgroundsApi.createSet({ projectId, name: value, description: "" });
             sets.apply(created);
             setName("");
-            selectSet(created.id);
+            selectSet(created);
         });
     }
 
@@ -147,14 +148,14 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         });
     }
 
-    /** Preparation: the job starts at once; its progress and result come to the set history with job.changed events. */
+    /**
+     * Preparation: the job starts at once; its progress and result come to the set history with job.changed events. The user stays on
+     * "Add": the running job shows in the task column beside the form, or in the strip above it in a narrow window.
+     */
     async function start(request: ImportBackgroundsRequestDto) {
         const scope = runs.scope();
         const job = await backgroundsApi.import(request);
-        if (runs.isCurrent(scope)) {
-            runs.apply(job);
-            setRunsOpen(true);
-        }
+        if (runs.isCurrent(scope)) runs.apply(job);
     }
 
     function setRemoved(targets: readonly BackgroundResponseDto[], removed: boolean) {
@@ -219,161 +220,173 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
         }
     }
 
+    // An archived set cannot be added to: "Add" is disabled and shows the gallery; restoring the set returns to the chosen tab.
+    const shownTab: SetTab = archived && tab === "add" ? "backgrounds" : tab;
+
     return (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden" data-testid="backgrounds-section">
+        <SectionLayout data-testid="backgrounds-section">
             {notice && (
-                <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="backgrounds-notice">
-                    <AlertDescription>
-                        <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="backgrounds-notice" onDismiss={() => setNotice(undefined)}>
+                    {notice.text}
+                </Notice>
             )}
-            <form className="flex max-w-2xl shrink-0 items-end gap-3" onSubmit={createSet}>
-                <label className="min-w-0 flex-1 space-y-2">
-                    <span className="text-xs text-muted-foreground">{t("section.newSetLabel")}</span>
-                    <Input required maxLength={120} aria-label={t("section.newSetLabel")} placeholder={t("section.newSetPlaceholder")} data-testid="background-set-new-name"
-                        value={name} onChange={event => setName(event.target.value)} />
-                </label>
-                <Button type="submit" data-testid="background-set-create" disabled={busy || !name.trim()}>{t("section.createSet")}</Button>
-            </form>
-            <div className="grid min-h-0 flex-1 grid-cols-[150px_minmax(0,1fr)] gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
-                <section className="min-h-0 overflow-y-auto overscroll-contain rounded-md border p-2" aria-label={t("section.sets")} data-testid="background-sets" tabIndex={0}>
-                    <div className="space-y-2">
-                        {sets.sets.map(item => (
-                            <button
-                                key={item.id}
-                                type="button"
-                                data-background-set-id={item.id}
-                                data-archived={item.archivedAt ? "true" : undefined}
-                                className={`w-full rounded-md px-3 py-3 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring ${item.id === setId ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"}`}
-                                aria-pressed={item.id === setId}
-                                onClick={() => selectSet(item.id)}
-                            >
-                                <span className="block text-sm font-medium break-words">{item.name}</span>
-                                <span className="mt-1 block text-xs text-muted-foreground" data-testid="background-set-summary">{setSummary(item)}</span>
-                                {!item.matchesProjectInput && (
-                                    <span className="mt-1 flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400" title={sizeMismatchText(item)} data-testid="set-size-mismatch">
-                                        <TriangleAlert className="size-3.5 shrink-0" aria-hidden />{t("section.sizeDiffers")}
-                                    </span>
-                                )}
-                            </button>
-                        ))}
-                        {sets.loading && !sets.sets.length && <p role="status" className="p-2 text-sm text-muted-foreground">{t("section.loadingSets")}</p>}
-                        {sets.error && (
-                            <Alert variant="destructive">
-                                <AlertDescription>
-                                    <p>{sets.error}</p>
-                                    <Button variant="ghost" size="sm" className="mt-1" onClick={() => void sets.refresh()}>{t("section.retry")}</Button>
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                        {!sets.loading && !sets.error && !sets.sets.length && <Empty>{t("section.noSets")}</Empty>}
-                    </div>
-                </section>
-                <section className="flex min-h-0 min-w-0 flex-col gap-3 overflow-y-auto overscroll-contain" aria-label={t("section.setContent")} data-testid="background-set-content">
+            <CollectionCreateForm
+                label={t("section.newSetLabel")}
+                placeholder={t("section.newSetPlaceholder")}
+                submitText={t("section.createSet")}
+                value={name}
+                setValue={setName}
+                busy={busy}
+                submit={createSet}
+                inputTestId="background-set-new-name"
+                submitTestId="background-set-create"
+            />
+            <MasterDetail>
+                <CollectionList
+                    label={t("section.sets")}
+                    testId="background-sets"
+                    loading={sets.loading && !sets.sets.length}
+                    loadingText={t("section.loadingSets")}
+                    error={sets.error}
+                    retry={() => void sets.refresh()}
+                    retryText={t("section.retry")}
+                    empty={!sets.loading && !sets.error && !sets.sets.length && <Empty>{t("section.noSets")}</Empty>}
+                >
+                    {sets.sets.map(item => (
+                        <CollectionItem
+                            key={item.id}
+                            data-background-set-id={item.id}
+                            data-archived={item.archivedAt ? "true" : undefined}
+                            selected={item.id === setId}
+                            onClick={() => selectSet(item)}
+                            title={item.name}
+                            summary={<span className="mt-1 block text-xs text-text-2" data-testid="background-set-summary">{setSummary(item)}</span>}
+                        >
+                            {!item.matchesProjectInput && (
+                                <span className="mt-1 flex items-center gap-1 text-xs text-warn" title={sizeMismatchText(item)} data-testid="set-size-mismatch">
+                                    <TriangleAlert className="size-3.5 shrink-0" aria-hidden />{t("section.sizeDiffers")}
+                                </span>
+                            )}
+                        </CollectionItem>
+                    ))}
+                </CollectionList>
+                <section className="flex min-h-0 min-w-0 flex-col gap-2" aria-label={t("section.setContent")} data-testid="background-set-content">
                     {set ? (
                         <>
-                            <div className="flex shrink-0 flex-col gap-2">
-                                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                            <div className="flex min-w-0 shrink-0 flex-col gap-1">
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <h2 className="min-w-0 font-medium break-words" data-testid="background-set-title">{set.name}</h2>
-                                    <span className="text-xs text-muted-foreground tabular-nums" data-testid="background-set-count">
+                                    <span className="text-xs text-text-2 tabular-nums" data-testid="background-set-count">
                                         {set.removedCount ? t("section.summaryRemoved", { summary: setSummary(set), removed: formatNumber(set.removedCount) }) : setSummary(set)}
                                     </span>
+                                    {set.description && <span className="min-w-0 flex-1 truncate text-xs text-text-2" title={set.description}>{set.description}</span>}
+                                    <Toolbar className="ml-auto gap-1">
+                                        <Button size="sm" variant="ghost" aria-label={t("section.editSetLabel", { name: set.name })} title={t("section.editSetLabel", { name: set.name })} disabled={busy} onClick={() => { setDialogError(undefined); setEditSet(set); }}>
+                                            <Pencil /><span className="hidden lg:inline">{t("section.edit")}</span>
+                                        </Button>
+                                        <Button size="sm" variant="ghost" aria-label={t(set.archivedAt ? "section.restoreSetLabel" : "section.archiveSetLabel", { name: set.name })} title={t(set.archivedAt ? "section.restoreSetLabel" : "section.archiveSetLabel", { name: set.name })} disabled={busy} onClick={() => toggleArchive(set)}>
+                                            {set.archivedAt ? <><ArchiveRestore /><span className="hidden lg:inline">{t("section.restore")}</span></> : <><Archive /><span className="hidden lg:inline">{t("section.archive")}</span></>}
+                                        </Button>
+                                        <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label={t("section.deleteSetLabel", { name: set.name })} title={t("section.deleteSetLabel", { name: set.name })} disabled={busy}
+                                            onClick={() => requestDeletion()}>
+                                            <Trash2 /><span className="hidden lg:inline">{t("section.deleteSet")}</span>
+                                        </Button>
+                                    </Toolbar>
                                 </div>
-                                {set.description && <p className="max-w-prose text-xs text-muted-foreground break-words">{set.description}</p>}
                                 {!set.matchesProjectInput && (
-                                    <p className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400" data-testid="set-size-mismatch-note">
+                                    <p className="flex min-w-0 items-center gap-2 text-xs text-warn" data-testid="set-size-mismatch-note"
+                                        title={t("section.sizeMismatchNote", { width: set.targetSize.width, height: set.targetSize.height, inputWidth: project.inputSize.width, inputHeight: project.inputSize.height })}>
                                         <TriangleAlert className="size-4 shrink-0" aria-hidden />
-                                        {t("section.sizeMismatchNote", { width: set.targetSize.width, height: set.targetSize.height, inputWidth: project.inputSize.width, inputHeight: project.inputSize.height })}
+                                        <span className="truncate">{t("section.sizeMismatchNote", { width: set.targetSize.width, height: set.targetSize.height, inputWidth: project.inputSize.width, inputHeight: project.inputSize.height })}</span>
                                     </p>
                                 )}
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Button size="sm" variant="ghost" aria-label={t("section.editSetLabel", { name: set.name })} disabled={busy} onClick={() => { setDialogError(undefined); setEditSet(set); }}>
-                                        <Pencil />{t("section.edit")}
-                                    </Button>
-                                    <Button size="sm" variant="ghost" aria-label={t(set.archivedAt ? "section.restoreSetLabel" : "section.archiveSetLabel", { name: set.name })} disabled={busy} onClick={() => toggleArchive(set)}>
-                                        {set.archivedAt ? <><ArchiveRestore />{t("section.restore")}</> : <><Archive />{t("section.archive")}</>}
-                                    </Button>
-                                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" aria-label={t("section.deleteSetLabel", { name: set.name })} disabled={busy}
-                                        onClick={() => requestDeletion()}>
-                                        <Trash2 />{t("section.deleteSet")}
-                                    </Button>
-                                    {items.length > 0 && (
-                                        <Button size="sm" variant="ghost" data-testid="background-select-page" onClick={selection.selectPage}>
-                                            {selected.size ? t("selection.clear") : t("selection.page")}
-                                        </Button>
-                                    )}
-                                    {selected.size > 0 && (
-                                        <>
-                                            <Button size="sm" variant="outline" disabled={busy || archived} data-testid="background-remove-selected" onClick={() => setRemoved(selectedItems, !allRemoved)}>
-                                                {allRemoved ? <><ArchiveRestore />{t("selection.restore", { number: selected.size })}</> : <><EyeOff />{t("selection.remove", { number: selected.size })}</>}
-                                            </Button>
-                                            <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" disabled={busy} data-testid="background-delete-selected"
-                                                onClick={() => requestDeletion([...selected], t("selection.deletionName", { name: set.name }))}>
-                                                <Trash2 />{t("selection.delete", { number: selected.size })}
-                                            </Button>
-                                        </>
-                                    )}
-                                    <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-                                        <Checkbox checked={showRemoved} data-testid="show-removed" onCheckedChange={value => setShowRemoved(value === true)} />
-                                        {t("section.showRemoved")}
-                                    </label>
-                                </div>
-                                {archived && <p className="text-xs text-muted-foreground">{t("section.archivedNote")}</p>}
+                                {archived && <p className="truncate text-xs text-text-2" title={t("section.archivedNote")}>{t("section.archivedNote")}</p>}
                             </div>
-                            <BackgroundAddPanel
-                                key={set.id}
-                                projectId={projectId}
-                                set={set}
-                                blur={blur}
-                                disabled={archived || busy}
-                                open={addOpen && !archived}
-                                setOpen={setAddOpen}
-                                start={start}
-                                openCrop={setCrop}
-                            />
-                            {!items.length && gallery.loading && <p role="status" className="text-sm text-muted-foreground">{t("section.loadingBackgrounds")}</p>}
-                            {gallery.error && (
-                                <Alert variant="destructive" className="shrink-0">
-                                    <AlertDescription>
-                                        <p>{gallery.error}</p>
-                                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void gallery.reload()}>{t("section.retry")}</Button>
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            {!items.length && !gallery.loading && !gallery.error && (
-                                <Empty>{t("section.emptySet")}</Empty>
-                            )}
-                            {items.length > 0 && (
-                                <BackgroundGallery
-                                    items={items}
-                                    selected={selected}
-                                    hasMore={gallery.hasMore}
-                                    loading={gallery.loading}
-                                    busy={busy}
-                                    readOnly={archived}
-                                    actions={{
-                                        toggle: selection.toggle,
-                                        view: item => setViewerId(item.id),
-                                        setRemoved: (item, removed) => setRemoved([item], removed),
-                                        remove: item => requestDeletion([item.id], item.origin.sourceName),
-                                        renew: gallery.renew,
-                                        loadMore: () => void gallery.loadMore(),
-                                    }}
-                                />
-                            )}
-                            <BackgroundRunsPanel runs={runs} open={runsOpen} setOpen={setRunsOpen} />
+                            <Tabs value={shownTab} onValueChange={value => setTab(value as SetTab)} className="flex-1 gap-2">
+                                <TabsList aria-label={t("tabs.label")}>
+                                    <TabsTrigger value="backgrounds" count={set.itemCount} data-testid="background-tab-backgrounds">{t("tabs.backgrounds")}</TabsTrigger>
+                                    <TabsTrigger value="add" disabled={archived} data-testid="background-tab-add">{t("tabs.add")}</TabsTrigger>
+                                    <TabsTrigger value="runs" count={runs.jobs.length} live={runs.active} data-testid="background-tab-runs">{t("tabs.runs")}</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="backgrounds" className="flex flex-col gap-2">
+                                    <Toolbar className="shrink-0">
+                                        {items.length > 0 && (
+                                            <Button size="sm" variant="ghost" data-testid="background-select-page" onClick={selection.selectPage}>
+                                                {selected.size ? t("selection.clear") : t("selection.page")}
+                                            </Button>
+                                        )}
+                                        {selected.size > 0 && (
+                                            <>
+                                                <Button size="sm" variant="outline" disabled={busy || archived} data-testid="background-remove-selected" onClick={() => setRemoved(selectedItems, !allRemoved)}>
+                                                    {allRemoved ? <><ArchiveRestore />{t("selection.restore", { number: selected.size })}</> : <><EyeOff />{t("selection.remove", { number: selected.size })}</>}
+                                                </Button>
+                                                <Button size="sm" variant="outline" className="text-destructive hover:text-destructive" disabled={busy} data-testid="background-delete-selected"
+                                                    onClick={() => requestDeletion([...selected], t("selection.deletionName", { name: set.name }))}>
+                                                    <Trash2 />{t("selection.delete", { number: selected.size })}
+                                                </Button>
+                                            </>
+                                        )}
+                                        <label className="ml-auto flex items-center gap-2 text-xs text-text-2">
+                                            <Checkbox checked={showRemoved} data-testid="show-removed" onCheckedChange={value => setShowRemoved(value === true)} />
+                                            {t("section.showRemoved")}
+                                        </label>
+                                    </Toolbar>
+                                    {!items.length && gallery.loading && <p role="status" className="text-sm text-text-2">{t("section.loadingBackgrounds")}</p>}
+                                    {gallery.error && (
+                                        <Notice variant="destructive" className="shrink-0" action={{ label: t("section.retry"), onClick: () => void gallery.reload() }}>{gallery.error}</Notice>
+                                    )}
+                                    {!items.length && !gallery.loading && !gallery.error && <Empty className="flex-1">{t("section.emptySet")}</Empty>}
+                                    {items.length > 0 && (
+                                        <BackgroundGallery
+                                            items={items}
+                                            selected={selected}
+                                            hasMore={gallery.hasMore}
+                                            loading={gallery.loading}
+                                            busy={busy}
+                                            readOnly={archived}
+                                            actions={{
+                                                toggle: selection.toggle,
+                                                view: item => setViewerId(item.id),
+                                                setRemoved: (item, removed) => setRemoved([item], removed),
+                                                remove: item => requestDeletion([item.id], item.origin.sourceName),
+                                                renew: gallery.renew,
+                                                loadMore: () => void gallery.loadMore(),
+                                            }}
+                                        />
+                                    )}
+                                </TabsContent>
+                                {/* Mounted while hidden: the chosen files, the video, its frame and the fields survive switching tabs. */}
+                                <TabsContent value="add" forceMount hidden={shownTab !== "add"}
+                                    className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(15rem,19rem)] lg:grid-rows-[minmax(0,1fr)]">
+                                    <ActiveJobs jobs={runs.jobs} label={t("runs.title")} progressLabel={t("runs.progress")} className="lg:hidden" testId="background-active-runs"
+                                        action={{ label: t("tabs.showRuns"), onClick: () => setTab("runs") }} />
+                                    <BackgroundAddPanel
+                                        key={set.id}
+                                        projectId={projectId}
+                                        set={set}
+                                        blur={blur}
+                                        disabled={archived || busy}
+                                        start={start}
+                                        openCrop={setCrop}
+                                    />
+                                    {shownTab === "add" && (
+                                        <Pane surface className="hidden p-3 lg:block" data-testid="background-add-runs">
+                                            <BackgroundRuns runs={runs} />
+                                        </Pane>
+                                    )}
+                                </TabsContent>
+                                <TabsContent value="runs" className="flex flex-col">
+                                    <Pane surface className="flex-1 p-3">
+                                        <BackgroundRuns runs={runs} />
+                                    </Pane>
+                                </TabsContent>
+                            </Tabs>
                         </>
                     ) : (
-                        <Empty>
-                            {sets.sets.length
-                                ? t("section.chooseSet")
-                                : t("section.createFirstSet")}
-                        </Empty>
+                        <Empty className="flex-1">{sets.sets.length ? t("section.chooseSet") : t("section.createFirstSet")}</Empty>
                     )}
                 </section>
-            </div>
+            </MasterDetail>
             {viewed && (
                 <ImageViewer
                     source={{
@@ -401,14 +414,10 @@ export function BackgroundsSection({ project }: { project: ProjectResponseDto })
             )}
             {editSet && <BackgroundSetDialog set={editSet} busy={busy} error={dialogError} close={() => setEditSet(undefined)} save={saveSet} />}
             {deletion && <BackgroundsDeletionDialog projectId={projectId} target={deletion} close={() => setDeletion(undefined)} deleted={deleted} />}
-        </div>
+        </SectionLayout>
     );
 }
 
-function Empty({ children }: { children: ReactNode }) {
-    return (
-        <div className="flex min-h-40 flex-col items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground" data-testid="backgrounds-empty">
-            {children}
-        </div>
-    );
+function Empty({ className, children }: { className?: string; children: string }) {
+    return <EmptyState title={children} className={cn("rounded-lg border border-dashed border-line", className)} data-testid="backgrounds-empty" />;
 }

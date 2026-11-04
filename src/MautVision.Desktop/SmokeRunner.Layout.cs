@@ -123,6 +123,43 @@ internal static partial class SmokeRunner
             await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page', 'Section ' + id);
             await verify('Section ' + id);
           }
+          // One scroll per region: in every tab of a background set and of an image group the visible scrolling regions are the list column
+          // and the work areas of the tab, none inside another and none squeezed below a usable height.
+          const scrollers = scope => $$('*', scope).filter(element => {
+            const box = element.getBoundingClientRect();
+            const overflow = getComputedStyle(element).overflowY;
+            return box.width >= 1 && (overflow === 'auto' || overflow === 'scroll');
+          });
+          const regions = [];
+          for (const [id, list, item, tabs] of [['backgrounds', 'background-sets', '[data-background-set-id]', 'background-tab-'], ['images', 'image-groups', '[data-image-group-id]', 'image-tab-']]) {
+            if (!sections.includes(id)) continue;
+            $('[data-section="' + id + '"]').click();
+            await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page' && $('[data-testid="' + list + '"]')
+              && !$('[data-testid="' + list + '"] [role="status"]'), 'Section ' + id + ' list');
+            const first = $(item, $('[data-testid="' + list + '"]'));
+            if (!first) continue;
+            first.click();
+            const triggers = await wait(() => { const found = $$('[role="tab"][data-testid^="' + tabs + '"]'); return found.length ? found : null; }, 'Tabs of ' + id);
+            for (const trigger of triggers.filter(element => !element.disabled)) {
+              trigger.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true, button: 0}));
+              await wait(() => trigger.getAttribute('aria-selected') === 'true', 'Tab ' + trigger.dataset.testid);
+              const place = 'Section ' + id + ', tab ' + trigger.dataset.testid;
+              await verify(place);
+              const found = scrollers($('[data-testid="' + id + '-section"]'));
+              const nested = found.filter(element => found.some(other => other !== element && other.contains(element)));
+              if (nested.length) throw new Error(place + ' at ' + width + '×' + height + ' scrolls inside a scrolling region: ' + nested.slice(0, 4).map(describe).join('; '));
+              if (found.length > 3) throw new Error(place + ' at ' + width + '×' + height + ' has ' + found.length + ' scrolling regions: ' + found.map(describe).join('; '));
+              const tall = element => Math.round(element.getBoundingClientRect().height);
+              if (found.some(element => tall(element) < 96)) {
+                const parts = ['[role="tablist"]', '[role="tabpanel"]:not([hidden])'].map(selector => selector + ' ' + ($(selector) ? tall($(selector)) : '-'));
+                throw new Error(place + ' at ' + width + '×' + height + ' squeezes a scrolling region below 96 px: '
+                  + found.map(element => describe(element) + ' ' + tall(element)).join('; ') + ' (' + parts.join(', ') + ')');
+              }
+              regions.push(trigger.dataset.testid + ' ' + found.map(tall).join('/') + ' px');
+            }
+          }
+          assert(regions.length > 0, 'Every tab of a background set and of an image group has at most 3 scrolling regions, none nested and none under 96 px, at '
+            + width + '×' + height + ' CSS px (' + label + '): ' + regions.join(', '));
           $('[aria-label="Переключить проект"]').click();
           const list = await wait(() => $('[role="listbox"]'), 'Project list opened');
           await settle();

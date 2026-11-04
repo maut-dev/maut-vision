@@ -70,3 +70,19 @@ can grow puts its content in `DialogBody`: the header and the footer stay, only 
 
 Grids that hold truncated or `nowrap` text use `minmax(0, 1fr)` columns, and flex children `min-w-0`: otherwise the longest line widens
 the region and the window scrolls horizontally. The smoke layout check verifies this at the 1080p and the minimum window sizes.
+
+A scrolling region never holds another one (`max-h-*` with its own overflow inside a `Pane`): long content gets its own tab, its own
+column or a dialog, and a disclosure inside a list unfolds inline. The smoke layout check also opens every tab of a background set and of
+an image group and fails on a scrolling region inside another or one squeezed below 96 px.
+
+## Tabs of a section
+
+A detail column with more than one kind of content splits it into `Tabs` under a compact header. A tab that holds a form keeps it mounted
+while another tab is shown (`forceMount` with `hidden`), so the chosen files and the fields survive. Work a section runs in the background
+is always visible: a count and a live dot on its history tab (`TabsTrigger count live`), and the progress of running jobs next to the form
+that started them (`ActiveJobs`).
+
+```tsx
+<TabsTrigger value="runs" count={runs.jobs.length} live={runs.active}>{t("tabs.runs")}</TabsTrigger>
+<TabsContent value="add" forceMount hidden={tab !== "add"}>…</TabsContent>
+```

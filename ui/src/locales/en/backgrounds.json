@@ -47,7 +47,6 @@
   "section": {
     "listUpdated": "{{message}} The list is refreshed.",
     "cleanupPending": "The materials are removed from the catalog. File cleanup continues automatically at the next start of the application.",
-    "hide": "Hide",
     "retry": "Retry",
     "newSetLabel": "Background set name",
     "newSetPlaceholder": "New background set",
@@ -73,6 +72,13 @@
     "emptySet": "No backgrounds yet. Add ready frames of the right size or cut them from images or a video.",
     "chooseSet": "Choose a set on the left to add or view backgrounds.",
     "createFirstSet": "Create the first background set. The frame size must match the model input."
+  },
+  "tabs": {
+    "label": "Set content",
+    "backgrounds": "Backgrounds",
+    "add": "Add",
+    "runs": "Preparation",
+    "showRuns": "All runs"
   },
   "add": {
     "title": "Add backgrounds",
@@ -193,7 +199,6 @@
   },
   "runs": {
     "title": "Background preparation",
-    "active": "running: {{number}}",
     "added": "added {{added}}",
     "addedOf": "added {{added}} of {{requested}}",
     "duplicates": "duplicates {{number}}",
@@ -202,7 +207,8 @@
     "processed": "processed {{processed}} of {{total}}",
     "progress": "Preparation progress",
     "issues": "Skip reasons ({{number}})",
-    "more": "and {{number}} more"
+    "more": "and {{number}} more",
+    "empty": "No runs yet. A started preparation appears here with its progress and result."
   },
   "setDialog": {
     "title": "Edit background set",
