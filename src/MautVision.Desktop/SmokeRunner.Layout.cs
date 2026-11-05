@@ -18,7 +18,9 @@ internal static partial class SmokeRunner
     /// The page at the sizes users get: the window of a 1080p monitor at the scale of this run (the window reduced to the work area) and the
     /// minimum window. WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--force-device-scale-factor=1.25 or 1.5 (smoke.ps1 -DeviceScaleFactor) renders
     /// the page at that scale on any monitor; the control gets the size in DIP that gives the CSS viewport of such a window. The library, the
-    /// catalogue and every section of a project must not scroll or stick out horizontally, and a Radix list must open inside the viewport.
+    /// catalogue and every section of a project must not scroll or stick out horizontally, and a Radix list must open inside the viewport. In
+    /// every tab of backgrounds, images, generation and datasets (and of a chosen dataset) and in the classes section the scrolling regions
+    /// are not nested, at most three and at least 96 px tall.
     /// </summary>
     private static async Task CheckLayoutAsync(CoreWebView2 web, string projectId, SmokeLayoutProbe layout, JsonNode report, CancellationToken token)
     {
@@ -123,43 +125,70 @@ internal static partial class SmokeRunner
             await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page', 'Section ' + id);
             await verify('Section ' + id);
           }
-          // One scroll per region: in every tab of a background set and of an image group the visible scrolling regions are the list column
-          // and the work areas of the tab, none inside another and none squeezed below a usable height.
+          // One scroll per region: in every tab of a background set, an image group, generation, datasets (and the tabs of a chosen dataset)
+          // and in the classes section the visible scrolling regions are the list column and the work areas of the tab, none inside another
+          // and none squeezed below a usable height.
           const scrollers = scope => $$('*', scope).filter(element => {
             const box = element.getBoundingClientRect();
             const overflow = getComputedStyle(element).overflowY;
             return box.width >= 1 && (overflow === 'auto' || overflow === 'scroll');
           });
+          const tall = element => Math.round(element.getBoundingClientRect().height);
           const regions = [];
-          for (const [id, list, item, tabs] of [['backgrounds', 'background-sets', '[data-background-set-id]', 'background-tab-'], ['images', 'image-groups', '[data-image-group-id]', 'image-tab-']]) {
+          const checkRegions = async (id, name) => {
+            const place = 'Section ' + id + (name ? ', tab ' + name : '');
+            await verify(place);
+            const found = scrollers($('[data-testid="' + id + '-section"]'));
+            const nested = found.filter(element => found.some(other => other !== element && other.contains(element)));
+            if (nested.length) throw new Error(place + ' at ' + width + '×' + height + ' scrolls inside a scrolling region: ' + nested.slice(0, 4).map(describe).join('; '));
+            if (found.length > 3) throw new Error(place + ' at ' + width + '×' + height + ' has ' + found.length + ' scrolling regions: ' + found.map(describe).join('; '));
+            if (found.some(element => tall(element) < 96)) {
+              const parts = ['[role="tablist"]', '[role="tabpanel"]:not([hidden])'].map(selector => selector + ' ' + ($(selector) ? tall($(selector)) : '-'));
+              throw new Error(place + ' at ' + width + '×' + height + ' squeezes a scrolling region below 96 px: '
+                + found.map(element => describe(element) + ' ' + tall(element)).join('; ') + ' (' + parts.join(', ') + ')');
+            }
+            regions.push((name ?? id) + ' ' + found.map(tall).join('/') + ' px');
+          };
+          const openTab = async trigger => {
+            trigger.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true, button: 0}));
+            await wait(() => trigger.getAttribute('aria-selected') === 'true', 'Tab ' + trigger.dataset.testid);
+          };
+          // list and item: the list column and the item to choose; required — without an item the section is skipped (its tabs belong to the item).
+          // groups: tab prefixes; open — the tab to show first; item — the group exists only for a chosen item.
+          const layoutTargets = [
+            {id: 'backgrounds', list: 'background-sets', item: '[data-background-set-id]', required: true, groups: [{prefix: 'background-tab-'}]},
+            {id: 'images', list: 'image-groups', item: '[data-image-group-id]', required: true, groups: [{prefix: 'image-tab-'}]},
+            {id: 'generation', groups: [{prefix: 'tab-'}]},
+            {id: 'datasets', list: 'dataset-list', item: '[data-dataset-version-id]', groups: [{prefix: 'datasets-tab-'},
+              {prefix: 'dataset-detail-tab-', open: 'datasets-tab-datasets', item: true}]},
+            {id: 'classes', list: 'class-list', item: '[data-class-id] button', groups: []},
+          ];
+          for (const target of layoutTargets) {
+            const {id, list} = target;
             if (!sections.includes(id)) continue;
             $('[data-section="' + id + '"]').click();
-            await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page' && $('[data-testid="' + list + '"]')
-              && !$('[data-testid="' + list + '"] [role="status"]'), 'Section ' + id + ' list');
-            const first = $(item, $('[data-testid="' + list + '"]'));
-            if (!first) continue;
-            first.click();
-            const triggers = await wait(() => { const found = $$('[role="tab"][data-testid^="' + tabs + '"]'); return found.length ? found : null; }, 'Tabs of ' + id);
-            for (const trigger of triggers.filter(element => !element.disabled)) {
-              trigger.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true, button: 0}));
-              await wait(() => trigger.getAttribute('aria-selected') === 'true', 'Tab ' + trigger.dataset.testid);
-              const place = 'Section ' + id + ', tab ' + trigger.dataset.testid;
-              await verify(place);
-              const found = scrollers($('[data-testid="' + id + '-section"]'));
-              const nested = found.filter(element => found.some(other => other !== element && other.contains(element)));
-              if (nested.length) throw new Error(place + ' at ' + width + '×' + height + ' scrolls inside a scrolling region: ' + nested.slice(0, 4).map(describe).join('; '));
-              if (found.length > 3) throw new Error(place + ' at ' + width + '×' + height + ' has ' + found.length + ' scrolling regions: ' + found.map(describe).join('; '));
-              const tall = element => Math.round(element.getBoundingClientRect().height);
-              if (found.some(element => tall(element) < 96)) {
-                const parts = ['[role="tablist"]', '[role="tabpanel"]:not([hidden])'].map(selector => selector + ' ' + ($(selector) ? tall($(selector)) : '-'));
-                throw new Error(place + ' at ' + width + '×' + height + ' squeezes a scrolling region below 96 px: '
-                  + found.map(element => describe(element) + ' ' + tall(element)).join('; ') + ' (' + parts.join(', ') + ')');
+            await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page' && $('[data-testid="' + id + '-section"]')
+              && (!list || $('[data-testid="' + list + '"]') && !$('[data-testid="' + list + '"] [role="status"]')), 'Section ' + id + ' ready');
+            const root = $('[data-testid="' + id + '-section"]');
+            const first = target.item ? $(target.item, $('[data-testid="' + list + '"]')) : null;
+            if (target.required && !first) continue;
+            if (first) first.click();
+            if (!target.groups.length) {
+              await checkRegions(id);
+              continue;
+            }
+            for (const group of target.groups) {
+              if (group.item && !first) continue;
+              if (group.open) await openTab(await wait(() => $('[data-testid="' + group.open + '"]', root), 'Tab ' + group.open));
+              const triggers = await wait(() => { const found = $$('[role="tab"][data-testid^="' + group.prefix + '"]', root); return found.length ? found : null; }, 'Tabs of ' + id);
+              for (const trigger of triggers.filter(element => !element.disabled)) {
+                await openTab(trigger);
+                await checkRegions(id, trigger.dataset.testid);
               }
-              regions.push(trigger.dataset.testid + ' ' + found.map(tall).join('/') + ' px');
             }
           }
-          assert(regions.length > 0, 'Every tab of a background set and of an image group has at most 3 scrolling regions, none nested and none under 96 px, at '
-            + width + '×' + height + ' CSS px (' + label + '): ' + regions.join(', '));
+          assert(regions.length > 0, 'Every tab of backgrounds, images, generation and datasets (with the tabs of a chosen dataset) and the classes section have at most'
+            + ' 3 scrolling regions, none nested and none under 96 px, at ' + width + '×' + height + ' CSS px (' + label + '): ' + regions.join(', '));
           $('[aria-label="Переключить проект"]').click();
           const list = await wait(() => $('[role="listbox"]'), 'Project list opened');
           await settle();

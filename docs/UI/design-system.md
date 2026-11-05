@@ -68,12 +68,25 @@ can grow puts its content in `DialogBody`: the header and the footer stay, only 
 </DialogContent>
 ```
 
+A dialog with a form wraps the body and the footer in `DialogForm`, so Enter in a field and the submit button of the footer send it while
+only the body scrolls.
+
+```tsx
+<DialogHeader>…</DialogHeader>
+<DialogForm onSubmit={submit}>
+    <DialogBody>{fields}</DialogBody>
+    <DialogFooter><Button type="submit">…</Button></DialogFooter>
+</DialogForm>
+```
+
 Grids that hold truncated or `nowrap` text use `minmax(0, 1fr)` columns, and flex children `min-w-0`: otherwise the longest line widens
 the region and the window scrolls horizontally. The smoke layout check verifies this at the 1080p and the minimum window sizes.
 
 A scrolling region never holds another one (`max-h-*` with its own overflow inside a `Pane`): long content gets its own tab, its own
-column or a dialog, and a disclosure inside a list unfolds inline. The smoke layout check also opens every tab of a background set and of
-an image group and fails on a scrolling region inside another or one squeezed below 96 px.
+column or a dialog, and a disclosure inside a list unfolds inline. Two work columns of a tab (a form and its results) scroll each at `lg`
+and wider; below `lg` they stack and the tab itself is the one scroll. The smoke layout check also opens every tab of a background set, an
+image group, generation, datasets and a chosen dataset, and the classes section, and fails on a scrolling region inside another, more than
+three of them or one squeezed below 96 px.
 
 ## Tabs of a section
 

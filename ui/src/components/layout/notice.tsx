@@ -8,7 +8,7 @@ interface NoticeProps extends Omit<ComponentProps<"div">, "title"> {
     variant?: VariantProps<typeof alertVariants>["variant"];
     title?: ReactNode;
     /** A button that resolves the notice, for example "Load again". */
-    action?: { label: string; onClick: () => void; disabled?: boolean };
+    action?: { label: string; onClick: () => void; disabled?: boolean; testId?: string };
     /** Shows "Hide": the owner of the notice state removes it. */
     onDismiss?: () => void;
 }
@@ -23,7 +23,7 @@ export function Notice({ variant, title, action, onDismiss, children, role, ...p
                 <div>{children}</div>
                 {(action || onDismiss) && (
                     <div className="mt-2 flex flex-wrap gap-2">
-                        {action && <Button type="button" variant="outline" size="sm" disabled={action.disabled} onClick={action.onClick}>{action.label}</Button>}
+                        {action && <Button type="button" variant="outline" size="sm" disabled={action.disabled} data-testid={action.testId} onClick={action.onClick}>{action.label}</Button>}
                         {onDismiss && <Button type="button" variant="ghost" size="sm" onClick={onDismiss}>{t("common.hide")}</Button>}
                     </div>
                 )}

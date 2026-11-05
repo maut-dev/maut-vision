@@ -21,12 +21,12 @@ export function RecipeDetails({ recipe, workspace, sets }: {
     return (
         <div className="space-y-3 text-sm" data-testid="recipe-details">
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <div><dt className="text-muted-foreground">{t("details.frameSize")}</dt><dd className="tabular-nums">{recipe.width} × {recipe.height} px</dd></div>
-                <div><dt className="text-muted-foreground">{t("form.scale")}</dt><dd className="tabular-nums">{formatNumber(recipe.scale)}</dd></div>
-                <div><dt className="text-muted-foreground">{t("form.objects")}</dt><dd className="tabular-nums">{recipe.objectsPerImage}</dd></div>
-                <div><dt className="text-muted-foreground">{t("details.emptyFrames")}</dt><dd className="tabular-nums">{formatNumber(toPercent(recipe.emptyProbability))}%</dd></div>
+                <div><dt className="text-text-2">{t("details.frameSize")}</dt><dd className="tabular-nums">{recipe.width} × {recipe.height} px</dd></div>
+                <div><dt className="text-text-2">{t("form.scale")}</dt><dd className="tabular-nums">{formatNumber(recipe.scale)}</dd></div>
+                <div><dt className="text-text-2">{t("form.objects")}</dt><dd className="tabular-nums">{recipe.objectsPerImage}</dd></div>
+                <div><dt className="text-text-2">{t("details.emptyFrames")}</dt><dd className="tabular-nums">{formatNumber(toPercent(recipe.emptyProbability))}%</dd></div>
             </dl>
-            <p className="text-xs text-muted-foreground">{t("details.scaleNote")}</p>
+            <p className="text-xs text-text-2">{t("details.scaleNote")}</p>
             <div>
                 <h4 className="mb-1 text-xs font-medium">{t("details.variants")}</h4>
                 <ul className="space-y-1 text-xs" data-testid="recipe-variants">

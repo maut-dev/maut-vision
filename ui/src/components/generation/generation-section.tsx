@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { generationApi } from "@/api/projects/generation/generation-api";
 import { defaultRecipe, randomSeed, type GenerationRecipeField } from "@/api/projects/generation/generation-rules";
@@ -7,10 +7,16 @@ import type { GenerationRunResponseDto } from "@/api/projects/generation/respons
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { BridgeError } from "@/api/transport/errors";
 import { createPalette } from "@/components/images/annotation-palette";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { ActiveJobs } from "@/components/jobs/job-history";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { SectionLayout } from "@/components/layout/section-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/layout/tabs";
+import { Toolbar } from "@/components/layout/toolbar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { errorMessage, formatNumber } from "@/lib/format";
+import { isRunActive } from "@/lib/generation/run-state";
 import {
     emptyForm,
     formFieldError,
@@ -35,7 +41,7 @@ import { RunCard } from "./run-card";
 
 type Tab = "recipes" | "runs";
 
-interface Notice {
+interface NoticeState {
     tone: "info" | "error";
     text: string;
     /** "Show runs" after a run was queued. */
@@ -46,10 +52,10 @@ const fields: readonly GenerationRecipeField[] = ["name", "description", "canvas
     "emptyProbability", "scale"];
 
 /**
- * The section "Generation": tabs "Presets (N)" and "Runs (N)". Presets — the form on the left (new, change, repeat of a run) with
- * "Sample frame", "Run parameters" and preset cards on the right. Runs — cards with progress by events. No polling:
- * generation.changed, job.changed, catalog.changed, backgrounds.changed. The form and the parameters live here, so they
- * survive tab switches.
+ * The section "Generation": tabs "Presets N" and "Runs N" (a live dot while a run is queued or running). Presets — the form (new, change,
+ * repeat of a run) with "Sample frame", and beside it the running runs, "Run parameters" and preset cards. Runs — cards with progress by
+ * events. No polling: generation.changed, job.changed, catalog.changed, backgrounds.changed. The form and the parameters live here, so
+ * they survive tab switches.
  */
 export function GenerationSection({ project, openImages }: { project: ProjectResponseDto; openImages: (groupId: string) => void }) {
     const { t } = useTranslation("generation");
@@ -67,7 +73,7 @@ export function GenerationSection({ project, openImages }: { project: ProjectRes
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const [deletion, setDeletion] = useState<GenerationDeletionTarget>();
-    const [notice, setNotice] = useState<Notice>();
+    const [notice, setNotice] = useState<NoticeState>();
     const [busy, setBusy] = useState(false);
     const nameRef = useRef<HTMLInputElement>(null);
 
@@ -219,37 +225,34 @@ export function GenerationSection({ project, openImages }: { project: ProjectRes
     }
 
     const loadError = catalog.error ?? sets.error ?? recipes.error;
+    const runJobs = runs.runs.map(run => run.job);
+    const running = runJobs.some(isRunActive);
     return (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden" data-testid="generation-section">
+        <SectionLayout data-testid="generation-section">
             {notice && (
-                <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="generation-notice">
-                    <AlertDescription>
-                        <p>{notice.text}</p>
-                        <div className="mt-1 flex gap-2">
-                            {notice.showRuns && <Button variant="outline" size="sm" data-testid="notice-show-runs" onClick={() => selectTab("runs")}>{t("section.showRuns")}</Button>}
-                            <Button variant="ghost" size="sm" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
-                        </div>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="generation-notice"
+                    action={notice.showRuns ? { label: t("section.showRuns"), onClick: () => selectTab("runs"), testId: "notice-show-runs" } : undefined}
+                    onDismiss={() => setNotice(undefined)}>
+                    {notice.text}
+                </Notice>
             )}
             {loadError && (
-                <Alert variant="destructive" className="shrink-0">
-                    <AlertDescription>
-                        <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void catalog.refresh(); void sets.refresh(); void recipes.refresh(); }}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" className="shrink-0"
+                    action={{ label: t("section.retry"), onClick: () => { void catalog.refresh(); void sets.refresh(); void recipes.refresh(); } }}>
+                    {loadError}
+                </Notice>
             )}
-            <div className="flex shrink-0 flex-wrap gap-2" role="group" aria-label={t("section.tabs")}>
-                <Button variant={tab === "recipes" ? "secondary" : "ghost"} aria-pressed={tab === "recipes"} data-testid="tab-recipes" onClick={() => selectTab("recipes")}>
-                    {t("section.presetsTab", { number: recipes.recipes.length })}
-                </Button>
-                <Button variant={tab === "runs" ? "secondary" : "ghost"} aria-pressed={tab === "runs"} data-testid="tab-runs" onClick={() => selectTab("runs")}>
-                    {t("section.runsTab", { number: runs.total })}
-                </Button>
-            </div>
-            <div className={tab === "recipes" ? "grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-5" : "hidden"}>
-                <section className="min-h-0 overflow-y-auto overscroll-contain pr-2" aria-label={t("section.formPanel")} data-testid="recipe-form-panel">
+            <Tabs value={tab} onValueChange={value => selectTab(value as Tab)} className="flex-1">
+                <TabsList aria-label={t("section.tabs")}>
+                    <TabsTrigger value="recipes" count={recipes.recipes.length} data-testid="tab-recipes">{t("section.presetsTab")}</TabsTrigger>
+                    <TabsTrigger value="runs" count={runs.total} live={running} data-testid="tab-runs">{t("section.runsTab")}</TabsTrigger>
+                </TabsList>
+                {/*
+                  Both tabs stay mounted: the form survives switching, run cards follow job.changed while hidden. At lg the form and the
+                  presets are two columns with a scroll each; below lg they stack in the one scroll of the tab.
+                */}
+                <TabsContent value="recipes" forceMount hidden={tab !== "recipes"}
+                    className="flex flex-col gap-4 overflow-y-auto overscroll-contain lg:grid lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-visible">
                     <RecipeFormPanel
                         values={form}
                         setValues={updateForm}
@@ -267,73 +270,68 @@ export function GenerationSection({ project, openImages }: { project: ProjectRes
                         cancel={cancelForm}
                         requestSamples={requestSamples}
                     />
-                </section>
-                <section className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-2" aria-label={t("section.savedPresets")} data-testid="recipe-list">
-                    <LaunchParameters values={launch} setValues={setLaunch} advancedOpen={advancedOpen} setAdvancedOpen={setAdvancedOpen} />
-                    <label className="flex items-center gap-2 text-sm">
-                        <Checkbox checked={showArchived} data-testid="show-archived-recipes" onCheckedChange={value => setShowArchived(value === true)} />
-                        {t("section.showArchived")}
-                    </label>
-                    {visibleRecipes.map(recipe => (
-                        <RecipeCard
-                            key={recipe.id}
-                            recipe={recipe}
-                            workspace={workspace}
-                            sets={sets.sets}
-                            count={launch.count}
-                            canStart={!runInvalid}
-                            editing={editing === recipe.id}
-                            busy={busy}
-                            start={() => start(recipe)}
-                            edit={() => edit(recipe)}
-                            toggleArchive={() => toggleArchive(recipe)}
-                            remove={() => setDeletion({ kind: "recipe", id: recipe.id, name: recipe.name, revision: recipe.revision })}
-                        />
-                    ))}
-                    {recipes.loading && !recipes.recipes.length && <p role="status" className="text-sm text-muted-foreground">{t("section.presetsLoading")}</p>}
-                    {!recipes.loading && !visibleRecipes.length && (
-                        <Empty testId="recipes-empty">{t("section.presetsEmpty")}</Empty>
-                    )}
-                </section>
-            </div>
-            {/* Both tabs stay mounted: the form survives switching, run cards follow job.changed while hidden. */}
-            <section className={tab === "runs" ? "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain pr-2" : "hidden"} aria-label={t("section.history")} data-testid="run-list">
-                {runs.error && (
-                    <Alert variant="destructive">
-                        <AlertDescription>
-                            <p>{runs.error}</p>
-                            <Button variant="ghost" size="sm" className="mt-1" onClick={() => void runs.refresh()}>{t("section.retry")}</Button>
-                        </AlertDescription>
-                    </Alert>
-                )}
-                {runs.runs.map(run => (
-                    <RunCard
-                        key={run.job.id}
-                        run={run}
-                        workspace={workspace}
-                        sets={sets.sets}
-                        busy={busy}
-                        openImages={openImages}
-                        cancel={() => cancelRun(run)}
-                        repeat={() => repeat(run)}
-                        remove={() => setDeletion({ kind: "run", id: run.job.id, name: run.recipe.name })}
-                    />
-                ))}
-                {runs.total > runs.runs.length && (
-                    <p className="text-xs text-muted-foreground">{t("section.lastRuns", { shown: Math.max(runPageLimit, runs.runs.length), total: formatNumber(runs.total) })}</p>
-                )}
-                {runs.loading && !runs.runs.length && <p role="status" className="text-sm text-muted-foreground">{t("section.runsLoading")}</p>}
-                {!runs.loading && !runs.error && !runs.runs.length && <Empty testId="runs-empty">{t("section.runsEmpty")}</Empty>}
-            </section>
+                    <section className="flex min-w-0 flex-col gap-3 lg:min-h-0" aria-label={t("section.savedPresets")}>
+                        <ActiveJobs jobs={runJobs} label={t("section.activeRuns")} progressLabel={t("section.activeProgress")} testId="generation-active-runs"
+                            action={{ label: t("section.showRuns"), onClick: () => selectTab("runs") }} />
+                        <LaunchParameters values={launch} setValues={setLaunch} advancedOpen={advancedOpen} setAdvancedOpen={setAdvancedOpen} />
+                        <Toolbar className="shrink-0">
+                            <label className="flex items-center gap-2 text-[13px] text-text-2">
+                                <Checkbox checked={showArchived} data-testid="show-archived-recipes" onCheckedChange={value => setShowArchived(value === true)} />
+                                {t("section.showArchived")}
+                            </label>
+                        </Toolbar>
+                        <div role="region" aria-label={t("section.presetList")} data-testid="recipe-list"
+                            className="space-y-3 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
+                            {visibleRecipes.map(recipe => (
+                                <RecipeCard
+                                    key={recipe.id}
+                                    recipe={recipe}
+                                    workspace={workspace}
+                                    sets={sets.sets}
+                                    count={launch.count}
+                                    canStart={!runInvalid}
+                                    editing={editing === recipe.id}
+                                    busy={busy}
+                                    start={() => start(recipe)}
+                                    edit={() => edit(recipe)}
+                                    toggleArchive={() => toggleArchive(recipe)}
+                                    remove={() => setDeletion({ kind: "recipe", id: recipe.id, name: recipe.name, revision: recipe.revision })}
+                                />
+                            ))}
+                            {recipes.loading && !recipes.recipes.length && <p role="status" className="text-sm text-text-2">{t("section.presetsLoading")}</p>}
+                            {!recipes.loading && !visibleRecipes.length && <Empty testId="recipes-empty">{t("section.presetsEmpty")}</Empty>}
+                        </div>
+                    </section>
+                </TabsContent>
+                <TabsContent value="runs" forceMount hidden={tab !== "runs"} className="flex flex-col">
+                    <Pane role="region" className="flex-1 space-y-3" aria-label={t("section.history")} data-testid="run-list">
+                        {runs.error && <Notice variant="destructive" action={{ label: t("section.retry"), onClick: () => void runs.refresh() }}>{runs.error}</Notice>}
+                        {runs.runs.map(run => (
+                            <RunCard
+                                key={run.job.id}
+                                run={run}
+                                workspace={workspace}
+                                sets={sets.sets}
+                                busy={busy}
+                                openImages={openImages}
+                                cancel={() => cancelRun(run)}
+                                repeat={() => repeat(run)}
+                                remove={() => setDeletion({ kind: "run", id: run.job.id, name: run.recipe.name })}
+                            />
+                        ))}
+                        {runs.total > runs.runs.length && (
+                            <p className="text-xs text-text-2">{t("section.lastRuns", { shown: Math.max(runPageLimit, runs.runs.length), total: formatNumber(runs.total) })}</p>
+                        )}
+                        {runs.loading && !runs.runs.length && <p role="status" className="text-sm text-text-2">{t("section.runsLoading")}</p>}
+                        {!runs.loading && !runs.error && !runs.runs.length && <Empty testId="runs-empty">{t("section.runsEmpty")}</Empty>}
+                    </Pane>
+                </TabsContent>
+            </Tabs>
             {deletion && <GenerationDeletionDialog projectId={projectId} target={deletion} close={() => setDeletion(undefined)} deleted={deleted} />}
-        </div>
+        </SectionLayout>
     );
 }
 
-function Empty({ testId, children }: { testId: string; children: ReactNode }) {
-    return (
-        <div className="flex min-h-40 flex-col items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground" data-testid={testId}>
-            {children}
-        </div>
-    );
+function Empty({ testId, children }: { testId: string; children: string }) {
+    return <EmptyState title={children} className="rounded-lg border border-dashed border-line" data-testid={testId} />;
 }

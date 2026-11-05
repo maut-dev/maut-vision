@@ -9,6 +9,8 @@ import {
 } from "@/api/projects/datasets/response-dto/dataset-operation-response-dto";
 import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { jobStatusLabels } from "@/components/jobs/job-run";
+import { Collapsible } from "@/components/layout/collapsible";
+import { Progress } from "@/components/layout/progress";
 import { Button } from "@/components/ui/button";
 import {
     count,
@@ -59,7 +61,7 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
     const repeatBlocked = kind === "build" ? !operation.specification : !version || archived || (kind === "export" && version.integrityState === "corrupt");
     const canOpen = !!version && (kind !== "build" || job.status === "succeeded");
     return (
-        <article className="space-y-3 rounded-md border bg-card p-4" data-dataset-operation-id={job.id} data-kind={kind} data-status={job.status}
+        <article className="surface space-y-3 p-4" data-dataset-operation-id={job.id} data-kind={kind} data-status={job.status}
             aria-label={`${operationTitles[kind]}: ${name}`}>
             <header className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -67,7 +69,7 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
                         {active && <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />}
                         {kind === "build" ? name : operationTitles[kind]} · {status}
                     </h3>
-                    <p className="mt-1 text-sm break-words text-muted-foreground">
+                    <p className="mt-1 text-sm break-words text-text-2">
                         {subtitle.join(" · ")}
                     </p>
                 </div>
@@ -100,39 +102,37 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
                 {progress.percent !== null && active && ` · ${progress.percent}%`}
             </p>
             {(active || job.status === "succeeded") && (
-                <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("operation.progressLabel", { title: operationTitles[kind] })}
-                    aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent ?? undefined} data-testid="operation-progress">
-                    <div className={progress.percent === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"}
-                        style={progress.percent === null ? undefined : { width: `${progress.percent}%` }} />
-                </div>
+                <Progress value={progress.percent} live={job.status === "running"} aria-label={t("operation.progressLabel", { title: operationTitles[kind] })}
+                    data-testid="operation-progress" />
             )}
             {kind === "export" && fileName && (
                 <p className="text-sm break-all" data-testid="operation-file">{t("operation.file", { name: fileName })}{exported && exported.bytes > 0 && ` · ${megabytes(exported.bytes)}`}</p>
             )}
-            {kind === "export" && active && <p role="status" className="text-xs text-muted-foreground">{t("operation.exportRunning")}</p>}
+            {kind === "export" && active && <p role="status" className="text-xs text-text-2">{t("operation.exportRunning")}</p>}
             {kind === "verify" && verify?.state && (
                 <p className={`text-sm ${verify.state === "corrupt" ? "text-destructive" : ""}`} data-testid="operation-integrity">{t("operation.integrity", { state: integrityLabels[verify.state] })}</p>
             )}
-            {times.length > 0 && <p className="text-xs text-muted-foreground">{times.join(" · ")}</p>}
+            {times.length > 0 && <p className="text-xs text-text-2">{times.join(" · ")}</p>}
+            {/* Issues unfold inline in the card, without a scroll of their own. */}
             {verify && verify.issueCount > 0 && (
-                <div className="space-y-2 rounded-md border p-3 text-sm" data-testid="operation-issues">
-                    <h4 className="font-medium">{t("operation.issues", { number: count(verify.issueCount) })}</h4>
-                    <ul className="max-h-40 space-y-1 overflow-auto" aria-label={t("operation.issuesLabel")}>
-                        {verify.issues.map((issue, index) => (
-                            <li key={`${issue.role}:${issue.sampleId}:${index}`} className="break-words">
-                                {[issueRoleLabels[issue.role], ...(issue.sampleId ? [t("operation.issueFrame", { id: issue.sampleId })] : []),
-                                    ...(issue.split ? [splitLabel(issue.split)] : []), errorText(issue.code)].join(" · ")}
-                            </li>
-                        ))}
-                    </ul>
-                    {verify.issueCount > verify.issues.length && <p className="text-xs text-muted-foreground">{t("operation.issuesShown", { number: count(verify.issues.length) })}</p>}
-                    <p className="text-xs text-muted-foreground">{datasetTexts.integrityHelp}</p>
-                </div>
+                <Collapsible title={t("operation.issues", { number: count(verify.issueCount) })} className="-mx-3" data-testid="operation-issues">
+                    <div className="space-y-2 px-3 pb-1 text-sm">
+                        <ul className="list-disc space-y-1 pl-9 break-words" aria-label={t("operation.issuesLabel")}>
+                            {verify.issues.map((issue, index) => (
+                                <li key={`${issue.role}:${issue.sampleId}:${index}`}>
+                                    {[issueRoleLabels[issue.role], ...(issue.sampleId ? [t("operation.issueFrame", { id: issue.sampleId })] : []),
+                                        ...(issue.split ? [splitLabel(issue.split)] : []), errorText(issue.code)].join(" · ")}
+                                </li>
+                            ))}
+                        </ul>
+                        {verify.issueCount > verify.issues.length && <p className="text-xs text-text-2">{t("operation.issuesShown", { number: count(verify.issues.length) })}</p>}
+                        <p className="text-xs text-text-2">{datasetTexts.integrityHelp}</p>
+                    </div>
+                </Collapsible>
             )}
             {endText && <p role="alert" className="text-sm break-words text-destructive" data-testid="operation-error">{endText}</p>}
-            <details className="text-xs text-muted-foreground">
-                <summary className="cursor-pointer">{kind === "build" ? t("operation.buildDetails") : t("operation.details")}</summary>
-                <div className="mt-2 space-y-2">
+            <Collapsible title={kind === "build" ? t("operation.buildDetails") : t("operation.details")} className="-mx-3" data-testid="operation-details">
+                <div className="space-y-2 px-3 pb-1 text-xs text-text-2">
                     {kind === "build" && operation.specification && (
                         <>
                             <p>
@@ -158,7 +158,7 @@ export function DatasetOperationCard({ operation, version, busy, cancel, repeat,
                     {job.status === "succeeded" && kind === "export" && <p>{t("operation.exportDone")}</p>}
                     <p className="break-all">{t("operation.version", { id: operation.versionId })}</p>
                 </div>
-            </details>
+            </Collapsible>
         </article>
     );
 }

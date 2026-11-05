@@ -5,7 +5,7 @@ import type { CatalogTargetKind, DeletionResultResponseDto, DeletionReviewRespon
 import { variantsApi } from "@/api/projects/catalog/variants-api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { errorMessage } from "@/lib/format";
 import { useReturnFocus } from "./catalog-dialogs";
 import { blockerText } from "@/lib/errors";
@@ -88,7 +88,6 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
             <DialogContent
                 data-testid="deletion-dialog"
                 showCloseButton={!busy}
-                className="max-h-[calc(100dvh-3rem)] overflow-y-auto"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}
                 onInteractOutside={event => { if (busy) event.preventDefault(); }}
                 onCloseAutoFocus={returnFocus}
@@ -97,34 +96,37 @@ export function CatalogDeletionDialog({ projectId, target, close, deleted }: {
                     <DialogTitle>{t("deletion.title")}</DialogTitle>
                     <DialogDescription className="break-words">{target.name}</DialogDescription>
                 </DialogHeader>
-                {state.loading && <p role="status" className="text-sm text-muted-foreground">{t("deletion.checking")}</p>}
-                {current && !state.loading && (
-                    <div className="space-y-3 text-sm">
-                        <dl className="grid grid-cols-[1fr_auto] gap-2" data-testid="deletion-counts">
-                            <dt>{t("deletion.classes")}</dt><dd className="text-right tabular-nums" data-count="classes">{current.classes}</dd>
-                            <dt>{t("deletion.classVariants")}</dt><dd className="text-right tabular-nums" data-count="classVariants">{current.classVariants}</dd>
-                            <dt>{t("deletion.assets")}</dt><dd className="text-right tabular-nums" data-count="assets">{current.assets}</dd>
-                        </dl>
-                        <p className="text-muted-foreground">
-                            {t("deletion.note")}
-                        </p>
-                        {blocked && (
-                            <Alert variant="destructive">
-                                <AlertDescription>
-                                    <p>{t("deletion.blocked")}</p>
-                                    <ul className="mt-2 list-disc space-y-1 pl-5">
-                                        {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText("catalog", blocker)}</li>)}
-                                    </ul>
-                                </AlertDescription>
-                            </Alert>
+                {/* The blockers can be long: only the body scrolls, the title and the buttons stay. */}
+                <DialogBody className="space-y-3">
+                    {state.loading && <p role="status" className="text-sm text-text-2">{t("deletion.checking")}</p>}
+                    {current && !state.loading && (
+                        <div className="space-y-3 text-sm">
+                            <dl className="grid grid-cols-[1fr_auto] gap-2" data-testid="deletion-counts">
+                                <dt>{t("deletion.classes")}</dt><dd className="text-right tabular-nums" data-count="classes">{current.classes}</dd>
+                                <dt>{t("deletion.classVariants")}</dt><dd className="text-right tabular-nums" data-count="classVariants">{current.classVariants}</dd>
+                                <dt>{t("deletion.assets")}</dt><dd className="text-right tabular-nums" data-count="assets">{current.assets}</dd>
+                            </dl>
+                            <p className="text-text-2">
+                                {t("deletion.note")}
+                            </p>
+                            {blocked && (
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        <p>{t("deletion.blocked")}</p>
+                                        <ul className="mt-2 list-disc space-y-1 pl-5">
+                                            {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText("catalog", blocker)}</li>)}
+                                        </ul>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+                    )}
+                    <div aria-live="polite">
+                        {(state.error || deleteError) && (
+                            <Alert variant="destructive"><AlertDescription>{state.error ?? deleteError}</AlertDescription></Alert>
                         )}
                     </div>
-                )}
-                <div aria-live="polite">
-                    {(state.error || deleteError) && (
-                        <Alert variant="destructive"><AlertDescription>{state.error ?? deleteError}</AlertDescription></Alert>
-                    )}
-                </div>
+                </DialogBody>
                 <DialogFooter>
                     <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
                     <Button variant="outline" disabled={busy || state.loading} onClick={() => setAttempt(value => value + 1)}>{t("deletion.checkAgain")}</Button>

@@ -1,4 +1,4 @@
-import { useState, type KeyboardEvent } from "react";
+import { useId, useState, type KeyboardEvent } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { backgroundsApi } from "@/api/projects/backgrounds/backgrounds-api";
 import type { ImportBackgroundsRequestDto } from "@/api/projects/backgrounds/request-dto/import-backgrounds-request-dto";
@@ -24,8 +24,9 @@ const modes: readonly ImportMode[] = ["ready", "images", "video"];
 const number = (value: number) => formatNumber(value);
 
 /**
- * "Add backgrounds": the way of adding (a radio group), its action and the shared blur, in one scrolling pane. The section keeps the
- * panel mounted while another tab is shown, so its state (the chosen video, the frame, the fields) survives switching tabs.
+ * "Add backgrounds": the way of adding (a segmented radio group with the hint of the chosen way), its action and the shared blur, in
+ * one scrolling pane. The section keeps the panel mounted while another tab is shown, so its state (the chosen video, the frame, the
+ * fields) survives switching tabs.
  */
 export function BackgroundAddPanel({ projectId, set, blur, disabled, start, openCrop }: {
     projectId: string;
@@ -38,6 +39,7 @@ export function BackgroundAddPanel({ projectId, set, blur, disabled, start, open
 }) {
     const { t } = useTranslation("backgrounds");
     const [mode, setMode] = useState<ImportMode>("ready");
+    const hintId = useId();
     const [ready, setReady] = useState<FileSelection>();
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string>();
@@ -95,22 +97,26 @@ export function BackgroundAddPanel({ projectId, set, blur, disabled, start, open
                 <p className="text-xs text-text-2">{t("add.description", { width, height })}</p>
             </div>
             <fieldset disabled={disabled} className="min-w-0 space-y-4">
-                <div role="radiogroup" aria-label={t("add.modes")} className="grid gap-2 @lg:grid-cols-3" onKeyDown={radioKey}>
-                    {modes.map(item => (
-                        <button
-                            key={item}
-                            type="button"
-                            role="radio"
-                            aria-checked={mode === item}
-                            tabIndex={mode === item ? 0 : -1}
-                            data-import-mode={item}
-                            className={`rounded-md border px-3 py-2 text-left outline-none transition-colors duration-120 ease-glass focus-visible:ring-[3px] focus-visible:ring-focus/30 ${mode === item ? "border-line-strong bg-glass-fill-hover shadow-[var(--glass-highlight)]" : "border-line hover:bg-glass-fill"}`}
-                            onClick={() => setMode(item)}
-                        >
-                            <span className="block text-sm font-medium">{t(`modes.${item}.title`)}</span>
-                            <span className="mt-1 block text-xs text-text-2">{t(`modes.${item}.hint`)}</span>
-                        </button>
-                    ))}
+                {/* A segmented radio group with the short names; the hint of the chosen way is one line under it. */}
+                <div className="space-y-1.5">
+                    <div role="radiogroup" aria-label={t("add.modes")} aria-describedby={`${hintId}-${mode}`} onKeyDown={radioKey}
+                        className="flex w-full gap-0.5 rounded-lg border border-line bg-ink-2 p-[3px] @lg:inline-flex @lg:w-fit">
+                        {modes.map(item => (
+                            <button
+                                key={item}
+                                type="button"
+                                role="radio"
+                                aria-checked={mode === item}
+                                tabIndex={mode === item ? 0 : -1}
+                                data-import-mode={item}
+                                className={`inline-flex h-7 min-w-0 flex-auto items-center justify-center rounded-md px-2 text-[13px] font-medium whitespace-nowrap outline-none transition-[background-color,color,box-shadow] duration-120 ease-glass focus-visible:ring-[3px] focus-visible:ring-focus/30 @lg:px-3 ${mode === item ? "bg-glass-fill-hover text-text-1 shadow-[var(--glass-highlight),var(--shadow-1)]" : "text-text-2 hover:text-text-1"}`}
+                                onClick={() => setMode(item)}
+                            >
+                                <span className="truncate">{t(`modes.${item}.title`)}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <p id={`${hintId}-${mode}`} className="text-xs text-text-2" data-testid="import-mode-hint">{t(`modes.${mode}.hint`)}</p>
                 </div>
                 {mode === "ready" && (
                     <div className="space-y-3" data-testid="ready-mode">

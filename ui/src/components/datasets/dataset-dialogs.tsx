@@ -15,7 +15,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogBody, DialogDescription, DialogFooter, DialogForm, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,23 +45,25 @@ export function DatasetEditDialog({ version, busy, error, close, save }: {
                 <DialogTitle>{t("edit.title")}</DialogTitle>
                 <DialogDescription>{t("edit.description")}</DialogDescription>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="dataset-edit-name">{t("edit.name")}</Label>
-                    <Input id="dataset-edit-name" data-testid="dataset-edit-name" autoFocus required maxLength={maxDatasetNameLength} value={name}
-                        onChange={event => setName(event.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="dataset-edit-description">{t("edit.descriptionLabel")}</Label>
-                    <Textarea id="dataset-edit-description" data-testid="dataset-edit-description" className="h-24 resize-none" maxLength={maxDatasetDescriptionLength}
-                        value={description} onChange={event => setDescription(event.target.value)} />
-                </div>
-                <DialogError error={error} />
+            <DialogForm onSubmit={submit}>
+                <DialogBody className="space-y-4 py-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="dataset-edit-name">{t("edit.name")}</Label>
+                        <Input id="dataset-edit-name" data-testid="dataset-edit-name" autoFocus required maxLength={maxDatasetNameLength} value={name}
+                            onChange={event => setName(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="dataset-edit-description">{t("edit.descriptionLabel")}</Label>
+                        <Textarea id="dataset-edit-description" data-testid="dataset-edit-description" className="h-24 resize-none" maxLength={maxDatasetDescriptionLength}
+                            value={description} onChange={event => setDescription(event.target.value)} />
+                    </div>
+                    <DialogError error={error} />
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("edit.cancel")}</Button>
                     <Button type="submit" data-testid="dataset-edit-save" disabled={busy || !name.trim()}>{busy ? t("edit.saving") : t("edit.save")}</Button>
                 </DialogFooter>
-            </form>
+            </DialogForm>
         </GuardedDialog>
     );
 }
@@ -126,7 +128,7 @@ export function DatasetOperationDeletionDialog({ projectId, operationId, name, c
 
     return (
         <AlertDialog open onOpenChange={open => { if (!open && !busy) close(); }}>
-            <AlertDialogContent className="max-h-[85vh] overflow-auto" data-testid="dataset-operation-deletion-dialog"
+            <AlertDialogContent data-testid="dataset-operation-deletion-dialog"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onCloseAutoFocus={returnFocus}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{t("deletion.operationTitle")}</AlertDialogTitle>
@@ -134,9 +136,9 @@ export function DatasetOperationDeletionDialog({ projectId, operationId, name, c
                         {t("deletion.operationText", { name })}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div aria-live="polite">
+                <DialogBody aria-live="polite">
                     {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                </div>
+                </DialogBody>
                 <AlertDialogFooter>
                     <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("edit.cancel")}</Button>
                     <Button variant="destructive" disabled={busy} data-testid="dataset-operation-deletion-confirm" onClick={() => void commit()}>

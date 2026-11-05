@@ -21,8 +21,8 @@ export function DatasetGroupPicker({ groups, selected, toggle, reviewCount, inva
     const active = groups.filter(group => !group.archivedAt);
     const missing = selected.filter(id => !active.some(group => group.id === id));
     return (
-        <fieldset className="max-h-64 min-h-32 space-y-2 overflow-y-auto rounded-md border p-3" aria-invalid={invalid || undefined} data-testid="dataset-groups">
-            <legend className="mb-2 text-xs text-muted-foreground">{t("groups.title")}</legend>
+        <fieldset className="min-w-0 space-y-2" aria-invalid={invalid || undefined} data-testid="dataset-groups">
+            <legend className="mb-2 text-sm font-medium">{t("groups.title")}</legend>
             {active.map(group => {
                 const images = group.imageCount - group.archivedImageCount;
                 const review = reviewCount(group.id);
@@ -31,7 +31,7 @@ export function DatasetGroupPicker({ groups, selected, toggle, reviewCount, inva
                         <Checkbox className="mt-0.5" checked={selected.includes(group.id)} aria-label={t("groups.label", { name: group.name })} onCheckedChange={() => toggle(group.id)} />
                         <span className="min-w-0">
                             <span className="block break-words">{group.name}</span>
-                            <span className="block text-xs text-muted-foreground tabular-nums" data-testid="dataset-group-meta">
+                            <span className="block text-xs text-text-2 tabular-nums" data-testid="dataset-group-meta">
                                 {[t("groups.frames", { count: images, value: count(images) }), group.origin === "generated" ? t("groups.generated") : t("groups.manual"),
                                     splitHintLabels[group.splitHint]].join(" · ")}
                                 {" · "}<ReviewShare review={review} images={images} />
@@ -43,12 +43,12 @@ export function DatasetGroupPicker({ groups, selected, toggle, reviewCount, inva
                 );
             })}
             {missing.map(id => (
-                <label key={id} className="flex items-center gap-2 text-sm text-muted-foreground" data-dataset-group-id={id}>
+                <label key={id} className="flex items-center gap-2 text-sm text-text-2" data-dataset-group-id={id}>
                     <Checkbox checked aria-label={t("groups.unavailableLabel")} onCheckedChange={() => toggle(id)} />
                     {t("groups.unavailable")}
                 </label>
             ))}
-            {!active.length && !missing.length && <p className="text-sm text-muted-foreground">{t("groups.empty")}</p>}
+            {!active.length && !missing.length && <p className="text-sm text-text-2">{t("groups.empty")}</p>}
         </fieldset>
     );
 }

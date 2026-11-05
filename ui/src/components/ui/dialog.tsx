@@ -11,9 +11,10 @@ const dialogOverlayClasses = "fixed inset-0 z-50 bg-black/55 backdrop-blur-xs"
 
 /**
  * A modal is raised glass at most the window height. One column that may shrink keeps truncated or nowrap children from widening it. A
- * content with a DialogBody becomes a column: the header and the footer stay, only the body scrolls.
+ * content with a DialogBody (or a DialogForm around the body and the footer) becomes a column: the header and the footer stay, only the
+ * body scrolls.
  */
-const dialogContentClasses = "glass-raised fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto rounded-xl p-6 text-text-1 outline-none has-[>[data-slot=dialog-body]]:flex has-[>[data-slot=dialog-body]]:flex-col has-[>[data-slot=dialog-body]]:overflow-hidden"
+const dialogContentClasses = "glass-raised fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto rounded-xl p-6 text-text-1 outline-none has-[>[data-slot=dialog-body]]:flex has-[>[data-slot=dialog-body]]:flex-col has-[>[data-slot=dialog-body]]:overflow-hidden has-[>[data-slot=dialog-form]]:flex has-[>[data-slot=dialog-form]]:flex-col has-[>[data-slot=dialog-form]]:overflow-hidden"
 
 function Dialog({
     ...props
@@ -111,6 +112,17 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
     )
 }
 
+/** A form that holds the DialogBody and the DialogFooter, so Enter in a field and the submit button of the footer send it. */
+function DialogForm({ className, ...props }: React.ComponentProps<"form">) {
+    return (
+        <form
+            data-slot="dialog-form"
+            className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}
+            {...props}
+        />
+    )
+}
+
 function DialogFooter({
     className,
     showCloseButton = false,
@@ -171,6 +183,7 @@ export {
     DialogContent,
     DialogDescription,
     DialogFooter,
+    DialogForm,
     DialogHeader,
     DialogOverlay,
     DialogPortal,

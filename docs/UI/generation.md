@@ -1,14 +1,30 @@
 # Generation in the UI
 
-The "Generation" section (`components/generation/`) has the tabs "Presets (N)" and "Runs (N)". The presets tab shows the form on the left
-and the run parameters and preset cards on the right; the runs tab shows run cards. Both tabs stay mounted: the form survives switching,
-and run cards receive events while hidden. Data comes from the [generation API](../Core/generation.md), without polling.
+The "Generation" section (`components/generation/`) has the tabs «Пресеты» and «Запуски». Data comes from the
+[generation API](../Core/generation.md), without polling.
 
 ```tsx
 const recipes = useGenerationRecipes(projectId);   // listRecipes + generation.changed (revisions, null — deleted)
 const runs = useGenerationRuns(projectId);         // listRuns + job.changed (kind generation.run, sequence) + generation.changed.runs
 const samples = useGenerationSamples(projectId);   // sample frames; a new request cancels the previous one
 ```
+
+## Layout
+
+The section follows [one scroll per region](design-system.md#one-scroll-per-region).
+
+| Tab | Holds | Scrolls |
+|---|---|---|
+| «Пресеты» (count of presets) | the preset form; beside it the running runs, "Run parameters", "Show archived" and the preset cards | the form fields; the preset cards |
+| «Запуски» (count of runs, a live dot while a run is queued or running) | the run cards | the run list |
+
+At `lg` and wider the form and the presets are two columns; below `lg` they stack in the one scroll of the tab. The form has a header with
+its mode, the fields with the sample frames, and the actions under the fields. Background sets and variant shares flow in the form scroll,
+without a list of their own. "Run parameters" stay above the cards; "Advanced" (the seed) is a disclosure that stays mounted while closed.
+
+Both tabs stay mounted (`forceMount` with `hidden`): the form survives switching, and run cards receive events while hidden. A started run
+is visible from «Пресеты»: the live dot of «Запуски» and the progress of running runs above "Run parameters" (`ActiveJobs`). The settings of
+a run unfold inline in its card. Each preset card starts its own run, so the start buttons are the white `default` buttons of their cards.
 
 ## Preset form
 

@@ -4,7 +4,10 @@ import { ArrowDown, ArrowUp, Plus, Tags } from "lucide-react";
 import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/response-dto/catalog-workspace-response-dto";
 import type { ClassResponseDto } from "@/api/projects/catalog/response-dto/class-response-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { EmptyState } from "@/components/layout/empty-state";
+import { MasterDetail } from "@/components/layout/master-detail";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AssetImportsState } from "@/lib/use-asset-imports";
@@ -23,7 +26,10 @@ export interface ClassActions {
     binding: ClassVariantActions;
 }
 
-/** The "Classes" section: the ordered list and the contents of the chosen class by variants. */
+/**
+ * The "Classes" section: the toolbar and a short order hint above two columns: the ordered list and the chosen class (a compact header
+ * with its name and "Attach variant", then its variants with their images in one scroll).
+ */
 export function ClassesPage({ projectId, workspace, inputSize, busy, imports, actions }: {
     projectId: string;
     workspace: CatalogWorkspaceResponseDto;
@@ -89,28 +95,22 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                 add={actions.create}
             />
             {!activeVariants.length && (
-                <Alert className="shrink-0">
-                    <Tags />
-                    <AlertTitle>{t("classes.registerVariants")}</AlertTitle>
-                    <AlertDescription>
-                        <p>{t("classes.registerVariantsText")}</p>
-                        <Button className="mt-3" variant="outline" onClick={actions.openVariants}>{t("classes.openVariants")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice className="shrink-0" title={t("classes.registerVariants")} action={{ label: t("classes.openVariants"), onClick: actions.openVariants }}>
+                    {t("classes.registerVariantsText")}
+                </Notice>
             )}
-            <p className="shrink-0 text-sm text-muted-foreground">
-                {t("classes.orderHelp")}
-            </p>
-            <div className="grid min-h-0 flex-1 grid-cols-[minmax(220px,30%)_minmax(0,1fr)] gap-5">
-                <div
+            <p className="shrink-0 text-xs text-text-2">{t("classes.orderHelp")}</p>
+            <MasterDetail className="grid-cols-[minmax(0,13rem)_minmax(0,1fr)] lg:grid-cols-[minmax(16rem,30%)_minmax(0,1fr)]">
+                <Pane
                     ref={list}
-                    className="min-h-0 overflow-y-auto overscroll-contain rounded-lg border"
+                    surface
+                    className="p-2 outline-none focus-visible:ring-[3px] focus-visible:ring-focus/30"
                     data-testid="class-list"
                     tabIndex={0}
                     role="region"
                     aria-label={t("classes.list")}
                 >
-                    <div className="divide-y">
+                    <div className="space-y-1">
                         {entries.map(item => {
                             const index = indices.get(item.id);
                             return (
@@ -121,7 +121,7 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                     deleteLabel={t("classes.deleteLabel", { name: item.name })}
                                     selected={item.id === selected?.id}
                                     prefix={index !== undefined && (
-                                        <span className="mr-2 text-xs tabular-nums text-muted-foreground" data-class-index={index} title={t("classes.indexHint")}>{index}</span>
+                                        <span className="mr-2 text-xs tabular-nums text-text-3" data-class-index={index} title={t("classes.indexHint")}>{index}</span>
                                     )}
                                     fallback={t("classes.fallback")}
                                     busy={busy}
@@ -166,60 +166,58 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                             text={t("classes.emptyText")}
                         />
                     )}
-                </div>
+                </Pane>
                 <section
-                    className="min-h-0 min-w-0 overflow-y-auto overscroll-contain rounded-lg border p-5"
+                    className="flex min-h-0 min-w-0 flex-col"
                     data-testid="class-content"
-                    tabIndex={0}
                     aria-label={selected ? t("classes.contentLabel", { name: selected.name }) : t("classes.content")}
                 >
                     {selected ? (
-                        <div className="space-y-5" data-selected-class-id={selected.id}>
-                            <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex min-h-0 flex-1 flex-col gap-3" data-selected-class-id={selected.id}>
+                            <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2">
                                 <div className="min-w-0">
-                                    <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold break-words">
+                                    <h2 className="flex flex-wrap items-center gap-2 font-medium break-words">
                                         {selected.name}
                                         {selected.archivedAt && <Badge variant="outline">{t("list.archived")}</Badge>}
                                     </h2>
-                                    <p className="mt-1 text-sm break-words text-muted-foreground">
+                                    <p className="mt-0.5 text-xs break-words text-text-2">
                                         {selected.description || t("classes.descriptionFallback")}
                                     </p>
                                 </div>
-                                <Button variant="outline" data-testid="attach-variant-open" disabled={busy || !!selected.archivedAt || !attachable.length} onClick={() => actions.attach(selected)}>
+                                <Button size="sm" variant="outline" data-testid="attach-variant-open" disabled={busy || !!selected.archivedAt || !attachable.length}
+                                    onClick={() => actions.attach(selected)}>
                                     <Plus />{t("classes.attach")}
                                 </Button>
                             </div>
-                            {bindings.map(binding => {
-                                const variant = workspace.variants.find(item => item.id === binding.variantId);
-                                return (
-                                    <ClassVariantSection
-                                        key={binding.id}
-                                        projectId={projectId}
-                                        binding={binding}
-                                        className={selected.name}
-                                        variantName={variant?.name ?? t("classes.variantFallback")}
-                                        classArchived={!!selected.archivedAt}
-                                        variantArchived={!!variant?.archivedAt}
-                                        inputSize={inputSize}
-                                        busy={busy}
-                                        importState={imports[binding.id]}
-                                        actions={actions.binding}
-                                    />
-                                );
-                            })}
-                            {!bindings.length && (
-                                <p className="py-8 text-sm text-muted-foreground">{t("classes.noBindings")}</p>
-                            )}
+                            <Pane surface tabIndex={0} role="region" aria-label={t("classes.variants")}
+                                className="flex-1 space-y-4 p-4 outline-none focus-visible:ring-[3px] focus-visible:ring-focus/30">
+                                {bindings.map(binding => {
+                                    const variant = workspace.variants.find(item => item.id === binding.variantId);
+                                    return (
+                                        <ClassVariantSection
+                                            key={binding.id}
+                                            projectId={projectId}
+                                            binding={binding}
+                                            className={selected.name}
+                                            variantName={variant?.name ?? t("classes.variantFallback")}
+                                            classArchived={!!selected.archivedAt}
+                                            variantArchived={!!variant?.archivedAt}
+                                            inputSize={inputSize}
+                                            busy={busy}
+                                            importState={imports[binding.id]}
+                                            actions={actions.binding}
+                                        />
+                                    );
+                                })}
+                                {!bindings.length && <EmptyState title={t("classes.noBindings")} />}
+                            </Pane>
                         </div>
                     ) : (
-                        <div className="flex min-h-80 flex-col items-center justify-center gap-2 text-center">
-                            <Tags className="size-6 text-muted-foreground" aria-hidden />
-                            <h2 className="font-medium">{t("classes.chooseTitle")}</h2>
-                            <p className="max-w-sm text-sm text-muted-foreground">{t("classes.chooseText")}</p>
-                        </div>
+                        <EmptyState icon={Tags} title={t("classes.chooseTitle")} description={t("classes.chooseText")}
+                            className="flex-1 rounded-lg border border-dashed border-line" />
                     )}
                 </section>
-            </div>
+            </MasterDetail>
         </>
     );
 }

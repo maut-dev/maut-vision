@@ -12,7 +12,6 @@
     "newClass": "New class",
     "classDescription": "A class defines which object the model detects.",
     "variantDescription": "This variant can be used in any class of the project.",
-    "hide": "Hide",
     "retry": "Retry",
     "loading": "Loading the catalog…"
   },
@@ -76,6 +75,7 @@
     "content": "Class contents",
     "descriptionFallback": "Add images of objects for every variant.",
     "attach": "Attach variant",
+    "variants": "Class variants",
     "variantFallback": "Variant",
     "noBindings": "Attach a shared project variant, then add images of this class.",
     "chooseTitle": "Choose a class",
@@ -125,7 +125,8 @@
     "cancelled": "Import cancelled",
     "failed": "Import not complete",
     "summary": "Added: {{added}} · Identical skipped: {{duplicates}} · Rejected: {{rejected}}",
-    "more": "and {{number}} more"
+    "more": "and {{number}} more",
+    "rejectedFiles": "Rejected files: {{number}}"
   },
   "assets": {
     "loading": "Loading images…",

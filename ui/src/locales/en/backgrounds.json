@@ -86,16 +86,16 @@
     "modes": "Way of adding backgrounds"
   },
   "modes": {
-    "ready": { "title": "Ready frames", "hint": "Files already of the right size, imported as they are." },
-    "images": { "title": "Cut from images", "hint": "Large screenshots: you place a frame on each file." },
-    "video": { "title": "Cut from video", "hint": "One frame for the whole video, a shot every N seconds." }
+    "ready": { "title": "Ready", "hint": "Files already of the right size, imported as they are." },
+    "images": { "title": "Images", "hint": "Large screenshots: you place a frame on each file." },
+    "video": { "title": "Video", "hint": "One frame for the whole video, a shot every N seconds." }
   },
   "ready": {
     "note": "Files of another size are not imported: they go to the “Skip reasons” of the run with their actual size.",
     "choose": "Choose files",
     "selected": "Files selected: {{number}}. Of the right size {{width}} × {{height}}: <exact>{{exact}}</exact> will be imported.",
     "skipped": "Will be skipped: {{number}} (larger: {{larger}}, smaller: {{smaller}}, unreadable: {{unreadable}}).",
-    "largerHint": "Large files can be cut with a frame: “Cut from images”."
+    "largerHint": "Large files can be cut with a frame: “Images”."
   },
   "images": {
     "note": "Files show one by one: place a {{width}} × {{height}} px frame on each. Files of exactly this size are taken whole, smaller ones are skipped. Samples come before the import.",

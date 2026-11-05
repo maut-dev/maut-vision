@@ -1538,8 +1538,8 @@ internal static partial class SmokeRunner
     private const string GenerationUiFormScript = """
           (await wait(() => enabled($('[data-section="generation"]')), 'Generation section enabled')).click();
           await wait(() => form() && setRow('Фоны UI') && weightOf(variantId) && $('[data-testid="recipes-empty"]') && $('[data-testid="runs-empty"]'), 'Generation opened');
-          assert(document.body.textContent.includes('Наложение объектов на фоны с заданными долями вариантов.') && text('[data-testid="tab-recipes"]') === 'Пресеты (0)'
-            && text('[data-testid="tab-runs"]') === 'Запуски (0)' && text('[data-testid="recipe-form-title"]') === 'Новый пресет'
+          assert(document.body.textContent.includes('Наложение объектов на фоны с заданными долями вариантов.') && text('[data-testid="tab-recipes"]') === 'Пресеты0'
+            && text('[data-testid="tab-runs"]') === 'Запуски0' && text('[data-testid="recipe-form-title"]') === 'Новый пресет'
             && text('[data-testid="recipe-canvas"]') === width + ' × ' + height
             && text('[data-testid="recipes-empty"]').startsWith('Сохраните пресет для следующих генераций.'), 'Generation opens lazily with the new recipe form and empty lists');
 
@@ -1602,7 +1602,7 @@ internal static partial class SmokeRunner
     private const string GenerationUiRecipeScript = """
           $('[data-testid="recipe-save"]').click();
           const saved = await wait(() => card('Улица UI пресет'), 'Recipe saved');
-          assert(saved.dataset.revision === '1' && text('[data-testid="tab-recipes"]') === 'Пресеты (1)' && $('[data-testid="recipe-name"]').value === ''
+          assert(saved.dataset.revision === '1' && text('[data-testid="tab-recipes"]') === 'Пресеты1' && $('[data-testid="recipe-name"]').value === ''
             && text('[data-testid="generation-notice"]').includes('Пресет «Улица UI пресет» сохранён.'), 'The recipe is saved from the form');
           assert($('[data-testid="recipe-variants"]', saved).textContent.includes('Сумерки UI — 100% · Знак UI') && $('[data-testid="recipe-sets"]', saved).textContent === 'Фоны UI · 2 фона'
             && $('[data-testid="recipe-details"]', saved).textContent.includes(width + ' × ' + height + ' px'), 'The recipe card shows its details');
@@ -1619,7 +1619,7 @@ internal static partial class SmokeRunner
           await wait(() => document.activeElement === labelled('Изменить пресет: Улица UI'), 'Focus back to the card');
           const stored = await request('generation.listRecipes', {projectId});
           const recipe = stored.data.find(item => item.name === 'Улица UI');
-          assert(recipe && recipe.revision === 2 && recipe.scale === 1 && recipe.objectsPerImage === 2 && recipe.emptyProbability === 0 && text('[data-testid="tab-recipes"]') === 'Пресеты (1)',
+          assert(recipe && recipe.revision === 2 && recipe.scale === 1 && recipe.objectsPerImage === 2 && recipe.emptyProbability === 0 && text('[data-testid="tab-recipes"]') === 'Пресеты1',
             'Editing saves a new revision of the same recipe and returns focus to the card');
 
           labelled('В архив: Улица UI').click();
@@ -1657,12 +1657,13 @@ internal static partial class SmokeRunner
             const done = await wait(() => runCard()?.dataset.status === 'succeeded' && runCard(), 'Run finished', () => [...seen].join(', '));
             watch();
             assert([...seen].some(value => value.startsWith('queued:') || value.startsWith('running:')) && seen.has('succeeded:100')
-              && $('[data-testid="tab-runs"]').getAttribute('aria-pressed') === 'true', 'The run card follows the run live from job.changed: ' + [...seen].join(', '));
+              && $('[data-testid="tab-runs"]').getAttribute('aria-selected') === 'true', 'The run card follows the run live from job.changed: ' + [...seen].join(', '));
             assert(text('[data-testid="run-summary"]') === '8 / 8 изображений · 100%. Кадров с недостающими объектами: 8' && text('[data-testid="run-status"]').startsWith('Готово · ')
-              && text('[data-testid="tab-runs"]') === 'Запуски (1)' && !$('[data-testid="run-cancel"]', done) && $('[data-testid="run-repeat"]', done) && !$('[data-testid="run-error"]', done),
+              && text('[data-testid="tab-runs"]') === 'Запуски1' && !$('[data-testid="run-cancel"]', done) && $('[data-testid="run-repeat"]', done) && !$('[data-testid="run-error"]', done),
               'The finished run shows its result with «Кадров с недостающими объектами: N»');
             const settings = $('[data-testid="run-settings"]', done);
-            settings.open = true;
+            $('[data-testid="run-settings-toggle"]', settings).click();
+            await wait(() => $('[data-testid="run-settings-toggle"]', settings).getAttribute('aria-expanded') === 'true' && $('[data-testid="recipe-details"]', settings), 'Run settings unfolded');
             assert(settings.textContent.includes('Seed: ' + seed + ' · количество: 8 · версия пресета: ' + revision) && settings.textContent.includes('Группа результата: Улица UI · '),
               '«Настройки этого запуска» show the seed, count and recipe revision');
           } finally {
@@ -1695,28 +1696,28 @@ internal static partial class SmokeRunner
     private const string GenerationUiRepeatScript = """
           $('[data-section="generation"]').click();
           await wait(() => form() && runCard()?.dataset.status === 'succeeded', 'Generation again');
-          $('[data-testid="tab-runs"]').click();
+          await selectTab('tab-runs');
           labelled('Настроить повтор: Улица UI').click();
           await wait(() => form().dataset.mode === 'repeat' && document.activeElement === $('[data-testid="recipe-name"]'), 'Repeat form');
           const runPage = await request('generation.listRuns', {projectId});
           const run = runPage.data.items[0];
           assert($('[data-testid="recipe-name"]').value === 'Улица UI · повтор' && text('[data-testid="repeat-notice"]').startsWith('Настройки сохранённого запуска')
             && $('[data-testid="launch-count"]').value === '8' && $('[data-testid="launch-seed"]').value === String(run.seed) && $('[data-testid="recipe-scale"]').value === '1'
-            && $('button[role="checkbox"]', setRow('Фоны UI')).getAttribute('aria-checked') === 'true' && $('[data-testid="tab-recipes"]').getAttribute('aria-pressed') === 'true',
+            && $('button[role="checkbox"]', setRow('Фоны UI')).getAttribute('aria-checked') === 'true' && $('[data-testid="tab-recipes"]').getAttribute('aria-selected') === 'true',
             '«Настроить повтор» fills the form, the seed and the count from the run');
 
-          $('[data-testid="tab-runs"]').click();
+          await selectTab('tab-runs');
           labelled('Удалить запуск: Улица UI').click();
           const dialog = await wait(() => $('[data-testid="generation-deletion-dialog"]'), 'Run deletion dialog');
           assert(dialog.textContent.includes('Удалить запуск из истории?') && dialog.textContent.includes('Созданная группа, изображения и разметка сохранятся.'),
             'The run deletion dialog has the old texts');
           $('[data-testid="generation-deletion-confirm"]').click();
-          await wait(() => !$('[data-testid="generation-deletion-dialog"]') && !runCard() && $('[data-testid="runs-empty"]') && text('[data-testid="tab-runs"]') === 'Запуски (0)', 'Run deleted');
+          await wait(() => !$('[data-testid="generation-deletion-dialog"]') && !runCard() && $('[data-testid="runs-empty"]') && text('[data-testid="tab-runs"]') === 'Запуски0', 'Run deleted');
           const kept = await request('images.getGroup', {projectId, groupId: run.outputGroupId});
           assert(kept.ok && kept.data.imageCount === 8, 'Deleting the run keeps its images');
 
-          $('[data-testid="tab-recipes"]').click();
-          await wait(() => form().dataset.mode === 'repeat' && $('[data-testid="tab-recipes"]').getAttribute('aria-pressed') === 'true', 'Recipes tab');
+          await selectTab('tab-recipes');
+          await wait(() => form().dataset.mode === 'repeat' && $('[data-testid="tab-recipes"]').getAttribute('aria-selected') === 'true', 'Recipes tab');
           (await wait(() => enabled($('[data-testid="recipe-samples"]')), 'Samples enabled')).click();
           const shown = await wait(() => {
             const items = samplesLoaded();
@@ -1834,22 +1835,31 @@ internal static partial class SmokeRunner
             && $('[data-testid="dataset-operations-verify-empty"]').textContent.startsWith('Откройте датасет во вкладке «Датасеты»'),
             'Datasets opens lazily on the «Датасеты» tab with the old empty texts');
 
+          // The smoke window is never activated, so the page moves the focus without focus events, and a tab activates on its focus
+          // event. They are sent here the way a focused window sends them.
+          const focusEvent = element => { if (!document.hasFocus()) element.dispatchEvent(new FocusEvent('focusin', {bubbles: true})); };
+          const keyTab = async (from, name) => {
+            key(from, name);
+            const to = await wait(() => document.activeElement !== from && document.activeElement?.getAttribute('role') === 'tab' && document.activeElement, 'Focus after ' + name);
+            focusEvent(to);
+          };
           tab('datasets').focus();
-          key(tab('datasets'), 'ArrowRight');
+          focusEvent(tab('datasets'));
+          await keyTab(tab('datasets'), 'ArrowRight');
           await wait(() => selectedTab() === 'datasets-tab-build' && document.activeElement === tab('build'), 'ArrowRight');
-          key(tab('build'), 'End');
+          await keyTab(tab('build'), 'End');
           await wait(() => selectedTab() === 'datasets-tab-export' && document.activeElement === tab('export'), 'End');
-          key(tab('export'), 'ArrowRight');
+          await keyTab(tab('export'), 'ArrowRight');
           await wait(() => selectedTab() === 'datasets-tab-datasets' && document.activeElement === tab('datasets'), 'ArrowRight wraps');
-          key(tab('datasets'), 'ArrowLeft');
+          await keyTab(tab('datasets'), 'ArrowLeft');
           await wait(() => selectedTab() === 'datasets-tab-export', 'ArrowLeft wraps');
-          key(tab('export'), 'Home');
+          await keyTab(tab('export'), 'Home');
           await wait(() => selectedTab() === 'datasets-tab-datasets' && document.activeElement === tab('datasets'), 'Home');
-          assert($$('[role="tablist"] [role="tab"]').map(item => item.textContent).join(',') === 'Датасеты,Сборка,Проверки,Экспорты'
+          assert($$('[role="tablist"] [role="tab"]').map(item => item.textContent).join(',') === 'Датасеты0,Сборка0,Проверки0,Экспорты0'
             && tab('datasets').tabIndex === 0 && tab('build').tabIndex === -1 && $('#dataset-panel-build').hidden
             && tab('datasets').getAttribute('aria-controls') === 'dataset-panel-datasets', 'Tabs are role=tab with arrows, Home and End and one tab stop');
 
-          key(tab('datasets'), 'ArrowRight');
+          await keyTab(tab('datasets'), 'ArrowRight');
           await wait(() => selectedTab() === 'datasets-tab-build' && $('[data-testid="dataset-build-form"]') && groupRow(unassignedId), 'Build tab');
           await wait(() => [unassignedId, validationId, duplicateId].every(id => groupRow(id)?.querySelector('[data-reviewed]')), 'Reviewed counts',
             () => [unassignedId, validationId].map(id => groupRow(id)?.textContent).join(' | '));
@@ -1929,6 +1939,9 @@ internal static partial class SmokeRunner
             && text('[data-testid="dataset-built"]').endsWith('· Групп-источников: 2 · Seed 7')
             && text('[data-testid="dataset-class-order"]') === 'Сохранённый порядок классов: 0: ' + className, 'The passport shows parts, integrity, the build and the class order');
 
+          await selectTab('dataset-detail-tab-samples');
+          assert(text('[data-testid="dataset-detail-tab-samples"]') === 'Образцы' + version.counts.total && $('[data-testid="dataset-passport"]').closest('[hidden]'),
+            'The samples of the chosen dataset are a tab of its own beside «Сведения»');
           const split = version.counts.train > 0 ? 'train' : 'val';
           const shown = await wait(() => tilesLoaded(version.counts[split]), 'Sample thumbnails', () => sampleTiles().length + ' tiles');
           assert(text('[data-testid="dataset-sample-count"]') === version.counts[split] + ' из ' + version.counts[split] + ' · Снимки при сборке'
@@ -1973,7 +1986,7 @@ internal static partial class SmokeRunner
             && $('[data-testid="operation-file"]', exported).textContent.startsWith('Файл: Улица UI.zip · ')
             && $('[data-testid="operation-repeat"]', exported).textContent === 'Сохранить ещё раз', 'The export shows the file name, its progress and «Сохранить ещё раз»');
 
-          tab('verify').click();
+          await selectTab('datasets-tab-verify');
           $('[data-testid="operation-delete"]', verify).click();
           const dialog = await wait(() => $('[data-testid="dataset-operation-deletion-dialog"]'), 'Operation deletion dialog');
           assert(dialog.textContent.includes('Удалить запись из истории?') && dialog.textContent.includes('Готовые датасеты, исходные изображения и сохранённые вами ZIP-файлы останутся.'),
@@ -1982,7 +1995,7 @@ internal static partial class SmokeRunner
           await wait(() => !$('[data-testid="dataset-operation-deletion-dialog"]') && !operations('verify').length && $('[data-testid="dataset-operations-verify-empty"]'), 'Check deleted');
           assert(true, '«Удалить из истории» removes the finished check');
 
-          tab('build').click();
+          await selectTab('datasets-tab-build');
           $('[data-testid="operation-repeat"]', operation('build', versionId)).click();
           await wait(() => selectedTab() === 'datasets-tab-build' && document.activeElement === $('[data-testid="dataset-name"]') && $('[data-testid="dataset-repeat-notice"]'), 'Repeat form');
           assert($('[data-testid="dataset-name"]').value === 'Улица UI' && $('[data-testid="dataset-seed"]').value === '7' && $('#dataset-train').value === '70'
@@ -2047,9 +2060,10 @@ internal static partial class SmokeRunner
           versionButton(secondId).click();
           const version = (await request('datasets.get', {projectId, versionId: secondId})).data;
           const split = version.counts.train > 0 ? 'train' : 'val';
-          await wait(() => versionButton(secondId).getAttribute('aria-pressed') === 'true' && tilesLoaded(version.counts[split]), 'Final grid');
+          await wait(() => versionButton(secondId).getAttribute('aria-pressed') === 'true' && $('[data-testid="dataset-details"]')?.dataset.datasetDetailsId === secondId, 'Second version');
+          await selectTab('dataset-detail-tab-samples');
+          await wait(() => tilesLoaded(version.counts[split]), 'Final grid');
           $('[data-testid="datasets-notice"] button')?.click();
-          $('[data-testid="dataset-class-order"]').scrollIntoView({block: 'start'});
           await sleep(300);
           return {checks};
         """;

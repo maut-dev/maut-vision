@@ -37,7 +37,8 @@ adding is the one brand button of the section.
 
 ## Adding
 
-Three methods in a radio group; the blur (`useBackgroundBlur`) is shared by all of them and is not reset when the method changes. Each run
+Three methods in a segmented radio group with short names («Готовые», «Изображения», «Видео») and the hint of the chosen one
+under it, so the choice takes one row of the form; the blur (`useBackgroundBlur`) is shared by all of them and is not reset when the method changes. Each run
 is one `backgrounds.import` job; the job appears in the set history immediately, and progress and outcome arrive as events.
 
 - Ready frames: after selecting files, before the run, a summary from the headers shows how many files have the right size and how many

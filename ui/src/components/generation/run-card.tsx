@@ -4,6 +4,8 @@ import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/respon
 import type { CatalogWorkspaceResponseDto } from "@/api/projects/catalog/response-dto/catalog-workspace-response-dto";
 import type { GenerationRunResponseDto } from "@/api/projects/generation/response-dto/generation-run-response-dto";
 import { jobStatusLabels } from "@/components/jobs/job-run";
+import { Collapsible } from "@/components/layout/collapsible";
+import { Progress } from "@/components/layout/progress";
 import { Button } from "@/components/ui/button";
 import { formatDate, formatNumber } from "@/lib/format";
 import { isRunActive, runErrorText, runProgress, runSummary } from "@/lib/generation/run-state";
@@ -30,7 +32,7 @@ export function RunCard({ run, workspace, sets, busy, openImages, cancel, repeat
     const error = runErrorText(run);
     const status = job.cancelRequested && active ? t("run.cancelling") : jobStatusLabels[job.status];
     return (
-        <article className="space-y-3 rounded-xl border bg-card p-5" data-generation-run-id={job.id} data-status={job.status} aria-label={t("run.label", { name: recipe.name })}>
+        <article className="surface space-y-3 p-4" data-generation-run-id={job.id} data-status={job.status} aria-label={t("run.label", { name: recipe.name })}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                     <h3 className="font-medium break-words">{recipe.name}</h3>
@@ -64,20 +66,16 @@ export function RunCard({ run, workspace, sets, busy, openImages, cancel, repeat
                 </div>
             </div>
             <p className="text-sm tabular-nums" data-testid="run-summary">{runSummary(run)}</p>
-            <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("run.progress", { name: recipe.name })}
-                aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.percent} data-testid="run-progress">
-                <div className={`h-full bg-brand transition-[width] ${job.status === "failed" ? "bg-destructive" : ""}`} style={{ width: `${progress.percent}%` }} />
-            </div>
+            <Progress value={progress.percent} live={job.status === "running"} aria-label={t("run.progress", { name: recipe.name })} data-testid="run-progress" />
             {error && <p role="status" className="text-sm text-destructive" data-testid="run-error">{error}</p>}
-            <details className="rounded-md border px-3 py-2" data-testid="run-settings">
-                <summary className="cursor-pointer text-sm">{t("run.settings")}</summary>
-                <div className="mt-3 space-y-3">
+            <Collapsible title={t("run.settings")} className="-mx-3" data-testid="run-settings">
+                <div className="space-y-3 px-3 pt-1 pb-2">
                     <p className="text-xs tabular-nums">{t("run.settingsLine", { seed: run.seed, count: formatNumber(run.requestedCount), revision: recipe.revision })}</p>
-                    {run.outputGroupName && <p className="text-xs break-words text-muted-foreground">{t("run.outputGroup", { name: run.outputGroupName })}</p>}
+                    {run.outputGroupName && <p className="text-xs break-words text-text-2">{t("run.outputGroup", { name: run.outputGroupName })}</p>}
                     <RecipeDetails recipe={recipe} workspace={workspace} sets={sets} />
-                    <p className="text-xs text-muted-foreground">{t("run.settingsNote")}</p>
+                    <p className="text-xs text-text-2">{t("run.settingsNote")}</p>
                 </div>
-            </details>
+            </Collapsible>
         </article>
     );
 }
