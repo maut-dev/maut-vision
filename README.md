@@ -73,16 +73,16 @@ Maut Vision is built to stay fast on large libraries:
 ## Installation
 
 > [!IMPORTANT]
-> **Download:** [MautVision-Setup-1.2.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.2.0/MautVision-Setup-1.2.0.exe) (1.93 GB)
+> **Download:** [MautVision-Setup-1.3.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.3.0/MautVision-Setup-1.3.0.exe) (1.93 GB)
 >
 > All versions and release notes: [GitHub Releases](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `966c3a23e646910893a1806a02430b72a500d4a5bdaca31aeb5516977ff6509d`
+> SHA-256: `72b832089f1b3b9824769a5b854768215a9aa79f68281ec78a331a90d79b6068`
 
 **Verify the download.** Compare the SHA-256 of the installer with the hash published next to the download link:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.2.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.3.0.exe -Algorithm SHA256
 ```
 
 The installer is not code-signed yet, so Windows SmartScreen may ask for confirmation ("More info" → "Run anyway"). Install only a file
