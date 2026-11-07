@@ -12,6 +12,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { DialogBody } from "@/components/ui/dialog";
 import { errorMessage } from "@/lib/format";
 
 export type GenerationDeletionTarget =
@@ -51,7 +52,7 @@ export function GenerationDeletionDialog({ projectId, target, close, deleted }: 
 
     return (
         <AlertDialog open onOpenChange={open => { if (!open && !busy) close(); }}>
-            <AlertDialogContent className="max-h-[85vh] overflow-auto" data-testid="generation-deletion-dialog"
+            <AlertDialogContent data-testid="generation-deletion-dialog"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }} onCloseAutoFocus={returnFocus}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{target.kind === "recipe" ? t("deletion.recipeTitle") : t("deletion.runTitle")}</AlertDialogTitle>
@@ -59,9 +60,9 @@ export function GenerationDeletionDialog({ projectId, target, close, deleted }: 
                         {t(target.kind === "recipe" ? "deletion.recipeText" : "deletion.runText", { name: target.name })}
                     </AlertDialogDescription>
                 </AlertDialogHeader>
-                <div aria-live="polite">
+                <DialogBody aria-live="polite">
                     {error && <Alert variant="destructive" data-testid="generation-deletion-error"><AlertDescription>{error}</AlertDescription></Alert>}
-                </div>
+                </DialogBody>
                 <AlertDialogFooter>
                     <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("form.cancel")}</Button>
                     <Button variant="destructive" disabled={busy} data-testid="generation-deletion-confirm" onClick={() => void commit()}>

@@ -27,7 +27,7 @@ import { LanguageSelect } from "@/components/language-select";
 import { McpHeader } from "@/components/mcp/mcp-header";
 import { ProjectLibrary } from "@/components/project-library";
 import { OverviewSection, type OverviewTarget } from "@/components/overview/overview-section";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Toast } from "@/components/layout/toast";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -397,14 +397,11 @@ export function App() {
                     </div>
                 </main>
             </div>
-            <div className="fixed bottom-4 right-4 z-40 max-w-sm" aria-live="polite">
+            <div className="fixed right-4 bottom-4 z-40 w-[min(24rem,calc(100vw-2rem))]" aria-live="polite">
                 {notice && !editor && (
-                    <Alert variant="destructive" className="shadow-glass-3">
-                        <AlertDescription>
-                            <p>{notice}</p>
-                            <Button variant="ghost" size="sm" className="mt-2" onClick={() => setNotice(undefined)}>{t("app.close")}</Button>
-                        </AlertDescription>
-                    </Alert>
+                    <Toast title={t("app.errorTitle")} closeLabel={t("app.close")} onClose={() => setNotice(undefined)} data-testid="app-notice">
+                        {notice}
+                    </Toast>
                 )}
             </div>
             {editor && (
@@ -436,7 +433,7 @@ export function App() {
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t("app.archiveTitle")}</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogDescription className="break-words">
                             {t("app.archiveText", { name: archiveTarget?.name ?? "" })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>

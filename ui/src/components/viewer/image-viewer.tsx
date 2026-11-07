@@ -4,7 +4,9 @@ import { ArrowLeft, ArrowRight, Circle } from "lucide-react";
 import type { ResourceUrl } from "@/api/resources/resource-url";
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { Toolbar } from "@/components/layout/toolbar";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import type { Box } from "@/lib/annotation/geometry";
 import { isTypingTarget, useZoomViewport } from "./use-zoom-viewport";
 import { ZoomControls } from "./zoom-controls";
@@ -85,14 +87,12 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
             <DialogContent
                 data-image-viewer
                 data-viewer-fullscreen={fullscreen}
-                className="flex min-h-0 flex-col gap-3 overflow-hidden p-4 sm:max-w-none"
-                style={{
-                    width: fullscreen ? "100vw" : "min(1200px, calc(100vw - 32px))",
-                    maxWidth: fullscreen ? "100vw" : "calc(100vw - 32px)",
-                    height: fullscreen ? "100dvh" : "min(900px, calc(100dvh - 32px))",
-                    maxHeight: fullscreen ? "100dvh" : "calc(100dvh - 32px)",
-                    borderRadius: fullscreen ? 0 : undefined,
-                }}
+                // The viewer is a fixed frame, not a scrolling dialog: the header and the toolbar stay, the viewport pans and zooms on its own and
+                // the metadata under it scrolls separately (neither is inside the other).
+                className={cn("flex flex-col gap-3 overflow-hidden p-4",
+                    fullscreen
+                        ? "h-dvh max-h-dvh w-screen max-w-none rounded-none sm:max-w-none"
+                        : "h-[min(900px,calc(100dvh-32px))] max-h-[calc(100dvh-32px)] w-[min(1200px,calc(100vw-32px))] max-w-[calc(100vw-32px)] sm:max-w-[calc(100vw-32px)]")}
                 onCloseAutoFocus={returnFocus}
                 onEscapeKeyDown={event => {
                     if (fullscreen) {
@@ -106,11 +106,13 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
                     if (event.key === "ArrowRight" && onNext) { event.preventDefault(); go(onNext); }
                 }}
             >
-                <DialogTitle className="truncate pr-8 text-base">{source.name}</DialogTitle>
-                <DialogDescription className="text-xs">
-                    {t("viewer.hint", { width: source.width, height: source.height })}
-                </DialogDescription>
-                <div className="flex flex-wrap items-center gap-2">
+                <DialogHeader className="gap-1 pr-8">
+                    <DialogTitle className="line-clamp-2 text-base leading-snug [overflow-wrap:anywhere]" title={source.name}>{source.name}</DialogTitle>
+                    <DialogDescription className="text-xs">
+                        {t("viewer.hint", { width: source.width, height: source.height })}
+                    </DialogDescription>
+                </DialogHeader>
+                <Toolbar className="shrink-0">
                     <Button size="sm" variant="outline" disabled={!onPrevious || navigationBusy} onClick={() => go(onPrevious)}><ArrowLeft aria-hidden />{t("viewer.previous")}</Button>
                     {position && <span className="text-xs tabular-nums text-muted-foreground" data-testid="viewer-position">{position}</span>}
                     <Button size="sm" variant="outline" disabled={!onNext || navigationBusy} onClick={() => go(onNext)}>{t("viewer.next")}<ArrowRight aria-hidden /></Button>
@@ -118,7 +120,7 @@ export function ImageViewer({ source, close, onPrevious, onNext, navigationBusy 
                     <Button size="sm" variant="outline" onClick={() => setFullscreen(value => !value)}>
                         {fullscreen ? t("viewer.exitFullscreen") : t("viewer.fullscreen")}
                     </Button>
-                </div>
+                </Toolbar>
                 <div
                     ref={zoom.ref}
                     data-viewer-viewport

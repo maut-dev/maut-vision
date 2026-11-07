@@ -21,7 +21,8 @@ internal static partial class SmokeRunner
     /// catalogue and every section of a project must not scroll or stick out horizontally, and a Radix list must open inside the viewport. In
     /// every tab of backgrounds, images, generation, datasets (and of a chosen dataset), training and checks and in the classes and models
     /// sections the scrolling regions are not nested, at most three and at least 96 px tall. The overview and analytics scroll with the page
-    /// and have no scrolling region of their own.
+    /// and have no scrolling region of their own. The dialog of AI assistants stays inside the window with each tab as its only scroll, the
+    /// same height on every tab and no horizontal overflow with the longest call of the MCP run unfolded in its log.
     /// </summary>
     private static async Task CheckLayoutAsync(CoreWebView2 web, string projectId, SmokeLayoutProbe layout, JsonNode report, CancellationToken token)
     {
@@ -224,7 +225,51 @@ internal static partial class SmokeRunner
           key(document.activeElement ?? document.body, 'Escape');
           await wait(() => !$('[role="listbox"]'), 'Project list closed');
           if (!inside) throw new Error('The project list opens outside the viewport: ' + JSON.stringify(box));
-          assert(true, 'The library, the catalogue and the sections ' + sections.join(', ') + ' do not overflow horizontally at ' + width + '×' + height
+          // The dialog of AI assistants: inside the window, never wider than itself, the same height on every tab, and the open tab is its
+          // only scroll. The MCP run before this check logged calls with long arguments; the longest one is shown unfolded.
+          $('[data-testid="mcp-settings-button"]').click();
+          const mcpDialog = await wait(() => $('[data-testid="mcp-settings-dialog"]'), 'MCP dialog');
+          await wait(() => $('[data-testid="mcp-status"]', mcpDialog) && $('[data-testid="mcp-call-log"] [data-sequence]', mcpDialog), 'MCP dialog ready');
+          const logged = (await request('mcp.listCalls', {limit: 500})).data;
+          const longest = logged.reduce((best, call) => call.arguments.length > best.arguments.length ? call : best);
+          const mcpHeights = [];
+          const mcpRegions = [];
+          for (const trigger of $$('[role="tab"][data-testid^="mcp-tab-"]', mcpDialog)) {
+            await openTab(trigger);
+            const place = 'The MCP dialog, tab ' + trigger.dataset.testid + ', at ' + width + '×' + height + ' (' + label + ')';
+            const panel = $('[role="tabpanel"]:not([hidden])', mcpDialog);
+            if (trigger.dataset.testid === 'mcp-tab-log') {
+              const row = () => $('[data-sequence="' + longest.sequence + '"]', panel);
+              while (!row()) {
+                const more = $('[data-testid="mcp-log-more"]', panel);
+                if (!more) throw new Error(place + ' does not list the call ' + longest.sequence + ' with the longest arguments');
+                const shown = $$('[data-sequence]', panel).length;
+                more.click();
+                await wait(() => $$('[data-sequence]', panel).length > shown, 'More calls');
+              }
+              $('[data-testid="mcp-call-arguments-toggle"]', row()).click();
+              await wait(() => $('[data-testid="mcp-call-arguments-toggle"]', row()).getAttribute('aria-expanded') === 'true', 'Arguments unfolded');
+              row().scrollIntoView({block: 'nearest'});
+            }
+            await verify(place);
+            const dialogBox = mcpDialog.getBoundingClientRect();
+            if (dialogBox.left < -1 || dialogBox.top < -1 || dialogBox.right > innerWidth + 1 || dialogBox.bottom > innerHeight + 1)
+              throw new Error(place + ' is outside the viewport: ' + JSON.stringify(dialogBox));
+            const found = scrollers(mcpDialog);
+            if (found.length !== 1 || found[0] !== panel) throw new Error(place + ' must scroll only in the tab: ' + found.map(describe).join('; '));
+            if (mcpDialog.scrollWidth > mcpDialog.clientWidth + 1 || panel.scrollWidth > panel.clientWidth + 1)
+              throw new Error(place + ' overflows horizontally: ' + mcpDialog.scrollWidth + ' > ' + mcpDialog.clientWidth + ', ' + panel.scrollWidth + ' > ' + panel.clientWidth);
+            if (tall(panel) < 96) throw new Error(place + ' squeezes the tab to ' + tall(panel) + ' px');
+            mcpHeights.push(Math.round(dialogBox.height));
+            mcpRegions.push(trigger.dataset.testid + ' ' + tall(panel) + ' px');
+          }
+          assert(mcpRegions.length === 3 && Math.max(...mcpHeights) - Math.min(...mcpHeights) <= 1, 'The MCP dialog has the tabs Server, Clients and Log of the same height ('
+            + mcpHeights.join('/') + ' px)');
+          key(document.activeElement ?? document.body, 'Escape');
+          await wait(() => !$('[data-testid="mcp-settings-dialog"]'), 'MCP dialog closed');
+          assert(true, 'The MCP dialog stays inside the window at ' + width + '×' + height + ' CSS px (' + label + '): each tab is its only scroll ('
+            + mcpRegions.join(', ') + ') and nothing overflows horizontally with the longest logged arguments (' + longest.arguments.length + ' characters) unfolded');
+          assert(true,'The library, the catalogue and the sections ' + sections.join(', ') + ' do not overflow horizontally at ' + width + '×' + height
             + ' CSS px (' + label + '); the Radix list opens inside the viewport');
           return {checks};
         """;

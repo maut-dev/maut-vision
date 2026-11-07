@@ -101,12 +101,12 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
                 <AlertDialogContent data-testid="unsaved-guard" onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}>
                     <AlertDialogHeader>
                         <AlertDialogTitle>{t("unsaved.title")}</AlertDialogTitle>
-                        <AlertDialogDescription>
+                        <AlertDialogDescription className="break-words">
                             {t("unsaved.text")}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="min-h-6" aria-live="polite">
-                        {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+                        {error && <p role="alert" className="text-sm text-destructive [overflow-wrap:anywhere]">{error}</p>}
                     </div>
                     <AlertDialogFooter className="sm:flex-wrap">
                         <AlertDialogCancel disabled={busy}>{t("unsaved.continue")}</AlertDialogCancel>

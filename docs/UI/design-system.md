@@ -41,7 +41,7 @@ Lime is a rare signal: at most one primary action of a view (`Button variant="br
 ## Layout primitives
 
 Shared pieces live in `ui/src/components/layout/`: `SectionLayout`, `Pane`, `MasterDetail`, `Panel`, `Collapsible`, `EmptyState`,
-`Notice`, `Progress`, `Tabs`, `Toolbar`. Components of `components/ui/` keep the shadcn API with the design system variants (`Button`
+`Notice`, `Progress`, `Tabs`, `Toast`, `Toolbar`. Components of `components/ui/` keep the shadcn API with the design system variants (`Button`
 `brand` and `glass`, `Badge` `ok`/`warn`/`danger`/`info`/`brand`/`plain`, `Card` `surface` and `glass`).
 
 ## One scroll per region
@@ -84,6 +84,23 @@ only the body scrolls.
 </DialogForm>
 ```
 
+A dialog with tabs has a stable height (`h-[min(640px,calc(100dvh-3rem))]`) and each tab panel is its body (`TabsContent asChild` around
+a `DialogBody`), kept mounted: switching tabs neither moves the dialog nor nests a scroll. Long names and paths in a dialog wrap
+(`break-words`, `[overflow-wrap:anywhere]` for values without spaces), and a destructive confirmation names what it deletes and confirms
+with the `destructive` button.
+
+```tsx
+<DialogContent className="h-[min(640px,calc(100dvh-3rem))]">
+    <DialogHeader>…</DialogHeader>
+    <Tabs value={tab} onValueChange={setTab} className="flex-1">
+        <TabsList>…</TabsList>
+        <TabsContent value="log" forceMount hidden={tab !== "log"} asChild>
+            <DialogBody>{log}</DialogBody>
+        </TabsContent>
+    </Tabs>
+</DialogContent>
+```
+
 Grids that hold truncated or `nowrap` text use `minmax(0, 1fr)` columns, and flex children `min-w-0`: otherwise the longest line widens
 the region and the window scrolls horizontally. The smoke layout check verifies this at the 1080p and the minimum window sizes.
 
@@ -96,7 +113,19 @@ Work sections (catalogue, images, backgrounds, generation, datasets, training, m
 analytics) and the library scroll with the page instead: `main` is their only scroll, so their lists are paged ("show more") and never get
 a `max-h` scroll of their own. The smoke layout check opens every tab of a background set, an image group, generation, datasets and a
 chosen dataset, training and checks, and the classes and models sections, and fails on a scrolling region inside another, more than three of
-them or one squeezed below 96 px; in the overview and analytics it fails on any scrolling region.
+them or one squeezed below 96 px; in the overview and analytics it fails on any scrolling region. In the dialog of AI assistants every tab
+must be the only scroll, keep the dialog height and stay within its width with the longest logged call unfolded.
+
+## Toasts
+
+A message over the window that does not belong to a section (an error of the shell) is a `Toast`: raised glass, an icon with a status word,
+text that wraps and a close button. It sits in an `aria-live` region; an error is announced at once and stays until it is closed.
+
+```tsx
+<div className="fixed right-4 bottom-4 z-40 w-[min(24rem,calc(100vw-2rem))]" aria-live="polite">
+    {notice && <Toast title={t("app.errorTitle")} closeLabel={t("app.close")} onClose={dismiss}>{notice}</Toast>}
+</div>
+```
 
 ## List rows
 

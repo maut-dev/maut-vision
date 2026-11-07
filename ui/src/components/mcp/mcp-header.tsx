@@ -13,7 +13,7 @@ const McpSettingsDialog = lazy(() => import("@/components/mcp/mcp-settings-dialo
 const McpConfirmationDialog = lazy(() => import("@/components/mcp/mcp-confirmation-dialog").then(module => ({ default: module.McpConfirmationDialog })));
 
 /**
- * The header entry "AI assistants (MCP)" next to the language: opens the settings dialog and is highlighted while the server runs. It also
+ * The header entry "AI assistants (MCP)" next to the language: opens the settings dialog and carries a status dot while the server runs. It also
  * shows the confirmations AI clients wait for (one at a time, oldest first) and passes open_project_in_app to the page.
  */
 export function McpHeader({ disabled, openProject }: { disabled?: boolean; openProject: (projectId: string) => void }) {
@@ -45,9 +45,11 @@ export function McpHeader({ disabled, openProject }: { disabled?: boolean; openP
     const current = pending[0];
     return (
         <>
-            <Button size="icon-sm" variant={running ? "secondary" : "ghost"} aria-label={label} title={label} disabled={disabled}
+            <Button size="icon-sm" variant="ghost" aria-label={label} title={label} disabled={disabled} className="relative"
                 data-testid="mcp-settings-button" data-running={running} onClick={() => setOpen(true)}>
                 <Bot />
+                {/* The running server is a status dot; the label says it in words. */}
+                {running && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-ok shadow-[0_0_6px_var(--ok)]" aria-hidden />}
             </Button>
             <Suspense fallback={null}>
                 {open && <McpSettingsDialog close={() => setOpen(false)} />}

@@ -11,10 +11,10 @@ const dialogOverlayClasses = "fixed inset-0 z-50 bg-black/55 backdrop-blur-xs"
 
 /**
  * A modal is raised glass at most the window height. One column that may shrink keeps truncated or nowrap children from widening it. A
- * content with a DialogBody (or a DialogForm around the body and the footer) becomes a column: the header and the footer stay, only the
- * body scrolls.
+ * content with a DialogBody becomes a column: the header and the footer stay, only the body scrolls. The body is a direct child, or it sits
+ * in a DialogForm with the footer, or it is the panel of a tab (TabsContent asChild) of Tabs that fill the dialog.
  */
-const dialogContentClasses = "glass-raised fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto rounded-xl p-6 text-text-1 outline-none has-[>[data-slot=dialog-body]]:flex has-[>[data-slot=dialog-body]]:flex-col has-[>[data-slot=dialog-body]]:overflow-hidden has-[>[data-slot=dialog-form]]:flex has-[>[data-slot=dialog-form]]:flex-col has-[>[data-slot=dialog-form]]:overflow-hidden"
+const dialogContentClasses = "glass-raised fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto rounded-xl p-6 text-text-1 outline-none has-[[data-slot=dialog-body]]:flex has-[[data-slot=dialog-body]]:flex-col has-[[data-slot=dialog-body]]:overflow-hidden"
 
 function Dialog({
     ...props
@@ -101,12 +101,15 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     )
 }
 
-/** The only scrolling region of a dialog; the header and the footer around it stay in place. */
+/**
+ * The only scrolling region of a dialog; the header and the footer around it stay in place. It is positioned, so the hidden native inputs
+ * of Radix Select and Checkbox inside it are clipped by it.
+ */
 function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="dialog-body"
-            className={cn("-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6", className)}
+            className={cn("relative -mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6", className)}
             {...props}
         />
     )
