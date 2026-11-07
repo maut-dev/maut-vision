@@ -53,7 +53,7 @@ export function TrainingParameterField({ parameter, context }: { parameter: Trai
     // The Ultralytics name in small print unless the label already names it ("Initial learning rate (lr0)").
     const caption = parameter.label.includes(`(${parameter.ultralyticsKey})`)
         ? null
-        : <span className="ml-1 font-mono text-[11px] text-muted-foreground">{parameter.ultralyticsKey}</span>;
+        : <span className="ml-1 font-mono text-[11px] text-text-2">{parameter.ultralyticsKey}</span>;
 
     if (parameter.type === "boolean") {
         return (
@@ -63,7 +63,7 @@ export function TrainingParameterField({ parameter, context }: { parameter: Trai
                         onCheckedChange={checked => set(checked === true)} />
                     <span>{parameter.label}{caption}</span>
                 </label>
-                {parameter.hint && <p id={hintId} className="text-xs leading-relaxed text-muted-foreground">{parameter.hint}</p>}
+                {parameter.hint && <p id={hintId} className="text-xs leading-relaxed text-text-2">{parameter.hint}</p>}
             </div>
         );
     }
@@ -138,12 +138,12 @@ export function TrainingParameterField({ parameter, context }: { parameter: Trai
                 </label>
             )}
             <label className="block space-y-1">
-                <span className="flex min-h-8 items-end text-xs text-muted-foreground"><span className="line-clamp-2">{parameter.label}{caption}</span></span>
+                <span className="flex min-h-8 items-end text-xs text-text-2"><span className="line-clamp-2">{parameter.label}{caption}</span></span>
                 {control}
             </label>
-            {note && <p className="text-xs font-medium text-amber-700 dark:text-amber-400" data-testid={`training-note-${parameter.key}`}>{note}</p>}
-            {parameter.hint && <p id={hintId} className="text-xs leading-relaxed text-muted-foreground">{parameter.hint}</p>}
-            {isInvalid && <p role="alert" className="text-xs text-destructive">{t("fields.invalid")}</p>}
+            {note && <p className="text-xs font-medium text-warn" data-testid={`training-note-${parameter.key}`}>{note}</p>}
+            {parameter.hint && <p id={hintId} className="text-xs leading-relaxed text-text-2">{parameter.hint}</p>}
+            {isInvalid && <p role="alert" className="text-xs text-danger">{t("fields.invalid")}</p>}
         </div>
     );
 }
@@ -156,27 +156,27 @@ export function TrainingParameterGroups({ context }: { context: ParameterFieldCo
     const { t } = useTranslation("training");
     return (
         <div className="space-y-3" data-testid="training-parameter-groups">
-            <p className="text-xs text-muted-foreground">{t("fields.groupsNote")}</p>
+            <p className="text-xs text-text-2">{t("fields.groupsNote")}</p>
             {trainingParameterGroups.filter(group => group.id !== "system").map(group => {
                 const fields = trainingParameters.filter(parameter => parameter.group === group.id && !parameter.base);
                 if (!fields.length) return null;
                 const invalid = fields.some(parameter => context.invalid.has(parameter.key));
                 return (
-                    <details key={group.id} className="rounded-md border px-4 py-3" open={group.id === "augmentation" || invalid || undefined} data-training-group={group.id}>
-                        <summary className={`cursor-pointer text-sm font-medium ${invalid ? "text-destructive" : ""}`}>{group.label}</summary>
+                    <details key={group.id} className="rounded-md border border-line px-4 py-3" open={group.id === "augmentation" || invalid || undefined} data-training-group={group.id}>
+                        <summary className={`cursor-pointer text-sm font-medium ${invalid ? "text-danger" : ""}`}>{group.label}</summary>
                         <div className="mt-4 grid gap-x-5 gap-y-4 sm:grid-cols-2 lg:grid-cols-3">
                             {fields.map(parameter => <TrainingParameterField key={parameter.key} parameter={parameter} context={context} />)}
                         </div>
                     </details>
                 );
             })}
-            <details className="rounded-md border px-4 py-3" data-training-group="system">
+            <details className="rounded-md border border-line px-4 py-3" data-training-group="system">
                 <summary className="cursor-pointer text-sm font-medium">{trainingParameterGroups.find(group => group.id === "system")!.label}</summary>
                 <dl className="mt-3 space-y-3 text-xs">
                     {unavailableTrainingParameters.map(item => (
                         <div key={item.key}>
                             <dt className="font-mono font-medium">{item.key}</dt>
-                            <dd className="mt-1 text-muted-foreground">{item.reason}</dd>
+                            <dd className="mt-1 text-text-2">{item.reason}</dd>
                         </div>
                     ))}
                 </dl>

@@ -1228,6 +1228,14 @@ internal static partial class SmokeRunner
             return wait(() => trigger.getAttribute('aria-selected') === 'true' && trigger, 'Tab ' + testId + ' selected');
           };
           const tabText = testId => text('[data-testid="' + testId + '"]');
+          // The smoke window is never activated, so the page moves the focus without focus events, and a tab activates on its focus
+          // event. They are sent here the way a focused window sends them.
+          const focusEvent = element => { if (!document.hasFocus()) element.dispatchEvent(new FocusEvent('focusin', {bubbles: true})); };
+          const keyTab = async (from, name) => {
+            key(from, name);
+            const to = await wait(() => document.activeElement !== from && document.activeElement?.getAttribute('role') === 'tab' && document.activeElement, 'Focus after ' + name);
+            focusEvent(to);
+          };
 
         """;
 
@@ -1387,7 +1395,9 @@ internal static partial class SmokeRunner
           assert(tabText('background-tab-runs') === 'Подготовка3' && runs().every(row => row.dataset.status === 'succeeded'),
             '«Подготовка» lists every run of the set with the count in the tab');
           await selectTab('background-tab-backgrounds');
-          await wait(() => thumbnailsLoaded(4 + added), 'Video thumbnails');
+          await wait(() => thumbnailsLoaded(4 + added), 'Video thumbnails', () => 'tiles ' + tiles().length + ' of ' + (4 + added) + ': '
+            + tiles().map(tile => tile.dataset.removed ? 'removed' : (tile.querySelector('[data-status]')?.dataset.status ?? 'none')
+              + '/' + (tile.querySelector('img')?.naturalWidth ?? '-')).join(' '));
 
           const first = tiles()[0];
           const firstName = $('label span', first).textContent;
@@ -1835,14 +1845,6 @@ internal static partial class SmokeRunner
             && $('[data-testid="dataset-operations-verify-empty"]').textContent.startsWith('Откройте датасет во вкладке «Датасеты»'),
             'Datasets opens lazily on the «Датасеты» tab with the old empty texts');
 
-          // The smoke window is never activated, so the page moves the focus without focus events, and a tab activates on its focus
-          // event. They are sent here the way a focused window sends them.
-          const focusEvent = element => { if (!document.hasFocus()) element.dispatchEvent(new FocusEvent('focusin', {bubbles: true})); };
-          const keyTab = async (from, name) => {
-            key(from, name);
-            const to = await wait(() => document.activeElement !== from && document.activeElement?.getAttribute('role') === 'tab' && document.activeElement, 'Focus after ' + name);
-            focusEvent(to);
-          };
           tab('datasets').focus();
           focusEvent(tab('datasets'));
           await keyTab(tab('datasets'), 'ArrowRight');
@@ -2333,17 +2335,20 @@ internal static partial class SmokeRunner
           const empty = await wait(() => $('[data-testid="training-empty"]'), 'Empty training');
           assert(document.body.textContent.includes('Обучение модели на собранном датасете и её версии с паспортом.')
             && empty.textContent.includes('Сначала соберите датасет') && empty.textContent.includes('Готовых датасетов пока нет: разметьте изображения и соберите датасет.')
-            && selectedTab() === 'training-tab-settings' && $$('[role="tablist"] [role="tab"]').map(item => item.textContent).join(',') === 'Настройки,Текущий запуск,История обучения',
-            'Training opens lazily on «Настройки»; without datasets it says «Сначала соберите датасет»');
+            && selectedTab() === 'training-tab-settings' && $$('[role="tablist"] [role="tab"]').map(item => item.textContent).join(',') === 'Настройки,Текущий запуск,История обучения0',
+            'Training opens lazily on «Настройки»; without datasets it says «Сначала соберите датасет»; the history tab counts the runs');
           await wait(() => $('[data-testid="training-history-empty"]')?.textContent.startsWith('Запусков пока нет.'), 'History empty');
           assert(text('[data-testid="training-current-empty"]').startsWith('Запустите обучение во вкладке «Настройки».'), 'The other tabs explain that there are no runs yet');
-          key(tab('settings'), 'ArrowRight');
+          tab('settings').focus();
+          focusEvent(tab('settings'));
+          await keyTab(tab('settings'), 'ArrowRight');
           await wait(() => selectedTab() === 'training-tab-current' && document.activeElement === tab('current'), 'ArrowRight');
-          key(tab('current'), 'End');
+          await keyTab(tab('current'), 'End');
           await wait(() => selectedTab() === 'training-tab-history', 'End');
-          key(tab('history'), 'Home');
+          await keyTab(tab('history'), 'Home');
           await wait(() => selectedTab() === 'training-tab-settings', 'Home');
-          assert(tab('settings').tabIndex === 0 && tab('history').tabIndex === -1 && $('#training-panel-history').hidden, 'Training tabs follow the tablist pattern');
+          assert(tab('settings').tabIndex === 0 && tab('history').tabIndex === -1 && $('#training-panel-history').hidden
+            && tab('history').getAttribute('aria-controls') === 'training-panel-history', 'Training tabs follow the tablist pattern');
           $('[data-testid="training-open-datasets"]').click();
           await wait(() => $('[data-testid="datasets-section"]') && $('[data-section="datasets"]').getAttribute('aria-current') === 'page', 'Datasets opened');
           assert(true, '«Открыть датасеты» opens the datasets section');
@@ -2515,7 +2520,7 @@ internal static partial class SmokeRunner
           await wait(() => !$('[data-image-viewer]') && document.activeElement === plot, 'Viewer closed');
           assert(true, 'Closing the viewer returns focus to the plot');
 
-          tab('history').click();
+          await selectTab('training-tab-history');
           const card = await wait(() => $('[data-testid="training-run-card"][data-run-id="' + ended.dataset.runId + '"]'), 'History card');
           assert($('[data-testid="training-run-card-state"]', card).textContent === 'Готово' && $('[data-testid="training-run-card-parameters"]', card).textContent.includes('8 эпох · batch 4 · процессор')
             && $('[data-testid="training-run-card-version"]', card).textContent === 'Паспорт версии ' + stored.number, '«История обучения» shows the run card with its version');
@@ -2529,7 +2534,7 @@ internal static partial class SmokeRunner
           const dataset = await trainingDataset();
           const succeededId = passport().dataset.runId;
           await rename(dataset.id, 'fake:hang');
-          tab('settings').click();
+          await selectTab('training-tab-settings');
           await wait(() => $('[data-testid="training-dataset"]').textContent.startsWith('fake:hang'), 'Renamed dataset');
           $('[data-testid="training-start"]').click();
           const hanging = await wait(() => selectedTab() === 'training-tab-current' && passport()?.dataset.runId !== succeededId && passport(), 'Second run');
@@ -2539,7 +2544,7 @@ internal static partial class SmokeRunner
           await wait(() => passport().dataset.state === 'cancelled' && text('[data-testid="training-run-state"]') === 'Отменено' && !$('[data-testid="training-cancel"]'), 'Cancelled',
             () => passport().dataset.state);
           assert(!$('[data-testid="training-run-error"]'), '«Отменить обучение» stops the run: «Отменено» without an error');
-          tab('history').click();
+          await selectTab('training-tab-history');
           const cards = await wait(() => $$('[data-testid="training-run-card"]').length >= 2 && $$('[data-testid="training-run-card"]'), 'History cards');
           assert(cards[0].dataset.runId === hanging.dataset.runId && cards[0].dataset.state === 'cancelled'
             && $('[data-testid="training-run-card-state"]', cards[0]).textContent === 'Отменено', 'The cancelled run heads the history');

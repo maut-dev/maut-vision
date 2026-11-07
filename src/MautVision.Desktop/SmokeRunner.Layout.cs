@@ -19,8 +19,9 @@ internal static partial class SmokeRunner
     /// minimum window. WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--force-device-scale-factor=1.25 or 1.5 (smoke.ps1 -DeviceScaleFactor) renders
     /// the page at that scale on any monitor; the control gets the size in DIP that gives the CSS viewport of such a window. The library, the
     /// catalogue and every section of a project must not scroll or stick out horizontally, and a Radix list must open inside the viewport. In
-    /// every tab of backgrounds, images, generation and datasets (and of a chosen dataset) and in the classes section the scrolling regions
-    /// are not nested, at most three and at least 96 px tall.
+    /// every tab of backgrounds, images, generation, datasets (and of a chosen dataset), training and checks and in the classes and models
+    /// sections the scrolling regions are not nested, at most three and at least 96 px tall. The overview and analytics scroll with the page
+    /// and have no scrolling region of their own.
     /// </summary>
     private static async Task CheckLayoutAsync(CoreWebView2 web, string projectId, SmokeLayoutProbe layout, JsonNode report, CancellationToken token)
     {
@@ -87,6 +88,10 @@ internal static partial class SmokeRunner
             const found = [];
             const viewport = document.documentElement.clientWidth;
             if (document.scrollingElement.scrollWidth > viewport + 1) found.push('the page scrolls horizontally: ' + document.scrollingElement.scrollWidth + ' > ' + viewport);
+            // The document never grows past the window: an absolutely positioned element (the hidden native input of a Radix Select or
+            // Checkbox) escapes the clipping of a scrolling region that is not positioned and stretches the page.
+            const viewportHeight = document.documentElement.clientHeight;
+            if (document.scrollingElement.scrollHeight > viewportHeight + 1) found.push('the page is taller than the window: ' + document.scrollingElement.scrollHeight + ' > ' + viewportHeight);
             const main = $('main');
             if (main && main.scrollWidth > main.clientWidth + 1) found.push('main scrolls horizontally: ' + main.scrollWidth + ' > ' + main.clientWidth);
             for (const element of $$('header *, aside *, main *, [role="listbox"], [role="menu"], [role="dialog"]')) {
@@ -125,9 +130,10 @@ internal static partial class SmokeRunner
             await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page', 'Section ' + id);
             await verify('Section ' + id);
           }
-          // One scroll per region: in every tab of a background set, an image group, generation, datasets (and the tabs of a chosen dataset)
-          // and in the classes section the visible scrolling regions are the list column and the work areas of the tab, none inside another
-          // and none squeezed below a usable height.
+          // One scroll per region: in every tab of a background set, an image group, generation, datasets (and the tabs of a chosen dataset),
+          // training and checks and in the classes and models sections the visible scrolling regions are the list column and the work areas
+          // of the tab, none inside another and none squeezed below a usable height. A horizontal table scroller hides its vertical overflow,
+          // so it is not counted.
           const scrollers = scope => $$('*', scope).filter(element => {
             const box = element.getBoundingClientRect();
             const overflow = getComputedStyle(element).overflowY;
@@ -154,6 +160,7 @@ internal static partial class SmokeRunner
             await wait(() => trigger.getAttribute('aria-selected') === 'true', 'Tab ' + trigger.dataset.testid);
           };
           // list and item: the list column and the item to choose; required — without an item the section is skipped (its tabs belong to the item).
+          // empty: the test id the section shows instead of its root when there is nothing to work with (the section is skipped then).
           // groups: tab prefixes; open — the tab to show first; item — the group exists only for a chosen item.
           const layoutTargets = [
             {id: 'backgrounds', list: 'background-sets', item: '[data-background-set-id]', required: true, groups: [{prefix: 'background-tab-'}]},
@@ -162,14 +169,19 @@ internal static partial class SmokeRunner
             {id: 'datasets', list: 'dataset-list', item: '[data-dataset-version-id]', groups: [{prefix: 'datasets-tab-'},
               {prefix: 'dataset-detail-tab-', open: 'datasets-tab-datasets', item: true}]},
             {id: 'classes', list: 'class-list', item: '[data-class-id] button', groups: []},
+            {id: 'training', groups: [{prefix: 'training-tab-'}]},
+            {id: 'models', groups: []},
+            {id: 'checks', empty: 'checks-empty', groups: [{prefix: 'checks-tab-'}]},
           ];
           for (const target of layoutTargets) {
             const {id, list} = target;
             if (!sections.includes(id)) continue;
             $('[data-section="' + id + '"]').click();
-            await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page' && $('[data-testid="' + id + '-section"]')
+            await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page'
+              && ($('[data-testid="' + id + '-section"]') || target.empty && $('[data-testid="' + target.empty + '"]'))
               && (!list || $('[data-testid="' + list + '"]') && !$('[data-testid="' + list + '"] [role="status"]')), 'Section ' + id + ' ready');
             const root = $('[data-testid="' + id + '-section"]');
+            if (!root) continue;
             const first = target.item ? $(target.item, $('[data-testid="' + list + '"]')) : null;
             if (target.required && !first) continue;
             if (first) first.click();
@@ -187,8 +199,23 @@ internal static partial class SmokeRunner
               }
             }
           }
-          assert(regions.length > 0, 'Every tab of backgrounds, images, generation and datasets (with the tabs of a chosen dataset) and the classes section have at most'
-            + ' 3 scrolling regions, none nested and none under 96 px, at ' + width + '×' + height + ' CSS px (' + label + '): ' + regions.join(', '));
+          assert(regions.length > 0, 'Every tab of backgrounds, images, generation, datasets (with the tabs of a chosen dataset), training and checks and the classes'
+            + ' and models sections have at most 3 scrolling regions, none nested and none under 96 px, at ' + width + '×' + height + ' CSS px (' + label + '): '
+            + regions.join(', '));
+          // Dashboards scroll with the page: main is their only scroll, lists are paged and wide tables scroll only horizontally.
+          const flowing = [];
+          for (const id of ['overview', 'analytics'].filter(item => sections.includes(item))) {
+            $('[data-section="' + id + '"]').click();
+            await wait(() => $('[data-section="' + id + '"]')?.getAttribute('aria-current') === 'page' && $('[data-testid="' + id + '-section"], [data-testid="' + id + '-empty"]'),
+              'Section ' + id + ' ready');
+            await verify('Section ' + id);
+            const root = $('[data-testid="' + id + '-section"]');
+            if (!root) continue;
+            const found = scrollers(root);
+            if (found.length) throw new Error('Section ' + id + ' at ' + width + '×' + height + ' scrolls inside the page: ' + found.slice(0, 4).map(describe).join('; '));
+            flowing.push(id);
+          }
+          assert(true, 'The sections ' + flowing.join(', ') + ' scroll only with the page at ' + width + '×' + height + ' CSS px (' + label + ')');
           $('[aria-label="Переключить проект"]').click();
           const list = await wait(() => $('[role="listbox"]'), 'Project list opened');
           await settle();

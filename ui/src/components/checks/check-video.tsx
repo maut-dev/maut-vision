@@ -5,7 +5,8 @@ import type { CheckVideoFrameResponseDto, CheckVideoSelectionResponseDto } from 
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import { BackgroundCropFrame } from "@/components/backgrounds/background-crop-frame";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
+import { Progress } from "@/components/layout/progress";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { defaultRegion, type FramePosition } from "@/lib/backgrounds/crop-frame";
@@ -92,15 +93,15 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
     }
 
     return (
-        <section className="space-y-4 rounded-lg border bg-card p-5" data-testid="check-video">
+        <section className="surface space-y-4 p-5" data-testid="check-video">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2 className="font-medium">{t("video.title")}</h2>
-                    <p className="mt-1 max-w-prose text-sm text-muted-foreground">{t("video.text", { width: input.width, height: input.height })}</p>
+                    <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("video.title")}</h2>
+                    <p className="mt-1 max-w-prose text-sm text-text-2">{t("video.text", { width: input.width, height: input.height })}</p>
                 </div>
                 <Button variant="outline" disabled={locked} data-testid="check-video-pick" onClick={pick}>{video ? t("video.other") : t("video.pick")}</Button>
             </div>
-            <p className="min-h-5 truncate text-xs text-muted-foreground" data-testid="check-video-source">
+            <p className="min-h-5 truncate text-xs text-text-2" data-testid="check-video-source">
                 {video
                     ? `${video.name} · ${video.width} × ${video.height} · ${formatTime(video.durationMs)}`
                     : t("video.prompt")}
@@ -120,11 +121,11 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                     ) : (
                         <>
                             <img src={frame.url} alt={video.name ?? t("video.frameAlt")} className="mx-auto max-h-[50vh] rounded-md" draggable={false} data-testid="check-video-frame" />
-                            <p className="text-center text-xs text-muted-foreground" data-testid="check-video-whole">{t("video.whole")}</p>
+                            <p className="text-center text-xs text-text-2" data-testid="check-video-whole">{t("video.whole")}</p>
                         </>
                     )}
                     <div className="flex items-center justify-center gap-3">
-                        <span className="text-xs tabular-nums text-muted-foreground" data-testid="check-video-frame-time">{t("video.frame", { time: formatTime(frame.timestampMs) })}</span>
+                        <span className="text-xs tabular-nums text-text-2" data-testid="check-video-frame-time">{t("video.frame", { time: formatTime(frame.timestampMs) })}</span>
                         <Button variant="ghost" size="sm" disabled={locked} data-testid="check-video-another" onClick={anotherFrame}>{t("video.another")}</Button>
                     </div>
                 </div>
@@ -137,10 +138,10 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                 <CheckParameterFields value={values} onChange={setValues} gpus={gpus} disabled={locked} invalid={"field" in parsed ? parsed.field : undefined}
                     testPrefix="check-video" />
             </div>
-            <p role={problem ? "alert" : undefined} className={`min-h-4 text-xs ${problem ? "text-destructive" : "text-muted-foreground"}`} data-testid="check-video-hint">
+            <p role={problem ? "alert" : undefined} className={`min-h-4 text-xs ${problem ? "text-danger" : "text-text-2"}`} data-testid="check-video-hint">
                 {problem ?? (video && stepMs !== null ? stepEstimate(video.durationMs, stepMs) : "")}
             </p>
-            {error && <Alert variant="destructive" data-testid="check-video-error-notice"><AlertDescription>{error}</AlertDescription></Alert>}
+            {error && <Notice variant="destructive" data-testid="check-video-error-notice">{error}</Notice>}
             <div className="flex flex-wrap gap-2">
                 <Button disabled={!video || !!problem || locked} data-testid="check-video-start" onClick={start}>{t("video.start")}</Button>
                 {session.active && (
@@ -148,14 +149,11 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                 )}
             </div>
             {check && progress && (
-                <div className="space-y-4 border-t pt-4" data-testid="check-video-result" data-check-id={check.id}>
+                <div className="space-y-4 border-t border-line pt-4" data-testid="check-video-result" data-check-id={check.id}>
                     <CheckStatus check={check} testPrefix="check-video" />
                     <div className="space-y-1">
-                        <div className="h-2 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("video.progressAria")} aria-valuemin={0} aria-valuemax={100}
-                            aria-valuenow={Math.round(share * 100)}>
-                            <div className="h-full bg-brand transition-[width]" style={{ width: `${share * 100}%` }} />
-                        </div>
-                        <p className="text-xs tabular-nums text-muted-foreground" data-testid="check-video-progress">
+                        <Progress value={share * 100} live={check.state === "running"} aria-label={t("video.progressAria")} />
+                        <p className="text-xs tabular-nums text-text-2" data-testid="check-video-progress">
                             {t(progress.framesTotal ? "video.progressOfTotal" : "video.progress", {
                                 position: formatTime(progress.positionMs),
                                 duration: formatTime(progress.durationMs ?? check.source.durationMs),
@@ -182,10 +180,10 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                     <div className="space-y-2">
                         <h3 className="text-sm font-medium">{t("video.journal")}</h3>
                         {rows.length ? (
-                            <div className="max-h-[28rem] overflow-y-auto rounded-md border">
+                            <div className="rounded-md border border-line">
                                 <table className="w-full text-sm" data-testid="check-video-journal">
-                                    <thead className="sticky top-0 bg-card">
-                                        <tr className="border-b text-left text-xs text-muted-foreground">
+                                    <thead className="sticky top-0 bg-ink-1">
+                                        <tr className="border-b border-line text-left text-xs text-text-2">
                                             <th className="w-24 px-3 py-2 font-normal">{t("video.time")}</th>
                                             <th className="w-20 px-3 py-2 text-right font-normal">{t("video.frameColumn")}</th>
                                             <th className="px-3 py-2 font-normal">{t("video.classes")}</th>
@@ -193,9 +191,9 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                                     </thead>
                                     <tbody>
                                         {rows.slice(0, shown).map(item => (
-                                            <tr key={item.ordinal} className="border-b align-top last:border-b-0" data-ordinal={item.ordinal}>
+                                            <tr key={item.ordinal} className="border-b border-line align-top last:border-b-0" data-ordinal={item.ordinal}>
                                                 <td className="px-3 py-1.5 tabular-nums">{formatTime(item.timeMs)}</td>
-                                                <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">{item.index}</td>
+                                                <td className="px-3 py-1.5 text-right tabular-nums text-text-2">{item.index}</td>
                                                 <td className="px-3 py-1.5"><DetectionChips detections={item.detections} /></td>
                                             </tr>
                                         ))}
@@ -203,9 +201,9 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                                 </table>
                             </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground">{t("video.noDetections")}</p>
+                            <p className="text-sm text-text-2">{t("video.noDetections")}</p>
                         )}
-                        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-text-2">
                             <span data-testid="check-video-journal-count">
                                 {t("video.shown", { shown: formatNumber(Math.min(shown, rows.length)), kept: formatNumber(check.journal.kept) })}
                             </span>
@@ -216,7 +214,7 @@ export function CheckVideo({ projectId, version, gpus }: { projectId: string; ve
                             )}
                         </div>
                         {check.journal.truncated && (
-                            <p className="text-xs text-muted-foreground" data-testid="check-video-truncated">
+                            <p className="text-xs text-text-2" data-testid="check-video-truncated">
                                 {t("video.truncated", { kept: formatNumber(check.journal.kept), total: formatNumber(check.journal.total) })}
                             </p>
                         )}

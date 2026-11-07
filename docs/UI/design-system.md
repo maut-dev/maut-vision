@@ -50,6 +50,11 @@ A bounded section fits the window: the page never scrolls, and each region that 
 `SectionLayout`; a region that scrolls is a `Pane`; its ancestors up to the root carry `min-h-0` and no overflow of their own. A dialog that
 can grow puts its content in `DialogBody`: the header and the footer stay, only the body scrolls.
 
+A scrolling region is positioned (`Pane` and `main` are `relative`). Radix Select and Checkbox render a hidden native input with
+`position: absolute`; without a positioned scrolling ancestor it is placed against the document and stretches it past the window. The
+layout smoke fails when the page is taller than the window. The document is not clipped with `overflow` instead: in WebView2 that stops
+`loading="lazy"` images below a scrolling region's edge from loading ahead of the scroll.
+
 ```tsx
 <SectionLayout>
     <Toolbar>{actions}</Toolbar>
@@ -84,9 +89,20 @@ the region and the window scrolls horizontally. The smoke layout check verifies 
 
 A scrolling region never holds another one (`max-h-*` with its own overflow inside a `Pane`): long content gets its own tab, its own
 column or a dialog, and a disclosure inside a list unfolds inline. Two work columns of a tab (a form and its results) scroll each at `lg`
-and wider; below `lg` they stack and the tab itself is the one scroll. The smoke layout check also opens every tab of a background set, an
-image group, generation, datasets and a chosen dataset, and the classes section, and fails on a scrolling region inside another, more than
-three of them or one squeezed below 96 px.
+and wider; below `lg` they stack and the tab itself is the one scroll. A table wider than its region scrolls horizontally with
+`overflow-x-auto overflow-y-hidden`: it never becomes a second vertical scroll.
+
+Work sections (catalogue, images, backgrounds, generation, datasets, training, models, checks) are bounded. Dashboards (the overview,
+analytics) and the library scroll with the page instead: `main` is their only scroll, so their lists are paged ("show more") and never get
+a `max-h` scroll of their own. The smoke layout check opens every tab of a background set, an image group, generation, datasets and a
+chosen dataset, training and checks, and the classes and models sections, and fails on a scrolling region inside another, more than three of
+them or one squeezed below 96 px; in the overview and analytics it fails on any scrolling region.
+
+## List rows
+
+A row of a long list is one line: the name and a short status or count. Its actions are compact icon buttons with an accessible name and a
+`title`; in a narrow list column they float over the right end of the row while it is hovered, holds the focus or is selected, and they stay
+in the tab order (only their opacity changes). A hint that applies to every row is shown once, under the list or in the empty state.
 
 ## Tabs of a section
 

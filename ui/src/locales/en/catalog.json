@@ -79,7 +79,9 @@
     "variantFallback": "Variant",
     "noBindings": "Attach a shared project variant, then add images of this class.",
     "chooseTitle": "Choose a class",
-    "chooseText": "Its variants and object images will appear here."
+    "chooseText": "Its variants and object images will appear here.",
+    "variantCount_one": "{{count}} variant",
+    "variantCount_other": "{{count}} variants"
   },
   "deletion": {
     "reviewFailed": "Could not check the dependencies. Check again.",

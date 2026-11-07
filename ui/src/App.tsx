@@ -59,6 +59,9 @@ const AnalyticsSection = lazy(() => import("@/components/analytics/analytics-sec
 
 type SectionId = "overview" | "variants" | "classes" | "backgrounds" | "generation" | "images" | "datasets" | "training" | "models" | "checks" | "analytics";
 
+/** Sections that fit the window (SectionLayout); the others scroll with the page. */
+const boundedSections: ReadonlySet<SectionId> = new Set(["variants", "classes", "images", "backgrounds", "generation", "datasets", "training", "models", "checks"]);
+
 /** A screen button of the header: the current screen is raised like a navigation item. */
 const headerNavClasses = "aria-[current=page]:border-line aria-[current=page]:bg-glass-fill-hover aria-[current=page]:shadow-highlight";
 
@@ -121,8 +124,9 @@ export function App() {
     const project = view.kind === "project" ? library.projects.find(item => item.id === view.projectId) : undefined;
     const section = sections.find(item => view.kind === "project" && item.id === view.section) ?? sections[0];
     const activeProjects = library.projects.filter(item => !item.archivedAt);
-    // Catalog sections fit the window: their lists scroll independently instead of the page.
-    const bounded = !!project && view.kind === "project" && (section.id === "variants" || section.id === "classes" || section.id === "images" || section.id === "backgrounds" || section.id === "generation" || section.id === "datasets");
+    // Work sections fit the window: their regions scroll independently instead of the page. The overview and analytics are dashboards
+    // that scroll with the page (main), without scrolling regions of their own.
+    const bounded = !!project && view.kind === "project" && boundedSections.has(section.id);
 
     useEffect(() => {
         // An archived or vanished project cannot stay open; the library shows its current state.
@@ -279,7 +283,7 @@ export function App() {
                         </nav>
                     </aside>
                 )}
-                <main className={`min-h-0 min-w-0 flex-1 overscroll-contain ${bounded ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`} aria-busy={busy}>
+                <main className={`relative min-h-0 min-w-0 flex-1 overscroll-contain ${bounded ? "flex flex-col overflow-hidden" : "overflow-y-auto"}`} aria-busy={busy}>
                     <div className={`mx-auto w-full max-w-7xl px-5 py-6 md:px-8 ${bounded ? "flex min-h-0 flex-1 flex-col gap-5 overflow-hidden" : "space-y-5"}`}>
                         {view.kind === "library" && (
                             <ProjectLibrary

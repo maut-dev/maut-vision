@@ -6,7 +6,7 @@ import type { ProjectResponseDto } from "@/api/projects/response-dto/project-res
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { CodedTextDto } from "@/api/coded-text-dto";
 import { i18n } from "@/i18n";
 import { codedText } from "@/lib/coded-text";
@@ -71,7 +71,6 @@ export function ProjectDeletionDialog({ project, close, deleted }: {
             <DialogContent
                 data-testid="project-deletion-dialog"
                 showCloseButton={!busy}
-                className="max-h-[calc(100dvh-3rem)] overflow-y-auto"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}
                 onInteractOutside={event => { if (busy) event.preventDefault(); }}
                 onCloseAutoFocus={returnFocus}
@@ -82,27 +81,29 @@ export function ProjectDeletionDialog({ project, close, deleted }: {
                         {t("projectDeletion.text", { name })}
                     </DialogDescription>
                 </DialogHeader>
-                {review.loading && <p role="status" className="text-sm text-muted-foreground">{t("projectDeletion.checking")}</p>}
-                {current && !review.loading && withJobs && (
-                    <div className="space-y-2 text-sm" data-testid="project-deletion-activities">
-                        <p className="font-medium">{t("projectDeletion.activities")}</p>
-                        <ul className="list-disc space-y-1 pl-5">
-                            {current.activities.map((activity, index) => (
-                                <li key={activity.jobId ?? `${activity.kind}-${index}`} className="break-words" data-testid="project-deletion-activity">
-                                    {activityTitle(activity.kind, activity.label)}
-                                </li>
-                            ))}
-                        </ul>
+                <DialogBody className="space-y-4">
+                    {review.loading && <p role="status" className="text-sm text-text-2">{t("projectDeletion.checking")}</p>}
+                    {current && !review.loading && withJobs && (
+                        <div className="space-y-2 text-sm" data-testid="project-deletion-activities">
+                            <p className="font-medium">{t("projectDeletion.activities")}</p>
+                            <ul className="list-disc space-y-1 pl-5">
+                                {current.activities.map((activity, index) => (
+                                    <li key={activity.jobId ?? `${activity.kind}-${index}`} className="break-words" data-testid="project-deletion-activity">
+                                        {activityTitle(activity.kind, activity.label)}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    <div className="space-y-2" aria-live="polite">
+                        {current?.transferActive && !review.loading && (
+                            <Alert variant="destructive"><AlertDescription data-testid="project-deletion-transfer">{t("projectDeletion.transferActive")}</AlertDescription></Alert>
+                        )}
+                        {(review.error || deleteError) && (
+                            <Alert variant="destructive"><AlertDescription data-testid="project-deletion-error">{review.error ?? deleteError}</AlertDescription></Alert>
+                        )}
                     </div>
-                )}
-                <div aria-live="polite">
-                    {current?.transferActive && !review.loading && (
-                        <Alert variant="destructive"><AlertDescription data-testid="project-deletion-transfer">{t("projectDeletion.transferActive")}</AlertDescription></Alert>
-                    )}
-                    {(review.error || deleteError) && (
-                        <Alert variant="destructive"><AlertDescription data-testid="project-deletion-error">{review.error ?? deleteError}</AlertDescription></Alert>
-                    )}
-                </div>
+                </DialogBody>
                 <DialogFooter>
                     <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("app.cancel")}</Button>
                     {(review.error || deleteError || current?.transferActive) && (

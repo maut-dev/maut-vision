@@ -308,7 +308,6 @@
     "tuned": "{{value}} (tuned)",
     "chosenByOptimizer": "{{value}} (chosen by the optimizer)",
     "version": "Version {{number}}",
-    "back": "← Back to models",
     "workingBadge": "Working",
     "subtitle": "Model version passport · {{architecture}} · {{width}} × {{height}} · {{date}}",
     "makeWorking": "Make working",
@@ -440,7 +439,6 @@
   "section": {
     "presetSaved": "The preset “{{name}}” was saved.",
     "presetDeleted": "The preset “{{name}}” was deleted.",
-    "hide": "Hide",
     "retry": "Retry",
     "currentRun": "Current run",
     "runLoading": "Loading the run…",

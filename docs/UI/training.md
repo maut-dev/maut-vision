@@ -1,8 +1,15 @@
 # Training in the UI
 
-The "Training" section (`components/training/`) has the tabs "Settings", "Current run" and "Training history" following the tablist
-pattern, as for datasets. All panels stay mounted: the form survives switching, and the run passport receives events while hidden. Data
-comes from the [training API](../Core/training.md), without polling.
+The "Training" section (`components/training/`) fits the window and has the tabs "Settings", "Current run" and "Training history"
+following the tablist pattern, as for datasets. All panels stay mounted: the form survives switching, and the run passport receives events
+while hidden. The history tab counts the runs and shows a live dot while a run is queued or running. Data comes from the
+[training API](../Core/training.md), without polling.
+
+| Tab | What scrolls |
+|---|---|
+| Settings | the tab: the form in one scroll |
+| Current run | at `lg` and wider two columns: the passport and the training log, each with its own scroll; below `lg` they stack in the scroll of the tab |
+| Training history | the tab: the run cards and "more runs" |
 
 ```tsx
 const runs = useTrainingRuns(projectId);          // listRuns + training.changed (revisions → getRun) + job.changed (kind training.run)
@@ -39,13 +46,17 @@ The run passport: progress ("Epoch X of Y", "Batch a of b", a bar, live metrics,
 dataset and classes, epoch history, run parameters, training log and cancellation; after success — a short passport of the model version
 (metrics, best epoch, parameters, files, pictures in the shared viewer).
 
+The log column keeps its newest lines in view while "latest messages" is shown. The version passport has no scroll of its own: the output map
+of classes is listed in full and adapts to the width of the column through container queries.
+
 The run state comes from the job snapshot `job.changed` immediately (`withJob`), details from `getRun` by the `training.changed` revision.
 Epochs are read further when `epochCount` exceeds the loaded ones, the log when `logCount` grows; after the outcome the epoch history is
 reread completely (Core replaces it with the worker file).
 
 ## Epoch charts
 
-`TrainingEpochChart` is an SVG without dependencies: a fixed series palette, validation losses dashed in the colour of their train series,
+`TrainingEpochChart` is an SVG without dependencies: the `series-N` tokens of the design system (axes and grid use the line and text
+tokens), validation losses dashed in the colour of their train series,
 a legend that toggles series, a crosshair with an "Epoch N" tooltip. There is no 200-epoch window: the whole run is drawn, and `thinPoints`
 (`lib/training/epoch-chart.ts`) keeps the minimum and maximum of each bucket, at most two points per pixel. The tooltip takes values from
 the full series.

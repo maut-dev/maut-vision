@@ -64,12 +64,12 @@ export function TrainingEpochChart({ id, label, series, unit }: { id: string; la
                                 data-series={line.key}
                                 title={off ? t("chart.showSeries") : t("chart.hideSeries")}
                                 onClick={() => toggle(line.key)}
-                                className={`flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors hover:bg-muted/60 ${off ? "opacity-40" : ""}`}
+                                className={`flex items-center gap-1.5 rounded px-1 py-0.5 transition-colors hover:bg-glass-fill ${off ? "opacity-40" : ""}`}
                             >
                                 <svg width="18" height="4" aria-hidden="true">
                                     <line x1="0" x2="18" y1="2" y2="2" stroke={line.color} strokeWidth="2" strokeDasharray={line.dashed ? "4 3" : undefined} />
                                 </svg>
-                                <span className="text-foreground/80">{line.label}</span>
+                                <span className="text-text-2">{line.label}</span>
                             </button>
                         </li>
                     );
@@ -86,17 +86,17 @@ export function TrainingEpochChart({ id, label, series, unit }: { id: string; la
                 >
                     {ticks(yMin, yMax, 4).map(tick => (
                         <g key={tick}>
-                            <line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="var(--border)" strokeDasharray="3 3" />
-                            <text x={pad.left - 6} y={y(tick)} textAnchor="end" dominantBaseline="middle" fontSize="13" fill="var(--muted-foreground)">
+                            <line x1={pad.left} x2={width - pad.right} y1={y(tick)} y2={y(tick)} stroke="var(--line)" strokeDasharray="3 3" />
+                            <text x={pad.left - 6} y={y(tick)} textAnchor="end" dominantBaseline="middle" fontSize="13" fill="var(--text-3)">
                                 {unit ? tick.toFixed(2) : formatNumber(tick, 2)}
                             </text>
                         </g>
                     ))}
                     {epochTicks(minEpoch, maxEpoch).map(tick => (
-                        <text key={tick} x={x(tick)} y={height - 8} textAnchor="middle" fontSize="13" fill="var(--muted-foreground)">{tick}</text>
+                        <text key={tick} x={x(tick)} y={height - 8} textAnchor="middle" fontSize="13" fill="var(--text-3)">{tick}</text>
                     ))}
                     {hover !== null && (
-                        <line x1={x(hover)} x2={x(hover)} y1={pad.top} y2={pad.top + plotHeight} stroke="var(--foreground)" strokeOpacity={0.35} data-testid="training-chart-crosshair" />
+                        <line x1={x(hover)} x2={x(hover)} y1={pad.top} y2={pad.top + plotHeight} stroke="var(--text-2)" strokeOpacity={0.5} data-testid="training-chart-crosshair" />
                     )}
                     {shown.map(line => {
                         const points = drawn.get(line.key) ?? [];
@@ -119,13 +119,13 @@ export function TrainingEpochChart({ id, label, series, unit }: { id: string; la
                     {hover !== null && shown.map(line => {
                         const value = lookup.get(line.key)?.get(hover);
                         return value === undefined ? null : (
-                            <circle key={line.key} cx={x(hover)} cy={y(value)} r={4} fill={line.color} stroke="var(--card)" strokeWidth={2} />
+                            <circle key={line.key} cx={x(hover)} cy={y(value)} r={4} fill={line.color} stroke="var(--ink-1)" strokeWidth={2} />
                         );
                     })}
                 </svg>
                 {hover !== null && (
-                    <div className="pointer-events-none absolute right-2 top-2 rounded-md border bg-background/95 px-3 py-2 text-xs shadow" data-testid="training-chart-tooltip">
-                        <p className="mb-1 text-muted-foreground">{t("chart.epoch", { epoch: hover })}</p>
+                    <div className="glass-raised pointer-events-none absolute top-2 right-2 rounded-md px-3 py-2 text-xs" data-testid="training-chart-tooltip">
+                        <p className="mb-1 text-text-2">{t("chart.epoch", { epoch: hover })}</p>
                         {shown.map(line => {
                             const value = lookup.get(line.key)?.get(hover);
                             return (

@@ -3,6 +3,9 @@
 The "Overview" section (`components/overview/`) is the first screen of an open project: project settings, project data, running work, the
 latest models and "Your computer". The section is recreated when the project changes.
 
+The overview is a dashboard that scrolls with the page: it has no scrolling region of its own. Running work is paged ("show more jobs"),
+the counters are KPI tiles, and the hardware load uses meters in the info colour (warn from 90 %), not the brand progress.
+
 ```tsx
 const data = useOverview(projectId);              // overview.get + job.changed, datasets.changed, training.changed with versions
 const { sample, failed } = useHardwareSample();   // hardware.sample every ~2 s after the answer, while mounted and visible

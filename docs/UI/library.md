@@ -1,7 +1,9 @@
 # Project library in the UI
 
 The library (`components/project-library.tsx`) is the first screen after startup: the project list, creation, settings, archive, export,
-import and deletion. The application always starts in the library; the last opened project comes first with a "last opened" mark
+import and deletion. It scrolls with the page. "Create a project" is the one brand action of the screen; a project is a surface row marked
+with the viewfinder corners on hover (and for the last opened one), and below `lg` its secondary actions keep only their icons, named by
+`aria-label` and `title`. The application always starts in the library; the last opened project comes first with a "last opened" mark
 (`lastProjectId` from `projects.list`, kept by Core).
 
 ```ts

@@ -13,12 +13,12 @@ export function ParameterList({ title, parameters, empty }: { title: string; par
                 <dl className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-xs">
                     {entries.map(([key, value]) => (
                         <div key={key} className="contents" data-parameter={key}>
-                            <dt className="break-all text-muted-foreground" title={key}>{parameterLabel(key)}</dt>
+                            <dt className="break-all text-text-2" title={key}>{parameterLabel(key)}</dt>
                             <dd className="break-all tabular-nums">{parameterText(value)}</dd>
                         </div>
                     ))}
                 </dl>
-            ) : <p className="text-xs text-muted-foreground">{empty}</p>}
+            ) : <p className="text-xs text-text-2">{empty}</p>}
         </div>
     );
 }

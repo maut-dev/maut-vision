@@ -1,7 +1,8 @@
 # Analytics in the UI
 
 The "Analytics" section (`components/analytics/`) compares selected model versions of the project: metrics and parameters, training curves
-by epoch, and dataset evaluations. It uses the same hooks as "Models" and "Checks", without polling.
+by epoch, and dataset evaluations. It uses the same hooks as "Models" and "Checks", without polling. The section scrolls with the page;
+its wide tables scroll only horizontally.
 
 ```tsx
 const models = useModelVersions(projectId);          // training.changed with versions

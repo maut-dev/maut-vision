@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import type { TrainingEpochDto } from "@/api/projects/training/response-dto/training-run-response-dto";
 import { TrainingEpochChart } from "@/components/training/training-epoch-chart";
+import { EmptyState } from "@/components/layout/empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { curveLabel, curveMetrics, epochValue, isQualityMetric } from "@/lib/analytics/analytics-view";
 import type { EpochPoint, EpochSeries } from "@/lib/training/epoch-chart";
@@ -39,9 +40,9 @@ export function AnalyticsCurves({ versions, histories }: {
     const missing = entries.filter(item => item.epochs === "failed" || (Array.isArray(item.epochs) && item.epochs.length === 0));
 
     return (
-        <section className="space-y-3 rounded-lg border bg-card p-5" data-testid="analytics-curves" data-metric={active}>
+        <section className="surface space-y-3 p-5" data-testid="analytics-curves" data-metric={active}>
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="font-medium">{t("curves.title")}</h2>
+                <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("curves.title")}</h2>
                 <Select value={active} onValueChange={setMetric} disabled={!available.length}>
                     <SelectTrigger aria-label={t("curves.metricAria")} className="w-56" data-testid="analytics-curve-metric"><SelectValue /></SelectTrigger>
                     <SelectContent>
@@ -52,9 +53,8 @@ export function AnalyticsCurves({ versions, histories }: {
             {series.length ? (
                 <TrainingEpochChart id="analytics" label={t("curves.chart", { metric: curveLabel(active) })} series={series} unit={isQualityMetric(active)} />
             ) : (
-                <div className="flex min-h-40 items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground" data-testid="analytics-curves-empty">
-                    {loading ? t("curves.loading") : t("curves.noValues", { metric: curveLabel(active) })}
-                </div>
+                <EmptyState title={loading ? t("curves.loading") : t("curves.noValues", { metric: curveLabel(active) })} className="min-h-40 rounded-lg border border-dashed border-line"
+                    data-testid="analytics-curves-empty" />
             )}
             {missing.length > 0 && (
                 <ul className="flex flex-wrap gap-x-5 gap-y-1 text-xs" aria-label={t("curves.missingAria")} data-testid="analytics-curves-missing">
@@ -62,7 +62,7 @@ export function AnalyticsCurves({ versions, histories }: {
                         <li key={version.id} className="flex items-center gap-1.5" data-version-id={version.id}>
                             <span className="inline-block h-0.5 w-4 rounded" style={{ background: seriesColor(version.number) }} />
                             {t("table.version", { number: version.number })}
-                            <span className="text-muted-foreground">{epochs === "failed" ? t("curves.failed") : t("curves.noEpochs")}</span>
+                            <span className="text-text-2">{epochs === "failed" ? t("curves.failed") : t("curves.noEpochs")}</span>
                         </li>
                     ))}
                 </ul>

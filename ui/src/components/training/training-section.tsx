@@ -7,7 +7,11 @@ import type { TrainingPresetResponseDto } from "@/api/projects/training/response
 import { trainingApi } from "@/api/projects/training/training-api";
 import { isActiveTrainingRun, trainingRunStateLabels } from "@/api/projects/training/training-parameters";
 import { BridgeError } from "@/api/transport/errors";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { SectionLayout } from "@/components/layout/section-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/layout/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { errorMessage, formatDate } from "@/lib/format";
@@ -18,9 +22,9 @@ import { useTrainingSetup } from "@/lib/use-training-setup";
 import { TrainingRunCard } from "./training-run-card";
 import { TrainingRunPassport } from "./training-run-passport";
 import { TrainingSettings } from "./training-settings";
-import { TrainingTabs, trainingPanelId, trainingTabId, type TrainingTab } from "./training-tabs";
+import { trainingPanelId, trainingTabId, trainingTabs, type TrainingTab } from "./training-tabs";
 
-interface Notice {
+interface NoticeState {
     tone: "info" | "error";
     text: string;
 }
@@ -44,7 +48,7 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
     const [seeking, setSeeking] = useState(!!initialRunId);
     const sought = useRef(false);
     const [busy, setBusy] = useState(false);
-    const [notice, setNotice] = useState<Notice>();
+    const [notice, setNotice] = useState<NoticeState>();
     const [hostField, setHostField] = useState<string>();
 
     useEffect(() => {
@@ -128,113 +132,116 @@ export function TrainingSection({ project, initialRunId, openDatasets }: { proje
     }
 
     const loadError = runs.error ?? datasets.error ?? versions.error;
+    const panel = (id: TrainingTab) => ({ value: id, id: trainingPanelId(id), "aria-labelledby": trainingTabId(id), forceMount: true as const, hidden: tab !== id });
     return (
-        <div className="space-y-4" data-testid="training-section">
-            <TrainingTabs tab={tab} select={setTab} />
-            {notice && (
-                <Alert variant={notice.tone === "error" ? "destructive" : "default"} data-testid="training-notice" data-tone={notice.tone}>
-                    <AlertDescription>
-                        <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
-            )}
-            {loadError && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void runs.refresh(); void datasets.refresh(); void versions.refresh(); }}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
-            )}
-            <div id={trainingPanelId("settings")} role="tabpanel" aria-labelledby={trainingTabId("settings")} hidden={tab !== "settings"}>
-                <TrainingSettings
-                    project={project}
-                    datasets={datasets.versions}
-                    datasetsLoading={datasets.loading}
-                    presets={setup.presets}
-                    runtime={setup.runtime}
-                    gpus={setup.gpus}
-                    hasActive={activeRuns.length > 0}
-                    busy={busy}
-                    hostField={hostField}
-                    start={start}
-                    savePreset={savePreset}
-                    deletePreset={deletePreset}
-                    openDatasets={openDatasets}
-                />
-            </div>
-            <div id={trainingPanelId("current")} role="tabpanel" aria-labelledby={trainingTabId("current")} hidden={tab !== "current"} className="space-y-4">
-                {selectable.length > 1 && (
-                    <label className="block space-y-1">
-                        <span className="block text-xs text-muted-foreground">{t("section.currentRun")}</span>
-                        <Select value={current?.id} onValueChange={setSelectedRunId}>
-                            <SelectTrigger aria-label={t("section.currentRun")} className="w-full sm:w-96" data-testid="training-current-select"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {selectable.map(run => (
-                                    <SelectItem key={run.id} value={run.id}>{trainingRunStateLabels[run.state]} · {run.dataset.name} · {formatDate(run.job.createdAt)}</SelectItem>
+        <SectionLayout data-testid="training-section">
+            {/* Every panel stays mounted: the form survives switching, the run passport gets events while hidden. */}
+            <Tabs value={tab} onValueChange={value => setTab(value as TrainingTab)} className="flex-1">
+                <TabsList aria-label={t("tabs.label")}>
+                    {trainingTabs.map(item => (
+                        <TabsTrigger key={item.id} value={item.id} id={trainingTabId(item.id)} aria-controls={trainingPanelId(item.id)} data-testid={`training-tab-${item.id}`}
+                            count={item.id === "history" ? runs.total : undefined} live={item.id === "history" && activeRuns.length > 0}>
+                            {item.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+                {notice && (
+                    <Notice variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="training-notice" data-tone={notice.tone}
+                        onDismiss={() => setNotice(undefined)}>
+                        {notice.text}
+                    </Notice>
+                )}
+                {loadError && (
+                    <Notice variant="destructive" className="shrink-0"
+                        action={{ label: t("section.retry"), onClick: () => { void runs.refresh(); void datasets.refresh(); void versions.refresh(); } }}>
+                        {loadError}
+                    </Notice>
+                )}
+                <TabsContent {...panel("settings")} className="flex flex-col">
+                    <Pane className="flex-1">
+                        <TrainingSettings
+                            project={project}
+                            datasets={datasets.versions}
+                            datasetsLoading={datasets.loading}
+                            presets={setup.presets}
+                            runtime={setup.runtime}
+                            gpus={setup.gpus}
+                            hasActive={activeRuns.length > 0}
+                            busy={busy}
+                            hostField={hostField}
+                            start={start}
+                            savePreset={savePreset}
+                            deletePreset={deletePreset}
+                            openDatasets={openDatasets}
+                        />
+                    </Pane>
+                </TabsContent>
+                {/* At lg the passport and the log are two columns with a scroll each; below lg they stack in the one scroll of the tab. */}
+                <TabsContent {...panel("current")} className="flex flex-col gap-4 overflow-y-auto overscroll-contain lg:overflow-hidden">
+                    {selectable.length > 1 && (
+                        <label className="block shrink-0 space-y-1">
+                            <span className="block text-xs text-text-2">{t("section.currentRun")}</span>
+                            <Select value={current?.id} onValueChange={setSelectedRunId}>
+                                <SelectTrigger aria-label={t("section.currentRun")} className="w-full sm:w-96" data-testid="training-current-select"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    {selectable.map(run => (
+                                        <SelectItem key={run.id} value={run.id}>{trainingRunStateLabels[run.state]} · {run.dataset.name} · {formatDate(run.job.createdAt)}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </label>
+                    )}
+                    {seeking && !runs.runs.some(run => run.id === initialRunId) ? (
+                        <EmptyState title={t("section.runLoading")} className={emptyClasses} data-testid="training-current-empty" />
+                    ) : current ? (
+                        <TrainingRunPassport
+                            key={current.id}
+                            projectId={projectId}
+                            run={current}
+                            version={versionOf(current.resultVersionId)}
+                            versionDeleted={versionDeleted(current)}
+                            busy={busy}
+                            cancel={() => cancel(current.id)}
+                            renewVersion={() => { if (current.resultVersionId) void versions.renew(current.resultVersionId); }}
+                            setWorking={() => { const versionId = current.resultVersionId; if (versionId) void act(() => versions.setWorking(versionId)); }}
+                        />
+                    ) : (
+                        <EmptyState title={runs.loading ? t("section.runLoading") : t("section.currentEmpty")} className={emptyClasses} data-testid="training-current-empty" />
+                    )}
+                </TabsContent>
+                <TabsContent {...panel("history")} className="flex flex-col">
+                    <Pane className="flex-1 space-y-3">
+                        <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("section.runs")}</h2>
+                        {runs.runs.length > 0 && (
+                            <ul className="space-y-3" data-testid="training-history">
+                                {runs.runs.map(run => (
+                                    <TrainingRunCard
+                                        key={run.id}
+                                        run={run}
+                                        version={versionOf(run.resultVersionId)}
+                                        versionDeleted={versionDeleted(run)}
+                                        busy={busy}
+                                        openRun={() => openRun(run.id)}
+                                        openVersion={() => openRun(run.id, run.resultVersionId ?? undefined)}
+                                        cancel={() => cancel(run.id)}
+                                    />
                                 ))}
-                            </SelectContent>
-                        </Select>
-                    </label>
-                )}
-                {seeking && !runs.runs.some(run => run.id === initialRunId) ? (
-                    <Empty testId="training-current-empty">{t("section.runLoading")}</Empty>
-                ) : current ? (
-                    <TrainingRunPassport
-                        key={current.id}
-                        projectId={projectId}
-                        run={current}
-                        version={versionOf(current.resultVersionId)}
-                        versionDeleted={versionDeleted(current)}
-                        busy={busy}
-                        cancel={() => cancel(current.id)}
-                        renewVersion={() => { if (current.resultVersionId) void versions.renew(current.resultVersionId); }}
-                        setWorking={() => { const versionId = current.resultVersionId; if (versionId) void act(() => versions.setWorking(versionId)); }}
-                    />
-                ) : (
-                    <Empty testId="training-current-empty">
-                        {runs.loading ? t("section.runLoading") : t("section.currentEmpty")}
-                    </Empty>
-                )}
-            </div>
-            <div id={trainingPanelId("history")} role="tabpanel" aria-labelledby={trainingTabId("history")} hidden={tab !== "history"} className="space-y-3">
-                <h2 className="font-medium">{t("section.runs")}</h2>
-                {runs.runs.length > 0 && (
-                    <ul className="space-y-3" data-testid="training-history">
-                        {runs.runs.map(run => (
-                            <TrainingRunCard
-                                key={run.id}
-                                run={run}
-                                version={versionOf(run.resultVersionId)}
-                                versionDeleted={versionDeleted(run)}
-                                busy={busy}
-                                openRun={() => openRun(run.id)}
-                                openVersion={() => openRun(run.id, run.resultVersionId ?? undefined)}
-                                cancel={() => cancel(run.id)}
-                            />
-                        ))}
-                    </ul>
-                )}
-                {!runs.runs.length && (
-                    <Empty testId="training-history-empty">
-                        {runs.loading ? t("section.loading") : t("section.historyEmpty")}
-                    </Empty>
-                )}
-                {runs.total > runs.runs.length && (
-                    <Button variant="outline" className="w-full" disabled={runs.loadingMore} onClick={() => void runs.loadMore()}>
-                        {runs.loadingMore ? t("section.loading") : t("section.moreRuns", { shown: runs.runs.length, total: runs.total })}
-                    </Button>
-                )}
-            </div>
-        </div>
+                            </ul>
+                        )}
+                        {!runs.runs.length && (
+                            <EmptyState title={runs.loading ? t("section.loading") : t("section.historyEmpty")} className={emptyClasses} data-testid="training-history-empty" />
+                        )}
+                        {runs.total > runs.runs.length && (
+                            <Button variant="outline" className="w-full" disabled={runs.loadingMore} onClick={() => void runs.loadMore()}>
+                                {runs.loadingMore ? t("section.loading") : t("section.moreRuns", { shown: runs.runs.length, total: runs.total })}
+                            </Button>
+                        )}
+                    </Pane>
+                </TabsContent>
+            </Tabs>
+        </SectionLayout>
     );
 }
 
-function Empty({ testId, children }: { testId: string; children: string }) {
-    return (
-        <div className="flex min-h-40 items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground" data-testid={testId}>
-            {children}
-        </div>
-    );
-}
+/** An empty tab: a dashed frame with the hint. */
+const emptyClasses = "min-h-40 rounded-lg border border-dashed border-line";

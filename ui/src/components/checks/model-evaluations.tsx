@@ -5,7 +5,7 @@ import type { ModelEvaluationResponseDto } from "@/api/projects/checks/response-
 import type { DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -102,10 +102,10 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
     }
 
     return (
-        <section className="space-y-5 rounded-lg border bg-card p-5" data-testid="model-evaluations">
+        <section className="surface space-y-5 p-5" data-testid="model-evaluations">
             <div>
-                <h2 className="font-medium">{t("evaluation.title")}</h2>
-                <p className="mt-1 max-w-prose text-sm text-muted-foreground">{t("evaluation.text")}</p>
+                <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("evaluation.title")}</h2>
+                <p className="mt-1 max-w-prose text-sm text-text-2">{t("evaluation.text")}</p>
             </div>
             <form className="space-y-3" onSubmit={submit}>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -146,29 +146,29 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                 </div>
                 <div className="min-h-4 text-xs" aria-live="polite" data-testid="evaluation-hint">
                     {!usable.length ? (
-                        <p className="text-muted-foreground">{t("evaluation.noUsable")}</p>
+                        <p className="text-text-2">{t("evaluation.noUsable")}</p>
                     ) : problem ? (
-                        <p role="alert" className="text-destructive" data-testid="evaluation-problem">{problem}</p>
+                        <p role="alert" className="text-danger" data-testid="evaluation-problem">{problem}</p>
                     ) : !validBatch ? (
-                        <p className="text-destructive">{t("evaluation.batchInvalid")}</p>
+                        <p className="text-danger">{t("evaluation.batchInvalid")}</p>
                     ) : dataset ? (
-                        <p className="text-muted-foreground">
+                        <p className="text-text-2">
                             {t("evaluation.splitFrames", { count: dataset.counts[part], frames: formatNumber(dataset.counts[part]), split: splitLabels[part] })}
                         </p>
                     ) : null}
                 </div>
-                {error && <Alert variant="destructive" data-testid="evaluation-error"><AlertDescription>{error}</AlertDescription></Alert>}
+                {error && <Notice variant="destructive" data-testid="evaluation-error">{error}</Notice>}
                 <Button type="submit" data-testid="evaluation-start" disabled={busy || !version || !dataset || !!problem || !validBatch || !validDevice}>
                     {t("evaluation.start")}
                 </Button>
             </form>
 
-            <div className="space-y-3 border-t pt-4" data-testid="evaluation-comparison">
+            <div className="space-y-3 border-t border-line pt-4" data-testid="evaluation-comparison">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <h3 className="text-sm font-medium">{t("evaluation.comparison")}</h3>
                     {pairs.length > 0 && (
                         <Select value={activeKey} onValueChange={setCompareKey}>
-                            <SelectTrigger aria-label={t("evaluation.pairAria")} className="w-72" data-testid="evaluation-pair"><SelectValue /></SelectTrigger>
+                            <SelectTrigger aria-label={t("evaluation.pairAria")} className="w-72 max-w-full" data-testid="evaluation-pair"><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 {pairs.map(item => (
                                     <SelectItem key={pairKey(item.dataset.versionId, item.split)} value={pairKey(item.dataset.versionId, item.split)}>
@@ -180,14 +180,14 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                     )}
                 </div>
                 {!pairs.length || !activePair ? (
-                    <p className="text-sm text-muted-foreground">{t("evaluation.comparisonEmpty")}</p>
+                    <p className="text-sm text-text-2">{t("evaluation.comparisonEmpty")}</p>
                 ) : !compared.length ? (
-                    <p className="text-sm text-muted-foreground">{t("evaluation.markVersions")}</p>
+                    <p className="text-sm text-text-2">{t("evaluation.markVersions")}</p>
                 ) : (
-                    <div className="overflow-x-auto rounded-md border">
+                    <div className="overflow-x-auto overflow-y-hidden rounded-md border border-line">
                         <table className="w-full text-sm" data-testid="evaluation-matrix">
                             <thead>
-                                <tr className="border-b text-left text-xs text-muted-foreground">
+                                <tr className="border-b text-left text-xs text-text-2">
                                     <th className="px-3 py-2 font-normal">{t("evaluation.metric")}</th>
                                     {compared.map((item, index) => (
                                         <th key={item.id} className="px-3 py-2 text-right font-normal" data-version-id={item.id}>
@@ -212,14 +212,14 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                                     const best = bestOf(values);
                                     return (
                                         <tr key={key} className="border-b last:border-b-0" data-metric={key}>
-                                            <td className="px-3 py-2 text-muted-foreground" title={qualityMetricHelp[key]}>
+                                            <td className="px-3 py-2 text-text-2" title={qualityMetricHelp[key]}>
                                                 <span className="cursor-help underline decoration-dotted underline-offset-4">{qualityMetricLabels[key]}</span>
                                             </td>
                                             {values.map((value, index) => (
                                                 <td key={compared[index].id} data-best={(best !== null && value === best) || undefined}
                                                     className={`px-3 py-2 text-right tabular-nums ${best !== null && value === best ? "font-semibold text-[var(--metric-best)]" : ""}`}>
                                                     {value === null
-                                                        ? matrix[index] ? "—" : <span className="text-xs text-muted-foreground">{t("evaluation.notChecked")}</span>
+                                                        ? matrix[index] ? "—" : <span className="text-xs text-text-2">{t("evaluation.notChecked")}</span>
                                                         : formatMetric(value)}
                                                 </td>
                                             ))}
@@ -232,14 +232,14 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                 )}
             </div>
 
-            <div className="space-y-2 border-t pt-4">
+            <div className="space-y-2 border-t border-line pt-4">
                 <h3 className="text-sm font-medium">{t("evaluation.all")}</h3>
-                {evaluations.error && <p role="alert" className="text-sm text-destructive">{evaluations.error}</p>}
+                {evaluations.error && <p role="alert" className="text-sm text-danger">{evaluations.error}</p>}
                 {evaluations.evaluations.length ? (
-                    <div className="overflow-x-auto rounded-md border">
+                    <div className="overflow-x-auto overflow-y-hidden rounded-md border border-line">
                         <table className="w-full text-sm" data-testid="evaluation-list">
                             <thead>
-                                <tr className="border-b text-left text-xs text-muted-foreground">
+                                <tr className="border-b text-left text-xs text-text-2">
                                     <th className="px-3 py-2 font-normal">{t("evaluation.columnVersion")}</th>
                                     <th className="px-3 py-2 font-normal">{t("evaluation.columnDataset")}</th>
                                     <th className="px-3 py-2 font-normal">{t("evaluation.columnState")}</th>
@@ -257,12 +257,12 @@ export function ModelEvaluations({ evaluations, versions, compared, versionId, d
                         </table>
                     </div>
                 ) : (
-                    <p className="text-sm text-muted-foreground" data-testid="evaluation-list-empty">
+                    <p className="text-sm text-text-2" data-testid="evaluation-list-empty">
                         {evaluations.loading ? t("loading") : t("evaluation.listEmpty")}
                     </p>
                 )}
                 {evaluations.total > evaluations.evaluations.length && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-text-2">
                         {t("evaluation.shownLatest", { shown: formatNumber(evaluations.evaluations.length), total: formatNumber(evaluations.total) })}
                     </p>
                 )}
@@ -293,12 +293,12 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
                 <td className="px-3 py-2">
                     {datasetLabel(item.dataset.versionId, item.dataset.name)} · {splitLabels[item.split]}
                     {item.imageCount !== null && (
-                        <span className="text-xs text-muted-foreground"> · {t("evaluation.frames", { count: item.imageCount, frames: formatNumber(item.imageCount) })}</span>
+                        <span className="text-xs text-text-2"> · {t("evaluation.frames", { count: item.imageCount, frames: formatNumber(item.imageCount) })}</span>
                     )}
                 </td>
-                <td className={`px-3 py-2 ${item.state === "failed" ? "text-destructive" : ""}`} data-testid="evaluation-row-state">{t(`evaluationState.${item.state}`)}</td>
+                <td className={`px-3 py-2 ${item.state === "failed" ? "text-danger" : ""}`} data-testid="evaluation-row-state">{t(`evaluationState.${item.state}`)}</td>
                 {qualityMetrics.map(key => <td key={key} className="px-3 py-2 text-right tabular-nums">{formatMetric(item.metrics[key])}</td>)}
-                <td className="px-3 py-2 text-xs text-muted-foreground">{formatDate(item.job.createdAt)}</td>
+                <td className="px-3 py-2 text-xs text-text-2">{formatDate(item.job.createdAt)}</td>
                 <td className="px-3 py-2 text-right">
                     {active ? (
                         <Button variant="ghost" size="sm" disabled={item.state === "cancelling"} data-testid="evaluation-cancel" onClick={cancel}>{t("evaluation.cancel")}</Button>
@@ -311,15 +311,15 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
             </tr>
             {item.error && (item.state === "failed" || item.state === "interrupted") && (
                 <tr className="border-b last:border-b-0">
-                    <td colSpan={columns} className="px-3 pb-2 text-xs text-destructive" data-testid="evaluation-row-error">{workerErrorText(item.error)}</td>
+                    <td colSpan={columns} className="px-3 pb-2 text-xs text-danger" data-testid="evaluation-row-error">{workerErrorText(item.error)}</td>
                 </tr>
             )}
             {expanded && (
-                <tr className="border-b bg-background/40 last:border-b-0">
+                <tr className="border-b border-line bg-ink-0/40 last:border-b-0">
                     <td colSpan={columns} className="px-3 py-2">
                         <table className="w-full text-xs" data-testid="evaluation-classes">
                             <thead>
-                                <tr className="text-left text-muted-foreground">
+                                <tr className="text-left text-text-2">
                                     <th className="py-1 font-normal">{t("results.class")}</th>
                                     {qualityMetrics.map(key => <th key={key} className="py-1 text-right font-normal">{qualityMetricLabels[key]}</th>)}
                                 </tr>
@@ -333,7 +333,7 @@ function EvaluationRow({ item, datasetLabel, expanded, toggle, cancel }: {
                                 ))}
                             </tbody>
                         </table>
-                        <p className="mt-1 text-muted-foreground">{t("evaluation.classesNote")}</p>
+                        <p className="mt-1 text-text-2">{t("evaluation.classesNote")}</p>
                     </td>
                 </tr>
             )}

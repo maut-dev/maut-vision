@@ -82,6 +82,9 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
     }
 
     const orderHint = searching ? t("classes.orderLocked") : undefined;
+    /** Variants attached to a class (archived ones too while the archive is shown): the short status of its row. */
+    const variantCount = (item: ClassResponseDto) =>
+        workspace.classVariants.filter(binding => binding.classId === item.id && (showArchive || !binding.archivedAt)).length;
     return (
         <>
             <CatalogToolbar
@@ -120,8 +123,10 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                     entry={item}
                                     deleteLabel={t("classes.deleteLabel", { name: item.name })}
                                     selected={item.id === selected?.id}
+                                    compact
+                                    status={t("classes.variantCount", { count: variantCount(item) })}
                                     prefix={index !== undefined && (
-                                        <span className="mr-2 text-xs tabular-nums text-text-3" data-class-index={index} title={t("classes.indexHint")}>{index}</span>
+                                        <span className="mr-2 inline-block min-w-4 text-xs tabular-nums text-text-3" data-class-index={index} title={t("classes.indexHint")}>{index}</span>
                                     )}
                                     fallback={t("classes.fallback")}
                                     busy={busy}
@@ -130,7 +135,7 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                     toggleArchive={() => actions.toggleArchive(item)}
                                     remove={() => actions.remove(item)}
                                     extra={index !== undefined && (
-                                        <div className="flex shrink-0 flex-col">
+                                        <>
                                             <Button
                                                 size="icon-xs"
                                                 variant="ghost"
@@ -153,12 +158,13 @@ export function ClassesPage({ projectId, workspace, inputSize, busy, imports, ac
                                             >
                                                 <ArrowDown />
                                             </Button>
-                                        </div>
+                                        </>
                                     )}
                                 />
                             );
                         })}
                     </div>
+                    {entries.length > 0 && <p className="px-2.5 pt-3 text-xs text-text-3">{t("classes.fallback")}</p>}
                     {!entries.length && (
                         <CatalogEmpty
                             searching={searching || classes.length > 0}

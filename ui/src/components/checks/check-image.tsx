@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { checksApi } from "@/api/projects/checks/checks-api";
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
 import { Button } from "@/components/ui/button";
 import { classColor, defaultCheckParameters, formatConfidence, parseCheckParameters, type CheckParameterValues } from "@/lib/checks/check-view";
 import { errorMessage, formatNumber } from "@/lib/format";
@@ -41,16 +41,16 @@ export function CheckImage({ projectId, version, gpus }: { projectId: string; ve
     }
 
     return (
-        <section className="space-y-4 rounded-lg border bg-card p-5" data-testid="check-image">
+        <section className="surface space-y-4 p-5" data-testid="check-image">
             <div>
-                <h2 className="font-medium">{t("image.title")}</h2>
-                <p className="mt-1 max-w-prose text-sm text-muted-foreground">{t("image.text", { size: version.imageSize })}</p>
+                <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("image.title")}</h2>
+                <p className="mt-1 max-w-prose text-sm text-text-2">{t("image.text", { size: version.imageSize })}</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
                 <CheckParameterFields value={values} onChange={setValues} gpus={gpus} disabled={busy || session.active} invalid={problem?.field} testPrefix="check-image" />
             </div>
-            <p role={problem ? "alert" : undefined} className="min-h-4 text-xs text-destructive">{problem?.message}</p>
-            {error && <Alert variant="destructive" data-testid="check-image-error-notice"><AlertDescription>{error}</AlertDescription></Alert>}
+            <p role={problem ? "alert" : undefined} className="min-h-4 text-xs text-danger">{problem?.message}</p>
+            {error && <Notice variant="destructive" data-testid="check-image-error-notice">{error}</Notice>}
             <div className="flex flex-wrap gap-2">
                 <Button data-testid="check-image-pick" disabled={!!problem || busy || session.active} onClick={() => void pick()}>
                     {t("image.pick")}
@@ -61,7 +61,7 @@ export function CheckImage({ projectId, version, gpus }: { projectId: string; ve
                 )}
             </div>
             {check && (
-                <div className="space-y-4 border-t pt-4" data-testid="check-image-result" data-check-id={check.id}>
+                <div className="space-y-4 border-t border-line pt-4" data-testid="check-image-result" data-check-id={check.id}>
                     <CheckStatus check={check} testPrefix="check-image" />
                     {check.preview && (
                         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
@@ -74,18 +74,18 @@ export function CheckImage({ projectId, version, gpus }: { projectId: string; ve
                                 {detections.length ? (
                                     <ol className="space-y-1 text-sm" data-testid="check-image-detections">
                                         {detections.map((item, index) => (
-                                            <li key={index} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1"
+                                            <li key={index} className="flex items-center justify-between gap-2 rounded-md border border-line px-2 py-1"
                                                 title={t("image.box", { x: item.x.toFixed(3), y: item.y.toFixed(3), width: item.width.toFixed(3), height: item.height.toFixed(3) })}>
                                                 <span className="inline-flex items-center gap-1.5">
                                                     <span className="inline-block size-2 rounded-full" style={{ background: classColor(item.classIndex) }} />
                                                     {item.name}
                                                 </span>
-                                                <span className="tabular-nums text-muted-foreground">{formatConfidence(item.confidence)}</span>
+                                                <span className="tabular-nums text-text-2">{formatConfidence(item.confidence)}</span>
                                             </li>
                                         ))}
                                     </ol>
                                 ) : check.state === "succeeded" ? (
-                                    <p className="text-sm text-muted-foreground" data-testid="check-image-nothing">
+                                    <p className="text-sm text-text-2" data-testid="check-image-nothing">
                                         {t("image.nothing", { confidence: String(check.settings.confidence) })}
                                     </p>
                                 ) : null}
