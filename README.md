@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.2.0-cefa1e?style=flat-square" alt="Version 1.2.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.3.0-cefa1e?style=flat-square" alt="Version 1.3.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="License AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Platform Windows 10/11 x64">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
@@ -27,7 +27,6 @@
 <p align="center">
   <a href="#installation">Download</a> ·
   <a href="#features">Features</a> ·
-  <a href="#screenshots">Screenshots</a> ·
   <a href="docs/overview.md">Documentation</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="README.ru.md">Русский</a>
@@ -58,24 +57,7 @@ command line.
 | 🧠 **Model versions** | Versions with metrics, parameters, plots and a working version; `best.pt` and **`best.onnx`** export as a reproducible ZIP. |
 | 🔍 **Checks** | Evaluation on a dataset split with a comparison matrix, and live checks on an **image, a video or a screen region** with boxes and a detection journal. |
 | 📊 **Overview and analytics** | Project data, running work, latest models, CPU/GPU/RAM load, and a side-by-side comparison of model versions with training curves. |
-| 🖥️ **Desktop comfort** | Tray mode with background jobs, single instance, per-monitor DPI, an event-driven UI without polling, structured logs. |
-
-## Screenshots
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/library.png" alt="Project library"><br><sub><b>Project library</b></sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/classes.png" alt="Classes and variants"><br><sub><b>Classes and variants</b></sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/generation.png" alt="Synthetic generation"><br><sub><b>Synthetic generation with sample frames</b></sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/training.png" alt="Training run"><br><sub><b>Training run with epoch charts</b></sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/check.png" alt="Model checks"><br><sub><b>Model versions compared on a dataset split</b></sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/overview.png" alt="Project overview"><br><sub><b>Project overview</b></sub></td>
-  </tr>
-</table>
+| 🖥️ **Desktop comfort** | A quiet glass interface with its own title bar, one scroll per panel, tray mode with background jobs, single instance, per-monitor DPI, an event-driven UI without polling, structured logs. |
 
 ## Performance
 

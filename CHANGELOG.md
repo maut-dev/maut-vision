@@ -7,6 +7,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-08
+
+### Added
+
+- **Frameless window**: the system title bar is gone; minimize, maximize/restore and close are buttons of the application header, which
+  is also the drag area (double-click maximizes, right-click opens the system menu). Resizing from edges and corners, snapping, Win+arrows,
+  the shadow and Windows 11 rounded corners stay native. The loading window has the same look.
+- **Design system**: the Maut Vision Glass tokens (graphite canvas, lime brand colour used once per screen, status colours, radii,
+  motion) and the Geist and Geist Mono fonts bundled with the application. Glass is used only for the header, the sidebar and overlays;
+  lists, galleries and tables stay on solid surfaces.
+- **Live work in tabs**: sections show running work as a count and a live dot on their tabs (background preparation, image imports,
+  generation runs, dataset operations, training history).
+
+### Changed
+
+- **One scroll per region**: every section fits the window and each region (a list, a work area, a dialog body) has exactly one scroll;
+  nested scrolling panels are gone.
+  - Backgrounds: a set has the tabs «Фоны», «Добавить» and «Подготовка»; the add tab shows the set's tasks next to the form, so running
+    imports are visible while cutting frames from a video. The add methods are a compact switch.
+  - Images: a group has the tabs «Изображения», «Кадры из видео» and «Импорт»; the annotation editor fills the work area.
+  - Generation, datasets (with «Сведения» and «Образцы» tabs of a dataset), training, checks and models use real tabs; overview and
+    analytics scroll as one page and wide tables scroll only sideways.
+  - Class rows are single lines with actions on hover.
+- **AI assistants (MCP) dialog**: the server status stays on top and the content is split into «Сервер», «Клиенты» and «Журнал»; long
+  configurations, arguments and errors wrap instead of widening the dialog, and call arguments unfold on demand.
+- **Dialogs** keep their header and buttons in place and scroll only their body; errors appear as a toast.
+- «Создать проект» is the primary action of the library.
+
+### Fixed
+
+- The MCP dialog scrolled horizontally when a log entry was long.
+- A form field with a dropdown or a checkbox could make the whole window scroll and shift the header.
+- The images section could squeeze its gallery to nothing on a small window.
+
 ## [1.2.0] - 2026-10-30
 
 ### Added
@@ -112,7 +146,8 @@ First public release.
   resource channel for images, structured logs.
 - **Delivery**: a per-user Inno Setup installer with the WebView2 bootstrapper, bundled ffmpeg (LGPL) and Python worker.
 
-[Unreleased]: https://github.com/maut-dev/maut-vision/compare/v1.2.0...dev
+[Unreleased]: https://github.com/maut-dev/maut-vision/compare/v1.3.0...dev
+[1.3.0]: https://github.com/maut-dev/maut-vision/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/maut-dev/maut-vision/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/maut-dev/maut-vision/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/maut-dev/maut-vision/releases/tag/v1.0.0
