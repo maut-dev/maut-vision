@@ -4,6 +4,10 @@ The "Checks" section (`components/checks/`) has a version choice (the working on
 "Screen" following the tablist pattern. The open mode stays mounted: switching tabs does not interrupt a check. Data comes from
 [model checks](../Core/checks.md), without polling.
 
+The section fits the window: the version and the mode tabs stay above, and each mode is one scroll with its form, results and journal.
+Journals have no scroll of their own: the video journal is paged ("show more", the header row sticks to the top of the mode), the screen
+journal holds the latest 40 frames. Wide tables scroll only horizontally.
+
 ```tsx
 const session = useLiveCheck(projectId, "screen", { keep: 40, stopOnLeave: true }); // snapshot + checks.changed by sequence
 const evaluations = useModelEvaluations(projectId);   // listEvaluations, listLatestEvaluations, checks.changed, job.changed

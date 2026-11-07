@@ -19,13 +19,19 @@
     "loadGroups": "Could not load the image groups. Retry loading.",
     "loadImports": "Could not load the import history."
   },
+  "tabs": {
+    "label": "Group content",
+    "images": "Images",
+    "video": "Frames from video",
+    "imports": "Import",
+    "showImports": "Full history"
+  },
   "section": {
     "generationLock": "Generation is filling this group. Editing becomes available when it finishes.",
     "archiveLock": "The group or the image is archived. Restore them to change the annotation.",
     "listUpdated": "{{message}} The list is refreshed.",
     "moved": "Moved to “{{name}}”: {{number}}.",
     "cleanupPending": "Deletion is complete. Files in use will be cleaned up in the background.",
-    "hide": "Hide",
     "retry": "Retry",
     "newGroupLabel": "Image group name",
     "newGroupName": "Group name",
@@ -115,7 +121,8 @@
     "removeRoi": "Remove ROI",
     "reviewed": "Reviewed, including an empty frame",
     "saving": "Saving…",
-    "save": "Save annotation"
+    "save": "Save annotation",
+    "details": "Annotation details"
   },
   "canvas": {
     "label": "Frame to annotate: drag to draw a box, drag with Space to pan"
@@ -180,7 +187,8 @@
     "progress": "Import progress",
     "summary": "Added {{added}} / {{total}} · skipped {{duplicates}} · errors {{rejected}}",
     "fileErrors": "File errors ({{number}})",
-    "more": "and {{number}} more"
+    "more": "and {{number}} more",
+    "empty": "No imports yet. An import of files, a folder or video frames appears here with its progress and result."
   },
   "deletion": {
     "imagesTitle": "Delete the images permanently?",
@@ -200,7 +208,6 @@
     "choosePrompt": "Choose a video, then set which frames to extract.",
     "other": "Another video",
     "choose": "Choose video",
-    "close": "Close “Video frames”",
     "start": "Start, s",
     "interval": "Interval, s",
     "count": "Frame count",

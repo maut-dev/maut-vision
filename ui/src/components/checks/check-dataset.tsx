@@ -36,8 +36,8 @@ export function CheckDataset({ projectId, versions, version, datasets, gpus }: {
     return (
         <div className="space-y-4">
             {versions.length > 1 && (
-                <section className="space-y-2 rounded-lg border bg-card p-4" data-testid="evaluation-compared">
-                    <h2 className="text-sm font-medium">{t("dataset.compared")}</h2>
+                <section className="surface space-y-2 p-4" data-testid="evaluation-compared">
+                    <h2 className="text-sm font-semibold">{t("dataset.compared")}</h2>
                     <div className="flex flex-wrap gap-x-5 gap-y-2">
                         {versions.map(item => (
                             <label key={item.id} className="flex items-center gap-2 text-sm">
@@ -50,7 +50,7 @@ export function CheckDataset({ projectId, versions, version, datasets, gpus }: {
                                 />
                                 <span className="inline-block size-2 rounded-full" style={{ background: seriesColor(item.number) }} />
                                 {t("version.number", { number: item.number })}
-                                {item.isWorking && <span className="text-xs text-muted-foreground">{t("version.working")}</span>}
+                                {item.isWorking && <span className="text-xs text-text-2">{t("version.working")}</span>}
                             </label>
                         ))}
                     </div>

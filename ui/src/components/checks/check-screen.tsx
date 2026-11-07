@@ -5,7 +5,7 @@ import type { MonitorResponseDto, ScreenShotResponseDto } from "@/api/projects/c
 import type { GpuInventoryResponseDto } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import { BackgroundCropFrame } from "@/components/backgrounds/background-crop-frame";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -100,16 +100,16 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
     }
 
     return (
-        <section className="space-y-4 rounded-lg border bg-card p-5" data-testid="check-screen">
+        <section className="surface space-y-4 p-5" data-testid="check-screen">
             <div>
-                <h2 className="font-medium">{t("screen.title")}</h2>
-                <p className="mt-1 max-w-prose text-sm text-muted-foreground">{t("screen.text", { width: input.width, height: input.height })}</p>
+                <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("screen.title")}</h2>
+                <p className="mt-1 max-w-prose text-sm text-text-2">{t("screen.text", { width: input.width, height: input.height })}</p>
             </div>
             <div className="flex flex-wrap items-end gap-3">
                 <Field label={t("screen.monitor")}>
                     <Select value={monitorIndex === undefined ? "" : String(monitorIndex)} disabled={locked || !monitors?.length}
                         onValueChange={next => { if (next) setMonitorIndex(Number(next)); }}>
-                        <SelectTrigger aria-label={t("screen.monitor")} className="w-72" data-testid="check-screen-monitor">
+                        <SelectTrigger aria-label={t("screen.monitor")} className="w-72 max-w-full" data-testid="check-screen-monitor">
                             <SelectValue placeholder={monitors ? t("screen.noMonitors") : t("screen.findingMonitors")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -122,7 +122,7 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                 </Button>
             </div>
             {monitor && !crop && (
-                <p className="text-sm text-muted-foreground" data-testid="check-screen-whole">
+                <p className="text-sm text-text-2" data-testid="check-screen-whole">
                     {t("screen.whole", { width: monitor.width, height: monitor.height })}
                 </p>
             )}
@@ -149,10 +149,10 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                 <CheckParameterFields value={values} onChange={setValues} gpus={gpus} disabled={locked} invalid={"field" in parsed ? parsed.field : undefined}
                     testPrefix="check-screen" />
             </div>
-            <p role={problem ? "alert" : undefined} className={`min-h-4 text-xs ${problem ? "text-destructive" : "text-muted-foreground"}`} data-testid="check-screen-hint">
+            <p role={problem ? "alert" : undefined} className={`min-h-4 text-xs ${problem ? "text-danger" : "text-text-2"}`} data-testid="check-screen-hint">
                 {problem ?? (crop && !shotOfMonitor ? t("screen.captureFirst") : t("screen.fpsHint"))}
             </p>
-            {error && <Alert variant="destructive" data-testid="check-screen-error-notice"><AlertDescription>{error}</AlertDescription></Alert>}
+            {error && <Notice variant="destructive" data-testid="check-screen-error-notice">{error}</Notice>}
             <div className="flex flex-wrap gap-2">
                 <Button disabled={!ready || !!problem || locked} data-testid="check-screen-start" onClick={start}>{t("screen.start")}</Button>
                 {session.active && (
@@ -160,9 +160,9 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                 )}
             </div>
             {check && (
-                <div className="space-y-4 border-t pt-4" data-testid="check-screen-result" data-check-id={check.id}>
+                <div className="space-y-4 border-t border-line pt-4" data-testid="check-screen-result" data-check-id={check.id}>
                     <CheckStatus check={check} testPrefix="check-screen" />
-                    <p className="text-xs tabular-nums text-muted-foreground" data-testid="check-screen-stats">
+                    <p className="text-xs tabular-nums text-text-2" data-testid="check-screen-stats">
                         {[
                             t("screen.stats", { frames: formatNumber(check.progress.framesProcessed), detected: formatNumber(check.summary.framesWithDetections) }),
                             ...(check.progress.fps !== null ? [t("screen.statsFps", { fps: formatNumber(check.progress.fps, { maximumFractionDigits: 1 }) })] : []),
@@ -174,14 +174,14 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                             <div className="space-y-1">
                                 <DetectionOverlay src={check.preview.url} width={check.preview.width} height={check.preview.height}
                                     detections={previewDetections(check, session.journal)} alt={t("screen.previewAlt")} testId="check-screen-preview" />
-                                <p className="text-center text-xs text-muted-foreground">{t("screen.previewNote", { time: formatTime(check.preview.timeMs) })}</p>
+                                <p className="text-center text-xs text-text-2">{t("screen.previewNote", { time: formatTime(check.preview.timeMs) })}</p>
                             </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground">{session.active ? t("screen.waiting") : t("screen.noFrames")}</p>
+                            <p className="text-sm text-text-2">{session.active ? t("screen.waiting") : t("screen.noFrames")}</p>
                         )}
                         <div className="space-y-2" data-testid="check-screen-now">
                             <h3 className="text-sm font-medium">{t("screen.now")}</h3>
-                            {check.lastFrame ? <DetectionChips detections={check.lastFrame.detections} /> : <p className="text-sm text-muted-foreground">—</p>}
+                            {check.lastFrame ? <DetectionChips detections={check.lastFrame.detections} /> : <p className="text-sm text-text-2">—</p>}
                         </div>
                     </div>
                     <div className="grid gap-4 lg:grid-cols-2">
@@ -192,12 +192,12 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                         <div className="space-y-2">
                             <h3 className="text-sm font-medium">{t("screen.recent")}</h3>
                             {recent.length ? (
-                                <div className="max-h-80 overflow-y-auto rounded-md border">
+                                <div className="rounded-md border border-line">
                                     <table className="w-full text-sm" data-testid="check-screen-journal">
                                         <tbody>
                                             {recent.map(item => (
-                                                <tr key={item.ordinal} className="border-b align-top last:border-b-0" data-ordinal={item.ordinal}>
-                                                    <td className="w-20 px-3 py-1.5 tabular-nums text-muted-foreground">{formatTime(item.timeMs)}</td>
+                                                <tr key={item.ordinal} className="border-b border-line align-top last:border-b-0" data-ordinal={item.ordinal}>
+                                                    <td className="w-20 px-3 py-1.5 tabular-nums text-text-2">{formatTime(item.timeMs)}</td>
                                                     <td className="px-3 py-1.5"><DetectionChips detections={item.detections} /></td>
                                                 </tr>
                                             ))}
@@ -205,7 +205,7 @@ export function CheckScreen({ projectId, version, gpus }: { projectId: string; v
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground">{t("screen.nothingYet")}</p>
+                                <p className="text-sm text-text-2">{t("screen.nothingYet")}</p>
                             )}
                         </div>
                     </div>

@@ -42,9 +42,18 @@ default), `token`, `restrictFolders` with `allowedFolders`, and `launchOnRequest
 (`mcp.getState`, `mcp.update`, `mcp.regenerateToken`, `mcp.addAllowedFolder`, `mcp.removeAllowedFolder`); no tool can, otherwise an AI
 could lift its own limits.
 
-The dialog «Подключение ИИ (MCP)» / "AI assistants (MCP)" opens from the header next to the language. It shows the state, port, access
-level, the masked token, ready configurations (the `claude mcp add --transport http` command, `.mcp.json`, the Claude Desktop entry with
-the proxy path), the folder restriction, a privacy note and the call log. Its texts are the UI namespace `mcp`, loaded with the dialog.
+The dialog «Подключение ИИ (MCP)» / "AI assistants (MCP)" opens from the header next to the language; the header button carries a status
+dot while the server runs. The fixed top of the dialog holds the switch, the state as a word and the endpoint. Three tabs below are its only
+scroll and stay mounted, so the shown token and "Copied" survive switching:
+
+| Tab | Contents |
+|---|---|
+| «Сервер» | port, access level, the masked token, the folder restriction, launching on request, the privacy note |
+| «Клиенты» | ready configurations: the `claude mcp add --transport http` command, `.mcp.json`, the Claude Desktop entry with the proxy path |
+| «Журнал» | the call log with its count: time, client, tool, outcome and duration; the error, the arguments (unfolded on demand) and the result wrap |
+
+Long values (configurations, arguments, paths) wrap inside the dialog and never widen it. Its texts are the UI namespace `mcp`, loaded with
+the dialog.
 
 ## Transport and authorization
 

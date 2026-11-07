@@ -42,7 +42,7 @@ export function BackgroundGallery({ items, selected, hasMore, loading, busy, rea
             label={t("gallery.label")}
             testId="background-gallery"
             loadingText={t("section.loadingBackgrounds")}
-            className="min-h-60"
+            className="min-h-0"
             renderTile={(item, index, style) => (
                 <BackgroundTile item={item} index={index} checked={selected.has(item.id)} busy={busy} readOnly={readOnly} actions={actions} style={style} />
             )}

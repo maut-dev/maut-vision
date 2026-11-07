@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { Progress } from "@/components/layout/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { i18n } from "@/i18n";
@@ -85,19 +86,13 @@ export function ProjectTransferBanner({ transfer, cancel, dismiss }: {
     const title = transferTitle(transfer);
     return (
         <Alert variant={state === "failed" ? "destructive" : "default"} role={state === "failed" ? "alert" : "status"} data-testid="transfer-banner" data-kind={transfer.kind} data-status={state}>
-            {running ? <Loader2 className="animate-spin" aria-hidden /> : state === "succeeded" ? <CheckCircle2 aria-hidden /> : <XCircle aria-hidden />}
+            {running ? <Loader2 className="animate-spin" aria-hidden /> : state === "succeeded" ? <CheckCircle2 className="text-ok" aria-hidden /> : <XCircle aria-hidden />}
             <AlertTitle className="break-words" data-testid="transfer-title">{title}</AlertTitle>
             <AlertDescription>
                 <p data-testid="transfer-detail">{transferDetail(transfer)}</p>
-                {bytes && <p className="tabular-nums text-muted-foreground" data-testid="transfer-bytes">{bytes}</p>}
-                {running && <p className="text-muted-foreground" data-testid="transfer-hint">{t("transfer.hint")}</p>}
-                {running && (
-                    <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("transfer.progress", { title })}
-                        aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent === null ? undefined : Math.round(percent)}>
-                        <div className={percent === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"}
-                            style={percent === null ? undefined : { width: `${Math.min(100, percent)}%` }} />
-                    </div>
-                )}
+                {bytes && <p className="tabular-nums text-text-2" data-testid="transfer-bytes">{bytes}</p>}
+                {running && <p className="text-text-2" data-testid="transfer-hint">{t("transfer.hint")}</p>}
+                {running && <Progress className="mt-1 w-full" value={percent} live aria-label={t("transfer.progress", { title })} />}
                 <div className="mt-2 flex gap-2">
                     {running
                         ? <Button size="sm" variant="outline" disabled={cancelRequested} onClick={cancel} data-testid="transfer-cancel">{t("common.cancelAction")}</Button>

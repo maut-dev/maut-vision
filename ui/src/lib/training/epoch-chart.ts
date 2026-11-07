@@ -15,8 +15,8 @@ export interface EpochSeries {
     points: EpochPoint[];
 }
 
-/** Series colors of the run passport. */
-export const seriesColors = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc"] as const;
+/** Series colors of the run passport: the design system chart series. */
+export const seriesColors = ["var(--series-1)", "var(--series-3)", "var(--series-4)", "var(--series-7)"] as const;
 
 const qualityKeys = ["precision", "recall", "mAP50", "mAP50_95"] as const;
 const lossKeys = ["box_loss", "cls_loss", "dfl_loss", "l1_loss"] as const;

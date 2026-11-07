@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.2.0-cefa1e?style=flat-square" alt="Версия 1.2.0"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/version-1.3.0-cefa1e?style=flat-square" alt="Версия 1.3.0"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square" alt="Лицензия AGPL-3.0"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D6?style=flat-square&logo=windows&logoColor=white" alt="Windows 10/11 x64">
   <img src="https://img.shields.io/badge/.NET-10-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 10">
@@ -27,7 +27,6 @@
 <p align="center">
   <a href="#установка">Скачать</a> ·
   <a href="#возможности">Возможности</a> ·
-  <a href="#снимки-экрана">Снимки экрана</a> ·
   <a href="docs/ru/README.md">Архитектура</a> ·
   <a href="CONTRIBUTING.md">Участие</a> ·
   <a href="README.md">English</a>
@@ -58,24 +57,7 @@
 | 🧠 **Версии моделей** | Версии с метриками, параметрами, графиками и рабочей версией; выгрузка `best.pt` и **`best.onnx`** в воспроизводимый ZIP. |
 | 🔍 **Проверки** | Оценка на части датасета с матрицей сравнения и живые проверки на **изображении, видео и области экрана** с рамками и журналом обнаружений. |
 | 📊 **Обзор и аналитика** | Данные проекта, идущие задачи, последние модели, нагрузка CPU/GPU/RAM и сравнение версий моделей с кривыми обучения. |
-| 🖥️ **Удобство** | Работа в области уведомлений с фоновыми задачами, единственный экземпляр, масштаб по монитору, интерфейс на событиях без опроса, журналы. |
-
-## Снимки экрана
-
-<table>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/library.png" alt="Библиотека проектов"><br><sub><b>Библиотека проектов</b></sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/classes.png" alt="Классы и варианты"><br><sub><b>Классы и варианты</b></sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/generation.png" alt="Генерация"><br><sub><b>Генерация с примером кадра</b></sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/training.png" alt="Обучение"><br><sub><b>Запуск обучения с графиками эпох</b></sub></td>
-  </tr>
-  <tr>
-    <td width="50%"><img src="docs/assets/screenshots/check.png" alt="Проверки моделей"><br><sub><b>Сравнение версий на части датасета</b></sub></td>
-    <td width="50%"><img src="docs/assets/screenshots/overview.png" alt="Обзор проекта"><br><sub><b>Обзор проекта</b></sub></td>
-  </tr>
-</table>
+| 🖥️ **Удобство** | Спокойный стеклянный интерфейс со своей строкой заголовка и одной прокруткой на панель, работа в области уведомлений с фоновыми задачами, единственный экземпляр, масштаб по монитору, интерфейс на событиях без опроса, журналы. |
 
 ## Производительность
 
@@ -89,16 +71,16 @@
 ## Установка
 
 > [!IMPORTANT]
-> **Скачать:** [MautVision-Setup-1.2.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.2.0/MautVision-Setup-1.2.0.exe) (1,93 ГБ)
+> **Скачать:** [MautVision-Setup-1.3.0.exe](https://github.com/maut-dev/maut-vision/releases/download/v1.3.0/MautVision-Setup-1.3.0.exe) (1,93 ГБ)
 >
 > Все версии и описание изменений: [выпуски на GitHub](https://github.com/maut-dev/maut-vision/releases).
 >
-> SHA-256: `966c3a23e646910893a1806a02430b72a500d4a5bdaca31aeb5516977ff6509d`
+> SHA-256: `72b832089f1b3b9824769a5b854768215a9aa79f68281ec78a331a90d79b6068`
 
 **Проверьте файл.** Сравните SHA-256 установщика с хешем, опубликованным рядом со ссылкой:
 
 ```powershell
-Get-FileHash .\MautVision-Setup-1.2.0.exe -Algorithm SHA256
+Get-FileHash .\MautVision-Setup-1.3.0.exe -Algorithm SHA256
 ```
 
 Установщик пока не подписан, поэтому Windows SmartScreen может попросить подтверждение («Подробнее» → «Выполнить в любом случае»).

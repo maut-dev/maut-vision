@@ -9,9 +9,9 @@ import { checkDeviceOptions, type CheckParameterField, type CheckParameterValues
 export function Field({ label, htmlFor, children, hint }: { label: string; htmlFor?: string; children: ReactNode; hint?: ReactNode }) {
     return (
         <div className="min-w-0 space-y-1">
-            <label className="block text-xs text-muted-foreground" htmlFor={htmlFor}>{label}</label>
+            <label className="block text-xs text-text-2" htmlFor={htmlFor}>{label}</label>
             {children}
-            {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+            {hint && <p className="text-xs text-text-2">{hint}</p>}
         </div>
     );
 }

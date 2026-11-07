@@ -4,7 +4,7 @@ import { Boxes } from "lucide-react";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogForm, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -52,59 +52,62 @@ export function ProjectEditor({ project, initialModelId, catalog, busy, error, c
 
     return (
         <Dialog open onOpenChange={open => { if (!open && !busy) close(); }}>
-            <DialogContent className="max-h-[calc(100dvh-3rem)] overflow-y-auto" onInteractOutside={event => { if (busy) event.preventDefault(); }}>
+            <DialogContent onInteractOutside={event => { if (busy) event.preventDefault(); }}>
                 <DialogHeader>
                     <DialogTitle>{project ? t("app.projectSettings") : t("projectEditor.newTitle")}</DialogTitle>
                     <DialogDescription>{t("projectEditor.description")}</DialogDescription>
                 </DialogHeader>
-                <form onSubmit={submit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="project-name">{t("projectEditor.name")}</Label>
-                        <Input id="project-name" data-testid="project-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="project-description">{t("projectEditor.descriptionLabel")}</Label>
-                        <Textarea id="project-description" className="h-24 resize-none" maxLength={2000} value={description} onChange={event => setDescription(event.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="project-model">{t("projectEditor.model")}</Label>
-                        <Select value={baseModelId} onValueChange={setBaseModelId} disabled={busy || catalog.loading}>
-                            <SelectTrigger id="project-model" data-testid="project-model" className="w-full"><SelectValue placeholder={t("projectEditor.modelPlaceholder")} /></SelectTrigger>
-                            <SelectContent>
-                                {project && !installed.some(model => model.id === project.baseModelId) && (
-                                    <SelectItem value={project.baseModelId}>{t("projectEditor.projectModel", { model: project.baseModelId })}</SelectItem>
-                                )}
-                                {installed.map(model => <SelectItem key={model.id} value={model.id}>{model.id}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        {!installed.length && !project && (
-                            <p className="text-sm text-muted-foreground">{t("projectEditor.installFirst")}</p>
-                        )}
-                        <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={openCatalog}><Boxes />{t("projectEditor.openCatalog")}</Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Only the fields scroll in a low window; Enter in a field and the footer button send the form. */}
+                <DialogForm onSubmit={submit}>
+                    <DialogBody className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="project-width">{t("projectEditor.width")}</Label>
-                            <Input id="project-width" type="number" required min={stride} step={stride} value={width} onChange={event => setWidth(event.target.value)} />
+                            <Label htmlFor="project-name">{t("projectEditor.name")}</Label>
+                            <Input id="project-name" data-testid="project-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="project-height">{t("projectEditor.height")}</Label>
-                            <Input id="project-height" type="number" required min={stride} step={stride} value={height} onChange={event => setHeight(event.target.value)} />
+                            <Label htmlFor="project-description">{t("projectEditor.descriptionLabel")}</Label>
+                            <Textarea id="project-description" className="h-24 resize-none" maxLength={2000} value={description} onChange={event => setDescription(event.target.value)} />
                         </div>
-                    </div>
-                    <p className={sizeValid ? "text-xs text-muted-foreground" : "text-xs text-destructive"}>
-                        {t("projectEditor.sizeHint", { stride })}
-                    </p>
-                    <div className="min-h-12" aria-live="polite">
-                        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                    </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="project-model">{t("projectEditor.model")}</Label>
+                            <Select value={baseModelId} onValueChange={setBaseModelId} disabled={busy || catalog.loading}>
+                                <SelectTrigger id="project-model" data-testid="project-model" className="w-full"><SelectValue placeholder={t("projectEditor.modelPlaceholder")} /></SelectTrigger>
+                                <SelectContent>
+                                    {project && !installed.some(model => model.id === project.baseModelId) && (
+                                        <SelectItem value={project.baseModelId}>{t("projectEditor.projectModel", { model: project.baseModelId })}</SelectItem>
+                                    )}
+                                    {installed.map(model => <SelectItem key={model.id} value={model.id}>{model.id}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            {!installed.length && !project && (
+                                <p className="text-sm text-text-2">{t("projectEditor.installFirst")}</p>
+                            )}
+                            <Button type="button" variant="ghost" size="sm" disabled={busy} onClick={openCatalog}><Boxes />{t("projectEditor.openCatalog")}</Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="project-width">{t("projectEditor.width")}</Label>
+                                <Input id="project-width" type="number" required min={stride} step={stride} value={width} onChange={event => setWidth(event.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="project-height">{t("projectEditor.height")}</Label>
+                                <Input id="project-height" type="number" required min={stride} step={stride} value={height} onChange={event => setHeight(event.target.value)} />
+                            </div>
+                        </div>
+                        <p className={sizeValid ? "text-xs text-text-2" : "text-xs text-danger"}>
+                            {t("projectEditor.sizeHint", { stride })}
+                        </p>
+                        <div className="min-h-12" aria-live="polite">
+                            {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
+                        </div>
+                    </DialogBody>
                     <DialogFooter>
                         <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("app.cancel")}</Button>
                         <Button type="submit" data-testid="project-save" disabled={busy || !name.trim() || !modelAvailable || !sizeValid}>
                             {busy ? t("common.saving") : project ? t("common.save") : t("projectEditor.create")}
                         </Button>
                     </DialogFooter>
-                </form>
+                </DialogForm>
             </DialogContent>
         </Dialog>
     );

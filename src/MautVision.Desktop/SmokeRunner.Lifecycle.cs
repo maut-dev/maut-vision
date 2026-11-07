@@ -11,10 +11,11 @@ namespace MautVision.Desktop;
 
 /// <summary>
 /// Host seams of the window for the smoke run: the recording tray, closing the window, whether it is shown, the work count and answer of
-/// «Выйти» (count null — the count of Core) with the questions asked, and how many times a second launch activated the window.
+/// «Выйти» (count null — the count of Core) with the questions asked, how many times a second launch activated the window, and the
+/// state of the window (normal, minimized, maximized).
 /// </summary>
 internal sealed record SmokeHostProbe(SmokeTray Tray, Action CloseWindow, Func<bool> WindowShown, Action<int?, bool> SetQuitAnswer,
-    Func<IReadOnlyList<string>> QuitQuestions, Func<int> Activations);
+    Func<IReadOnlyList<string>> QuitQuestions, Func<int> Activations, Func<System.Windows.WindowState> State);
 
 internal static partial class SmokeRunner
 {

@@ -22,28 +22,28 @@ export function DatasetPlanCard({ plan, stale, busy, building, build }: {
     const reasons = skipReasons(plan.skipped);
     const blocked = !plan.buildable || !plan.sufficientSamples;
     return (
-        <section className="space-y-3 rounded-md border bg-card p-5" aria-label={t("plan.label")} data-testid="dataset-plan-card" data-plan-id={plan.id}
+        <section className="surface space-y-3 p-5" aria-label={t("plan.label")} data-testid="dataset-plan-card" data-plan-id={plan.id}
             data-buildable={plan.buildable && plan.sufficientSamples ? "true" : "false"} data-stale={stale ? "true" : undefined}>
-            <h3 className="font-medium break-words">{plan.specification.name} · {blocked ? t("plan.blocked") : t("plan.ready")}</h3>
-            <p className="text-sm text-muted-foreground tabular-nums" data-testid="dataset-plan-counts">
+            <h3 className="text-[15px] font-semibold tracking-[-0.015em] break-words">{plan.specification.name} · {blocked ? t("plan.blocked") : t("plan.ready")}</h3>
+            <p className="text-sm text-text-2 tabular-nums" data-testid="dataset-plan-counts">
                 {t("plan.counts", { train: count(plan.counts.train), val: count(plan.counts.val), test: count(plan.counts.test), skipped: count(plan.skipped.total) })}
             </p>
             {reasons.length > 0 && (
-                <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground" aria-label={t("plan.skips")} data-testid="dataset-plan-skips">
+                <ul className="list-disc space-y-0.5 pl-5 text-xs text-text-2" aria-label={t("plan.skips")} data-testid="dataset-plan-skips">
                     {reasons.map(reason => <li key={reason.key} data-reason={reason.key}>{t("plan.skip", { label: reason.label, number: count(reason.count) })}</li>)}
                 </ul>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-text-2">
                 {t("plan.frame", { width: plan.width, height: plan.height, classes: classOrderText({ classMap: plan.classes }), boxes: count(plan.composition.boxes), negatives: count(plan.composition.negatives) })}
             </p>
             {plan.warnings.map(warning => (
                 <p key={warning.code} role="status" data-warning={warning.code}
-                    className={`text-xs ${warning.code === "datasets.split_collision" ? "text-destructive" : "text-amber-700 dark:text-amber-400"}`}>
+                    className={`text-xs ${warning.code === "datasets.split_collision" ? "text-destructive" : "text-warn"}`}>
                     {planWarningText(warning)}
                 </p>
             ))}
-            {stale && <p className="text-xs text-muted-foreground" data-testid="dataset-plan-stale">{t("plan.stale")}</p>}
-            <Button disabled={busy || stale || blocked} data-testid="dataset-build" onClick={build}>
+            {stale && <p className="text-xs text-text-2" data-testid="dataset-plan-stale">{t("plan.stale")}</p>}
+            <Button variant="brand" disabled={busy || stale || blocked} data-testid="dataset-build" onClick={build}>
                 {building ? <Loader2 className="animate-spin" aria-hidden /> : <Hammer />}{t("plan.build")}
             </Button>
         </section>

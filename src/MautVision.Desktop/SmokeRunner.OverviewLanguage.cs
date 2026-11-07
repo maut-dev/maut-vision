@@ -128,20 +128,20 @@ internal static partial class SmokeRunner
             'The checks shell, its modes and the version caption are in English');
           const modes = {image: 'check-image', dataset: 'model-evaluations', video: 'check-video', screen: 'check-screen'};
           for (const [id, testId] of Object.entries(modes)) {
-            modeTab(id).click();
+            await selectTab('checks-tab-' + id);
             await wait(() => panel(id) && !panel(id).hidden && $('[data-testid="' + testId + '"]', panel(id)), 'English mode ' + id);
             if (id === 'screen') await wait(() => !text('[data-testid="check-screen-monitor"]').startsWith('Looking'), 'Monitors listed');
             if (id === 'dataset') await wait(() => text('[data-testid="evaluation-hint"]'), 'Evaluation hint');
             await sectionEnglish(panel(id), 'The ' + id + ' mode has no Cyrillic outside user names', borrowed);
           }
-          modeTab('dataset').click();
+          await selectTab('checks-tab-dataset');
           const smoke = (await request('datasets.list', {projectId})).data.find(item => item.name === 'Проверка smoke');
           await pick($('[data-testid="evaluation-dataset"]'), 'Проверка smoke · ');
           const split = smoke.counts.test > 0 ? 'Test' : 'Validation';
           const expected = englishPlural(smoke.counts[split === 'Test' ? 'test' : 'val'], 'frame', 'frames') + ' in the ' + split + ' split. The input size comes from the version.';
           await wait(() => text('[data-testid="evaluation-hint"]') === expected, 'English frames of the split', () => text('[data-testid="evaluation-hint"]'));
           assert(true, 'The evaluation form counts frames of the split with English plural forms: ' + expected);
-          modeTab('image').click();
+          await selectTab('checks-tab-image');
           const confidence = await wait(() => $('[data-testid="check-image-confidence"]'), 'Confidence field');
           setValue(confidence, '2');
           await wait(() => $('[data-testid="check-image"] p[role="alert"]')?.textContent === 'The confidence threshold is a number from 0 to 1.'

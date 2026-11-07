@@ -4,10 +4,15 @@
         xmlns:wv="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         Title="Maut Vision"
         Icon="Assets/maut-vision.ico"
-        WindowStartupLocation="CenterScreen" Background="#09090b">
+        WindowStartupLocation="CenterScreen" Background="#07090a">
+  <!-- No system caption: the page draws the title bar (app-region: drag) and the window buttons. The host keeps the sizing frame for
+       snapping, Win+arrows and the system menu, and resizes in the band around WebView2 (Host/WindowFrame.cs). -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0" ResizeBorderThickness="0" GlassFrameThickness="0,0,0,1" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
   <Grid>
-    <wv:WebView2 x:Name="Browser" DefaultBackgroundColor="#09090b" />
-    <TextBlock x:Name="StartupMessage" Foreground="#a1a1aa"
+    <wv:WebView2 x:Name="Browser" Margin="6" DefaultBackgroundColor="#07090a" />
+    <TextBlock x:Name="StartupMessage" Foreground="#aab2ab"
                FontFamily="Segoe UI" HorizontalAlignment="Center" VerticalAlignment="Center"
                TextWrapping="Wrap" MaxWidth="500" Margin="32" />
   </Grid>

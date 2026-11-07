@@ -50,7 +50,7 @@ internal static partial class SmokeRunner
 
           $('[data-section="generation"]').click();
           await wait(() => $('[data-testid="generation-section"]') && $('[data-testid="launch-count"]'), 'English generation');
-          await wait(() => text('[data-testid="tab-recipes"]').startsWith('Presets ('), 'English generation tabs');
+          await wait(() => text('[data-testid="tab-recipes"]').startsWith('Presets'), 'English generation tabs');
           await requireSectionEnglish($('main'), 'The generation section has no Cyrillic outside user data');
           const count = $('[data-testid="launch-count"]');
           const before = count.value;
@@ -68,15 +68,15 @@ internal static partial class SmokeRunner
           setValue(count, before);
 
           $('[data-section="datasets"]').click();
-          await wait(() => $('[data-testid="datasets-section"]') && text('[data-testid="datasets-tab-build"]') === 'Build', 'English datasets');
+          await wait(() => $('[data-testid="datasets-section"]') && /^Build\d+$/.test(text('[data-testid="datasets-tab-build"]')), 'English datasets');
           await wait(() => !$('[data-testid="dataset-list"] [role="status"]'), 'Datasets loaded');
           await requireSectionEnglish($('main'), 'The datasets section has no Cyrillic outside user data');
-          const sizes = $$('[data-dataset-version-id] p:nth-child(2)').map(item => item.textContent);
+          const sizes = $$('[data-dataset-version-id] [data-testid="dataset-version-summary"]').map(item => item.textContent);
           assert(sizes.length > 0 && sizes.every(item => /^(1 image|[\d,]+ images) · /.test(item)), 'Dataset image counts take English plural forms: ' + sizes.join(' | '));
-          $('[data-testid="datasets-tab-build"]').click();
+          await selectTab('datasets-tab-build');
           await wait(() => $('[data-testid="dataset-build-form"]') && !$('[data-testid="dataset-build-form"]').closest('[hidden]'), 'English dataset build form');
           await requireSectionEnglish($('main'), 'The dataset build form has no Cyrillic outside user data');
-          $('[data-testid="datasets-tab-datasets"]').click();
+          await selectTab('datasets-tab-datasets');
 
           $('[data-section="training"]').click();
           await wait(() => $('[data-testid="training-section"]') && text('[data-testid="training-tab-settings"]') === 'Settings', 'English training');

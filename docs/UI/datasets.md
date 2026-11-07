@@ -1,8 +1,10 @@
 # Datasets in the UI
 
-The "Datasets" section (`components/datasets/`) has the tabs "Datasets", "Build", "Checks" and "Exports" following the tablist pattern:
-`role="tab"`, one tab stop, arrows wrap around, Home and End. All panels stay mounted: the form and the plan survive switching, and
-operation cards receive events while hidden. Data comes from the [datasets API](../Core/datasets.md), without polling.
+The "Datasets" section (`components/datasets/`) has the tabs «Датасеты», «Сборка», «Проверки» and «Экспорты» (`Tabs`: one tab stop,
+arrows wrap around, Home and End). Each tab counts its items, and an operation tab shows a live dot while an operation is queued or running.
+All panels stay mounted (`forceMount` with `hidden`): the form and the plan survive switching, and operation cards receive events while
+hidden. The tabs and panels keep the ids `dataset-tab-<tab>` and `dataset-panel-<tab>`, so focus can move to a tab by its id. Data comes
+from the [datasets API](../Core/datasets.md), without polling.
 
 ```tsx
 const versions = useDatasetVersions(projectId);           // list (archive included) + datasets.changed (revisions, null — deleted)
@@ -10,11 +12,28 @@ const builds = useDatasetOperations(projectId, "build");  // listOperations + jo
 const samples = useDatasetSamples(projectId, versionId, split); // sample pages on demand
 ```
 
+## Layout
+
+The section follows [one scroll per region](design-system.md#one-scroll-per-region).
+
+| Tab | Holds | Scrolls |
+|---|---|---|
+| «Датасеты» | search and "Show archive" above the list; the chosen version with its header and the tabs «Сведения» and «Образцы» | the list; the passport or the sample grid |
+| «Сборка» | the build form; beside it the plan and the build history | the form fields; the plan with the history |
+| «Проверки», «Экспорты» | operation cards | the card list |
+
+At `lg` and wider the build form and the plan with the history are two columns; below `lg` they stack in the one scroll of the tab. Image
+groups and classes flow in the form scroll: classes are a grid of checkboxes with "Select all", "Clear all" and "N of M chosen", so a
+hundred classes take a few dozen rows and need no list or dialog of their own. "Check before building" stays under the fields; "Build
+dataset" on the plan card is the brand button of the section. Integrity issues and the details of an operation unfold inline in its card.
+
 ## Datasets
 
 On the left is the list with search by name and description and an option to show archived datasets; a version whose size differs from the
-project input is marked. On the right are the passport of the selected version, actions and samples. An archived version cannot be checked,
-exported or changed, a corrupt one cannot be exported; Core checks the same.
+project input is marked. On the right is the chosen version: a header with its name and actions, then «Сведения» (the passport: splits,
+integrity, build, class order, composition) and «Образцы» (the sample grid, the only scroll of that tab). «Сведения» stays mounted; the
+chosen tab survives choosing another version. An archived version cannot be checked, exported or changed, a corrupt one cannot be exported;
+Core checks the same.
 
 Samples are a `VirtualGrid` of split thumbnails with boxes: objects solid, negatives and ROI dashed, colours from
 `datasetOverlayColors`. A frame opens in the shared viewer with toggles for objects, negatives and ROI; "next" past the last loaded sample

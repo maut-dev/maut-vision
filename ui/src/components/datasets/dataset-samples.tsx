@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { DatasetSplit } from "@/api/projects/datasets/request-dto/dataset-request-dto";
 import type { DatasetSampleResponseDto, DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import { ResourceImage } from "@/components/resource-image";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImageViewer } from "@/components/viewer/image-viewer";
@@ -70,29 +70,26 @@ export function DatasetSamples({ projectId, version }: { projectId: string; vers
 
     const overlays = viewed ? sampleOverlays(viewed, version).filter(overlay => visible[overlay.kind]) : [];
     return (
-        <section className="flex min-h-[28rem] flex-col gap-3" aria-label={t("samples.label")} data-testid="dataset-samples">
-            <div className="flex flex-wrap items-center gap-3">
-                <h3 className="text-sm font-medium">{t("samples.title")}</h3>
+        <section className="flex min-h-0 flex-1 flex-col gap-2" aria-label={t("samples.label")} data-testid="dataset-samples">
+            <div className="flex shrink-0 flex-wrap items-center gap-3">
+                <h3 className="sr-only">{t("samples.title")}</h3>
                 <Select value={split} onValueChange={value => { setViewedId(undefined); setSplit(value as DatasetSplit); }}>
                     <SelectTrigger aria-label={t("samples.split")} className="w-48" data-testid="dataset-sample-split"><SelectValue /></SelectTrigger>
                     <SelectContent>
                         {datasetSplits.map(item => <SelectItem key={item} value={item}>{splitLabel(item)} · {count(version.counts[item])}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <span className="text-xs text-muted-foreground tabular-nums" data-testid="dataset-sample-count">
+                <span className="text-xs text-text-2 tabular-nums" data-testid="dataset-sample-count">
                     {t("samples.count", { shown: count(items.length), total: count(total) })}
                 </span>
             </div>
             {samples.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{samples.error}</p>
-                        <Button variant="outline" size="sm" className="mt-1" disabled={samples.loading} onClick={() => void samples.loadMore()}>{t("samples.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" className="shrink-0" action={{ label: t("samples.retry"), disabled: samples.loading, onClick: () => void samples.loadMore() }}>
+                    {samples.error}
+                </Notice>
             )}
             {!samples.loading && !samples.error && !samples.hasMore && !items.length ? (
-                <p className="text-sm text-muted-foreground" data-testid="dataset-samples-empty">{t("samples.empty")}</p>
+                <EmptyState title={t("samples.empty")} className="flex-1 rounded-lg border border-dashed border-line" data-testid="dataset-samples-empty" />
             ) : (
                 <VirtualGrid
                     items={items}
@@ -105,7 +102,7 @@ export function DatasetSamples({ projectId, version }: { projectId: string; vers
                     label={t("samples.gridLabel", { split: splitLabel(split) })}
                     testId="dataset-sample-grid"
                     loadingText={t("samples.loading")}
-                    className="min-h-[24rem]"
+                    className="min-h-0"
                     renderTile={(sample, position, style) => (
                         <SampleTile key={sample.id} sample={sample} version={version} position={position} style={style}
                             open={() => setViewedId(sample.id)} renew={() => void samples.renew(sample.id)} />
@@ -164,7 +161,7 @@ function SampleTile({ sample, version, position, style, open, renew }: {
         <div style={style} className="min-w-0" data-dataset-sample-id={sample.id} data-testid="dataset-sample-tile" data-objects={sample.boxes.length}>
             <button
                 type="button"
-                className="block w-full rounded-md border p-1.5 text-left outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+                className="block w-full rounded-lg border border-line bg-ink-1 p-1.5 text-left outline-none transition-colors duration-120 ease-glass hover:bg-ink-2 focus-visible:ring-[3px] focus-visible:ring-focus/30"
                 aria-label={t("samples.open", { number: position + 1 })}
                 data-testid="dataset-sample-open"
                 onClick={open}
@@ -182,7 +179,7 @@ function SampleTile({ sample, version, position, style, open, renew }: {
                         </svg>
                     )}
                 </div>
-                <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground tabular-nums" data-testid="dataset-sample-caption">
+                <span className="mt-1 line-clamp-2 block text-xs text-text-2 tabular-nums" data-testid="dataset-sample-caption">
                     {[`${sample.width} × ${sample.height}`, t("samples.objectCount", { count: sample.boxes.length }),
                         t("samples.negativeCount", { count: sample.negatives.length })].join(" · ")}
                 </span>

@@ -7,6 +7,7 @@ using MautVision.Core;
 using MautVision.Core.Interfaces;
 using MautVision.Core.Interfaces.Projects.Transfer;
 using MautVision.Desktop.Controllers;
+using MautVision.Desktop.Controllers.AppWindow;
 using MautVision.Desktop.Controllers.Mcp;
 using MautVision.Desktop.Controllers.Mcp.ResponseDto;
 using MautVision.Desktop.Controllers.Projects;
@@ -22,7 +23,7 @@ using Microsoft.Extensions.Logging;
 
 namespace MautVision.Desktop;
 
-public partial class MainWindow : Window
+public partial class MainWindow : Window, IHostWindow
 {
     private readonly LaunchOptions options;
     private readonly ICore core;
@@ -65,6 +66,7 @@ public partial class MainWindow : Window
     private CoreWebView2Environment? webEnvironment;
     // WebView2 processes of the window for the memory of the application; replaced on the UI thread, read by hardware.sample.
     private volatile int[] webViewProcessIds = [];
+    private IntPtr handle;
 
     internal MainWindow(LaunchOptions options, ICore core, ILoggerFactory loggers, HostSettings hostSettings, HostLanguage language)
     {
@@ -88,6 +90,7 @@ public partial class MainWindow : Window
         mcp = new McpService(hostSettings, options.WorkDirectory, () => new McpToolDependencies(core, controllers.Projects, controllers.Jobs, controllers.Overview,
             controllers.Hardware, language, mcp!.Paths, mcp.Uploads, options.WorkDirectory, () => mcp.Settings, OpenProjectForMcp), RequestMcpAttention, loggers);
         ControllerRegistration.RegisterMcp(transport, new McpController(mcp, dialogs));
+        ControllerRegistration.RegisterWindow(transport, new WindowController(this));
         mcp.Changed += OnMcpChanged;
         mcp.CallLog.Added += OnMcpCall;
         mcp.Confirmations.Requested += OnMcpConfirmationRequested;
@@ -122,9 +125,17 @@ public partial class MainWindow : Window
             ShowActivated = false;
         }
         Loaded += OnLoaded;
-        SourceInitialized += (_, _) => HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(OnWindowMessage);
+        // Added after the hook of WindowChrome (it subscribed in InitializeComponent), so this hook sees the messages first.
+        SourceInitialized += (_, _) =>
+        {
+            handle = new WindowInteropHelper(this).Handle;
+            WindowFrame.RoundCorners(handle);
+            HwndSource.FromHwnd(handle)?.AddHook(OnWindowMessage);
+        };
         Closing += OnClosing;
         StateChanged += OnStateChanged;
+        Activated += OnActivationChanged;
+        Deactivated += OnActivationChanged;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs args)
@@ -159,6 +170,8 @@ public partial class MainWindow : Window
             web.Settings.AreDefaultContextMenusEnabled = false;
             web.Settings.AreDevToolsEnabled = System.Diagnostics.Debugger.IsAttached;
             web.Settings.AreDefaultScriptDialogsEnabled = false;
+            // The title bar of the page: app-region: drag areas act as the caption (drag, snap, double click, the system menu).
+            web.Settings.IsNonClientRegionSupportEnabled = true;
             // SmartScreen cannot rate the local UI host and waits for its 2 s timeout before every navigation;
             // navigation is limited to that host by OnNavigationStarting, so the check adds nothing.
             web.Settings.IsReputationCheckingRequired = false;
@@ -208,7 +221,7 @@ public partial class MainWindow : Window
             var work = SmokeRunner.RunAsync(Browser.CoreWebView2, options.SmokeReport, options.WorkDirectory, core, resourceHandles, fileSelections, mcp,
                 new SmokeCloseProbe(closeGuard, () => SmokeCloseRequests), minimized => WindowState = minimized ? WindowState.Minimized : WindowState.Normal,
                 new SmokeHostProbe((SmokeTray)tray, Close, () => IsVisible, (count, answer) => (SmokeActiveWork, SmokeQuitAnswer) = (count, answer),
-                    () => SmokeQuitQuestions.ToArray(), () => Activations),
+                    () => SmokeQuitQuestions.ToArray(), () => Activations, () => WindowState),
                 new SmokeLayoutProbe(SetSmokeBrowserSize, () => System.Windows.Media.VisualTreeHelper.GetDpi(this).DpiScaleX,
                     () => new Size(ActualWidth - Browser.ActualWidth, ActualHeight - Browser.ActualHeight)),
                 lifetime.Token);
@@ -297,6 +310,9 @@ public partial class MainWindow : Window
         if (!closing) Close();
     }
 
+    private const int WmSize = 0x0005;
+    private const int SizeMinimized = 1;
+    private const int SizeMaximized = 2;
     private const int WmQueryEndSession = 0x0011;
     private const int WmEndSession = 0x0016;
 
@@ -307,8 +323,18 @@ public partial class MainWindow : Window
     /// The end of the Windows session and Restart Manager (an installer updating the application) send WM_QUERYENDSESSION and
     /// WM_ENDSESSION to the windows of the process, the hidden one too: the application exits instead of hiding in the tray.
     /// </summary>
+    /// <remarks>
+    /// The window has no system caption: the band around WebView2 answers the resize hit tests (WebView2 answers over itself, its
+    /// app-region areas as the caption), and a maximized window insets WebView2 by the part that overhangs the monitor.
+    /// </remarks>
     private IntPtr OnWindowMessage(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (message == WindowFrame.WmNcHitTest && WindowState == WindowState.Normal && WindowFrame.ResizeHitTest(hwnd, lParam) is { } edge)
+        {
+            handled = true;
+            return edge;
+        }
+        if (message == WmSize && wParam.ToInt64() != SizeMinimized) FitBrowserToFrame(wParam.ToInt64() == SizeMaximized);
         if (message == WmQueryEndSession) EndForSession("End of session requested (WM_QUERYENDSESSION, 0x" + lParam.ToString("X") + ")");
         else if (message == WmEndSession && wParam != IntPtr.Zero && !closing)
         {
@@ -342,6 +368,43 @@ public partial class MainWindow : Window
             logger.LogError(error, "Transfers were not cancelled before the end of the session.");
         }
     }
+
+    /// <summary>
+    /// A normal window keeps the resize band around WebView2; a maximized one has no band and insets WebView2 by its sizing frame beyond
+    /// the work area of the monitor, so the title bar and the edges of the page stay on the screen.
+    /// </summary>
+    private void FitBrowserToFrame(bool maximized)
+    {
+        Browser.Margin = maximized ? WindowFrame.MaximizedOverhang(handle) : new Thickness(WindowFrame.ResizeBand);
+    }
+
+    private HostWindowState WindowStateSnapshot => new(WindowState == WindowState.Maximized, IsActive);
+
+    private void PublishWindowState()
+    {
+        if (!closing) transport.PublishEvent("window.stateChanged", WindowController.Map(WindowStateSnapshot));
+    }
+
+    private void OnActivationChanged(object? sender, EventArgs args) => PublishWindowState();
+
+    /// <summary>The window buttons of the title bar; close is the old system close button: the window hides in the tray.</summary>
+    Task<HostWindowState> IHostWindow.ApplyAsync(WindowCommand command, CancellationToken cancellationToken) => Dispatcher.InvokeAsync(() =>
+    {
+        if (closing) return WindowStateSnapshot;
+        switch (command)
+        {
+            case WindowCommand.Minimize:
+                WindowState = WindowState.Minimized;
+                break;
+            case WindowCommand.ToggleMaximize:
+                WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+                break;
+            case WindowCommand.Close:
+                Close();
+                break;
+        }
+        return WindowStateSnapshot;
+    }, System.Windows.Threading.DispatcherPriority.Normal, cancellationToken).Task;
 
     /// <summary>Shows the window from the notification area (or a minimized one) with its page visible.</summary>
     internal void ShowFromTray()
@@ -617,6 +680,7 @@ public partial class MainWindow : Window
     {
         if (closing) return;
         Browser.Visibility = WindowState == WindowState.Minimized ? Visibility.Hidden : Visibility.Visible;
+        PublishWindowState();
     }
 
     private void OnProcessFailed(object? sender, CoreWebView2ProcessFailedEventArgs args)
@@ -707,6 +771,8 @@ public partial class MainWindow : Window
         mcp.Confirmations.Requested -= OnMcpConfirmationRequested;
         mcp.Confirmations.Closed -= OnMcpConfirmationClosed;
         StateChanged -= OnStateChanged;
+        Activated -= OnActivationChanged;
+        Deactivated -= OnActivationChanged;
         if (webEnvironment is not null) webEnvironment.ProcessInfosChanged -= OnProcessInfosChanged;
         transport.EventReady -= OnEvent;
         projectEvents.Dispose();

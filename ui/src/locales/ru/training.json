@@ -309,7 +309,6 @@
     "tuned": "{{value}} (подобрано)",
     "chosenByOptimizer": "{{value}} (подобрал оптимизатор)",
     "version": "Версия {{number}}",
-    "back": "← К списку моделей",
     "workingBadge": "Рабочая",
     "subtitle": "Паспорт версии модели · {{architecture}} · {{width}} × {{height}} · {{date}}",
     "makeWorking": "Сделать рабочей",
@@ -441,7 +440,6 @@
   "section": {
     "presetSaved": "Пресет «{{name}}» сохранён.",
     "presetDeleted": "Пресет «{{name}}» удалён.",
-    "hide": "Скрыть",
     "retry": "Повторить",
     "currentRun": "Текущий запуск",
     "runLoading": "Загрузка запуска…",

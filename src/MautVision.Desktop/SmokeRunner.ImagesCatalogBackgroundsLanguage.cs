@@ -72,15 +72,21 @@ internal static partial class SmokeRunner
             + ' · ' + set.targetSize.width + ' × ' + set.targetSize.height;
           assert(text('[data-background-set-id="' + set.id + '"] [data-testid="background-set-summary"]') === summary,
             'A background set summary takes the English plural: ' + summary);
-          if ($('[data-testid="background-add-toggle"]').getAttribute('aria-expanded') === 'false') $('[data-testid="background-add-toggle"]').click();
-          if ($('[data-testid="background-runs-toggle"]')?.getAttribute('aria-expanded') === 'false') $('[data-testid="background-runs-toggle"]').click();
+          await requireEnglishSection('The backgrounds gallery tab has no Cyrillic outside user data');
+          await selectTab('background-tab-add');
           (await wait(() => $('[data-testid="blur-enabled"]'), 'Blur settings')).click();
           setValue(await wait(() => $('[data-testid="blur-max"]'), 'Blur radius fields'), '2000');
           await wait(() => text('[data-testid="blur-error"]') === 'The radius is from 0 to 1000 px.', 'English blur validation',
             () => text('[data-testid="blur-error"]'));
           assert(true, 'A blur radius out of range shows the English validation message');
-          await requireEnglishSection('The backgrounds section has no Cyrillic outside user data');
+          await requireEnglishSection('The backgrounds «Add» tab has no Cyrillic outside user data');
           $('[data-testid="blur-enabled"]').click();
+          await selectTab('background-tab-runs');
+          await wait(() => $('[data-testid="background-runs"]'), 'English preparation tab');
+          for (const toggle of $$('[data-testid="run-issues-toggle"]')) toggle.click();
+          await sleep(100);
+          await requireEnglishSection('The backgrounds «Preparation» tab has no Cyrillic outside user data');
+          await selectTab('background-tab-backgrounds');
 
           const groups = (await request('images.listGroups', {projectId})).data;
           const group = groups.find(item => item.origin === 'manual' && !item.archivedAt && item.imageCount > item.archivedImageCount)
@@ -93,6 +99,12 @@ internal static partial class SmokeRunner
           assert(text('[data-testid="image-group-count"]').startsWith('Frames: ') && $('[data-testid="filter-archive"]').textContent === 'Active',
             'The images section speaks English');
           await requireEnglishSection('The images section has no Cyrillic outside user data');
+          await selectTab('image-tab-imports');
+          await wait(() => $('[data-testid="image-imports"]'), 'English import tab');
+          for (const toggle of $$('[data-testid="import-issues-toggle"]')) toggle.click();
+          await sleep(100);
+          await requireEnglishSection('The images «Import» tab has no Cyrillic outside user data');
+          await selectTab('image-tab-images');
 
           await toEnglishLibrary();
           return {checks};

@@ -2,12 +2,22 @@
   "title": "AI assistants (MCP)",
   "description": "Claude Code, Claude Desktop, Cursor and other MCP clients on this computer can work with your projects as you do: look, create, train and check. Everything the AI does is visible in this window.",
   "enable": "Turn on the MCP server",
+  "state": {
+    "stopped": "off",
+    "starting": "starting",
+    "running": "running",
+    "port_busy": "port busy",
+    "failed": "failed"
+  },
+  "endpoint": "Server address for clients",
   "status": {
-    "stopped": "The server is off",
-    "starting": "The server is starting…",
-    "running": "The server is running: {{endpoint}}",
     "port_busy": "Port {{port}} is used by another program. Choose another port.",
     "failed": "The server did not start. Details are in the application log."
+  },
+  "tabs": {
+    "server": "Server",
+    "clients": "Clients",
+    "log": "Log"
   },
   "port": {
     "label": "Port",
@@ -43,7 +53,8 @@
     "proxyMissing": "The stdio proxy comes with the next build; the configuration already names its path.",
     "copy": "Copy",
     "copied": "Copied",
-    "copyFailed": "Could not copy to the clipboard."
+    "copyFailed": "Could not copy to the clipboard.",
+    "none": "The configurations appear when the server is turned on for the first time and gets a token."
   },
   "folders": {
     "restrict": "Allow the AI only the chosen folders",
@@ -64,6 +75,7 @@
     "succeeded": "succeeded",
     "failed": "error",
     "more": "Show more",
+    "arguments": "Arguments",
     "duration": "{{ms}} ms"
   },
   "confirm": {

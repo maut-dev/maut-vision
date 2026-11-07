@@ -95,6 +95,8 @@
   },
   "build": {
     "title": "Prepare a build",
+    "fields": "Build settings",
+    "classesChosen": "{{chosen}} of {{total}} chosen",
     "repeatNotice": "The settings of the saved build were copied to the form. The current sources are checked again.",
     "name": "Dataset name",
     "classes": "Classes to train",
@@ -117,10 +119,10 @@
     "plan": "Check before building"
   },
   "section": {
+    "buildResults": "Plan and build history",
     "buildQueued": "The build “{{name}}” is queued. Its progress is in the history below.",
     "archived": "The dataset “{{name}}” was moved to the archive.",
     "restored": "The dataset “{{name}}” was restored.",
-    "hide": "Hide",
     "retry": "Retry",
     "selected": "Chosen dataset",
     "choose": "Choose a dataset",
@@ -142,6 +144,9 @@
     }
   },
   "details": {
+    "tabs": "Dataset content",
+    "passportTab": "Details",
+    "samplesTab": "Samples",
     "active": "Active",
     "counts": "Finished frames · Train {{train}} · Validation {{val}} · Test {{test}}",
     "integrity": "Integrity: <state>{{state}}</state> · {{status}}",

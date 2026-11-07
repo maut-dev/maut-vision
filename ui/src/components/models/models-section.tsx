@@ -3,8 +3,13 @@ import { useTranslation } from "react-i18next";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import type { ModelVersionResponseDto } from "@/api/projects/training/response-dto/model-version-response-dto";
 import type { TrainingEpochDto } from "@/api/projects/training/response-dto/training-run-response-dto";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { Progress } from "@/components/layout/progress";
+import { SectionLayout } from "@/components/layout/section-layout";
+import { Toolbar } from "@/components/layout/toolbar";
 import { ModelVersionPassport } from "@/components/training/model-version-passport";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { bestOf, qualityMetrics, type QualityMetric } from "@/lib/checks/check-view";
 import { errorMessage } from "@/lib/format";
@@ -20,7 +25,8 @@ import "@/i18n/sections/models";
 
 /**
  * The section "Models": all model versions of the project (newest first) with metrics, the working version, ZIP export, deletion and the
- * passport. No polling: training.changed (versions, deleted ones too), datasets.changed (dataset names), job.changed (the export).
+ * passport. No polling: training.changed (versions, deleted ones too), datasets.changed (dataset names), job.changed (the export). The section
+ * fits the window: the header with notices and the export stays, the list or the passport below it is the one scroll.
  */
 export function ModelsSection({ project, initialVersionId, openTraining }: {
     project: ProjectResponseDto;
@@ -70,23 +76,18 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
         remove: () => setDeleting(version),
     });
 
-    const header = (
+    const notices = (
         <>
             {notice && (
-                <Alert variant={notice.tone === "error" ? "destructive" : "default"} data-testid="models-notice" data-tone={notice.tone}>
-                    <AlertDescription>
-                        <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="models-notice" data-tone={notice.tone}
+                    onDismiss={() => setNotice(undefined)}>
+                    {notice.text}
+                </Notice>
             )}
             {models.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{models.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" className="shrink-0" action={{ label: t("section.retry"), onClick: () => void models.refresh() }}>
+                    {models.error}
+                </Notice>
             )}
         </>
     );
@@ -108,53 +109,52 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
 
     if (passport) {
         return (
-            <div className="space-y-4" data-testid="models-section">
-                {header}
+            <SectionLayout data-testid="models-section">
+                <Toolbar className="shrink-0">
+                    <Button variant="ghost" size="sm" data-testid="model-version-back" onClick={() => setPassportId(undefined)}>{t("section.back")}</Button>
+                </Toolbar>
+                {notices}
                 <ExportPlate state={exporter.state} versionId={passport.id} dismiss={exporter.dismiss} />
-                <VersionPassport
-                    projectId={projectId}
-                    version={passport}
-                    busy={busy || exporter.active}
-                    renew={() => void models.renew(passport.id)}
-                    back={() => setPassportId(undefined)}
-                    {...actions(passport)}
-                />
+                <Pane className="flex-1" role="region" aria-label={t("section.passport", { number: passport.number })}>
+                    <VersionPassport
+                        projectId={projectId}
+                        version={passport}
+                        busy={busy || exporter.active}
+                        renew={() => void models.renew(passport.id)}
+                        {...actions(passport)}
+                    />
+                </Pane>
                 {dialog}
-            </div>
+            </SectionLayout>
         );
     }
 
     if (!models.loaded) {
         return (
-            <div className="space-y-4" data-testid="models-section">
-                {header}
-                {!models.error && <p role="status" className="text-sm text-muted-foreground">{t("section.loading")}</p>}
-            </div>
+            <SectionLayout data-testid="models-section">
+                {notices}
+                {!models.error && <p role="status" className="text-sm text-text-2">{t("section.loading")}</p>}
+            </SectionLayout>
         );
     }
 
     if (!versions.length) {
         return (
-            <div className="space-y-4" data-testid="models-section">
-                {header}
-                <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed p-6 text-center" data-testid="models-empty">
-                    <p className="max-w-prose text-sm text-muted-foreground">
-                        {t("section.empty")}
-                    </p>
-                    <Button variant="outline" data-testid="models-open-training" onClick={openTraining}>{t("section.toTraining")}</Button>
-                </div>
-            </div>
+            <SectionLayout data-testid="models-section">
+                {notices}
+                <EmptyState title={t("section.empty")} className="min-h-40 shrink-0 rounded-lg border border-dashed border-line" data-testid="models-empty"
+                    action={<Button variant="outline" data-testid="models-open-training" onClick={openTraining}>{t("section.toTraining")}</Button>} />
+            </SectionLayout>
         );
     }
 
     const best = Object.fromEntries(qualityMetrics.map(key => [key, bestOf(versions.map(item => item.metrics[key]))])) as Record<QualityMetric, number | null>;
     return (
-        <div className="space-y-4" data-testid="models-section">
-            {header}
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <h2 className="font-medium">{t("section.title")}</h2>
-                    <p className="mt-1 text-xs text-muted-foreground" data-testid="models-summary">
+        <SectionLayout data-testid="models-section">
+            <div className="flex shrink-0 flex-wrap items-end justify-between gap-3">
+                <div className="min-w-0">
+                    <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("section.title")}</h2>
+                    <p className="mt-1 max-w-prose text-xs text-text-2" data-testid="models-summary">
                         {working
                             ? t("section.summary", { count: versions.length, number: working.number })
                             : t("section.summaryNoWorking", { count: versions.length })}
@@ -162,22 +162,25 @@ export function ModelsSection({ project, initialVersionId, openTraining }: {
                 </div>
                 <Button variant="outline" size="sm" onClick={openTraining}>{t("section.toTraining")}</Button>
             </div>
+            {notices}
             <ExportPlate state={exporter.state} dismiss={exporter.dismiss} />
-            <ul className="space-y-3" data-testid="models-list">
-                {versions.map(version => (
-                    <ModelVersionCard
-                        key={version.id}
-                        version={version}
-                        datasetName={datasetName(version)}
-                        best={best}
-                        busy={busy || exporter.active}
-                        openPassport={() => setPassportId(version.id)}
-                        {...actions(version)}
-                    />
-                ))}
-            </ul>
+            <Pane className="flex-1" role="region" aria-label={t("section.title")}>
+                <ul className="space-y-3" data-testid="models-list">
+                    {versions.map(version => (
+                        <ModelVersionCard
+                            key={version.id}
+                            version={version}
+                            datasetName={datasetName(version)}
+                            best={best}
+                            busy={busy || exporter.active}
+                            openPassport={() => setPassportId(version.id)}
+                            {...actions(version)}
+                        />
+                    ))}
+                </ul>
+            </Pane>
             {dialog}
-        </div>
+        </SectionLayout>
     );
 }
 
@@ -188,26 +191,22 @@ function ExportPlate({ state, versionId, dismiss }: { state: ModelExportState | 
     const { job, result } = state;
     const running = job.status === "queued" || job.status === "running";
     return (
-        <div className="space-y-2 rounded-md border p-3 text-sm" role="status" data-testid="model-export" data-status={job.status}>
+        <div className="surface shrink-0 space-y-2 p-3 text-sm" role="status" data-testid="model-export" data-status={job.status}>
             {running && (
                 <>
-                    <p className="text-muted-foreground">{t("export.running", { number: state.versionNumber, fileName: state.fileName })}</p>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("export.progress")} aria-valuemin={0} aria-valuemax={100}
-                        aria-valuenow={job.progress ?? undefined}>
-                        <div className={job.progress === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"}
-                            style={job.progress === null ? undefined : { width: `${job.progress}%` }} />
-                    </div>
+                    <p className="text-text-2">{t("export.running", { number: state.versionNumber, fileName: state.fileName })}</p>
+                    <Progress value={job.progress} live={job.status === "running"} aria-label={t("export.progress")} />
                 </>
             )}
             {job.status === "succeeded" && (
-                <p data-testid="model-export-result">
+                <p className="text-ok" data-testid="model-export-result">
                     {result
                         ? t("export.doneSize", { number: result.versionNumber, fileName: result.fileName, size: formatBytes(result.bytes) })
                         : t("export.done", { number: state.versionNumber, fileName: state.fileName })}
                 </p>
             )}
             {!running && job.status !== "succeeded" && (
-                <p className="text-destructive" data-testid="model-export-error">
+                <p className="text-danger" data-testid="model-export-error">
                     {job.status === "cancelled" ? t("export.cancelled") : (job.error ? jobErrorText(job.error) : t("export.failed"))}
                 </p>
             )}
@@ -217,12 +216,11 @@ function ExportPlate({ state, versionId, dismiss }: { state: ModelExportState | 
 }
 
 /** The version passport in "Models": the epoch history of the run for "best …" is read by pages (readEpochHistory). */
-function VersionPassport({ projectId, version, busy, renew, back, setWorking, exportZip, remove }: {
+function VersionPassport({ projectId, version, busy, renew, setWorking, exportZip, remove }: {
     projectId: string;
     version: ModelVersionResponseDto;
     busy: boolean;
     renew: () => void;
-    back: () => void;
     setWorking: () => void;
     exportZip: () => void;
     remove: () => void;
@@ -237,5 +235,5 @@ function VersionPassport({ projectId, version, busy, renew, back, setWorking, ex
         return () => { active = false; };
     }, [projectId, runId]);
 
-    return <ModelVersionPassport version={version} epochs={epochs} busy={busy} renew={renew} setWorking={setWorking} exportZip={exportZip} remove={remove} back={back} />;
+    return <ModelVersionPassport version={version} epochs={epochs} busy={busy} renew={renew} setWorking={setWorking} exportZip={exportZip} remove={remove} />;
 }

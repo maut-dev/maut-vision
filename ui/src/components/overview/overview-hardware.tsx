@@ -33,13 +33,13 @@ export function OverviewHardware() {
     }, [sample]);
 
     return (
-        <section className="min-w-0 space-y-4 rounded-lg border bg-card p-4" aria-labelledby="overview-hardware-heading" data-testid="overview-hardware">
-            <h2 id="overview-hardware-heading" className="font-medium">{t("hardware.title")}</h2>
+        <section className="surface min-w-0 space-y-4 p-4" aria-labelledby="overview-hardware-heading" data-testid="overview-hardware">
+            <h2 id="overview-hardware-heading" className="text-[15px] font-semibold tracking-[-0.015em]">{t("hardware.title")}</h2>
             {failed && (
-                <p role="alert" className="text-sm text-destructive" data-testid="overview-hardware-error">{t("hardware.failed")}</p>
+                <p role="alert" className="text-sm text-danger" data-testid="overview-hardware-error">{t("hardware.failed")}</p>
             )}
             {!sample ? (
-                <p role="status" className="text-sm text-muted-foreground">{t("hardware.collecting")}</p>
+                <p role="status" className="text-sm text-text-2">{t("hardware.collecting")}</p>
             ) : (
                 <HardwareSample sample={sample} history={history} />
             )}
@@ -56,22 +56,22 @@ function HardwareSample({ sample, history }: { sample: HardwareSampleResponseDto
             <div className="space-y-3" data-testid="overview-cpu" data-status={cpu.status}>
                 <div>
                     <h3 className="break-words text-sm font-medium">{cpu.model ?? t("hardware.cpu")}</h3>
-                    <p className="text-xs text-muted-foreground" data-testid="overview-cpu-threads">
+                    <p className="text-xs text-text-2" data-testid="overview-cpu-threads">
                         {cpu.physicalCores !== null ? `${t("hardware.cores", { count: cpu.physicalCores, value: formatNumber(cpu.physicalCores) })} · ${threads}` : threads}
                     </p>
                 </div>
                 <Usage label={t("hardware.cpuLoad")} value={cpu.utilizationPercent} detail={cpu.status === "available" || !cpu.reason ? undefined : errorText(cpu.reason)}
                     testId="overview-cpu-load" />
             </div>
-            <div className="space-y-2 border-t pt-4">
+            <div className="space-y-2 border-t border-line pt-4">
                 {ram ? (
                     <Usage label={t("hardware.ramLoad")} value={ram.utilizationPercent} detail={t("hardware.used", { used: gigabytes(ram.usedBytes), total: gigabytes(ram.totalBytes) })}
                         testId="overview-ram" />
                 ) : (
                     <Usage label={t("hardware.ramLoad")} value={null} testId="overview-ram" />
                 )}
-                <div className="text-xs text-muted-foreground" data-testid="overview-application">
-                    <p className="text-sm text-foreground">{t("hardware.application", { size: gigabytes(application.totalBytes) })}</p>
+                <div className="text-xs text-text-2" data-testid="overview-application">
+                    <p className="text-sm text-text-1">{t("hardware.application", { size: gigabytes(application.totalBytes) })}</p>
                     <p data-testid="overview-application-parts">
                         {t("hardware.parts", {
                             host: gigabytes(application.hostBytes),
@@ -83,18 +83,18 @@ function HardwareSample({ sample, history }: { sample: HardwareSampleResponseDto
                     </p>
                 </div>
             </div>
-            <div className="space-y-4 border-t pt-4" data-testid="overview-gpus" data-status={sample.gpuStatus}>
+            <div className="space-y-4 border-t border-line pt-4" data-testid="overview-gpus" data-status={sample.gpuStatus}>
                 {sample.gpuStatus === "unavailable" || !sample.gpus.length ? (
                     <div>
                         <h3 className="text-sm font-medium">GPU</h3>
-                        <p className="mt-2 text-xs text-muted-foreground" data-testid="overview-gpu-reason">
+                        <p className="mt-2 text-xs text-text-2" data-testid="overview-gpu-reason">
                             {sample.gpuReason ? errorText(sample.gpuReason) : t("hardware.unavailable")}
                         </p>
                     </div>
                 ) : sample.gpus.map(gpu => <Gpu key={gpu.index} gpu={gpu} />)}
             </div>
             <LoadChart history={history} gpus={sample.gpus} />
-            <p className="text-xs text-muted-foreground" data-testid="overview-hardware-time">{t("hardware.sampled", { time: formatClock(sample.timestamp) })}</p>
+            <p className="text-xs text-text-2" data-testid="overview-hardware-time">{t("hardware.sampled", { time: formatClock(sample.timestamp) })}</p>
         </>
     );
 }
@@ -113,7 +113,7 @@ function Gpu({ gpu }: { gpu: GpuSampleDto }) {
                 detail={gpu.memoryTotalBytes !== null && gpu.memoryUsedBytes !== null
                     ? t("hardware.used", { used: gigabytes(gpu.memoryUsedBytes), total: gigabytes(gpu.memoryTotalBytes) }) : undefined}
             />
-            <p className="text-xs text-muted-foreground" data-testid="overview-gpu-details">
+            <p className="text-xs text-text-2" data-testid="overview-gpu-details">
                 {t("hardware.temperature", { value: temperature })}
                 {" · "}{t("hardware.driver", { value: gpu.driverVersion ?? t("hardware.unavailable") })}
             </p>
@@ -129,11 +129,11 @@ function Usage({ label, value, detail, testId }: { label: string; value: number 
                 <span className="tabular-nums" data-testid={testId && `${testId}-value`}>{percent(value)}</span>
             </div>
             {value !== null && (
-                <div className="h-1.5 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
-                    <div className="h-full bg-brand transition-[width]" style={{ width: `${Math.min(100, value)}%` }} />
+                <div className="h-1.5 overflow-hidden rounded-full bg-ink-3" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(value)}>
+                    <div className={`h-full rounded-full transition-[width] duration-420 ease-glass ${value >= 90 ? "bg-warn" : "bg-info"}`} style={{ width: `${Math.min(100, value)}%` }} />
                 </div>
             )}
-            {detail && <p className="break-words text-xs text-muted-foreground" data-testid={testId && `${testId}-detail`}>{detail}</p>}
+            {detail && <p className="break-words text-xs text-text-2" data-testid={testId && `${testId}-detail`}>{detail}</p>}
         </div>
     );
 }
@@ -152,8 +152,8 @@ function LoadChart({ history, gpus }: { history: readonly LoadPoint[]; gpus: rea
         ...gpus.map(gpu => ({ key: `gpu-${gpu.index}`, label: `GPU ${gpu.index}`, color: gpuColor(gpu.index), segments: loadSegments(history, point => point.gpus[gpu.index]) })),
     ];
     return (
-        <figure className="space-y-1.5 border-t pt-4" data-testid="overview-load-chart" data-points={history.length}>
-            <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <figure className="space-y-1.5 border-t border-line pt-4" data-testid="overview-load-chart" data-points={history.length}>
+            <figcaption className="flex flex-wrap items-center justify-between gap-2 text-xs text-text-2">
                 <span>{t("hardware.chartCaption")}</span>
                 <span className="flex flex-wrap gap-3">
                     {lines.map(line => (
@@ -164,9 +164,9 @@ function LoadChart({ history, gpus }: { history: readonly LoadPoint[]; gpus: rea
                     ))}
                 </span>
             </figcaption>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="h-16 w-full rounded border" role="img"
+            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none" className="h-16 w-full rounded border border-line bg-ink-0/40" role="img"
                 aria-label={t("hardware.chartAria")}>
-                {[25, 50, 75].map(tick => <line key={tick} x1={0} x2={chartWidth} y1={y(tick)} y2={y(tick)} stroke="var(--border)" strokeDasharray="3 3" />)}
+                {[25, 50, 75].map(tick => <line key={tick} x1={0} x2={chartWidth} y1={y(tick)} y2={y(tick)} stroke="var(--line)" strokeDasharray="3 3" />)}
                 {lines.flatMap(line => line.segments.map((segment, index) => segment.length > 1 ? (
                     <polyline key={`${line.key}-${index}`} data-load-line={line.key} fill="none" stroke={line.color} strokeWidth={1.5} vectorEffect="non-scaling-stroke"
                         strokeLinejoin="round" points={segment.map(point => `${x(point.at)},${y(point.value)}`).join(" ")} />

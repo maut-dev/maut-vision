@@ -20,7 +20,12 @@ throttled by Core, not by Events.
 checks.changed { projectId, evaluations: [{ id, revision }], check: live check snapshot | null }
 project.removed { projectId }
 projectImport.changed { import snapshot with sequence }
+window.stateChanged { maximized, active }
 ```
+
+Host state follows the same rule. The title bar reads the window state with `window.getState` and then applies `window.stateChanged`,
+which the host sends for every change, including the ones made outside the page (Win+Up, snapping, a double click on the drag area,
+activation).
 
 Creating and importing a project arrive as `project.changed` with a full snapshot; deletion is `project.removed` with one id: a deleted
 project has no snapshot.

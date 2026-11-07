@@ -12,7 +12,9 @@
     "summary_one": "{{count}} version · working — version {{number}}. Each successful training run creates a new version; earlier versions do not change.",
     "summary_other": "{{count}} versions · working — version {{number}}. Each successful training run creates a new version; earlier versions do not change.",
     "summaryNoWorking_one": "{{count}} version · working — none. Each successful training run creates a new version; earlier versions do not change.",
-    "summaryNoWorking_other": "{{count}} versions · working — none. Each successful training run creates a new version; earlier versions do not change."
+    "summaryNoWorking_other": "{{count}} versions · working — none. Each successful training run creates a new version; earlier versions do not change.",
+    "back": "← Back to models",
+    "passport": "Version {{number}} passport"
   },
   "export": {
     "running": "Exporting version {{number}} to {{fileName}}…",

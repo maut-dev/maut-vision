@@ -10,7 +10,8 @@ import type {
 } from "@/api/projects/training/response-dto/training-runtime-response-dto";
 import { defaultDevice, trainingFormWarnings, trainingParameter } from "@/api/projects/training/training-parameters";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, formatDay } from "@/lib/format";
@@ -107,28 +108,22 @@ export function TrainingSettings({ project, datasets, datasetsLoading, presets, 
 
     if (!datasetsLoading && !available.length) {
         return (
-            <section className="space-y-3 rounded-lg border border-dashed p-6" data-testid="training-empty">
-                <h2 className="font-medium">{t("settings.emptyTitle")}</h2>
-                <p className="max-w-prose text-sm text-muted-foreground">{t("settings.emptyText")}</p>
-                <Button variant="outline" data-testid="training-open-datasets" onClick={openDatasets}>{t("settings.openDatasets")}</Button>
-            </section>
+            <EmptyState title={t("settings.emptyTitle")} description={t("settings.emptyText")} className="min-h-40 rounded-lg border border-dashed border-line" data-testid="training-empty"
+                action={<Button variant="outline" data-testid="training-open-datasets" onClick={openDatasets}>{t("settings.openDatasets")}</Button>} />
         );
     }
 
     return (
         <div className="space-y-4">
             {runtimeProblem && (
-                <Alert variant="destructive" data-testid="training-runtime-problem" data-code={runtimeProblem.code ?? undefined}>
-                    <AlertDescription>
-                        <p className="font-medium text-foreground">{t("settings.runtimeUnavailable")}</p>
-                        <p>{runtimeProblem.code ? errorText(runtimeProblem.code) : t("settings.runtimeNotConfigured")}</p>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" title={t("settings.runtimeUnavailable")} data-testid="training-runtime-problem" data-code={runtimeProblem.code ?? undefined}>
+                    {runtimeProblem.code ? errorText(runtimeProblem.code) : t("settings.runtimeNotConfigured")}
+                </Notice>
             )}
-            <form className="space-y-5 rounded-lg border bg-card p-5" onSubmit={submit} aria-label={t("settings.newRun")} data-testid="training-form">
-                <h2 className="font-medium">{t("settings.newRun")}</h2>
+            <form className="surface space-y-5 p-5" onSubmit={submit} aria-label={t("settings.newRun")} data-testid="training-form">
+                <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("settings.newRun")}</h2>
                 <label className="block space-y-1">
-                    <span className="block text-xs text-muted-foreground">{t("settings.dataset")}</span>
+                    <span className="block text-xs text-text-2">{t("settings.dataset")}</span>
                     <Select value={datasetId} onValueChange={id => { if (id) setDatasetId(id); }}disabled={busy || !available.length}>
                         <SelectTrigger aria-label={t("settings.dataset")} className="w-full sm:w-96" data-testid="training-dataset">
                             <SelectValue placeholder={datasetsLoading ? t("settings.loading") : t("settings.chooseDataset")} />
@@ -141,7 +136,7 @@ export function TrainingSettings({ project, datasets, datasetsLoading, presets, 
                     </Select>
                 </label>
                 {dataset && (
-                    <div className="space-y-1 rounded-md border p-3 text-xs text-muted-foreground" data-testid="training-dataset-summary" data-dataset-id={dataset.id}>
+                    <div className="space-y-1 rounded-md border border-line p-3 text-xs text-text-2" data-testid="training-dataset-summary" data-dataset-id={dataset.id}>
                         <p data-testid="training-dataset-counts">
                             {t("settings.counts", { train: count(dataset.counts.train), val: count(dataset.counts.val), test: count(dataset.counts.test), width: dataset.width, height: dataset.height })}
                         </p>
@@ -151,7 +146,7 @@ export function TrainingSettings({ project, datasets, datasetsLoading, presets, 
                         <p>{t("settings.built", { date: formatDate(dataset.createdAt), boxes: count(dataset.composition.boxes), negatives: count(dataset.composition.negatives) })}</p>
                         {warnings.map(warning => (
                             <p key={warning.code} role={warning.blocking ? "alert" : undefined} data-warning={warning.code}
-                                className={warning.blocking ? "text-destructive" : "text-amber-700 dark:text-amber-400"}>
+                                className={warning.blocking ? "text-danger" : "text-warn"}>
                                 {warning.message}
                             </p>
                         ))}
@@ -178,24 +173,24 @@ export function TrainingSettings({ project, datasets, datasetsLoading, presets, 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="training-main-fields">{mainKeys.map(field)}</div>
                 <div className="grid gap-4 sm:grid-cols-2">
                     {field("amp")}
-                    <p className="self-end text-xs text-muted-foreground">
+                    <p className="self-end text-xs text-text-2">
                         {t("settings.autoNote")}
                     </p>
                 </div>
-                <details className="rounded-md border px-3 py-2" data-testid="training-advanced">
-                    <summary className="cursor-pointer select-none text-sm text-muted-foreground">{t("settings.advanced")}</summary>
+                <details className="rounded-md border border-line px-3 py-2" data-testid="training-advanced">
+                    <summary className="cursor-pointer select-none text-sm text-text-2">{t("settings.advanced")}</summary>
                     <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">{advancedKeys.map(field)}</div>
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="mt-2 text-xs text-text-2">
                         {t("settings.advancedNote")}
                     </p>
                 </details>
                 <TrainingParameterGroups context={context} />
-                <p className={`min-h-4 text-xs ${valid ? "text-muted-foreground" : "text-destructive"}`} aria-live="polite" data-testid="training-form-hint">
+                <p className={`min-h-4 text-xs ${valid ? "text-text-2" : "text-danger"}`} aria-live="polite" data-testid="training-form-hint">
                     {valid
                         ? t("settings.validHint")
                         : t("settings.invalidHint", { names: parsed.invalid.map(key => trainingParameter(key)?.label ?? key).join(", ") })}
                 </p>
-                <p className="text-xs text-muted-foreground" data-testid="training-architecture-note">
+                <p className="text-xs text-text-2" data-testid="training-architecture-note">
                     {t("settings.architectureNote", { architecture: project.baseModelId, width: project.inputSize.width, height: project.inputSize.height })}
                 </p>
                 <Button type="submit" disabled={busy || !dataset || !valid || blocked || !!runtimeProblem} data-testid="training-start">

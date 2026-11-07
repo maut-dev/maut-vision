@@ -7,8 +7,8 @@ import type { VariantResponseDto } from "@/api/projects/catalog/response-dto/var
 import { variantsApi } from "@/api/projects/catalog/variants-api";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { BridgeError } from "@/api/transport/errors";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { Notice } from "@/components/layout/notice";
+import { SectionLayout } from "@/components/layout/section-layout";
 import { errorMessage } from "@/lib/format";
 import { useAssetImports } from "@/lib/use-asset-imports";
 import { useCatalog } from "@/lib/use-catalog";
@@ -24,7 +24,7 @@ type Editor =
     | { kind: "class"; entry?: ClassResponseDto }
     | { kind: "attach"; classId: string };
 
-interface Notice {
+interface NoticeState {
     text: string;
     tone: "info" | "error";
 }
@@ -52,7 +52,7 @@ export function CatalogSection({ project, page, openVariants }: {
     const catalog = useCatalog(projectId);
     const importer = useAssetImports(projectId);
     const [busy, setBusy] = useState(false);
-    const [notice, setNotice] = useState<Notice>();
+    const [notice, setNotice] = useState<NoticeState>();
     const [editor, setEditor] = useState<Editor>();
     const [editorError, setEditorError] = useState<string>();
     const [archive, setArchive] = useState<ArchiveRequest>();
@@ -170,23 +170,15 @@ export function CatalogSection({ project, page, openVariants }: {
         : editor?.kind === "class" && editor.entry ? t("section.editClass") : t("section.newClass");
 
     return (
-        <div className="flex min-h-0 flex-1 flex-col gap-4" data-testid={`${page}-section`}>
+        <SectionLayout data-testid={`${page}-section`}>
             {notice && (
-                <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="catalog-notice">
-                    <AlertDescription>
-                        <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="catalog-notice" onDismiss={() => setNotice(undefined)}>
+                    {notice.text}
+                </Notice>
             )}
-            {!workspace && catalog.loading && <p role="status" className="text-sm text-muted-foreground">{t("section.loading")}</p>}
+            {!workspace && catalog.loading && <p role="status" className="text-sm text-text-2">{t("section.loading")}</p>}
             {!workspace && !catalog.loading && catalog.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{catalog.error}</p>
-                        <Button variant="outline" size="sm" className="mt-2" onClick={() => void catalog.refresh()}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" className="shrink-0" action={{ label: t("section.retry"), onClick: () => void catalog.refresh() }}>{catalog.error}</Notice>
             )}
             {workspace && page === "variants" && (
                 <VariantsPage
@@ -263,6 +255,6 @@ export function CatalogSection({ project, page, openVariants }: {
             {deletion && (
                 <CatalogDeletionDialog projectId={projectId} target={deletion} close={() => setDeletion(undefined)} deleted={deleted} />
             )}
-        </div>
+        </SectionLayout>
     );
 }

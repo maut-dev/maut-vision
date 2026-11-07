@@ -38,18 +38,18 @@ export function ModelVersionCard({ version, datasetName, best, busy, setWorking,
     const { t } = useTranslation("models");
     const weights = weightsText(version);
     return (
-        <li className={`space-y-4 rounded-lg border bg-card p-5 ${version.isWorking ? "border-brand/50" : ""}`} data-testid="model-version-card"
+        <li className={`surface space-y-4 p-5 ${version.isWorking ? "border-brand/40" : ""}`} data-testid="model-version-card"
             data-version-id={version.id} data-working={version.isWorking || undefined}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <h3 className="flex items-center gap-2 font-medium">
+                    <h3 className="flex items-center gap-2 text-[15px] font-semibold tracking-[-0.015em]">
                         {t("card.version", { number: version.number })}
-                        {version.isWorking && <Badge data-testid="model-version-card-working">{t("card.working")}</Badge>}
+                        {version.isWorking && <Badge variant="brand" data-testid="model-version-card-working">{t("card.working")}</Badge>}
                     </h3>
-                    <p className="mt-1 text-xs text-muted-foreground" data-testid="model-version-card-meta">
+                    <p className="mt-1 text-xs break-words text-text-2" data-testid="model-version-card-meta">
                         {formatDate(version.createdAt)} · {datasetName} · {version.architecture} · {version.input.width} × {version.input.height}
                     </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground" data-testid="model-version-card-weights">
+                    <p className="mt-0.5 text-xs text-text-2" data-testid="model-version-card-weights">
                         {epochsText(version)}{weights && ` · ${weights}`}
                     </p>
                 </div>
@@ -67,11 +67,11 @@ export function ModelVersionCard({ version, datasetName, best, busy, setWorking,
                     const value = version.metrics[key];
                     const top = typeof value === "number" && best[key] !== null && value === best[key];
                     return (
-                        <div key={key} className="rounded-md border px-3 py-2" title={qualityMetricHelp[key]} data-metric={key} data-best={top || undefined}>
-                            <dt className="text-xs text-muted-foreground">{qualityMetricLabels[key]}</dt>
-                            <dd className={`mt-0.5 tabular-nums ${top ? "font-semibold text-[var(--metric-best)]" : ""}`}>
+                        <div key={key} className="rounded-md border border-line bg-ink-0/40 px-3 py-2" title={qualityMetricHelp[key]} data-metric={key} data-best={top || undefined}>
+                            <dt className="text-xs text-text-2">{qualityMetricLabels[key]}</dt>
+                            <dd className={`mt-0.5 text-lg font-semibold tracking-[-0.02em] tabular-nums ${top ? "text-[var(--metric-best)]" : ""}`}>
                                 {formatMetric(value)}
-                                {top && <span className="ml-1.5 text-xs font-normal text-muted-foreground">{t("card.best")}</span>}
+                                {top && <span className="ml-1.5 text-xs font-normal tracking-normal text-text-2">{t("card.best")}</span>}
                             </dd>
                         </div>
                     );

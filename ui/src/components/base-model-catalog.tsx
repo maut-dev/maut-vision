@@ -2,7 +2,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Check, Download, Loader2, Search, Trash2, X } from "lucide-react";
 import type { BaseModelResponseDto } from "@/api/base-models/response-dto/base-model-response-dto";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
+import { Progress } from "@/components/layout/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,25 +16,27 @@ import type { BaseModelsState } from "@/lib/use-base-models";
 function InstallationStatus({ model }: { model: BaseModelResponseDto }) {
     const { t } = useTranslation();
     if (model.status === "installed") {
-        return <span className="flex items-center gap-1.5 text-sm"><Check className="size-4 text-brand" aria-hidden />{t("baseModels.installed")}</span>;
+        return <span className="flex items-center gap-1.5 text-sm text-ok"><Check className="size-4" aria-hidden />{t("baseModels.installed")}</span>;
     }
     if (model.status === "installing") {
         const percent = Math.min(100, Math.floor(model.progress));
         return (
             <div className="w-full space-y-1.5 sm:w-48" data-testid="base-model-progress">
-                <div className="flex justify-between gap-3 text-xs tabular-nums text-muted-foreground">
+                <div className="flex justify-between gap-3 text-xs tabular-nums text-text-2">
                     <span>{t("baseModels.downloaded", { done: megabytes(model.byteSize * model.progress / 100), total: megabytes(model.byteSize) })}</span>
                     <span>{percent}%</span>
                 </div>
-                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={t("baseModels.installing", { model: model.id })} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
-                    <div className="h-full rounded-full bg-brand transition-[width] duration-300" style={{ width: `${model.progress}%` }} />
-                </div>
+                <Progress value={model.progress} live aria-label={t("baseModels.installing", { model: model.id })} />
             </div>
         );
     }
-    return <span className="text-sm text-muted-foreground">{model.status === "failed" ? t("baseModels.failed") : t("baseModels.notInstalled")}</span>;
+    return <span className={`text-sm ${model.status === "failed" ? "text-danger" : "text-text-2"}`}>{model.status === "failed" ? t("baseModels.failed") : t("baseModels.notInstalled")}</span>;
 }
 
+/**
+ * The catalogue of base models: search, the family and "Installed" filters, a row per model with its size, installation progress and
+ * actions. It scrolls with the page; no row action is primary, so the screen has no brand button.
+ */
 export function BaseModelCatalog({ catalog, back, createProject }: {
     catalog: BaseModelsState;
     back: () => void;
@@ -53,19 +57,19 @@ export function BaseModelCatalog({ catalog, back, createProject }: {
         <section className="space-y-5" aria-labelledby="catalog-heading">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h1 id="catalog-heading" className="text-2xl font-semibold">{t("app.baseModels")}</h1>
-                    <p className="mt-2 max-w-prose text-sm text-muted-foreground">
+                    <h1 id="catalog-heading" className="text-2xl font-semibold tracking-[-0.025em]">{t("app.baseModels")}</h1>
+                    <p className="mt-2 max-w-prose text-sm text-text-2">
                         {t("baseModels.subtitle")}
                     </p>
                 </div>
                 <Button variant="outline" onClick={back}>{t("app.allProjects")}</Button>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-2">
                 {t("baseModels.about")}
             </p>
             <div className="flex flex-wrap items-center gap-3">
                 <div className="relative min-w-48 flex-1">
-                    <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" aria-hidden />
+                    <Search className="absolute top-2.5 left-3 size-4 text-text-3" aria-hidden />
                     <Input aria-label={t("baseModels.searchLabel")} placeholder={t("baseModels.searchPlaceholder")} value={search} onChange={event => setSearch(event.target.value)} className="pl-9" />
                 </div>
                 <Select value={family} onValueChange={setFamily}>
@@ -80,37 +84,32 @@ export function BaseModelCatalog({ catalog, back, createProject }: {
                 </Button>
             </div>
             {catalog.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{catalog.error}</p>
-                        <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => void catalog.refresh()}>{t("common.retryLoading")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" action={{ label: t("common.retryLoading"), onClick: () => void catalog.refresh() }}>{catalog.error}</Notice>
             )}
             {catalog.loading && !catalog.models.length ? (
-                <div className="flex items-center gap-2 py-8 text-muted-foreground" role="status">
+                <div className="flex items-center gap-2 py-8 text-text-2" role="status">
                     <Loader2 className="size-4 animate-spin" aria-hidden />{t("baseModels.loading")}
                 </div>
             ) : (
-                <div className="divide-y rounded-lg border" data-testid="base-model-list">
+                <div className="surface divide-y divide-line" data-testid="base-model-list">
                     {visible.map(model => {
                         const pending = catalog.pending.includes(model.id);
                         return (
-                            <div key={model.id} className="space-y-3 p-4" data-model-id={model.id} data-status={model.status}>
+                            <div key={model.id} className="space-y-3 px-4 py-3" data-model-id={model.id} data-status={model.status}>
                                 <div className="flex flex-wrap items-center justify-between gap-4">
                                     <div className="min-w-32">
                                         <div className="flex items-center gap-2">
-                                            <h2 className="font-medium">{model.id}</h2>
-                                            {model.stride === 64 && <Badge variant="outline">P6</Badge>}
+                                            <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{model.id}</h2>
+                                            {model.stride === 64 && <Badge variant="plain">P6</Badge>}
                                         </div>
-                                        <p className="mt-1 text-xs tabular-nums text-muted-foreground">{model.family} · {megabytes(model.byteSize)}</p>
+                                        <p className="mt-1 text-xs tabular-nums text-text-2">{model.family} · {megabytes(model.byteSize)}</p>
                                     </div>
                                     <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
                                         <InstallationStatus model={model} />
                                         {model.status === "installed" ? (
                                             <>
                                                 <Button type="button" size="sm" variant="outline" onClick={() => createProject(model.id)}>{t("library.create")}</Button>
-                                                <Button type="button" size="icon-sm" variant="ghost" disabled={pending} onClick={() => void catalog.remove(model.id)} aria-label={t("baseModels.deleteLabel", { model: model.id })} title={t("baseModels.deleteHint")}>
+                                                <Button type="button" size="icon-sm" variant="ghost" className="text-danger hover:text-danger" disabled={pending} onClick={() => void catalog.remove(model.id)} aria-label={t("baseModels.deleteLabel", { model: model.id })} title={t("baseModels.deleteHint")}>
                                                     <Trash2 />
                                                 </Button>
                                             </>
@@ -126,17 +125,13 @@ export function BaseModelCatalog({ catalog, back, createProject }: {
                                         )}
                                     </div>
                                 </div>
-                                {model.error && <p role="status" className="max-w-prose text-sm text-destructive">{errorText(model.error.code)}</p>}
+                                {model.error && <p role="status" className="max-w-prose text-sm text-danger">{errorText(model.error.code)}</p>}
                             </div>
                         );
                     })}
                     {!visible.length && (
-                        <div className="space-y-2 p-8 text-center">
-                            <p className="font-medium">{installedOnly ? t("baseModels.noneInstalled") : t("baseModels.notFound")}</p>
-                            <p className="text-sm text-muted-foreground">
-                                {installedOnly ? t("baseModels.noneInstalledHint") : t("baseModels.notFoundHint")}
-                            </p>
-                        </div>
+                        <EmptyState title={installedOnly ? t("baseModels.noneInstalled") : t("baseModels.notFound")}
+                            description={installedOnly ? t("baseModels.noneInstalledHint") : t("baseModels.notFoundHint")} />
                     )}
                 </div>
             )}

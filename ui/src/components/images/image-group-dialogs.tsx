@@ -4,7 +4,7 @@ import type { ImageGroupResponseDto, ImageSplitHint } from "@/api/projects/image
 import { imageSplitHints } from "@/api/projects/images/response-dto/image-group-response-dto";
 import { DialogError, GuardedDialog } from "@/components/catalog/catalog-dialogs";
 import { Button } from "@/components/ui/button";
-import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogBody, DialogDescription, DialogFooter, DialogForm, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -43,30 +43,32 @@ export function ImageGroupDialog({ group, busy, error, close, save }: {
                 <DialogTitle>{t("groupDialog.title")}</DialogTitle>
                 <DialogDescription>{t("groupDialog.description")}</DialogDescription>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="image-group-name">{t("groupDialog.name")}</Label>
-                    <Input id="image-group-name" data-testid="image-group-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="image-group-description">{t("groupDialog.descriptionLabel")}</Label>
-                    <Textarea id="image-group-description" className="h-24 resize-none" maxLength={4000} value={description} onChange={event => setDescription(event.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="image-group-split">{t("groupDialog.split")}</Label>
-                    <Select value={splitHint} onValueChange={value => setSplitHint(value as ImageSplitHint)} disabled={busy}>
-                        <SelectTrigger id="image-group-split" data-testid="image-group-split" className="w-full"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            {imageSplitHints.map(hint => <SelectItem key={hint} value={hint}>{splitHintLabels[hint]}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <DialogError error={error} />
+            <DialogForm onSubmit={submit}>
+                <DialogBody className="space-y-4 py-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="image-group-name">{t("groupDialog.name")}</Label>
+                        <Input id="image-group-name" data-testid="image-group-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="image-group-description">{t("groupDialog.descriptionLabel")}</Label>
+                        <Textarea id="image-group-description" className="h-24 resize-none" maxLength={4000} value={description} onChange={event => setDescription(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="image-group-split">{t("groupDialog.split")}</Label>
+                        <Select value={splitHint} onValueChange={value => setSplitHint(value as ImageSplitHint)} disabled={busy}>
+                            <SelectTrigger id="image-group-split" data-testid="image-group-split" className="w-full"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {imageSplitHints.map(hint => <SelectItem key={hint} value={hint}>{splitHintLabels[hint]}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DialogError error={error} />
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
                     <Button type="submit" data-testid="image-group-save" disabled={busy || !name.trim()}>{busy ? t("dialog.saving") : t("dialog.save")}</Button>
                 </DialogFooter>
-            </form>
+            </DialogForm>
         </GuardedDialog>
     );
 }
@@ -95,24 +97,26 @@ export function MoveImagesDialog({ count, targets, busy, error, close, move }: {
                 <DialogTitle>{t("moveDialog.title")}</DialogTitle>
                 <DialogDescription>{t("moveDialog.description", { number: formatNumber(count) })}</DialogDescription>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={submit}>
-                {targets.length ? (
-                    <div className="space-y-2">
-                        <Label htmlFor="move-target">{t("moveDialog.target")}</Label>
-                        <Select value={targetId} onValueChange={setTargetId} disabled={busy}>
-                            <SelectTrigger id="move-target" data-testid="move-target" className="w-full" autoFocus><SelectValue placeholder={t("moveDialog.chooseGroup")} /></SelectTrigger>
-                            <SelectContent>
-                                {targets.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                ) : <p className="text-sm text-muted-foreground">{t("moveDialog.noTargets")}</p>}
-                <DialogError error={error} />
+            <DialogForm onSubmit={submit}>
+                <DialogBody className="space-y-4 py-1">
+                    {targets.length ? (
+                        <div className="space-y-2">
+                            <Label htmlFor="move-target">{t("moveDialog.target")}</Label>
+                            <Select value={targetId} onValueChange={setTargetId} disabled={busy}>
+                                <SelectTrigger id="move-target" data-testid="move-target" className="w-full" autoFocus><SelectValue placeholder={t("moveDialog.chooseGroup")} /></SelectTrigger>
+                                <SelectContent>
+                                    {targets.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : <p className="text-sm text-muted-foreground">{t("moveDialog.noTargets")}</p>}
+                    <DialogError error={error} />
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
                     <Button type="submit" data-testid="move-confirm" disabled={busy || !target}>{busy ? t("moveDialog.moving") : t("moveDialog.move")}</Button>
                 </DialogFooter>
-            </form>
+            </DialogForm>
         </GuardedDialog>
     );
 }

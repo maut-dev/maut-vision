@@ -1,7 +1,11 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { SectionLayout } from "@/components/layout/section-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/layout/tabs";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import "@/i18n/sections/checks";
@@ -25,7 +29,8 @@ const panelId = (mode: Mode) => `checks-panel-${mode}`;
  * The Checks section: the version (the working one by default) and the modes Image, Dataset, Video, Screen as a tablist; initialMode is
  * the mode of a navigation (an evaluation from the overview opens Dataset).
  * Opened modes stay mounted, so switching tabs does not break a check; leaving the section stops a screen check. No polling:
- * training.changed, datasets.changed, checks.changed, job.changed.
+ * training.changed, datasets.changed, checks.changed, job.changed. The section fits the window: the version stays above the tabs, and each
+ * mode is one scroll with its form, results and journal.
  */
 export function ChecksSection({ project, initialMode, openModels }: { project: ProjectResponseDto; initialMode?: Mode; openModels: () => void }) {
     const { t } = useTranslation("checks");
@@ -44,43 +49,24 @@ export function ChecksSection({ project, initialMode, openModels }: { project: P
         setOpened(current => current.has(next) ? current : new Set([...current, next]));
     }
 
-    function onKeyDown(event: KeyboardEvent, index: number) {
-        const last = modes.length - 1;
-        const next = event.key === "ArrowRight" ? (index + 1) % modes.length
-            : event.key === "ArrowLeft" ? (index + last) % modes.length
-                : event.key === "Home" ? 0 : event.key === "End" ? last : null;
-        if (next === null) return;
-        event.preventDefault();
-        select(modes[next].id);
-        document.getElementById(tabId(modes[next].id))?.focus();
-    }
-
     if (models.loaded && !versions.length) {
         return (
-            <section className="space-y-3 rounded-lg border border-dashed p-6" data-testid="checks-empty">
-                <h2 className="font-medium">{t("empty.title")}</h2>
-                <p className="max-w-prose text-sm text-muted-foreground">{t("empty.text")}</p>
-                <Button variant="outline" data-testid="checks-open-models" onClick={openModels}>{t("empty.openModels")}</Button>
-            </section>
+            <EmptyState title={t("empty.title")} description={t("empty.text")} className="min-h-40 rounded-lg border border-dashed border-line" data-testid="checks-empty"
+                action={<Button variant="outline" data-testid="checks-open-models" onClick={openModels}>{t("empty.openModels")}</Button>} />
         );
     }
 
     return (
-        <div className="space-y-5" data-testid="checks-section">
+        <SectionLayout data-testid="checks-section">
             {models.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{models.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>{t("retry")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" className="shrink-0" action={{ label: t("retry"), onClick: () => void models.refresh() }}>{models.error}</Notice>
             )}
-            <section className="space-y-4 rounded-lg border bg-card p-5">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                    <div className="space-y-1">
-                        <span className="block text-xs text-muted-foreground">{t("version.label")}</span>
+            <Tabs value={mode} onValueChange={next => select(next as Mode)} className="flex-1">
+                <div className="flex shrink-0 flex-wrap items-end justify-between gap-x-4 gap-y-2">
+                    <div className="min-w-0 space-y-1">
+                        <span className="block text-xs text-text-2">{t("version.label")}</span>
                         <Select value={version?.id ?? ""} disabled={!versions.length} onValueChange={next => { if (next) setSelectedId(next); }}>
-                            <SelectTrigger aria-label={t("version.aria")} className="w-80" data-testid="checks-version">
+                            <SelectTrigger aria-label={t("version.aria")} className="w-80 max-w-full" data-testid="checks-version">
                                 <SelectValue placeholder={models.loaded ? t("version.none") : t("loading")} />
                             </SelectTrigger>
                             <SelectContent>
@@ -88,41 +74,31 @@ export function ChecksSection({ project, initialMode, openModels }: { project: P
                             </SelectContent>
                         </Select>
                     </div>
-                    <div role="tablist" aria-label={t("modeLabel")} className="flex flex-wrap gap-1 rounded-md border p-1">
-                        {modes.map((item, index) => (
-                            <Button
-                                key={item.id}
-                                id={tabId(item.id)}
-                                role="tab"
-                                size="sm"
-                                data-testid={`checks-tab-${item.id}`}
-                                tabIndex={mode === item.id ? 0 : -1}
-                                aria-selected={mode === item.id}
-                                aria-controls={panelId(item.id)}
-                                variant={mode === item.id ? "secondary" : "ghost"}
-                                onClick={() => select(item.id)}
-                                onKeyDown={event => onKeyDown(event, index)}
-                            >
+                    <TabsList aria-label={t("modeLabel")}>
+                        {modes.map(item => (
+                            <TabsTrigger key={item.id} value={item.id} id={tabId(item.id)} aria-controls={panelId(item.id)} data-testid={`checks-tab-${item.id}`}>
                                 {t(`modes.${item.id}`)}
-                            </Button>
+                            </TabsTrigger>
                         ))}
-                    </div>
+                    </TabsList>
                 </div>
                 {version && (
-                    <p className="text-xs text-muted-foreground" data-testid="checks-caption">
+                    <p className="shrink-0 text-xs text-text-2" data-testid="checks-caption">
                         {t("caption", { number: version.number, width: version.input.width, height: version.input.height, classes: version.classes.length })}{" "}
                         <Button variant="link" size="sm" className="h-auto p-0 text-xs" data-testid="checks-models-link" onClick={openModels}>{t("allVersions")}</Button>
                     </p>
                 )}
-            </section>
-            {version && modes.map(item => opened.has(item.id) && (
-                <div key={item.id} id={panelId(item.id)} role="tabpanel" aria-labelledby={tabId(item.id)} hidden={mode !== item.id}>
-                    {item.id === "image" && <CheckImage projectId={projectId} version={version} gpus={gpus} />}
-                    {item.id === "dataset" && <CheckDataset projectId={projectId} versions={versions} version={version} datasets={datasets.versions} gpus={gpus} />}
-                    {item.id === "video" && <CheckVideo projectId={projectId} version={version} gpus={gpus} />}
-                    {item.id === "screen" && <CheckScreen projectId={projectId} version={version} gpus={gpus} />}
-                </div>
-            ))}
-        </div>
+                {version && modes.map(item => opened.has(item.id) && (
+                    <TabsContent key={item.id} value={item.id} id={panelId(item.id)} aria-labelledby={tabId(item.id)} forceMount hidden={mode !== item.id} className="flex flex-col">
+                        <Pane className="flex-1">
+                            {item.id === "image" && <CheckImage projectId={projectId} version={version} gpus={gpus} />}
+                            {item.id === "dataset" && <CheckDataset projectId={projectId} versions={versions} version={version} datasets={datasets.versions} gpus={gpus} />}
+                            {item.id === "video" && <CheckVideo projectId={projectId} version={version} gpus={gpus} />}
+                            {item.id === "screen" && <CheckScreen projectId={projectId} version={version} gpus={gpus} />}
+                        </Pane>
+                    </TabsContent>
+                ))}
+            </Tabs>
+        </SectionLayout>
     );
 }

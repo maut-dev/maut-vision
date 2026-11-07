@@ -10,12 +10,19 @@
     "soon": "soon",
     "loadingSection": "Loading the section…",
     "close": "Close",
+    "errorTitle": "Error",
     "cancel": "Cancel",
     "archiveTitle": "Move to the archive?",
     "archiveText": "The project “{{name}}” will be hidden from the list and cannot be opened or changed. The data is kept; the project can be restored at any time.",
     "toArchive": "Archive",
     "aiAssistants": "AI assistants (MCP)",
     "aiAssistantsRunning": "AI assistants (MCP): the server is running"
+  },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
   },
   "common": {
     "hide": "Hide",

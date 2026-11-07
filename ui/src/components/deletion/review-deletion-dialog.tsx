@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { blockerText, type Blocker, type BlockerArea } from "@/lib/errors";
 import { errorMessage } from "@/lib/format";
 
@@ -73,7 +73,6 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ area, title,
             <DialogContent
                 data-testid={testId}
                 showCloseButton={!busy}
-                className="max-h-[calc(100dvh-3rem)] overflow-y-auto"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}
                 onInteractOutside={event => { if (busy) event.preventDefault(); }}
                 onCloseAutoFocus={returnFocus}
@@ -82,26 +81,29 @@ export function ReviewDeletionDialog<R extends DeletionReview, D>({ area, title,
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription className="break-words">{description}</DialogDescription>
                 </DialogHeader>
-                {state.loading && <p role="status" className="text-sm text-muted-foreground">{t("deletion.checking")}</p>}
-                {current && !state.loading && (
-                    <div className="space-y-3 text-sm">
-                        {renderReview(current)}
-                        {blocked && (
-                            <Alert variant="destructive">
-                                <AlertDescription>
-                                    {blockersTitle}
-                                    <ul className="mt-2 list-disc space-y-1 pl-5">
-                                        {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText(area, blocker)}</li>)}
-                                    </ul>
-                                    {blockersNote}
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                {/* The review and the blockers can be long: only the body scrolls, the title and the buttons stay. */}
+                <DialogBody className="space-y-3 break-words">
+                    {state.loading && <p role="status" className="text-sm text-text-2">{t("deletion.checking")}</p>}
+                    {current && !state.loading && (
+                        <div className="space-y-3 text-sm">
+                            {renderReview(current)}
+                            {blocked && (
+                                <Alert variant="destructive">
+                                    <AlertDescription>
+                                        {blockersTitle}
+                                        <ul className="mt-2 list-disc space-y-1 pl-5">
+                                            {current.blockers.map(blocker => <li key={blocker.code} className="break-words">{blockerText(area, blocker)}</li>)}
+                                        </ul>
+                                        {blockersNote}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </div>
+                    )}
+                    <div aria-live="polite">
+                        {(state.error || deleteError) && <Alert variant="destructive"><AlertDescription>{state.error ?? deleteError}</AlertDescription></Alert>}
                     </div>
-                )}
-                <div aria-live="polite">
-                    {(state.error || deleteError) && <Alert variant="destructive"><AlertDescription>{state.error ?? deleteError}</AlertDescription></Alert>}
-                </div>
+                </DialogBody>
                 <DialogFooter>
                     <Button variant="outline" autoFocus disabled={busy} onClick={close}>{t("app.cancel")}</Button>
                     <Button variant="outline" disabled={busy || state.loading} onClick={() => setAttempt(value => value + 1)}>{t("common.checkAgain")}</Button>

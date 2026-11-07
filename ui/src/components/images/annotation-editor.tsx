@@ -6,7 +6,9 @@ import { imagesApi } from "@/api/projects/images/images-api";
 import type { ImageAnnotationResponseDto, SavedImageAnnotationResponseDto } from "@/api/projects/images/response-dto/image-annotation-response-dto";
 import type { ImageResponseDto } from "@/api/projects/images/response-dto/image-response-dto";
 import { VariantColorInput } from "@/components/catalog/variant-color-input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { Toolbar } from "@/components/layout/toolbar";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,7 +37,8 @@ export interface EditorNavigation {
 /**
  * The annotation editor of one image. The draft lives in the edit history; it counts as unsaved only when it differs from the
  * saved revision (undoing back to the saved state clears the mark). The guard of unsaved changes is shared by the application: the
- * editor registers saving and discarding.
+ * editor registers saving and discarding. It takes the whole detail area: the toolbars on top, the canvas filling the rest and the
+ * details beside it (below it in a narrow window).
  */
 export function AnnotationEditor({ projectId, image, palette, lockReason, navigation, close, inspect, saved, setColor }: {
     projectId: string;
@@ -198,144 +201,143 @@ export function AnnotationEditor({ projectId, image, palette, lockReason, naviga
     const index = selectedObject && draft ? draft.objects.indexOf(selectedObject) + 1 : 0;
 
     return (
-        <section className="space-y-3 rounded-md border bg-card p-3" aria-label={t("editor.label", { name: image.displayName })} data-testid="annotation-editor" data-dirty={dirty || undefined}>
-            <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" variant="outline" onClick={() => inspect(draft, stored?.revision)}>{t("editor.inspect")}</Button>
-                <Button size="sm" variant="outline" data-testid="editor-back" onClick={close}>{t("editor.back")}</Button>
-                <Button size="icon-sm" variant="ghost" aria-label={t("editor.previous")} title={t("editor.previousHint")} disabled={!navigation.previous} onClick={navigation.previous}><ChevronLeft /></Button>
-                <Button size="icon-sm" variant="ghost" aria-label={t("editor.next")} title={t("editor.nextHint")} disabled={!navigation.next} onClick={navigation.next}><ChevronRight /></Button>
-                <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-2">
+        <section className="flex min-h-0 flex-1 flex-col gap-3" aria-label={t("editor.label", { name: image.displayName })} data-testid="annotation-editor" data-dirty={dirty || undefined}>
+            <div className="flex shrink-0 flex-col gap-2">
+                <Toolbar>
+                    <Button size="sm" variant="outline" data-testid="editor-back" onClick={close}>{t("editor.back")}</Button>
+                    <Button size="icon-sm" variant="ghost" aria-label={t("editor.previous")} title={t("editor.previousHint")} disabled={!navigation.previous} onClick={navigation.previous}><ChevronLeft /></Button>
+                    <Button size="icon-sm" variant="ghost" aria-label={t("editor.next")} title={t("editor.nextHint")} disabled={!navigation.next} onClick={navigation.next}><ChevronRight /></Button>
                     <h3 className="min-w-0 font-medium break-words">{t("editor.title", { name: image.displayName })}</h3>
-                    <span className={`text-xs ${dirty ? "text-amber-300" : "text-muted-foreground"}`} data-testid="editor-status" role="status">{status}</span>
-                </div>
-            </div>
-            {lockReason && <p className="text-sm text-muted-foreground" data-testid="editor-locked">{lockReason}</p>}
-            {loadError && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setAttempt(value => value + 1)}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
-            )}
-            <div className="flex flex-wrap items-center gap-2">
-                <Select value={tool} onValueChange={value => { setTool(value as AnnotationTool); setSelection(null); }} disabled={locked}>
-                    <SelectTrigger size="sm" aria-label={t("editor.tool")} className="w-36" data-testid="editor-tool"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="object">{t("editor.object")}</SelectItem>
-                        <SelectItem value="roi">{t("roi")}</SelectItem>
-                    </SelectContent>
-                </Select>
-                <Select value={effectiveClassId} onValueChange={chooseClass} disabled={locked}>
-                    <SelectTrigger size="sm" aria-label={t("editor.class")} className="w-44" data-testid="editor-class"><SelectValue placeholder={t("editor.chooseClass")} /></SelectTrigger>
-                    <SelectContent>
-                        {classItems.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                <Select value={effectiveVariantId ?? noVariant} onValueChange={chooseVariant} disabled={locked || !effectiveClassId}>
-                    <SelectTrigger size="sm" aria-label={t("editor.variant")} className="w-44" data-testid="editor-variant"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value={noVariant}>{t("editor.noVariant")}</SelectItem>
-                        {variantItems.map(item => (
-                            <SelectItem key={item.id} value={item.id}>
-                                <span className="flex items-center gap-2">
-                                    <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
-                                    {item.name}
-                                </span>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-                {binding ? (
-                    <VariantColorInput
-                        key={binding.id}
-                        name={palette.labelOf(binding.classId, binding.id)}
-                        color={binding.color}
-                        displayColor={binding.displayColor}
-                        disabled={!binding.available}
-                        label={t("editor.variantColor")}
-                        resetText={t("editor.defaultColor")}
-                        save={color => setColor(binding, color)}
-                    />
-                ) : (
-                    <input
-                        type="color"
-                        aria-label={t("editor.variantColor")}
-                        title={t("editor.variantColorHint")}
-                        disabled
-                        value={palette.colorOf(effectiveClassId, null)}
-                        className="h-8 w-10 rounded-md border bg-transparent p-1 disabled:cursor-not-allowed disabled:opacity-50"
-                    />
-                )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-                <ZoomControls zoom={zoom} />
-                <div className="ml-auto flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline" aria-label={t("editor.undoHint")} title={t("editor.undoHint")} data-testid="editor-undo" disabled={locked || !history || !canUndo(history)}
-                        onClick={() => { setHistory(value => value && undo(value)); setSelection(null); }}><Undo2 />{t("editor.undo")}</Button>
-                    <Button size="sm" variant="outline" aria-label={t("editor.redoHint")} title={t("editor.redoHint")} data-testid="editor-redo" disabled={locked || !history || !canRedo(history)}
-                        onClick={() => { setHistory(value => value && redo(value)); setSelection(null); }}><Redo2 />{t("editor.redo")}</Button>
-                </div>
-            </div>
-            <AnnotationCanvas
-                image={source}
-                draft={draft}
-                selection={selection}
-                tool={tool}
-                classId={classId}
-                classVariantId={classVariantId}
-                palette={palette}
-                locked={locked || busy}
-                zoom={zoom}
-                select={setSelection}
-                commit={change}
-                renew={renew}
-            />
-            {selectedObject && <p className="text-xs text-muted-foreground" data-testid="editor-selection">{t("editor.selected", { index })}</p>}
-            <p className="text-xs text-muted-foreground">
-                {t("editor.help")}
-                {" "}{t("editor.keys")}
-            </p>
-            <ImageDetails image={image} annotation={draft} revision={stored?.revision} palette={palette} />
-            {draft && (
-                <>
-                    <div className="flex flex-wrap gap-2">
-                        {draft.objects.map((item, position) => (
-                            <Button
-                                key={item.id}
-                                variant="outline"
-                                size="sm"
-                                title={palette.labelOf(item.classId, item.classVariantId)}
-                                disabled={locked}
-                                aria-pressed={selection === item.id}
-                                onClick={() => change(removeObject(draft, item.id), selection === item.id ? null : selection)}
-                            >
-                                <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: palette.colorOf(item.classId, item.classVariantId) }} />
-                                {t("editor.removeBox", { index: position + 1 })}
-                                <span className="max-w-48 truncate text-muted-foreground">{palette.labelOf(item.classId, item.classVariantId)}</span>
-                            </Button>
-                        ))}
-                        {draft.roi && (
-                            <Button variant="outline" size="sm" disabled={locked} onClick={() => change({ ...draft, roi: null }, selection === "roi" ? null : selection)}>{t("editor.removeRoi")}</Button>
+                    <span className={`text-xs ${dirty ? "text-warn" : "text-text-2"}`} data-testid="editor-status" role="status">{status}</span>
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                        <Button size="sm" variant="outline" onClick={() => inspect(draft, stored?.revision)}>{t("editor.inspect")}</Button>
+                        {draft && (
+                            <>
+                                <label className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                        disabled={locked}
+                                        data-testid="editor-reviewed"
+                                        checked={draft.reviewState === "reviewed"}
+                                        onCheckedChange={checked => change({ ...draft, reviewState: checked === true ? "reviewed" : "unreviewed" })}
+                                    />
+                                    {t("editor.reviewed")}
+                                </label>
+                                <Button size="sm" data-testid="annotation-save" disabled={locked || busy || !dirty} onClick={() => void save().catch(() => {})}>
+                                    {busy ? t("editor.saving") : t("editor.save")}
+                                </Button>
+                            </>
                         )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-4">
-                        <label className="flex items-center gap-2 text-sm">
-                            <Checkbox
-                                disabled={locked}
-                                data-testid="editor-reviewed"
-                                checked={draft.reviewState === "reviewed"}
-                                onCheckedChange={checked => change({ ...draft, reviewState: checked === true ? "reviewed" : "unreviewed" })}
-                            />
-                            {t("editor.reviewed")}
-                        </label>
-                        <Button data-testid="annotation-save" disabled={locked || busy || !dirty} onClick={() => void save().catch(() => {})}>
-                            {busy ? t("editor.saving") : t("editor.save")}
-                        </Button>
+                </Toolbar>
+                <Toolbar>
+                    <Select value={tool} onValueChange={value => { setTool(value as AnnotationTool); setSelection(null); }} disabled={locked}>
+                        <SelectTrigger size="sm" aria-label={t("editor.tool")} className="w-36" data-testid="editor-tool"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="object">{t("editor.object")}</SelectItem>
+                            <SelectItem value="roi">{t("roi")}</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={effectiveClassId} onValueChange={chooseClass} disabled={locked}>
+                        <SelectTrigger size="sm" aria-label={t("editor.class")} className="w-44" data-testid="editor-class"><SelectValue placeholder={t("editor.chooseClass")} /></SelectTrigger>
+                        <SelectContent>
+                            {classItems.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                    <Select value={effectiveVariantId ?? noVariant} onValueChange={chooseVariant} disabled={locked || !effectiveClassId}>
+                        <SelectTrigger size="sm" aria-label={t("editor.variant")} className="w-44" data-testid="editor-variant"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value={noVariant}>{t("editor.noVariant")}</SelectItem>
+                            {variantItems.map(item => (
+                                <SelectItem key={item.id} value={item.id}>
+                                    <span className="flex items-center gap-2">
+                                        <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: item.color }} />
+                                        {item.name}
+                                    </span>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {binding ? (
+                        <VariantColorInput
+                            key={binding.id}
+                            name={palette.labelOf(binding.classId, binding.id)}
+                            color={binding.color}
+                            displayColor={binding.displayColor}
+                            disabled={!binding.available}
+                            label={t("editor.variantColor")}
+                            resetText={t("editor.defaultColor")}
+                            save={color => setColor(binding, color)}
+                        />
+                    ) : (
+                        <input
+                            type="color"
+                            aria-label={t("editor.variantColor")}
+                            title={t("editor.variantColorHint")}
+                            disabled
+                            value={palette.colorOf(effectiveClassId, null)}
+                            className="h-8 w-10 rounded-md border bg-transparent p-1 disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                    )}
+                    <ZoomControls zoom={zoom} />
+                    <div className="ml-auto flex flex-wrap items-center gap-2">
+                        <Button size="sm" variant="outline" aria-label={t("editor.undoHint")} title={t("editor.undoHint")} data-testid="editor-undo" disabled={locked || !history || !canUndo(history)}
+                            onClick={() => { setHistory(value => value && undo(value)); setSelection(null); }}><Undo2 />{t("editor.undo")}</Button>
+                        <Button size="sm" variant="outline" aria-label={t("editor.redoHint")} title={t("editor.redoHint")} data-testid="editor-redo" disabled={locked || !history || !canRedo(history)}
+                            onClick={() => { setHistory(value => value && redo(value)); setSelection(null); }}><Redo2 />{t("editor.redo")}</Button>
                     </div>
-                </>
-            )}
-            <div aria-live="polite">{error && <p role="alert" className="text-sm text-destructive" data-testid="editor-error">{error}</p>}</div>
+                </Toolbar>
+                {lockReason && <p className="text-sm text-text-2" data-testid="editor-locked">{lockReason}</p>}
+                {loadError && <Notice variant="destructive" action={{ label: t("section.retry"), onClick: () => setAttempt(value => value + 1) }}>{loadError}</Notice>}
+                <div aria-live="polite">{error && <p role="alert" className="text-sm text-destructive" data-testid="editor-error">{error}</p>}</div>
+            </div>
+            {/* The canvas fills the work area and keeps its own pan and zoom scroll; the details have one scroll of their own beside it. */}
+            <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,2fr)_minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1fr)_17rem] lg:grid-rows-[minmax(0,1fr)]">
+                <AnnotationCanvas
+                    image={source}
+                    draft={draft}
+                    selection={selection}
+                    tool={tool}
+                    classId={classId}
+                    classVariantId={classVariantId}
+                    palette={palette}
+                    locked={locked || busy}
+                    zoom={zoom}
+                    select={setSelection}
+                    commit={change}
+                    renew={renew}
+                />
+                <Pane surface role="region" aria-label={t("editor.details")} className="space-y-3 p-3" data-testid="editor-details">
+                    {selectedObject && <p className="text-xs text-text-2" data-testid="editor-selection">{t("editor.selected", { index })}</p>}
+                    <ImageDetails image={image} annotation={draft} revision={stored?.revision} palette={palette} />
+                    {draft && (draft.objects.length > 0 || draft.roi) && (
+                        <div className="flex flex-wrap gap-2">
+                            {draft.objects.map((item, position) => (
+                                <Button
+                                    key={item.id}
+                                    variant="outline"
+                                    size="sm"
+                                    className="max-w-full"
+                                    title={palette.labelOf(item.classId, item.classVariantId)}
+                                    disabled={locked}
+                                    aria-pressed={selection === item.id}
+                                    onClick={() => change(removeObject(draft, item.id), selection === item.id ? null : selection)}
+                                >
+                                    <span className="size-2.5 shrink-0 rounded-sm" style={{ backgroundColor: palette.colorOf(item.classId, item.classVariantId) }} />
+                                    {t("editor.removeBox", { index: position + 1 })}
+                                    <span className="min-w-0 truncate text-text-2">{palette.labelOf(item.classId, item.classVariantId)}</span>
+                                </Button>
+                            ))}
+                            {draft.roi && (
+                                <Button variant="outline" size="sm" disabled={locked} onClick={() => change({ ...draft, roi: null }, selection === "roi" ? null : selection)}>{t("editor.removeRoi")}</Button>
+                            )}
+                        </div>
+                    )}
+                    <p className="text-xs text-text-2">
+                        {t("editor.help")}
+                        {" "}{t("editor.keys")}
+                    </p>
+                </Pane>
+            </div>
         </section>
     );
 }

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/response-dto/background-set-response-dto";
 import { DialogError, GuardedDialog } from "@/components/catalog/catalog-dialogs";
 import { Button } from "@/components/ui/button";
-import { DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DialogBody, DialogDescription, DialogFooter, DialogForm, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,22 +37,24 @@ export function BackgroundSetDialog({ set, busy, error, close, save }: {
                 <DialogTitle>{t("setDialog.title")}</DialogTitle>
                 <DialogDescription>{t("setDialog.description", { width: set.targetSize.width, height: set.targetSize.height })}</DialogDescription>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="background-set-name">{t("setDialog.name")}</Label>
-                    <Input id="background-set-name" data-testid="background-set-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="background-set-description">{t("setDialog.descriptionLabel")}</Label>
-                    <Textarea id="background-set-description" data-testid="background-set-description" className="h-24 resize-none" maxLength={4000}
-                        value={description} onChange={event => setDescription(event.target.value)} />
-                </div>
-                <DialogError error={error} />
+            <DialogForm onSubmit={submit}>
+                <DialogBody className="space-y-4 py-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="background-set-name">{t("setDialog.name")}</Label>
+                        <Input id="background-set-name" data-testid="background-set-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="background-set-description">{t("setDialog.descriptionLabel")}</Label>
+                        <Textarea id="background-set-description" data-testid="background-set-description" className="h-24 resize-none" maxLength={4000}
+                            value={description} onChange={event => setDescription(event.target.value)} />
+                    </div>
+                    <DialogError error={error} />
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
                     <Button type="submit" data-testid="background-set-save" disabled={busy || !name.trim()}>{busy ? t("dialog.saving") : t("dialog.save")}</Button>
                 </DialogFooter>
-            </form>
+            </DialogForm>
         </GuardedDialog>
     );
 }

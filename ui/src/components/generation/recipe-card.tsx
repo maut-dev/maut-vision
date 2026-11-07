@@ -27,16 +27,16 @@ export function RecipeCard({ recipe, workspace, sets, count, canStart, editing, 
     const { t } = useTranslation("generation");
     const archived = !!recipe.archivedAt;
     return (
-        <article className={`space-y-3 rounded-xl border bg-card p-5 ${editing ? "border-primary/60" : ""}`} data-generation-recipe-id={recipe.id}
+        <article className={`surface space-y-3 p-4 ${editing ? "border-line-strong shadow-[var(--glass-highlight)]" : ""}`} data-generation-recipe-id={recipe.id}
             data-revision={recipe.revision} data-archived={archived || undefined} aria-label={t("recipe.label", { name: recipe.name })}>
             <div className="flex items-start justify-between gap-2">
                 <h3 className="min-w-0 font-medium break-words" data-testid="recipe-name-title">
                     {recipe.name}
-                    {archived && <span className="ml-2 text-xs text-muted-foreground" data-testid="recipe-archived">{t("recipe.archived")}</span>}
+                    {archived && <span className="ml-2 text-xs text-text-2" data-testid="recipe-archived">{t("recipe.archived")}</span>}
                 </h3>
-                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{t("recipe.revision", { revision: recipe.revision })}</span>
+                <span className="shrink-0 text-xs text-text-2 tabular-nums">{t("recipe.revision", { revision: recipe.revision })}</span>
             </div>
-            {recipe.description && <p className="text-sm break-words text-muted-foreground">{recipe.description}</p>}
+            {recipe.description && <p className="text-sm break-words text-text-2">{recipe.description}</p>}
             <RecipeDetails recipe={recipe} workspace={workspace} sets={sets} />
             <div className="flex flex-wrap items-center gap-2">
                 <Button className="h-auto min-h-9 max-w-full min-w-0 whitespace-normal" disabled={busy || !canStart || archived} data-testid="recipe-start" onClick={start}>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { VariantResponseDto } from "@/api/projects/catalog/response-dto/variant-response-dto";
+import { Pane } from "@/components/layout/pane";
 import { CatalogEmpty, CatalogRow, CatalogToolbar, filterEntries } from "./catalog-list";
 
 export interface VariantActions {
@@ -10,7 +11,7 @@ export interface VariantActions {
     remove: (variant: VariantResponseDto) => void;
 }
 
-/** The "Variants" section: the shared list of the ways objects of the project look. */
+/** The "Variants" section: the toolbar and one scrolling list of the ways objects of the project look. */
 export function VariantsPage({ variants, busy, actions }: {
     variants: readonly VariantResponseDto[];
     busy: boolean;
@@ -32,14 +33,15 @@ export function VariantsPage({ variants, busy, actions }: {
                 addDisabled={busy}
                 add={actions.create}
             />
-            <div
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-lg border"
+            <Pane
+                surface
+                className="flex-1 p-2 outline-none focus-visible:ring-[3px] focus-visible:ring-focus/30"
                 data-testid="variant-list"
                 tabIndex={0}
                 role="region"
                 aria-label={t("variants.list")}
             >
-                <div className="divide-y">
+                <div className="space-y-1">
                     {entries.map(variant => (
                         <CatalogRow
                             key={variant.id}
@@ -63,7 +65,7 @@ export function VariantsPage({ variants, busy, actions }: {
                         text={t("variants.emptyText")}
                     />
                 )}
-            </div>
+            </Pane>
         </>
     );
 }

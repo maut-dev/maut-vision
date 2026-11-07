@@ -50,13 +50,15 @@ export function McpConfirmationDialog({ confirmation, answered }: { confirmation
 
     const seconds = Math.max(0, Math.round((Date.parse(confirmation.expiresAt) - now) / 1000));
     const jobs = Number(confirmation.values.jobs ?? "0");
+    // Deleting a project cannot be undone: its "Allow" is the destructive button.
+    const destructive = confirmation.action === "delete_project";
     return (
         <AlertDialog open onOpenChange={open => { if (!open && !busy) void answer(false); }}>
             <AlertDialogContent data-testid="mcp-confirmation" data-action={confirmation.action}>
                 <AlertDialogHeader>
                     <AlertDialogTitle>{t("confirm.title")}</AlertDialogTitle>
                     <AlertDialogDescription asChild>
-                        <div className="space-y-2">
+                        <div className="space-y-2 [overflow-wrap:anywhere]">
                             <p>{actionText(confirmation)}</p>
                             {confirmation.action === "delete_project" && jobs > 0 && <p>{t("confirm.actions.delete_project_jobs", { jobs: confirmation.values.jobs })}</p>}
                             <p className="text-xs">{t("confirm.client", { client: confirmation.client })} · {t("confirm.tool", { tool: confirmation.tool })}</p>
@@ -68,7 +70,7 @@ export function McpConfirmationDialog({ confirmation, answered }: { confirmation
                     <AlertDialogCancel data-testid="mcp-confirmation-deny" disabled={busy} onClick={event => { event.preventDefault(); void answer(false); }}>
                         {t("confirm.deny")}
                     </AlertDialogCancel>
-                    <AlertDialogAction data-testid="mcp-confirmation-allow" disabled={busy} onClick={event => { event.preventDefault(); void answer(true); }}>
+                    <AlertDialogAction data-testid="mcp-confirmation-allow" variant={destructive ? "destructive" : "default"} disabled={busy} onClick={event => { event.preventDefault(); void answer(true); }}>
                         {t("confirm.allow")}
                     </AlertDialogAction>
                 </AlertDialogFooter>

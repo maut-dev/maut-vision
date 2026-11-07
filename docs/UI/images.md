@@ -1,5 +1,26 @@
 # Viewer, annotation and image gallery
 
+## Images section
+
+The "Images" section (`components/images/images-section.tsx`) is a master-detail section: groups on the left, the chosen group on the
+right. It follows [one scroll per region](design-system.md#one-scroll-per-region): the list of groups scrolls on its own, the group
+column does not scroll. The group column has a compact header (name, counts, purpose, edit, archive, delete; «Импорт файлов» and «Из
+папки» with their options; the state of the file choice and the error of the last import action) and three tabs.
+
+| Tab | Holds | Scrolls |
+|---|---|---|
+| «Изображения» (count of active frames) | filters, selection actions and the virtual gallery | the gallery |
+| «Кадры из видео» | the video form, and above it the progress of running imports with a button to «Импорт» | the form |
+| «Импорт» (count of imports, a live dot while one is queued or running) | the import history of the group | the history |
+
+A group opens on «Изображения»; an empty gallery offers «Кадры из видео» next to the file import of the header. «Кадры из видео» is
+disabled where file import is unavailable and then shows the gallery. It stays mounted while another tab is shown (`forceMount` with
+`hidden`), so the chosen video and the fields survive switching tabs. Errors per file of an import unfold inline in its row.
+
+The annotation editor replaces the header and the tabs and takes the whole group column: toolbars on top (navigation, the review mark
+and «Сохранить», tools, zoom and history), the canvas filling the rest with its own pan and zoom scroll, and the details of the
+annotation beside it (below it in a narrow window) with one scroll of their own.
+
 ## Shared viewer
 
 `components/viewer/image-viewer.tsx` is one frame viewer for images, classes, backgrounds and datasets. The owner passes a source with a
@@ -20,6 +41,7 @@ further pages.
 - Zoom (`lib/annotation/zoom.ts`, the `useZoomViewport` hook) is shared with the editor: "fit" = min(1, width/w, height/h) without
   enlarging, x1 is one frame pixel per CSS pixel, steps up to x10, and the centre of the visible area is kept.
 - Esc in full screen exits it first; after closing, focus returns to the element that opened the viewer.
+- The details under the frame are one region with one scroll; lists inside them (the boxes of an annotation) do not scroll on their own.
 - An expired URL: the viewer calls `renew` once, then offers to retry loading.
 
 ## Annotation editor
@@ -51,8 +73,8 @@ limited to 400 images, as in the API.
 
 ## Video frames
 
-The "frames from video" action of a group opens a panel above the gallery (`components/images/video-frame-import.tsx`); it is unavailable
-where file import is unavailable (archive, generated group, running generation). The video is chosen in a native window
+The «Кадры из видео» tab of a group holds the form (`components/images/video-frame-import.tsx`); it is unavailable where file import is
+unavailable (archive, generated group, running generation). The video is chosen in a native window
 (`imagesApi.selectVideo`); the panel shows name, size and duration and the fields start (0 s), interval (1 s) and frame count
 (min(20, max(1, ⌈duration in seconds⌉))). Values are checked by `videoFrameRangeError` — the same rules as in the host: a last timestamp
 past the end of the video shows an error and disables extraction.
@@ -63,5 +85,6 @@ const error = videoFrameRangeError(range, video.durationMs);
 await imports.importVideo(video.selectionToken, range, skipDuplicates);
 ```
 
-Progress and outcome are shown by the shared import history of the group (`useImageImports`). A video selection serves one run: afterwards
+Progress and outcome are shown by the shared import history of the group (`useImageImports`) in «Импорт»; while an import runs, its
+progress is pinned above the form. A video selection serves one run: afterwards
 the panel asks to choose the video again. The "skip duplicates in the group" flag is shared with file import.

@@ -35,13 +35,13 @@ export function GenerationSamples({ samples, palette, stale }: {
     return (
         <section className="space-y-2" aria-label={t("form.sample")} data-testid="generation-samples" aria-busy={samples.loading}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-sm font-medium">{t("form.sample")}{samples.seed !== undefined && <span className="ml-2 text-xs font-normal text-muted-foreground tabular-nums">seed {samples.seed}</span>}</h3>
-                {samples.loading && <span role="status" className="flex items-center gap-1 text-xs text-muted-foreground"><Loader2 className="size-3.5 animate-spin" aria-hidden />{t("samples.drawing")}</span>}
+                <h3 className="text-sm font-medium">{t("form.sample")}{samples.seed !== undefined && <span className="ml-2 text-xs font-normal text-text-2 tabular-nums">seed {samples.seed}</span>}</h3>
+                {samples.loading && <span role="status" className="flex items-center gap-1 text-xs text-text-2"><Loader2 className="size-3.5 animate-spin" aria-hidden />{t("samples.drawing")}</span>}
             </div>
             {samples.error && <Alert variant="destructive" data-testid="generation-samples-error"><AlertDescription>{samples.error}</AlertDescription></Alert>}
             {items.length > 0 && (
                 <>
-                    <p className="text-xs text-muted-foreground" data-testid="generation-samples-note">
+                    <p className="text-xs text-text-2" data-testid="generation-samples-note">
                         {stale
                             ? t("samples.stale")
                             : t("samples.note", { count: items.length })}
@@ -51,7 +51,7 @@ export function GenerationSamples({ samples, palette, stale }: {
                             <li key={item.sampleIndex} data-testid="generation-sample" data-objects={item.objects.length}>
                                 <button
                                     type="button"
-                                    className="w-full rounded-md text-left outline-none transition-colors hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring"
+                                    className="w-full rounded-md text-left outline-none transition-colors duration-120 ease-glass hover:bg-glass-fill focus-visible:ring-[3px] focus-visible:ring-focus/30"
                                     aria-label={t("samples.open", { number: item.sampleIndex + 1 })}
                                     data-testid="generation-sample-open"
                                     onClick={() => setViewed(item.sampleIndex)}
@@ -61,11 +61,11 @@ export function GenerationSamples({ samples, palette, stale }: {
                                             className="w-full" onExpired={samples.renew} />
                                         <SampleOverlay sample={item} palette={palette} />
                                     </div>
-                                    <span className="mt-1 block text-xs text-muted-foreground tabular-nums">
+                                    <span className="mt-1 block text-xs text-text-2 tabular-nums">
                                         {item.objects.length
                                             ? t("samples.frameObjects", { number: item.sampleIndex + 1, objects: item.objects.length })
                                             : t("samples.frameEmpty", { number: item.sampleIndex + 1 })}
-                                        {item.missingObjects > 0 && <span className="text-amber-700 dark:text-amber-400"> · {t("samples.missing", { missing: item.missingObjects })}</span>}
+                                        {item.missingObjects > 0 && <span className="text-warn"> · {t("samples.missing", { missing: item.missingObjects })}</span>}
                                     </span>
                                 </button>
                             </li>

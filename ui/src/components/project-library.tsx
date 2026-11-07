@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Archive, ArchiveRestore, Boxes, Download, FolderOpen, Loader2, Plus, Search, Settings, Trash2, Upload } from "lucide-react";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { ProjectTransferBanner } from "@/components/project-transfer-banner";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Notice } from "@/components/layout/notice";
+import { Toolbar } from "@/components/layout/toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,6 +16,7 @@ import type { ProjectsState } from "@/lib/use-projects";
 /**
  * The library: the last opened project comes first, marked Last opened; transfers (export, import) are banners with progress and an
  * outcome; deletion is the dialog of the owner (remove). opening — the project being opened now: another one can open without waiting.
+ * "Create a project" is the one brand action of the screen; below lg the row actions keep only their icons, named by aria-label and title.
  */
 export function ProjectLibrary({ library, transfers, busy, opening, notice, dismissNotice, create, edit, open, archive, remove, catalog }: {
     library: ProjectsState;
@@ -44,8 +46,8 @@ export function ProjectLibrary({ library, transfers, busy, opening, notice, dism
         <div className="space-y-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-semibold">{t("library.title")}</h1>
-                    <p className="mt-2 text-sm text-muted-foreground">{t("library.subtitle")}</p>
+                    <h1 className="text-2xl font-semibold tracking-[-0.025em]">{t("library.title")}</h1>
+                    <p className="mt-2 text-sm text-text-2">{t("library.subtitle")}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
                     <Button variant="outline" onClick={catalog} disabled={busy}><Boxes />{t("app.baseModels")}</Button>
@@ -58,24 +60,14 @@ export function ProjectLibrary({ library, transfers, busy, opening, notice, dism
                     >
                         <Upload />{t("library.import")}
                     </Button>
-                    <Button onClick={create} disabled={busy} data-testid="create-project"><Plus />{t("library.create")}</Button>
+                    <Button variant="brand" onClick={create} disabled={busy} data-testid="create-project"><Plus />{t("library.create")}</Button>
                 </div>
             </div>
             {library.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{library.error}</p>
-                        <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => void library.refresh()}>{t("common.retryLoading")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" action={{ label: t("common.retryLoading"), onClick: () => void library.refresh() }}>{library.error}</Notice>
             )}
             {transfers.error && (
-                <Alert variant="destructive" data-testid="transfer-error">
-                    <AlertDescription>
-                        <p>{transfers.error}</p>
-                        <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={transfers.clearError}>{t("common.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" data-testid="transfer-error" onDismiss={transfers.clearError}>{transfers.error}</Notice>
             )}
             {transfers.transfers.map(transfer => (
                 <ProjectTransferBanner
@@ -86,87 +78,93 @@ export function ProjectLibrary({ library, transfers, busy, opening, notice, dism
                 />
             ))}
             {notice && (
-                <Alert role="status" data-testid="project-deletion-notice">
-                    <AlertDescription>
-                        <p>{notice}</p>
-                        <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={dismissNotice}>{t("common.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice data-testid="project-deletion-notice" onDismiss={dismissNotice}><p>{notice}</p></Notice>
             )}
             <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="relative w-full max-w-sm">
-                    <Search className="absolute left-3 top-2.5 size-4 text-muted-foreground" aria-hidden />
+                    <Search className="absolute top-2.5 left-3 size-4 text-text-3" aria-hidden />
                     <Input aria-label={t("library.search")} placeholder={t("library.search")} className="pl-9" value={search} onChange={event => setSearch(event.target.value)} />
                 </div>
-                <label className="flex items-center gap-2 text-sm">
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-text-2">
                     <Checkbox checked={showArchive} onCheckedChange={value => setShowArchive(value === true)} />
                     {t("library.showArchive")}{archivedCount > 0 && ` (${archivedCount})`}
                 </label>
             </div>
-            <div className="overflow-hidden rounded-lg border">
+            <div>
                 {library.loading && !library.projects.length ? (
-                    <div className="flex items-center gap-2 p-6 text-muted-foreground" role="status">
+                    <div className="surface flex items-center gap-2 p-6 text-text-2" role="status">
                         <Loader2 className="size-4 animate-spin" aria-hidden />{t("library.loading")}
                     </div>
                 ) : (
-                    <div className="divide-y" data-testid="project-list">
+                    <ul className="space-y-2" data-testid="project-list">
                         {projects.map(project => (
-                            <div key={project.id} data-project-id={project.id} className="flex flex-wrap items-center justify-between gap-4 p-5">
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <FolderOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                                        <h2 className="break-words font-medium">{project.name}</h2>
-                                        {project.id === last && <Badge variant="secondary" data-testid="project-last">{t("library.lastOpened")}</Badge>}
-                                        {project.archivedAt && <Badge variant="outline">{t("library.archived")}</Badge>}
+                            <li key={project.id} data-project-id={project.id} data-selected={project.id === last || undefined}
+                                className="surface corners flex flex-wrap items-center justify-between gap-x-4 gap-y-3 px-4 py-3.5 transition-colors duration-120 ease-glass hover:bg-ink-2">
+                                <div className="min-w-0 flex-1 basis-64">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <FolderOpen className="size-4 shrink-0 text-text-3" aria-hidden />
+                                        <h2 className="min-w-0 text-[15px] font-semibold tracking-[-0.015em] break-words">{project.name}</h2>
+                                        {project.id === last && <Badge variant="brand" data-testid="project-last">{t("library.lastOpened")}</Badge>}
+                                        {project.archivedAt && <Badge variant="plain">{t("library.archived")}</Badge>}
                                     </div>
-                                    <p className="mt-2 max-w-prose whitespace-pre-wrap break-words text-sm text-muted-foreground">
+                                    <p className="mt-1 line-clamp-2 max-w-prose text-[13px] break-words whitespace-pre-wrap text-text-2" title={project.description || undefined}>
                                         {project.description || t("library.noDescription")}
                                     </p>
-                                    <p className="mt-2 text-xs tabular-nums text-muted-foreground">
+                                    <p className="mt-1 text-xs tabular-nums text-text-3">
                                         {project.baseModelId} · {project.inputSize.width} × {project.inputSize.height} px
                                     </p>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                {/* Below lg the secondary actions keep only their icons, so a row stays compact; "Open" keeps its word. */}
+                                <Toolbar className="gap-1">
                                     {!project.archivedAt && (
                                         <>
-                                            <Button onClick={() => open(project)} disabled={busy || opening === project.id} data-testid="open-project">
+                                            <Button size="sm" onClick={() => open(project)} disabled={busy || opening === project.id} data-testid="open-project">
                                                 {opening === project.id ? <><Loader2 className="animate-spin" aria-hidden />{t("library.opening")}</> : t("library.open")}
                                             </Button>
-                                            <Button variant="outline" onClick={() => edit(project)} disabled={busy}><Settings />{t("library.settings")}</Button>
+                                            <Button size="sm" variant="ghost" aria-label={t("library.settings")} title={t("library.settings")} onClick={() => edit(project)} disabled={busy}>
+                                                <Settings /><span className="hidden lg:inline">{t("library.settings")}</span>
+                                            </Button>
                                         </>
                                     )}
                                     <Button
-                                        variant="outline"
+                                        size="sm"
+                                        variant="ghost"
                                         onClick={() => void transfers.startExport(project)}
                                         disabled={transfers.exporting.has(project.id)}
+                                        aria-label={t("library.export")}
                                         title={t("library.exportHint")}
                                         data-testid="export-project"
                                     >
-                                        <Download />{t("library.export")}
+                                        <Download /><span className="hidden lg:inline">{t("library.export")}</span>
                                     </Button>
-                                    <Button variant="ghost" onClick={() => archive(project)} disabled={busy}>
-                                        {project.archivedAt ? <><ArchiveRestore />{t("library.restore")}</> : <><Archive />{t("app.toArchive")}</>}
+                                    <Button size="sm" variant="ghost" onClick={() => archive(project)} disabled={busy}
+                                        aria-label={project.archivedAt ? t("library.restore") : t("app.toArchive")} title={project.archivedAt ? t("library.restore") : t("app.toArchive")}>
+                                        {project.archivedAt
+                                            ? <><ArchiveRestore /><span className="hidden lg:inline">{t("library.restore")}</span></>
+                                            : <><Archive /><span className="hidden lg:inline">{t("app.toArchive")}</span></>}
                                     </Button>
                                     <Button
+                                        size="sm"
                                         variant="ghost"
-                                        className="text-destructive hover:text-destructive"
+                                        className="text-danger hover:text-danger"
                                         onClick={() => remove(project)}
                                         disabled={busy || transfers.exporting.has(project.id)}
                                         aria-label={t("library.deleteLabel", { name: project.name })}
+                                        title={t("library.delete")}
                                         data-testid="delete-project"
                                     >
-                                        <Trash2 />{t("library.delete")}
+                                        <Trash2 /><span className="hidden lg:inline">{t("library.delete")}</span>
                                     </Button>
-                                </div>
-                            </div>
+                                </Toolbar>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 )}
                 {!library.loading && projects.length === 0 && (
-                    <div className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
+                    <div className="surface flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
                         <img src="./brand/logo-mark.png" alt="" className="size-12 opacity-80" draggable={false} />
-                        <h2 className="font-medium">{library.projects.length ? t("library.notFound") : t("library.emptyTitle")}</h2>
-                        <p className="max-w-sm text-sm text-muted-foreground">
+                        <h2 className="text-[15px] font-semibold">{library.projects.length ? t("library.notFound") : t("library.emptyTitle")}</h2>
+                        <p className="max-w-sm text-sm text-text-2">
                             {library.projects.length ? t("library.notFoundHint") : t("library.emptyText")}
                         </p>
                         {!library.projects.length && (

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { datasetsApi } from "@/api/projects/datasets/datasets-api";
 import { specificationFieldError, type DatasetSpecificationField } from "@/api/projects/datasets/dataset-rules";
@@ -7,10 +7,14 @@ import type { DatasetOperationResponseDto } from "@/api/projects/datasets/respon
 import type { DatasetPlanResponseDto, DatasetVersionResponseDto } from "@/api/projects/datasets/response-dto/dataset-response-dto";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { BridgeError } from "@/api/transport/errors";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/layout/empty-state";
+import { MasterDetail } from "@/components/layout/master-detail";
+import { Notice } from "@/components/layout/notice";
+import { Pane } from "@/components/layout/pane";
+import { SectionLayout } from "@/components/layout/section-layout";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/layout/tabs";
 import { emptyDatasetForm, formFromSpecification, specificationKey, toSpecification, type DatasetFormValues } from "@/lib/datasets/dataset-form";
-import { matchesSearch, operationTitles } from "@/lib/datasets/dataset-view";
+import { isOperationActive, matchesSearch, operationTitles } from "@/lib/datasets/dataset-view";
 import { errorMessage, formatNumber } from "@/lib/format";
 import { useCatalog } from "@/lib/use-catalog";
 import { operationPageLimit, useDatasetOperations, type DatasetOperationsState } from "@/lib/use-dataset-operations";
@@ -24,9 +28,9 @@ import { DatasetDeletionDialog, DatasetEditDialog, DatasetOperationDeletionDialo
 import { DatasetList, versionButtonId } from "./dataset-list";
 import { DatasetOperationCard } from "./dataset-operation-card";
 import { DatasetPlanCard } from "./dataset-plan-card";
-import { DatasetTabs, panelId, tabId, type DatasetTab } from "./dataset-tabs";
+import { datasetTabs, panelId, tabId, type DatasetTab } from "./dataset-tabs";
 
-interface Notice {
+interface NoticeState {
     tone: "info" | "error";
     text: string;
 }
@@ -34,9 +38,10 @@ interface Notice {
 const fields: readonly DatasetSpecificationField[] = ["name", "description", "groupIds", "classIds", "variants", "roles", "ratios", "seed"];
 
 /**
- * The section "Datasets": tabs "Datasets" (the list with search and archive, the passport of the chosen version and samples), "Build"
- * (the form, the plan, the build history), "Checks" and "Exports" (operation cards). No polling: datasets.changed, job.changed,
- * images.changed, catalog.changed. All tabs stay mounted: the form and the plan survive switching, cards get events while hidden.
+ * The section "Datasets": tabs "Datasets" (the list with search and archive, the chosen version with "Details" and "Samples"), "Build"
+ * (the form, the plan, the build history), "Checks" and "Exports" (operation cards); a tab counts its items and shows a live dot while
+ * an operation runs. No polling: datasets.changed, job.changed, images.changed, catalog.changed. All tabs stay mounted: the form and the
+ * plan survive switching, cards get events while hidden.
  */
 export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
     const { t } = useTranslation("datasets");
@@ -60,7 +65,7 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
     const [plan, setPlan] = useState<DatasetPlanResponseDto>();
     const [planKey, setPlanKey] = useState<string>();
     const [action, setAction] = useState<"plan" | "build" | "other">();
-    const [notice, setNotice] = useState<Notice>();
+    const [notice, setNotice] = useState<NoticeState>();
     const [editing, setEditing] = useState<DatasetVersionResponseDto>();
     const [editError, setEditError] = useState<string>();
     const [deleting, setDeleting] = useState<DatasetVersionResponseDto>();
@@ -221,50 +226,62 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
     }
 
     const loadError = catalog.error ?? groups.error ?? versions.error;
+    const counts: Record<DatasetTab, number> = {
+        datasets: versions.versions.filter(version => !version.archivedAt).length,
+        build: builds.total,
+        verify: verifies.total,
+        export: exports.total,
+    };
+    const live = (tab: DatasetTab) => tab !== "datasets" && operations[tab].operations.some(operation => isOperationActive(operation.job));
+    const panel = (id: DatasetTab) => ({ value: id, id: panelId(id), "aria-labelledby": tabId(id), forceMount: true as const, hidden: tab !== id });
     return (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden" data-testid="datasets-section">
-            <DatasetTabs tab={tab} select={setTab} />
-            {notice && (
-                <Alert variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="datasets-notice">
-                    <AlertDescription>
-                        <p>{notice.text}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setNotice(undefined)}>{t("section.hide")}</Button>
-                    </AlertDescription>
-                </Alert>
-            )}
-            {loadError && (
-                <Alert variant="destructive" className="shrink-0">
-                    <AlertDescription>
-                        <p>{loadError}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => { void catalog.refresh(); void groups.refresh(); void versions.refresh(); }}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
-            )}
-            <div id={panelId("datasets")} role="tabpanel" aria-labelledby={tabId("datasets")} hidden={tab !== "datasets"}
-                className={tab === "datasets" ? "grid min-h-0 flex-1 grid-cols-[minmax(220px,0.75fr)_minmax(0,1.7fr)] gap-3" : undefined}>
-                <DatasetList versions={versions.versions} loading={versions.loading} selectedId={selected?.id} select={setSelectedId}
-                    search={search} setSearch={setSearch} showArchived={showArchived} setShowArchived={setShowArchived} />
-                <section className="flex min-h-0 flex-col rounded-md border bg-card" aria-label={t("section.selected")}>
-                    <div className="border-b p-3"><h2 className="font-medium break-words" data-testid="dataset-title">{selected?.name ?? t("section.choose")}</h2></div>
-                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4">
-                        {selected ? (
-                            <DatasetDetails
-                                projectId={projectId}
-                                version={selected}
-                                busy={busy}
-                                verify={() => verify(selected)}
-                                exportZip={() => exportZip(selected)}
-                                edit={() => { setEditError(undefined); setEditing(selected); }}
-                                toggleArchive={() => toggleArchive(selected)}
-                                remove={() => setDeleting(selected)}
-                            />
-                        ) : <p className="text-sm text-muted-foreground">{t("section.chooseHint")}</p>}
-                    </div>
-                </section>
-            </div>
-            <div id={panelId("build")} role="tabpanel" aria-labelledby={tabId("build")} hidden={tab !== "build"}
-                className={tab === "build" ? "grid min-h-0 flex-1 grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-5" : undefined}>
-                <section className="min-h-0 space-y-4 overflow-y-auto overscroll-contain pr-2" aria-label={t("section.newBuild")}>
+        <SectionLayout data-testid="datasets-section">
+            {/* Every panel stays mounted: the form and the plan survive switching, operation cards get events while hidden. */}
+            <Tabs value={tab} onValueChange={value => setTab(value as DatasetTab)} className="flex-1">
+                <TabsList aria-label={t("tabs.label")}>
+                    {datasetTabs.map(item => (
+                        <TabsTrigger key={item.id} value={item.id} id={tabId(item.id)} aria-controls={panelId(item.id)} data-testid={`datasets-tab-${item.id}`}
+                            count={counts[item.id]} live={live(item.id)}>
+                            {item.label}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+                {notice && (
+                    <Notice variant={notice.tone === "error" ? "destructive" : "default"} className="shrink-0" data-testid="datasets-notice" onDismiss={() => setNotice(undefined)}>
+                        {notice.text}
+                    </Notice>
+                )}
+                {loadError && (
+                    <Notice variant="destructive" className="shrink-0"
+                        action={{ label: t("section.retry"), onClick: () => { void catalog.refresh(); void groups.refresh(); void versions.refresh(); } }}>
+                        {loadError}
+                    </Notice>
+                )}
+                <TabsContent {...panel("datasets")} className="flex flex-col">
+                    <MasterDetail className="grid-cols-[minmax(0,11rem)_minmax(0,1fr)] lg:grid-cols-[minmax(14rem,0.6fr)_minmax(0,1.7fr)]">
+                        <DatasetList versions={versions.versions} loading={versions.loading} selectedId={selected?.id} select={setSelectedId}
+                            search={search} setSearch={setSearch} showArchived={showArchived} setShowArchived={setShowArchived} />
+                        <section className="flex min-h-0 min-w-0 flex-col" aria-label={t("section.selected")}>
+                            {selected ? (
+                                <DatasetDetails
+                                    projectId={projectId}
+                                    version={selected}
+                                    busy={busy}
+                                    verify={() => verify(selected)}
+                                    exportZip={() => exportZip(selected)}
+                                    edit={() => { setEditError(undefined); setEditing(selected); }}
+                                    toggleArchive={() => toggleArchive(selected)}
+                                    remove={() => setDeleting(selected)}
+                                />
+                            ) : (
+                                <EmptyState title={t("section.choose")} description={t("section.chooseHint")} className="flex-1 rounded-lg border border-dashed border-line" />
+                            )}
+                        </section>
+                    </MasterDetail>
+                </TabsContent>
+                {/* At lg the form and the plan with the build history are two columns with a scroll each; below lg they stack in one scroll. */}
+                <TabsContent {...panel("build")}
+                    className="flex flex-col gap-4 overflow-y-auto overscroll-contain lg:grid lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] lg:overflow-visible">
                     <DatasetBuildForm
                         values={form}
                         setValues={updateForm}
@@ -279,18 +296,22 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                         nameRef={nameRef}
                         repeatNotice={repeatNotice}
                     />
-                    {plan && <DatasetPlanCard plan={plan} stale={planStale} busy={busy} building={action === "build"} build={build} />}
-                </section>
-                <OperationList kind="build" state={builds} versionOf={versionOf} busy={busy} cancel={cancel} repeat={repeat}
-                    remove={(operation, name) => setRemovingOperation({ operation, name })} openDataset={openDataset} />
-            </div>
-            {(["verify", "export"] as const).map(kind => (
-                <div key={kind} id={panelId(kind)} role="tabpanel" aria-labelledby={tabId(kind)} hidden={tab !== kind}
-                    className={tab === kind ? "flex min-h-0 flex-1 flex-col" : undefined}>
-                    <OperationList kind={kind} state={operations[kind]} versionOf={versionOf} busy={busy} cancel={cancel} repeat={repeat}
-                        remove={(operation, name) => setRemovingOperation({ operation, name })} openDataset={openDataset} />
-                </div>
-            ))}
+                    <div className="flex min-w-0 flex-col gap-4 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain" role="region" aria-label={t("section.buildResults")}
+                        data-testid="dataset-build-results">
+                        {plan && <DatasetPlanCard plan={plan} stale={planStale} busy={busy} building={action === "build"} build={build} />}
+                        <OperationList kind="build" state={builds} versionOf={versionOf} busy={busy} cancel={cancel} repeat={repeat}
+                            remove={(operation, name) => setRemovingOperation({ operation, name })} openDataset={openDataset} />
+                    </div>
+                </TabsContent>
+                {(["verify", "export"] as const).map(kind => (
+                    <TabsContent key={kind} {...panel(kind)} className="flex flex-col">
+                        <Pane className="flex-1">
+                            <OperationList kind={kind} state={operations[kind]} versionOf={versionOf} busy={busy} cancel={cancel} repeat={repeat}
+                                remove={(operation, name) => setRemovingOperation({ operation, name })} openDataset={openDataset} />
+                        </Pane>
+                    </TabsContent>
+                ))}
+            </Tabs>
             {editing && <DatasetEditDialog version={editing} busy={busy} error={editError} close={() => setEditing(undefined)} save={values => void saveEdit(values)} />}
             {deleting && (
                 <DatasetDeletionDialog
@@ -320,10 +341,11 @@ export function DatasetsSection({ project }: { project: ProjectResponseDto }) {
                     }}
                 />
             )}
-        </div>
+        </SectionLayout>
     );
 }
 
+/** The cards of one operation kind; the history has no scroll of its own: the owner puts it into a Pane or a scrolling column. */
 function OperationList({ kind, state, versionOf, busy, cancel, repeat, remove, openDataset }: {
     kind: DatasetOperationKind;
     state: DatasetOperationsState;
@@ -337,16 +359,9 @@ function OperationList({ kind, state, versionOf, busy, cancel, repeat, remove, o
     const { t } = useTranslation("datasets");
     const label = t(`section.operations.${kind}`);
     return (
-        <section className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain pr-2" aria-label={label} data-testid={`dataset-operations-${kind}`}>
-            {kind === "build" && <h2 className="font-medium">{label}</h2>}
-            {state.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{state.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void state.refresh()}>{t("section.retry")}</Button>
-                    </AlertDescription>
-                </Alert>
-            )}
+        <section className="min-w-0 space-y-3" aria-label={label} data-testid={`dataset-operations-${kind}`}>
+            {kind === "build" && <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{label}</h2>}
+            {state.error && <Notice variant="destructive" action={{ label: t("section.retry"), onClick: () => void state.refresh() }}>{state.error}</Notice>}
             {state.operations.map(operation => {
                 const version = versionOf(operation.versionId);
                 const name = version?.name ?? operation.versionName;
@@ -364,18 +379,12 @@ function OperationList({ kind, state, versionOf, busy, cancel, repeat, remove, o
                 );
             })}
             {state.total > state.operations.length && (
-                <p className="text-xs text-muted-foreground">{t("section.lastOperations", { shown: Math.max(operationPageLimit, state.operations.length), total: formatNumber(state.total) })}</p>
+                <p className="text-xs text-text-2">{t("section.lastOperations", { shown: Math.max(operationPageLimit, state.operations.length), total: formatNumber(state.total) })}</p>
             )}
-            {state.loading && !state.operations.length && <p role="status" className="text-sm text-muted-foreground">{t("section.loading")}</p>}
-            {!state.loading && !state.error && !state.operations.length && <Empty testId={`dataset-operations-${kind}-empty`}>{t(`section.empty.${kind}`)}</Empty>}
+            {state.loading && !state.operations.length && <p role="status" className="text-sm text-text-2">{t("section.loading")}</p>}
+            {!state.loading && !state.error && !state.operations.length && (
+                <EmptyState title={t(`section.empty.${kind}`)} className="rounded-lg border border-dashed border-line" data-testid={`dataset-operations-${kind}-empty`} />
+            )}
         </section>
-    );
-}
-
-function Empty({ testId, children }: { testId: string; children: ReactNode }) {
-    return (
-        <div className="flex min-h-40 flex-col items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground" data-testid={testId}>
-            {children}
-        </div>
     );
 }

@@ -175,9 +175,11 @@ internal static partial class SmokeRunner
             '«Проверки» choose the working version and describe its weights, input and classes');
           assert($$('[role="tablist"][aria-label="Режим проверки"] [role="tab"]').map(item => item.textContent).join() === 'Изображение,Датасет,Видео,Экран'
             && modeTab('image').getAttribute('aria-selected') === 'true' && !panel('image').hidden, 'Modes are tabs with «Изображение» first');
-          key(modeTab('image'), 'End');
+          modeTab('image').focus();
+          focusEvent(modeTab('image'));
+          await keyTab(modeTab('image'), 'End');
           await wait(() => modeTab('screen').getAttribute('aria-selected') === 'true' && document.activeElement === modeTab('screen'), 'End');
-          key(modeTab('screen'), 'Home');
+          await keyTab(modeTab('screen'), 'Home');
           await wait(() => modeTab('image').getAttribute('aria-selected') === 'true' && panel('screen').hidden && !panel('image').hidden, 'Home');
           assert(true, 'Mode tabs follow the tablist pattern');
 
@@ -200,7 +202,7 @@ internal static partial class SmokeRunner
           const previousImage = $('[data-testid="check-image-result"]')?.dataset.checkId;
           (await wait(() => enabled($('[data-testid="check-image-pick"]')), 'Pick enabled')).click();
           await wait(() => $('[data-testid="check-image-result"]')?.dataset.checkId !== previousImage && state('check-image') === 'running', 'Hanging check running');
-          modeTab('screen').click();
+          await selectTab('checks-tab-screen');
           await wait(() => $('[data-testid="check-screen"]') && text('[data-testid="check-screen-monitor"]').startsWith('Монитор '), 'Monitors listed');
           const monitors = (await request('checks.listMonitors', {})).data;
           const primary = monitors.find(item => item.isPrimary) ?? monitors[0];
@@ -217,7 +219,7 @@ internal static partial class SmokeRunner
           await wait(() => text('[data-testid="check-screen-error-notice"]').startsWith('Уже идёт другая проверка'), 'Busy refusal',
             () => text('[data-testid="check-screen-error-notice"]'));
           assert($('[data-testid="check-screen-result"]')?.dataset.checkId === shownBefore, 'A second check is refused at once while one runs, with the Russian text');
-          modeTab('image').click();
+          await selectTab('checks-tab-image');
           await wait(() => !panel('image').hidden, 'Image tab');
           assert(state('check-image') === 'running' && text('[data-testid="check-image-state"]') === 'Идёт проверка', 'Switching tabs keeps the running check');
           $('[data-testid="check-image-stop"]').click();
@@ -229,7 +231,7 @@ internal static partial class SmokeRunner
 
     private const string ChecksUiVideoScript = """
           await openChecks();
-          modeTab('video').click();
+          await selectTab('checks-tab-video');
           (await wait(() => enabled($('[data-testid="check-video-pick"]')), 'Video pick')).click();
           await wait(() => text('[data-testid="check-video-source"]').startsWith('улица.mp4 · 640 × 360 · '), 'Video chosen', () => text('[data-testid="check-video-source"]'));
           const working = (await modelVersions()).find(version => version.isWorking);
@@ -267,7 +269,7 @@ internal static partial class SmokeRunner
           const checkId = result.dataset.checkId;
           await openSection('models', 'models-section');
           await openSection('checks', 'checks-section');
-          modeTab('video').click();
+          await selectTab('checks-tab-video');
           await wait(() => $('[data-testid="check-video-result"]')?.dataset.checkId === checkId && $$('[data-testid="check-video-journal"] tbody tr').length === 6,
             'Reconnected video check', () => checkId + ' vs ' + $('[data-testid="check-video-result"]')?.dataset.checkId + ' rows ' + $$('[data-testid="check-video-journal"] tbody tr').length
               + ' tab ' + modeTab('video')?.getAttribute('aria-selected') + ' panel ' + !!panel('video') + ' state ' + state('check-video'));
@@ -277,7 +279,7 @@ internal static partial class SmokeRunner
 
     private const string ChecksUiVideoStopScript = """
           await openChecks();
-          modeTab('video').click();
+          await selectTab('checks-tab-video');
           (await wait(() => enabled($('[data-testid="check-video-pick"]')), 'Video pick')).click();
           await wait(() => text('[data-testid="check-video-source"]').startsWith('fake-hang.mp4 · '), 'Hanging video chosen');
           const before = $('[data-testid="check-video-result"]')?.dataset.checkId;
@@ -291,7 +293,7 @@ internal static partial class SmokeRunner
 
     private const string ChecksUiScreenScript = """
           await openChecks();
-          modeTab('screen').click();
+          await selectTab('checks-tab-screen');
           (await wait(() => enabled($('[data-testid="check-screen-capture"]')), 'Capture enabled')).click();
           await wait(() => loaded($('[data-testid="check-screen"] [data-testid="crop-image"]')) || $('[data-testid="check-screen-whole"]'), 'Screenshot again');
           await wait(() => enabled($('[data-testid="check-screen-start"]')), 'Screen start');
@@ -331,7 +333,7 @@ internal static partial class SmokeRunner
 
     private const string ChecksUiDatasetScript = """
           await openChecks();
-          modeTab('dataset').click();
+          await selectTab('checks-tab-dataset');
           await wait(() => $('[data-testid="model-evaluations"]'), 'Evaluations');
           const versions = await modelVersions();
           const working = versions.find(version => version.isWorking);
@@ -432,7 +434,7 @@ internal static partial class SmokeRunner
           await wait(() => !card(target.id) && text('[data-testid="models-notice"]').startsWith('Версия ' + target.number + ' удалена.'), 'Version deleted');
           assert(text('[data-testid="models-summary"]').startsWith('Всего ' + (versions.length - 1) + ' · '), 'A deleted version leaves the list');
           await openSection('training', 'training-section');
-          tab('history').click();
+          await selectTab('training-tab-history');
           const deleted = await wait(() => $('[data-testid="training-run-card"][data-run-id="' + target.runId + '"] [data-testid="training-run-card-version-deleted"]'),
             'Deleted version in the history');
           assert(deleted.textContent === 'Версия удалена' && !$('[data-testid="training-run-card"][data-run-id="' + target.runId + '"] [data-testid="training-run-card-version"]'),

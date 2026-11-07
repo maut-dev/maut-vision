@@ -9,7 +9,7 @@ import type { BackgroundSetResponseDto } from "@/api/projects/backgrounds/respon
 import { useReturnFocus } from "@/components/catalog/catalog-dialogs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { automaticDecision, cropPlan, previousRegion, type CropDecision } from "@/lib/backgrounds/crop-plan";
 import { defaultRegion, type FramePosition, type LastRegion } from "@/lib/backgrounds/crop-frame";
 import { i18n } from "@/i18n";
@@ -22,6 +22,8 @@ import "@/i18n/sections/backgrounds";
 
 /** A frame preview is a temporary URL for 10 minutes; showing the file again reuses it while the expiry is far. */
 const previewReuseMs = 5 * 60_000;
+// The frame of the pick stage fits the dialog body: the window height less the dialog margin, its header, the file name and the footer.
+const cropFrameHeight = "min(58vh, calc(100dvh - 20rem))";
 
 /**
  * "Cutting backgrounds from images": files one by one. Files of exactly the needed size are taken whole, smaller ones are skipped,
@@ -183,7 +185,7 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
     return (
         <Dialog open onOpenChange={open => { if (!open && !busy) close(); }}>
             <DialogContent
-                className="max-h-[94vh] overflow-y-auto sm:max-w-4xl"
+                className="sm:max-w-4xl"
                 data-testid="crop-dialog"
                 data-stage={stage}
                 showCloseButton={!busy}
@@ -199,59 +201,62 @@ export function BackgroundImageCropDialog({ projectId, set, selection, blur, sta
                             : t("crop.reviewHint")}
                     </DialogDescription>
                 </DialogHeader>
-                {stage === "pick" ? (
-                    <div className="space-y-3">
-                        <p className="min-h-5 truncate text-sm" data-testid="crop-file">{files[position]?.name}</p>
-                        {loading || !source ? (
-                            <div role="status" className="flex h-72 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground">{t("crop.loading")}</div>
-                        ) : (
-                            <BackgroundCropFrame source={source} frame={frame} value={region} onChange={setRegion} autoFocus />
-                        )}
+                {/* Only the body scrolls (a long review); the frame of the pick stage is sized to fit the body of any window. */}
+                <DialogBody className="space-y-3">
+                    {stage === "pick" ? (
+                        <div className="space-y-3">
+                            <p className="min-h-5 text-sm [overflow-wrap:anywhere]" data-testid="crop-file">{files[position]?.name}</p>
+                            {loading || !source ? (
+                                <div role="status" className="flex h-[min(18rem,calc(100dvh-20rem))] items-center justify-center rounded-md bg-ink-2 text-xs text-text-2">{t("crop.loading")}</div>
+                            ) : (
+                                <BackgroundCropFrame source={source} frame={frame} value={region} onChange={setRegion} autoFocus maxHeight={cropFrameHeight} />
+                            )}
+                        </div>
+                    ) : (
+                        <div className="space-y-4" data-testid="crop-review">
+                            <ul className="space-y-1 text-sm">
+                                <li data-testid="crop-count-crop">{t("crop.countCrop", { number: plan.counts.crop })}</li>
+                                <li data-testid="crop-count-whole">{t("crop.countWhole", { width: frame.width, height: frame.height, number: plan.counts.whole })}</li>
+                                <li className="text-muted-foreground" data-testid="crop-count-skip">{t("crop.countSkip", { number: plan.counts.skip })}</li>
+                            </ul>
+                            {small.length > 0 && (
+                                <details className="rounded-md border px-3 py-2 text-xs text-muted-foreground" data-testid="crop-small">
+                                    <summary className="cursor-pointer select-none">{t("crop.small", { number: small.length })}</summary>
+                                    {small.map(([index, decision]) => decision.kind === "small" && (
+                                        <p key={index} className="mt-1 break-words">
+                                            {t("crop.smallFile", { name: name(index), width: decision.width, height: decision.height, targetWidth: frame.width, targetHeight: frame.height })}
+                                        </p>
+                                    ))}
+                                </details>
+                            )}
+                            {invalid.length > 0 && (
+                                <details className="rounded-md border px-3 py-2 text-xs text-destructive" data-testid="crop-invalid">
+                                    <summary className="cursor-pointer select-none">{t("crop.invalid", { number: invalid.length })}</summary>
+                                    {invalid.map(([index, decision]) => decision.kind === "invalid" && (
+                                        <p key={index} className="mt-1 break-words">{name(index)} · {decision.message ?? t("crop.unreadable")}</p>
+                                    ))}
+                                </details>
+                            )}
+                            <BackgroundBlurSettings blur={blur} disabled={busy} />
+                            {tooMany ? (
+                                <p role="alert" className="text-sm text-destructive">
+                                    {t("crop.tooMany", { count: maxCropSources })}
+                                </p>
+                            ) : included.length ? (
+                                <div aria-busy={samplesState.busy}>
+                                    {samplesState.error && <Alert variant="destructive"><AlertDescription>{samplesState.error}</AlertDescription></Alert>}
+                                    {samplesState.busy && !preview && <p role="status" className="text-xs text-muted-foreground">{t("crop.preparingSamples")}</p>}
+                                    <BackgroundImportSamples preview={preview} />
+                                </div>
+                            ) : (
+                                <p className="text-sm text-muted-foreground">{t("crop.nothing")}</p>
+                            )}
+                        </div>
+                    )}
+                    <div aria-live="polite">
+                        {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
                     </div>
-                ) : (
-                    <div className="space-y-4" data-testid="crop-review">
-                        <ul className="space-y-1 text-sm">
-                            <li data-testid="crop-count-crop">{t("crop.countCrop", { number: plan.counts.crop })}</li>
-                            <li data-testid="crop-count-whole">{t("crop.countWhole", { width: frame.width, height: frame.height, number: plan.counts.whole })}</li>
-                            <li className="text-muted-foreground" data-testid="crop-count-skip">{t("crop.countSkip", { number: plan.counts.skip })}</li>
-                        </ul>
-                        {small.length > 0 && (
-                            <details className="rounded-md border px-3 py-2 text-xs text-muted-foreground" data-testid="crop-small">
-                                <summary className="cursor-pointer select-none">{t("crop.small", { number: small.length })}</summary>
-                                {small.map(([index, decision]) => decision.kind === "small" && (
-                                    <p key={index} className="mt-1 break-words">
-                                        {t("crop.smallFile", { name: name(index), width: decision.width, height: decision.height, targetWidth: frame.width, targetHeight: frame.height })}
-                                    </p>
-                                ))}
-                            </details>
-                        )}
-                        {invalid.length > 0 && (
-                            <details className="rounded-md border px-3 py-2 text-xs text-destructive" data-testid="crop-invalid">
-                                <summary className="cursor-pointer select-none">{t("crop.invalid", { number: invalid.length })}</summary>
-                                {invalid.map(([index, decision]) => decision.kind === "invalid" && (
-                                    <p key={index} className="mt-1 break-words">{name(index)} · {decision.message ?? t("crop.unreadable")}</p>
-                                ))}
-                            </details>
-                        )}
-                        <BackgroundBlurSettings blur={blur} disabled={busy} />
-                        {tooMany ? (
-                            <p role="alert" className="text-sm text-destructive">
-                                {t("crop.tooMany", { count: maxCropSources })}
-                            </p>
-                        ) : included.length ? (
-                            <div aria-busy={samplesState.busy}>
-                                {samplesState.error && <Alert variant="destructive"><AlertDescription>{samplesState.error}</AlertDescription></Alert>}
-                                {samplesState.busy && !preview && <p role="status" className="text-xs text-muted-foreground">{t("crop.preparingSamples")}</p>}
-                                <BackgroundImportSamples preview={preview} />
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">{t("crop.nothing")}</p>
-                        )}
-                    </div>
-                )}
-                <div aria-live="polite">
-                    {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                </div>
+                </DialogBody>
                 <DialogFooter>
                     {stage === "pick" ? (
                         <>

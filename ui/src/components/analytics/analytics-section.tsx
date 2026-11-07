@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { Check, CircleHelp, Copy } from "lucide-react";
 import type { ProjectResponseDto } from "@/api/projects/response-dto/project-response-dto";
 import { ModelEvaluations } from "@/components/checks/model-evaluations";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { EmptyState } from "@/components/layout/empty-state";
+import { Notice } from "@/components/layout/notice";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -22,7 +23,8 @@ import { seriesColor } from "@/lib/series-color";
 /**
  * The Analytics section: comparison of the chosen model versions — metrics and parameters, training curves by epoch and dataset checks
  * (the shared ModelEvaluations). No polling: training.changed, datasets.changed, checks.changed, job.changed. The choice of versions is
- * kept per project in localStorage; the epoch history is read once per version while the section is open.
+ * kept per project in localStorage; the epoch history is read once per version while the section is open. The section scrolls with the
+ * page; wide tables scroll only horizontally.
  */
 export function AnalyticsSection({ project, openTraining, openPassport }: {
     project: ProjectResponseDto;
@@ -98,28 +100,20 @@ export function AnalyticsSection({ project, openTraining, openPassport }: {
 
     if (models.loaded && !versions.length) {
         return (
-            <section className="space-y-3 rounded-lg border border-dashed p-6" data-testid="analytics-empty">
-                <h2 className="font-medium">{t("empty.title")}</h2>
-                <p className="max-w-prose text-sm text-muted-foreground">{t("empty.text")}</p>
-                <Button variant="outline" data-testid="analytics-open-training" onClick={openTraining}>{t("empty.openTraining")}</Button>
-            </section>
+            <EmptyState title={t("empty.title")} description={t("empty.text")} className="min-h-40 rounded-lg border border-dashed border-line" data-testid="analytics-empty"
+                action={<Button variant="outline" data-testid="analytics-open-training" onClick={openTraining}>{t("empty.openTraining")}</Button>} />
         );
     }
 
     return (
         <div className="space-y-5" data-testid="analytics-section">
             {models.error && (
-                <Alert variant="destructive">
-                    <AlertDescription>
-                        <p>{models.error}</p>
-                        <Button variant="ghost" size="sm" className="mt-1" onClick={() => void models.refresh()}>{t("retry")}</Button>
-                    </AlertDescription>
-                </Alert>
+                <Notice variant="destructive" action={{ label: t("retry"), onClick: () => void models.refresh() }}>{models.error}</Notice>
             )}
-            <section className="space-y-3 rounded-lg border bg-card p-5" data-testid="analytics-versions">
-                <h2 className="font-medium">{t("versions.title")}</h2>
+            <section className="surface space-y-3 p-5" data-testid="analytics-versions">
+                <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("versions.title")}</h2>
                 {!models.loaded ? (
-                    <p role="status" className="text-sm text-muted-foreground">{t("versions.loading")}</p>
+                    <p role="status" className="text-sm text-text-2">{t("versions.loading")}</p>
                 ) : (
                     <div className="flex flex-wrap gap-x-5 gap-y-2">
                         {versions.map(version => (
@@ -132,29 +126,29 @@ export function AnalyticsSection({ project, openTraining, openPassport }: {
                                 />
                                 <span className="inline-block size-2 rounded-full" style={{ background: seriesColor(version.number) }} />
                                 {t("table.version", { number: version.number })}
-                                {version.isWorking && <Badge variant="secondary">{t("versions.working")}</Badge>}
-                                <span className="text-xs text-muted-foreground">{formatDay(version.createdAt)}</span>
+                                {version.isWorking && <Badge variant="brand">{t("versions.working")}</Badge>}
+                                <span className="text-xs text-text-2">{formatDay(version.createdAt)}</span>
                             </label>
                         ))}
                     </div>
                 )}
-                <p className="text-xs text-muted-foreground">{t("versions.note")}</p>
+                <p className="text-xs text-text-2">{t("versions.note")}</p>
             </section>
             {selected.length > 0 ? (
                 <>
-                    <section className="space-y-3 rounded-lg border bg-card p-5" data-testid="analytics-metrics">
+                    <section className="surface space-y-3 p-5" data-testid="analytics-metrics">
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h2 className="font-medium">{t("metrics.title")}</h2>
+                            <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("metrics.title")}</h2>
                             <Button variant="outline" size="sm" data-testid="analytics-copy" data-copied={copied || undefined} onClick={() => void copyTable()}>
                                 {copied ? <Check /> : <Copy />}
                                 {copied ? t("metrics.copied") : t("metrics.copy")}
                             </Button>
                         </div>
-                        {copyError && <p role="alert" className="text-sm text-destructive">{copyError}</p>}
-                        <div className="overflow-x-auto rounded-md border">
+                        {copyError && <p role="alert" className="text-sm text-danger">{copyError}</p>}
+                        <div className="overflow-x-auto overflow-y-hidden rounded-md border border-line">
                             <table className="w-full text-sm" data-testid="analytics-table">
                                 <thead>
-                                    <tr className="border-b text-left text-xs text-muted-foreground">
+                                    <tr className="border-b border-line text-left text-xs text-text-2">
                                         <th className="px-3 py-2 font-normal">{t("table.parameter")}</th>
                                         {selected.map(version => (
                                             <th key={version.id} className="px-3 py-2 text-right font-normal" data-version-id={version.id}>
@@ -172,8 +166,8 @@ export function AnalyticsSection({ project, openTraining, openPassport }: {
                                         const values = selected.map(version => row.quality ? version.metrics[row.quality] : undefined);
                                         const best = row.quality ? bestOf(values) : null;
                                         return (
-                                            <tr key={row.key} className="border-b last:border-b-0" data-row={row.key}>
-                                                <td className="px-3 py-2 text-muted-foreground" title={row.help}>
+                                            <tr key={row.key} className="border-b border-line last:border-b-0" data-row={row.key}>
+                                                <td className="px-3 py-2 text-text-2" title={row.help}>
                                                     <span className="inline-flex items-center gap-1">
                                                         {row.label}
                                                         {row.help && <CircleHelp className="size-3.5 opacity-60" aria-hidden />}
@@ -187,7 +181,7 @@ export function AnalyticsSection({ project, openTraining, openPassport }: {
                                                             className={`px-3 py-2 text-right tabular-nums ${isBest ? "font-semibold text-[var(--metric-best)]" : ""}`}>
                                                             {row.text(version)}
                                                             {best !== null && typeof value === "number" && !isBest && (
-                                                                <span className="ml-1.5 text-xs text-muted-foreground" title={t("metrics.gap")} data-testid="analytics-gap">
+                                                                <span className="ml-1.5 text-xs text-text-2" title={t("metrics.gap")} data-testid="analytics-gap">
                                                                     −{(best - value).toFixed(3)}
                                                                 </span>
                                                             )}
@@ -200,20 +194,18 @@ export function AnalyticsSection({ project, openTraining, openPassport }: {
                                 </tbody>
                             </table>
                         </div>
-                        <p className="text-xs text-muted-foreground">{t("metrics.note")}</p>
+                        <p className="text-xs text-text-2">{t("metrics.note")}</p>
                     </section>
                     <AnalyticsCurves versions={selected} histories={histories} />
                 </>
             ) : (
                 models.loaded && (
-                    <div className="flex min-h-24 items-center justify-center rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground" data-testid="analytics-none">
-                        {t("none")}
-                    </div>
+                    <EmptyState title={t("none")} className="min-h-24 rounded-lg border border-dashed border-line" data-testid="analytics-none" />
                 )
             )}
             {models.loaded && (
                 <section className="space-y-3" data-testid="analytics-evaluations">
-                    <h2 className="font-medium">{t("evaluations")}</h2>
+                    <h2 className="text-[15px] font-semibold tracking-[-0.015em]">{t("evaluations")}</h2>
                     <ModelEvaluations evaluations={evaluations} versions={versions} compared={selected} versionId={selected[0]?.id} datasets={datasets.versions} gpus={gpus} />
                 </section>
             )}

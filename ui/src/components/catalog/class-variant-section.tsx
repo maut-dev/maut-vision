@@ -5,6 +5,9 @@ import type { ClassAssetResponseDto } from "@/api/projects/catalog/response-dto/
 import type { ClassVariantResponseDto } from "@/api/projects/catalog/response-dto/class-variant-response-dto";
 import { parseImportClassAssetsResult } from "@/api/projects/catalog/response-dto/import-class-assets-result-dto";
 import type { InputSizeDto } from "@/api/projects/input-size-dto";
+import { Collapsible } from "@/components/layout/collapsible";
+import { Notice } from "@/components/layout/notice";
+import { Progress } from "@/components/layout/progress";
 import { ResourceImage } from "@/components/resource-image";
 import { ImageViewer } from "@/components/viewer/image-viewer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -53,7 +56,7 @@ export function ClassVariantSection({ projectId, binding, className, variantName
     const oversized = binding.assetCount > 0
         && (binding.maxAssetWidth >= inputSize.width || binding.maxAssetHeight >= inputSize.height);
     return (
-        <section data-class-variant-id={binding.id} aria-label={t("binding.label", { name: variantName })} className="space-y-3 border-t pt-4">
+        <section data-class-variant-id={binding.id} aria-label={t("binding.label", { name: variantName })} className="space-y-3 border-t border-line pt-4 first:border-t-0 first:pt-0">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                     <VariantColorInput
@@ -67,7 +70,7 @@ export function ClassVariantSection({ projectId, binding, className, variantName
                     <h3 className="font-medium break-words">{variantName}</h3>
                     <Badge variant="outline" data-testid="asset-count">{imagesLabel(binding.assetCount)}</Badge>
                     {binding.opaqueAssetCount > 0 && (
-                        <Badge variant="outline" className="border-amber-500/50 text-amber-300" title={t("binding.noAlphaHint")}>
+                        <Badge variant="warn" title={t("binding.noAlphaHint")}>
                             {t("binding.noAlphaCount", { number: formatNumber(binding.opaqueAssetCount) })}
                         </Badge>
                     )}
@@ -107,8 +110,8 @@ export function ClassVariantSection({ projectId, binding, className, variantName
             </div>
             {importState && <ImportStatus state={importState} cancel={() => actions.cancelImport(binding)} dismiss={() => actions.dismissImport(binding)} />}
             {oversized && (
-                <Alert className="border-amber-500/40" role="status" data-testid="scale-warning">
-                    <AlertTriangle className="text-amber-400" />
+                <Alert variant="warn" role="status" data-testid="scale-warning">
+                    <AlertTriangle />
                     <AlertTitle>{t("binding.scaleTitle")}</AlertTitle>
                     <AlertDescription>
                         {t("binding.scaleText", { width: inputSize.width, height: inputSize.height })}
@@ -124,7 +127,7 @@ function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: 
     const { t } = useTranslation("catalog");
     const job = state.job;
     if (state.selecting && !job) {
-        return <p role="status" className="text-sm text-muted-foreground">{t("import.selecting")}</p>;
+        return <p role="status" className="text-sm text-text-2">{t("import.selecting")}</p>;
     }
     if (!job) {
         return state.error ? <ImportError message={state.error} dismiss={dismiss} /> : null;
@@ -132,65 +135,48 @@ function ImportStatus({ state, cancel, dismiss }: { state: AssetImport; cancel: 
     if (isJobActive(job)) {
         const percent = job.total ? Math.round(((job.processed ?? 0) / job.total) * 100) : job.progress;
         return (
-            <div role="status" data-testid="import-progress" className="space-y-2 rounded-lg border bg-card p-3 text-sm">
+            <div role="status" data-testid="import-progress" className="space-y-2 rounded-lg border border-line bg-ink-2 p-3 text-sm">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="flex items-center gap-2">
                         <Loader2 className="size-4 animate-spin" aria-hidden />
                         {job.status === "queued" ? t("import.queued") : t("import.running")}
-                        {job.total !== null && <span className="tabular-nums text-muted-foreground">{t("import.progress", { processed: formatNumber(job.processed ?? 0), total: formatNumber(job.total) })}</span>}
+                        {job.total !== null && <span className="tabular-nums text-text-2">{t("import.progress", { processed: formatNumber(job.processed ?? 0), total: formatNumber(job.total) })}</span>}
                     </span>
                     <Button variant="outline" size="sm" disabled={job.cancelRequested} onClick={cancel}>
                         {job.cancelRequested ? t("import.cancelling") : t("import.cancel")}
                     </Button>
                 </div>
-                <div
-                    className="h-1.5 overflow-hidden rounded-full bg-secondary"
-                    role="progressbar"
-                    aria-label={t("import.progressLabel")}
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={percent ?? undefined}
-                >
-                    <div className={percent === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"} style={percent === null ? undefined : { width: `${percent}%` }} />
-                </div>
+                <Progress value={percent} live={job.status === "running"} aria-label={t("import.progressLabel")} />
                 {state.error && <p className="text-destructive">{state.error}</p>}
             </div>
         );
     }
     const result = parseImportClassAssetsResult(job);
     const title = job.status === "succeeded" ? t("import.succeeded") : job.status === "cancelled" ? t("import.cancelled") : t("import.failed");
+    // Rejected files unfold inline in the result, without a scroll of their own.
     return (
-        <Alert variant={job.status === "succeeded" ? "default" : "destructive"} data-testid="import-result">
-            <AlertTitle>{title}</AlertTitle>
-            <AlertDescription>
-                {result && (
-                    <p className="tabular-nums">
-                        {t("import.summary", { added: formatNumber(result.added), duplicates: formatNumber(result.duplicates), rejected: formatNumber(result.rejected) })}
-                    </p>
-                )}
-                {job.status !== "succeeded" && job.status !== "cancelled" && job.error && <p>{jobErrorText(job.error)}</p>}
-                {!!result?.rejectedFiles.length && (
-                    <ul className="mt-1 max-h-32 list-disc space-y-0.5 overflow-y-auto pl-5 text-xs">
+        <Notice variant={job.status === "succeeded" ? "default" : "destructive"} title={title} data-testid="import-result" onDismiss={dismiss}>
+            {result && (
+                <p className="tabular-nums">
+                    {t("import.summary", { added: formatNumber(result.added), duplicates: formatNumber(result.duplicates), rejected: formatNumber(result.rejected) })}
+                </p>
+            )}
+            {job.status !== "succeeded" && job.status !== "cancelled" && job.error && <p>{jobErrorText(job.error)}</p>}
+            {!!result?.rejectedFiles.length && (
+                <Collapsible title={<span className="text-xs font-normal">{t("import.rejectedFiles", { number: formatNumber(result.rejected) })}</span>} className="-mx-3 mt-1"
+                    data-testid="import-rejected">
+                    <ul className="list-disc space-y-0.5 pr-3 pb-1 pl-12 text-xs">
                         {result.rejectedFiles.map((file, index) => <li key={`${file.name}-${index}`} className="break-words">{file.name} — {errorText(file.reason)}</li>)}
                         {result.rejected > result.rejectedFiles.length && <li>{t("import.more", { number: formatNumber(result.rejected - result.rejectedFiles.length) })}</li>}
                     </ul>
-                )}
-                <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>{t("section.hide")}</Button>
-            </AlertDescription>
-        </Alert>
+                </Collapsible>
+            )}
+        </Notice>
     );
 }
 
 function ImportError({ message, dismiss }: { message: string; dismiss: () => void }) {
-    const { t } = useTranslation("catalog");
-    return (
-        <Alert variant="destructive">
-            <AlertDescription>
-                <p>{message}</p>
-                <Button variant="ghost" size="sm" className="mt-1" onClick={dismiss}>{t("section.hide")}</Button>
-            </AlertDescription>
-        </Alert>
-    );
+    return <Notice variant="destructive" onDismiss={dismiss}>{message}</Notice>;
 }
 
 function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
@@ -236,10 +222,10 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
     }, [hasMore, loadMore]);
 
     if (!assets.items.length) {
-        if (assets.loading) return <p role="status" className="py-6 text-sm text-muted-foreground">{t("assets.loading")}</p>;
+        if (assets.loading) return <p role="status" className="py-6 text-sm text-text-2">{t("assets.loading")}</p>;
         if (assets.error) return <GridError message={assets.error} retry={() => void assets.reload()} />;
         return (
-            <p className="py-6 text-sm text-muted-foreground">
+            <p className="py-6 text-sm text-text-2">
                 {t("assets.empty")}
             </p>
         );
@@ -253,7 +239,7 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                         <figure key={asset.id} data-class-asset-id={asset.id} className="min-w-0">
                             <button
                                 type="button"
-                                className="relative block w-full rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                className="relative block w-full rounded-md outline-none focus-visible:ring-[3px] focus-visible:ring-focus/30"
                                 aria-label={t("assets.viewLabel", { name: `${label} · ${size}` })}
                                 onClick={() => setViewed({ id: asset.id })}
                             >
@@ -261,19 +247,19 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
                                     src={asset.thumbnailUrl}
                                     alt={`${label} · ${size}`}
                                     fit="contain"
-                                    className="h-24 w-full border"
+                                    className="h-24 w-full rounded-md border border-line"
                                     onExpired={assets.renew}
                                 />
                                 {!asset.hasAlpha && (
                                     <span
-                                        className="absolute top-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[10px] leading-none text-amber-300"
+                                        className="absolute top-1 left-1 rounded bg-black/70 px-1 py-0.5 text-[10px] leading-none text-warn"
                                         title={t("assets.noAlphaHint")}
                                     >
                                         {t("assets.noAlpha")}
                                     </span>
                                 )}
                             </button>
-                            <figcaption className="mt-1 text-center text-xs tabular-nums text-muted-foreground">{size}</figcaption>
+                            <figcaption className="mt-1 text-center text-xs tabular-nums text-text-2">{size}</figcaption>
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -328,12 +314,5 @@ function AssetGrid({ projectId, classVariantId, label, busy, remove }: {
 
 function GridError({ message, retry }: { message: string; retry: () => void }) {
     const { t } = useTranslation("catalog");
-    return (
-        <Alert variant="destructive">
-            <AlertDescription>
-                <p>{message}</p>
-                <Button variant="ghost" size="sm" className="mt-1" onClick={retry}>{t("section.retry")}</Button>
-            </AlertDescription>
-        </Alert>
-    );
+    return <Notice variant="destructive" action={{ label: t("section.retry"), onClick: retry }}>{message}</Notice>;
 }

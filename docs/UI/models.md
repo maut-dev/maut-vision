@@ -3,6 +3,10 @@
 The "Models" section (`components/models/`) lists all model versions of the project, newest first: a card with metrics, the working
 version, ZIP export, deletion and the passport. Data comes from [model versions](../Core/training.md#model-versions), without polling.
 
+The section fits the window. The header — the summary or "back to models", notices and the export progress — stays in place; the list of
+cards or the passport below it is the one scroll. The list compares the four metrics of every version side by side, so the passport
+replaces the list instead of sharing the width with it.
+
 ```tsx
 const models = useModelVersions(projectId);    // listModelVersions + training.changed (versions, revision null — deleted); loaded, listedAt
 const exporter = useModelExport(projectId);    // selectModelExportDestination → startModelExport → job.changed (kind training.export)
@@ -30,8 +34,8 @@ if (reason && versionInUseReasons[reason]) throw new Error(`Версию сей�
 
 ## Passport
 
-The passport is the shared `ModelVersionPassport` of training; in "Models" it gets export, deletion and "back to models", and the epoch
-history is read in pages by `runId`. The navigation intent `{ section: "models", versionId }` opens the passport directly.
+The passport is the shared `ModelVersionPassport` of training; in "Models" it gets export and deletion, the header above it gets "back to
+models", and the epoch history is read in pages by `runId`. The navigation intent `{ section: "models", versionId }` opens the passport directly.
 
 A training run keeps `resultVersionId` after the version is deleted. The training history shows "version deleted" if the version is missing
 from the list read after the run ended (`listedAt`): a version created a moment ago is not taken for a deleted one.

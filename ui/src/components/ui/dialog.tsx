@@ -6,6 +6,16 @@ import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { Button } from "@/components/ui/button"
 
+/** The overlay of every modal: the page dims by 55 % and blurs a little. */
+const dialogOverlayClasses = "fixed inset-0 z-50 bg-black/55 backdrop-blur-xs"
+
+/**
+ * A modal is raised glass at most the window height. One column that may shrink keeps truncated or nowrap children from widening it. A
+ * content with a DialogBody becomes a column: the header and the footer stay, only the body scrolls. The body is a direct child, or it sits
+ * in a DialogForm with the footer, or it is the panel of a tab (TabsContent asChild) of Tabs that fill the dialog.
+ */
+const dialogContentClasses = "glass-raised fixed top-[50%] left-[50%] z-50 grid max-h-[calc(100dvh-3rem)] w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto rounded-xl p-6 text-text-1 outline-none has-[[data-slot=dialog-body]]:flex has-[[data-slot=dialog-body]]:flex-col has-[[data-slot=dialog-body]]:overflow-hidden"
+
 function Dialog({
     ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
@@ -38,7 +48,7 @@ function DialogOverlay({
         <DialogPrimitive.Overlay
             data-slot="dialog-overlay"
             className={cn(
-                "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+                dialogOverlayClasses,
                 className
             )}
             {...props}
@@ -60,7 +70,8 @@ function DialogContent({
             <DialogPrimitive.Content
                 data-slot="dialog-content"
                 className={cn(
-                    "fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg",
+                    dialogContentClasses,
+                    "sm:max-w-lg",
                     className
                 )}
                 {...props}
@@ -69,7 +80,7 @@ function DialogContent({
                 {showCloseButton && (
                     <DialogPrimitive.Close
                         data-slot="dialog-close"
-                        className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+                        className="absolute top-4 right-4 grid size-7 place-items-center rounded-md text-text-2 transition-colors duration-120 ease-glass outline-none hover:bg-glass-fill hover:text-text-1 focus-visible:ring-[3px] focus-visible:ring-focus/30 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
                     >
                         <XIcon />
                         <span className="sr-only"><CloseText /></span>
@@ -84,7 +95,32 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div
             data-slot="dialog-header"
-            className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+            className={cn("flex shrink-0 flex-col gap-2 text-center sm:text-left", className)}
+            {...props}
+        />
+    )
+}
+
+/**
+ * The only scrolling region of a dialog; the header and the footer around it stay in place. It is positioned, so the hidden native inputs
+ * of Radix Select and Checkbox inside it are clipped by it.
+ */
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+    return (
+        <div
+            data-slot="dialog-body"
+            className={cn("relative -mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6", className)}
+            {...props}
+        />
+    )
+}
+
+/** A form that holds the DialogBody and the DialogFooter, so Enter in a field and the submit button of the footer send it. */
+function DialogForm({ className, ...props }: React.ComponentProps<"form">) {
+    return (
+        <form
+            data-slot="dialog-form"
+            className={cn("flex min-h-0 flex-1 flex-col gap-4", className)}
             {...props}
         />
     )
@@ -102,7 +138,7 @@ function DialogFooter({
         <div
             data-slot="dialog-footer"
             className={cn(
-                "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+                "flex shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-end",
                 className
             )}
             {...props}
@@ -124,7 +160,7 @@ function DialogTitle({
     return (
         <DialogPrimitive.Title
             data-slot="dialog-title"
-            className={cn("text-lg leading-none font-semibold", className)}
+            className={cn("text-lg leading-none font-semibold tracking-[-0.02em]", className)}
             {...props}
         />
     )
@@ -145,15 +181,19 @@ function DialogDescription({
 
 export {
     Dialog,
+    DialogBody,
     DialogClose,
     DialogContent,
     DialogDescription,
     DialogFooter,
+    DialogForm,
     DialogHeader,
     DialogOverlay,
     DialogPortal,
     DialogTitle,
     DialogTrigger,
+    dialogContentClasses,
+    dialogOverlayClasses,
 }
 
 function CloseText() {

@@ -47,7 +47,6 @@
   "section": {
     "listUpdated": "{{message}} The list is refreshed.",
     "cleanupPending": "The materials are removed from the catalog. File cleanup continues automatically at the next start of the application.",
-    "hide": "Hide",
     "retry": "Retry",
     "newSetLabel": "Background set name",
     "newSetPlaceholder": "New background set",
@@ -74,22 +73,29 @@
     "chooseSet": "Choose a set on the left to add or view backgrounds.",
     "createFirstSet": "Create the first background set. The frame size must match the model input."
   },
+  "tabs": {
+    "label": "Set content",
+    "backgrounds": "Backgrounds",
+    "add": "Add",
+    "runs": "Preparation",
+    "showRuns": "All runs"
+  },
   "add": {
     "title": "Add backgrounds",
     "description": "Each background is an image of exactly {{width}} × {{height}} px, like the model input. Generation pastes objects onto backgrounds; annotation happens in the images section.",
     "modes": "Way of adding backgrounds"
   },
   "modes": {
-    "ready": { "title": "Ready frames", "hint": "Files already of the right size, imported as they are." },
-    "images": { "title": "Cut from images", "hint": "Large screenshots: you place a frame on each file." },
-    "video": { "title": "Cut from video", "hint": "One frame for the whole video, a shot every N seconds." }
+    "ready": { "title": "Ready", "hint": "Files already of the right size, imported as they are." },
+    "images": { "title": "Images", "hint": "Large screenshots: you place a frame on each file." },
+    "video": { "title": "Video", "hint": "One frame for the whole video, a shot every N seconds." }
   },
   "ready": {
     "note": "Files of another size are not imported: they go to the “Skip reasons” of the run with their actual size.",
     "choose": "Choose files",
     "selected": "Files selected: {{number}}. Of the right size {{width}} × {{height}}: <exact>{{exact}}</exact> will be imported.",
     "skipped": "Will be skipped: {{number}} (larger: {{larger}}, smaller: {{smaller}}, unreadable: {{unreadable}}).",
-    "largerHint": "Large files can be cut with a frame: “Cut from images”."
+    "largerHint": "Large files can be cut with a frame: “Images”."
   },
   "images": {
     "note": "Files show one by one: place a {{width}} × {{height}} px frame on each. Files of exactly this size are taken whole, smaller ones are skipped. Samples come before the import.",
@@ -193,7 +199,6 @@
   },
   "runs": {
     "title": "Background preparation",
-    "active": "running: {{number}}",
     "added": "added {{added}}",
     "addedOf": "added {{added}} of {{requested}}",
     "duplicates": "duplicates {{number}}",
@@ -202,7 +207,8 @@
     "processed": "processed {{processed}} of {{total}}",
     "progress": "Preparation progress",
     "issues": "Skip reasons ({{number}})",
-    "more": "and {{number}} more"
+    "more": "and {{number}} more",
+    "empty": "No runs yet. A started preparation appears here with its progress and result."
   },
   "setDialog": {
     "title": "Edit background set",

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import type { JobResponseDto, JobStatus } from "@/api/jobs/response-dto/job-response-dto";
+import { Progress } from "@/components/layout/progress";
 import { Button } from "@/components/ui/button";
 import { i18n } from "@/i18n";
 import { jobErrorText } from "@/lib/errors";
@@ -21,6 +22,11 @@ export const jobStatusLabels: Readonly<Record<JobStatus, string>> = {
 
 export const count = (value: number) => formatNumber(value);
 
+/** Percent of a job: processed of total when the total is known, otherwise the progress it reports; null — indeterminate. */
+export function jobPercent(job: JobResponseDto): number | null {
+    return job.total ? Math.round(((job.processed ?? 0) / job.total) * 100) : job.progress;
+}
+
 /**
  * A history row of a long operation (image import, background preparation): state, time, the result or "P of T", cancelling
  * a running job, the progress bar and the job error. The owner passes details of the result in children.
@@ -35,25 +41,20 @@ export function JobRunRow({ job, summary, progressLabel, cancel, children }: {
 }) {
     const { t } = useTranslation();
     const active = isJobActive(job);
-    const percent = job.total ? Math.round(((job.processed ?? 0) / job.total) * 100) : job.progress;
     return (
-        <li className="space-y-1 py-2 text-xs" data-job-id={job.id} data-status={job.status}>
+        <li className="space-y-1.5 py-2.5 text-xs" data-job-id={job.id} data-status={job.status}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="flex min-w-0 flex-wrap items-center gap-2">
-                    {active && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
+                <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                    {active && <Loader2 className="size-3.5 animate-spin text-text-2" aria-hidden />}
                     <span className="font-medium">{job.cancelRequested && active ? t("jobs.cancelling") : jobStatusLabels[job.status]}</span>
-                    <span className="text-muted-foreground">{formatDate(job.createdAt)}</span>
+                    <span className="text-text-2">{formatDate(job.createdAt)}</span>
                     {summary ?? (active && job.total !== null && (
-                        <span className="tabular-nums text-muted-foreground">{t("jobs.progress", { processed: count(job.processed ?? 0), total: count(job.total) })}</span>
+                        <span className="tabular-nums text-text-2">{t("jobs.progress", { processed: count(job.processed ?? 0), total: count(job.total) })}</span>
                     ))}
                 </span>
                 {active && <Button size="xs" variant="ghost" disabled={job.cancelRequested} onClick={cancel}>{t("common.cancelAction")}</Button>}
             </div>
-            {active && (
-                <div className="h-1 overflow-hidden rounded-full bg-secondary" role="progressbar" aria-label={progressLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent ?? undefined}>
-                    <div className={percent === null ? "h-full w-1/3 animate-pulse bg-brand" : "h-full bg-brand transition-[width]"} style={percent === null ? undefined : { width: `${percent}%` }} />
-                </div>
-            )}
+            {active && <Progress value={jobPercent(job)} live={job.status === "running"} aria-label={progressLabel} />}
             {!active && job.status !== "succeeded" && job.error && <p className="text-destructive">{jobErrorText(job.error)}</p>}
             {children}
         </li>

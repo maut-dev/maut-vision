@@ -12,7 +12,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogForm, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,7 +31,7 @@ export function useReturnFocus() {
     };
 }
 
-/** A dialog that cannot be closed with Esc, a click outside or the cross while saving. */
+/** A dialog that cannot be closed with Esc, a click outside or the cross while saving; a form in it is a DialogForm with a DialogBody. */
 export function GuardedDialog({ busy, close, testId, children }: { busy: boolean; close: () => void; testId: string; children: ReactNode }) {
     const returnFocus = useReturnFocus();
     return (
@@ -39,7 +39,6 @@ export function GuardedDialog({ busy, close, testId, children }: { busy: boolean
             <DialogContent
                 data-testid={testId}
                 showCloseButton={!busy}
-                className="max-h-[calc(100dvh-3rem)] overflow-y-auto"
                 onEscapeKeyDown={event => { if (busy) event.preventDefault(); }}
                 onInteractOutside={event => { if (busy) event.preventDefault(); }}
                 onCloseAutoFocus={returnFocus}
@@ -89,21 +88,23 @@ export function CatalogEntryDialog({ title, description, initial, busy, error, c
                 <DialogTitle>{title}</DialogTitle>
                 <DialogDescription>{description}</DialogDescription>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="catalog-name">{t("dialog.name")}</Label>
-                    <Input id="catalog-name" data-testid="catalog-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="catalog-description">{t("dialog.description")}</Label>
-                    <Textarea id="catalog-description" className="h-24 resize-none" maxLength={2000} value={text} onChange={event => setText(event.target.value)} />
-                </div>
-                <DialogError error={error} />
+            <DialogForm onSubmit={submit}>
+                <DialogBody className="space-y-4 py-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="catalog-name">{t("dialog.name")}</Label>
+                        <Input id="catalog-name" data-testid="catalog-name" autoFocus required maxLength={120} value={name} onChange={event => setName(event.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="catalog-description">{t("dialog.description")}</Label>
+                        <Textarea id="catalog-description" className="h-24 resize-none" maxLength={2000} value={text} onChange={event => setText(event.target.value)} />
+                    </div>
+                    <DialogError error={error} />
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
                     <Button type="submit" data-testid="catalog-save" disabled={busy || !name.trim()}>{busy ? t("dialog.saving") : t("dialog.save")}</Button>
                 </DialogFooter>
-            </form>
+            </DialogForm>
         </GuardedDialog>
     );
 }
@@ -130,25 +131,27 @@ export function AttachVariantDialog({ variants, busy, error, close, save }: {
                 <DialogTitle>{t("dialog.attachTitle")}</DialogTitle>
                 <DialogDescription>{t("dialog.attachDescription")}</DialogDescription>
             </DialogHeader>
-            <form className="space-y-4" onSubmit={submit}>
-                <div className="space-y-2">
-                    <Label htmlFor="attach-variant">{t("dialog.attachLabel")}</Label>
-                    <Select value={variantId} onValueChange={setVariantId} disabled={busy}>
-                        <SelectTrigger id="attach-variant" data-testid="attach-variant" className="w-full" autoFocus>
-                            <SelectValue placeholder={t("dialog.chooseVariant")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {variants.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">{t("dialog.attachHint")}</p>
-                </div>
-                <DialogError error={error} />
+            <DialogForm onSubmit={submit}>
+                <DialogBody className="space-y-4 py-1">
+                    <div className="space-y-2">
+                        <Label htmlFor="attach-variant">{t("dialog.attachLabel")}</Label>
+                        <Select value={variantId} onValueChange={setVariantId} disabled={busy}>
+                            <SelectTrigger id="attach-variant" data-testid="attach-variant" className="w-full" autoFocus>
+                                <SelectValue placeholder={t("dialog.chooseVariant")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {variants.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <p className="text-xs text-text-2">{t("dialog.attachHint")}</p>
+                    </div>
+                    <DialogError error={error} />
+                </DialogBody>
                 <DialogFooter>
                     <Button type="button" variant="outline" disabled={busy} onClick={close}>{t("dialog.cancel")}</Button>
                     <Button type="submit" data-testid="attach-save" disabled={busy || !variantId}>{busy ? t("dialog.saving") : t("dialog.attach")}</Button>
                 </DialogFooter>
-            </form>
+            </DialogForm>
         </GuardedDialog>
     );
 }

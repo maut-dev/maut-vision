@@ -38,7 +38,7 @@ export function TrainingPresetBar({ presets, presetId, changed, busy, canSave, a
         <div className="space-y-2" data-testid="training-presets">
             <div className="flex flex-wrap items-end gap-2">
                 <label className="space-y-1">
-                    <span className="block text-xs text-muted-foreground">{t("presets.label")}</span>
+                    <span className="block text-xs text-text-2">{t("presets.label")}</span>
                     <Select value={changed ? "" : presetId} onValueChange={id => { if (!id) return; setConfirmDelete(false); apply(id); }} disabled={!presets.length || busy}>
                         <SelectTrigger aria-label={t("presets.label")} className="w-full sm:w-72" data-testid="training-preset">
                             <SelectValue placeholder={presets.length ? t("presets.choose") : t("presets.none")} />
@@ -72,7 +72,7 @@ export function TrainingPresetBar({ presets, presetId, changed, busy, canSave, a
             {name !== undefined && (
                 <div className="flex flex-wrap items-end gap-2">
                     <label className="space-y-1">
-                        <span className="block text-xs text-muted-foreground">{t("presets.name")}</span>
+                        <span className="block text-xs text-text-2">{t("presets.name")}</span>
                         <Input
                             autoFocus
                             className="sm:w-72"
@@ -96,7 +96,7 @@ export function TrainingPresetBar({ presets, presetId, changed, busy, canSave, a
                     <Button type="button" variant="ghost" onClick={() => setName(undefined)}>{t("presets.cancel")}</Button>
                 </div>
             )}
-            <p className="text-xs text-muted-foreground" data-testid="training-preset-hint">
+            <p className="text-xs text-text-2" data-testid="training-preset-hint">
                 {name !== undefined
                     ? overwritten
                         ? t("presets.overwriteHint", { name: overwritten.name })
