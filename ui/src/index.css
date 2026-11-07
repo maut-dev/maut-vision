@@ -346,6 +346,19 @@
         opacity: 1;
     }
 
+    /* The title bar is the caption of the frameless window (WebView2 non-client regions): its background drags the window, a double
+       click maximizes or restores it and a right click opens the system menu. Every control inside stays clickable. */
+    .drag-region {
+        -webkit-app-region: drag;
+        app-region: drag;
+    }
+
+    .drag-region :is(button, a, input, select, textarea, [role="button"], [role="combobox"], [tabindex]),
+    .no-drag {
+        -webkit-app-region: no-drag;
+        app-region: no-drag;
+    }
+
     /* A navigation item of the shell: the current one is raised glass with its icon in the brand colour. */
     .nav-item {
         display: flex;

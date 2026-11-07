@@ -17,6 +17,8 @@ import type { ProjectImportChangedEventDto } from "./event-dto/project-import-ch
 import type { ProjectOpenedEventDto } from "./event-dto/project-opened-event-dto";
 import { isProjectRemovedDto, type ProjectRemovedEventDto } from "./event-dto/project-removed-event-dto";
 import type { LanguageChangedEventDto } from "./event-dto/language-changed-event-dto";
+import type { WindowStateChangedEventDto } from "./event-dto/window-state-changed-event-dto";
+import { isWindowStateResponseDto } from "../window/response-dto/window-state-response-dto";
 import {
     isMcpConfirmationClosedEventData, isMcpOpenProjectEventData, type McpConfirmationClosedEventData, type McpOpenProjectEventData,
 } from "./event-dto/mcp-event-dto";
@@ -172,6 +174,14 @@ export function subscribeLanguageChanged(listener: (event: LanguageChangedEventD
     return nativeBridge.subscribe(event => {
         if (event.event !== "settings.languageChanged" || !isLanguageResponseDto(event.data)) return;
         listener({ kind: "event", event: "settings.languageChanged", data: event.data });
+    });
+}
+
+/** The main window was maximized, restored, minimized or (de)activated, also outside the page (Win+Up, snapping, the drag area). */
+export function subscribeWindowStateChanged(listener: (event: WindowStateChangedEventDto) => void): () => void {
+    return nativeBridge.subscribe(event => {
+        if (event.event !== "window.stateChanged" || !isWindowStateResponseDto(event.data)) return;
+        listener({ kind: "event", event: "window.stateChanged", data: event.data });
     });
 }
 

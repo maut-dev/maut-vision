@@ -22,7 +22,8 @@ internal static partial class SmokeRunner
     /// every tab of backgrounds, images, generation, datasets (and of a chosen dataset), training and checks and in the classes and models
     /// sections the scrolling regions are not nested, at most three and at least 96 px tall. The overview and analytics scroll with the page
     /// and have no scrolling region of their own. The dialog of AI assistants stays inside the window with each tab as its only scroll, the
-    /// same height on every tab and no horizontal overflow with the longest call of the MCP run unfolded in its log.
+    /// same height on every tab and no horizontal overflow with the longest call of the MCP run unfolded in its log. The pieces of the title
+    /// bar do not overlap and leave an empty drag area of at least 24 px, in the library and with a project open.
     /// </summary>
     private static async Task CheckLayoutAsync(CoreWebView2 web, string projectId, SmokeLayoutProbe layout, JsonNode report, CancellationToken token)
     {
@@ -112,10 +113,38 @@ internal static partial class SmokeRunner
             const found = problems();
             if (found.length) throw new Error(place + ' at ' + width + '×' + height + ' (' + label + ') overflows: ' + found.slice(0, 8).join('; '));
           };
+          // The title bar fits the window: its pieces never overlap, stay inside it, the window buttons hold the top right corner and an
+          // empty drag area of at least 24 px is left between the groups.
+          const titleBars = [];
+          const checkTitleBar = place => {
+            const bar = $('[data-testid="title-bar"]');
+            const visible = element => { const box = element.getBoundingClientRect(); return box.width >= 1 && box.height >= 1 && getComputedStyle(element).visibility !== 'hidden'; };
+            const candidates = $$('button, img, [role="img"], span', bar).filter(element => visible(element)
+              && (element.tagName !== 'SPAN' || element.getAttribute('role') === 'img' || element.children.length === 0 && element.textContent.trim()));
+            const pieces = candidates.filter(element => !candidates.some(other => other !== element && other.contains(element)));
+            const viewport = document.documentElement.clientWidth;
+            const problems = [];
+            for (const [index, element] of pieces.entries()) {
+              const box = element.getBoundingClientRect();
+              if (box.left < -0.5 || box.right > viewport + 0.5) problems.push(describe(element) + ' sticks out ' + Math.round(box.left) + '…' + Math.round(box.right));
+              for (const other of pieces.slice(index + 1)) {
+                const next = other.getBoundingClientRect();
+                if (box.left < next.right - 0.5 && next.left < box.right - 0.5 && box.top < next.bottom - 0.5 && next.top < box.bottom - 0.5)
+                  problems.push(describe(element) + ' overlaps ' + describe(other));
+              }
+            }
+            const gap = Math.floor($('[data-testid="title-bar-drag"]', bar).getBoundingClientRect().width);
+            if (gap < 24) problems.push('the drag area is ' + gap + ' px');
+            const close = $('[data-testid="window-close"]', bar).getBoundingClientRect();
+            if (Math.abs(close.right - viewport) > 1 || close.top > 0.5) problems.push('«Закрыть» is not in the top right corner: ' + JSON.stringify(close));
+            if (problems.length) throw new Error('The title bar of ' + place + ' at ' + width + '×' + height + ' (' + label + '): ' + problems.slice(0, 6).join('; '));
+            titleBars.push(place + ' ' + pieces.length + ' pieces, drag area ' + gap + ' px');
+          };
           const headerButton = text => $$('header button').find(item => item.textContent.includes(text));
           headerButton('Все проекты').click();
           await wait(() => $('[data-testid="open-project"]'), 'Library');
           await verify('The library');
+          checkTitleBar('the library');
           headerButton('Базовые модели').click();
           await settle();
           await verify('The base model catalogue');
@@ -125,6 +154,10 @@ internal static partial class SmokeRunner
           assert(target, 'A project is left for the layout check');
           (await wait(() => $('[data-project-id="' + target.id + '"] [data-testid="open-project"]'), 'Project row')).click();
           await wait(() => $('[data-section="overview"]')?.getAttribute('aria-current') === 'page', 'Project opened');
+          await settle();
+          checkTitleBar('a project');
+          assert(true, 'The title bar fits ' + width + '×' + height + ' CSS px (' + label + '): nothing overlaps or sticks out, the window buttons hold the corner ('
+            + titleBars.join(', ') + ')');
           const sections = $$('[data-section]').filter(item => !item.disabled).map(item => item.dataset.section);
           for (const id of sections) {
             $('[data-section="' + id + '"]').click();

@@ -1,4 +1,7 @@
 using MautVision.Core.Interfaces;
+using MautVision.Desktop.Controllers.AppWindow;
+using MautVision.Desktop.Controllers.AppWindow.RequestDto;
+using MautVision.Desktop.Controllers.AppWindow.ResponseDto;
 using MautVision.Desktop.Controllers.BaseModels;
 using MautVision.Desktop.Controllers.BaseModels.RequestDto;
 using MautVision.Desktop.Controllers.BaseModels.ResponseDto;
@@ -244,6 +247,15 @@ internal static class ControllerRegistration
         transport.Register<GetLanguageRequestDto, LanguageResponseDto>("settings.getLanguage", settings.GetLanguageAsync);
         transport.Register<SetLanguageRequestDto, LanguageResponseDto>("settings.setLanguage", settings.SetLanguageAsync);
         return new RegisteredControllers(projects, jobs, overview, hardware);
+    }
+
+    /// <summary>The window buttons of the title bar the page draws: state, minimize, maximize or restore, close (hide in the tray).</summary>
+    internal static void RegisterWindow(BridgeTransport transport, WindowController window)
+    {
+        transport.Register<GetWindowStateRequestDto, WindowStateResponseDto>("window.getState", window.GetStateAsync);
+        transport.Register<MinimizeWindowRequestDto, WindowStateResponseDto>("window.minimize", window.MinimizeAsync);
+        transport.Register<ToggleMaximizeWindowRequestDto, WindowStateResponseDto>("window.toggleMaximize", window.ToggleMaximizeAsync);
+        transport.Register<CloseWindowRequestDto, WindowStateResponseDto>("window.close", window.CloseAsync);
     }
 
     /// <summary>The settings dialog "AI assistants (MCP)": settings, state, call log and confirmations.</summary>

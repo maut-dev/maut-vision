@@ -18,6 +18,12 @@
     "aiAssistants": "AI assistants (MCP)",
     "aiAssistantsRunning": "AI assistants (MCP): the server is running"
   },
+  "window": {
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "close": "Close"
+  },
   "common": {
     "hide": "Hide",
     "retryLoading": "Load again",

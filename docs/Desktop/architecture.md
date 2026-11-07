@@ -38,7 +38,7 @@ Texts of the host (loading window, tray menu and notice, exit question, native f
 relabels the tray at once ([localization](../UI/localization.md#language)).
 
 ```text
-window close button        → window hidden, page hidden
+close button, Alt+F4       → window hidden, page hidden
 started with --tray        → no loading window; the main window stays minimized out of the taskbar and goes to the tray once the library is shown
 tray: click, "Open"        → window and page visible
 tray: "Exit"               → window shown → question if background work runs → unsaved changes guard → cancel transfers → exit
@@ -50,6 +50,28 @@ Session end and the installer request ask nothing and do not hide the window to 
 
 The first window size is 1200×800 DIP, reduced to the screen work area; the minimum size is not larger than that either. The manifest
 enables PerMonitorV2: the window and WebView2 render at the scale of their monitor.
+
+### Frameless window
+
+The main window has no system caption: the page draws the title bar with the window buttons
+([design system](../UI/design-system.md#title-bar)). `WindowChrome` with a zero caption removes the caption but keeps the styles of a sizing
+window, so snapping, Win+arrows, the system menu (Alt+Space), the taskbar and Alt+Tab title and the DWM shadow behave as for a standard
+window; DWM is asked for rounded corners on Windows 11.
+
+WebView2 is a child window that answers the hit tests over itself, so the window cannot resize where WebView2 lies. A normal window keeps a
+band of 6 DIP around WebView2 in the canvas colour; the host answers `WM_NCHITTEST` in the band with the edges and, within 16 DIP of a
+corner, the corners. With `IsNonClientRegionSupportEnabled` WebView2 answers `HTCAPTION` over CSS `app-region: drag`: the title bar drags
+the window, snaps it, maximizes or restores it on a double click and opens the system menu on a right click.
+
+```text
+normal:     | band 6 DIP | WebView2: title bar (app-region: drag → HTCAPTION), page (HTCLIENT) | band 6 DIP |   band → HTLEFT, HTTOPRIGHT…
+maximized:  the window overhangs the monitor by its sizing frame; WebView2 is inset by that overhang to the work area, no band
+```
+
+A maximized window keeps its sizing frame beyond the monitor edges, as Windows positions every sizing window; without the inset the title
+bar and the edges of the page would be cut off. The inset is measured from the window and the work area of its monitor, so the taskbar
+stays visible. The window buttons of the page are bridge requests (`window.minimize`, `window.toggleMaximize`, `window.close`); the close
+button hides the window to the tray like Alt+F4. The loading window is frameless as well and is dragged by any point.
 
 The question before exit is a native message box, not a page dialog: exit does not depend on whether the page responds. The host asks it
 if jobs of open projects are running (`IJobsManager.CountActive`) or an import is in progress. After consent, running exports and imports

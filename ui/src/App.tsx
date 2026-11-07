@@ -6,6 +6,7 @@ import {
     Cpu,
     Database,
     FolderOpen,
+    HardDrive,
     Image,
     Layers,
     LayoutDashboard,
@@ -25,6 +26,7 @@ import { ProjectDeletionDialog } from "@/components/project-deletion-dialog";
 import { ProjectEditor, type ProjectEditorValues } from "@/components/project-editor";
 import { LanguageSelect } from "@/components/language-select";
 import { McpHeader } from "@/components/mcp/mcp-header";
+import { TitleBar } from "@/components/shell/title-bar";
 import { ProjectLibrary } from "@/components/project-library";
 import { OverviewSection, type OverviewTarget } from "@/components/overview/overview-section";
 import { Toast } from "@/components/layout/toast";
@@ -224,41 +226,50 @@ export function App() {
 
     return (
         <div className="flex h-full flex-col text-foreground">
-            {/* The shell (header and sidebar) is the only glass of the page; the content stays on the canvas. */}
-            <header className="glass relative z-10 flex h-14 shrink-0 items-center justify-between gap-4 border-x-0 border-t-0 px-4">
-                <div className="flex min-w-0 items-center gap-3">
-                    <img src="./brand/logo-mark.png" alt="Maut Vision" className="size-8 shrink-0 object-contain" draggable={false} />
-                    <span className="hidden font-semibold tracking-tight sm:inline">Maut Vision</span>
-                    <div className="h-6 border-l border-line-strong" />
-                    <Button size="sm" variant="ghost" className={headerNavClasses} onClick={() => navigate({ kind: "library" })} disabled={busy} aria-current={view.kind === "library" ? "page" : undefined}>
-                        <FolderOpen />{t("app.allProjects")}
-                    </Button>
-                    {project && (
-                        <>
-                            <span className="text-text-3" aria-hidden>/</span>
-                            <Select value={project.id} onValueChange={id => guard(() => void openProject(id))} disabled={busy}>
-                                <SelectTrigger aria-label={t("app.switchProject")} className="w-44 sm:w-64"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {activeProjects.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </>
-                    )}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                    {project && (
-                        <Button size="icon-sm" variant="ghost" aria-label={t("app.projectSettings")} title={t("app.projectSettings")} disabled={busy} onClick={() => editProject(project)}>
-                            <Settings />
+            {/* The shell (title bar and sidebar) is the only glass of the page; the content stays on the canvas. */}
+            <TitleBar
+                failed={setNotice}
+                navigation={(
+                    <>
+                        <Button size="sm" variant="ghost" className={headerNavClasses} onClick={() => navigate({ kind: "library" })} disabled={busy}
+                            aria-current={view.kind === "library" ? "page" : undefined} aria-label={t("app.allProjects")} title={t("app.allProjects")}>
+                            <FolderOpen /><span className="hidden lg:inline">{t("app.allProjects")}</span>
                         </Button>
-                    )}
-                    <Button size="sm" variant="ghost" className={headerNavClasses} onClick={showCatalog} disabled={busy} aria-current={view.kind === "catalog" ? "page" : undefined}>
-                        <Boxes />{t("app.baseModels")}
-                    </Button>
-                    <McpHeader disabled={busy} openProject={projectId => guard(() => void openProject(projectId))} />
-                    <LanguageSelect disabled={busy} failed={setNotice} />
-                    <span className="hidden text-xs text-text-3 lg:block">{t("app.localStorage")}</span>
-                </div>
-            </header>
+                        {project && (
+                            <>
+                                <span className="text-text-3" aria-hidden>/</span>
+                                <Select value={project.id} onValueChange={id => guard(() => void openProject(id))} disabled={busy}>
+                                    <SelectTrigger size="sm" aria-label={t("app.switchProject")} className="w-40 min-w-0 lg:w-60"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {activeProjects.map(item => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </>
+                        )}
+                    </>
+                )}
+                actions={(
+                    <>
+                        {/* Where the data lives: a quiet line on wide windows, an icon with a tooltip otherwise. */}
+                        <span className="no-drag hidden pr-2 text-xs whitespace-nowrap text-text-3 xl:block">{t("app.localStorage")}</span>
+                        <span className="no-drag inline-flex size-8 items-center justify-center text-text-3 xl:hidden" role="img" aria-label={t("app.localStorage")}
+                            title={t("app.localStorage")} data-testid="local-storage">
+                            <HardDrive className="size-4" aria-hidden />
+                        </span>
+                        {project && (
+                            <Button size="icon-sm" variant="ghost" aria-label={t("app.projectSettings")} title={t("app.projectSettings")} disabled={busy} onClick={() => editProject(project)}>
+                                <Settings />
+                            </Button>
+                        )}
+                        <Button size="sm" variant="ghost" className={headerNavClasses} onClick={showCatalog} disabled={busy} aria-current={view.kind === "catalog" ? "page" : undefined}
+                            aria-label={t("app.baseModels")} title={t("app.baseModels")}>
+                            <Boxes /><span className="hidden lg:inline">{t("app.baseModels")}</span>
+                        </Button>
+                        <McpHeader disabled={busy} openProject={projectId => guard(() => void openProject(projectId))} />
+                        <LanguageSelect disabled={busy} failed={setNotice} />
+                    </>
+                )}
+            />
             <div className="flex min-h-0 flex-1">
                 {project && view.kind === "project" && (
                     <aside className="glass flex min-h-0 w-16 shrink-0 flex-col overflow-y-auto overscroll-contain border-y-0 border-l-0 p-2 shadow-none md:w-52 md:p-3">

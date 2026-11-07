@@ -38,6 +38,23 @@ Lime is a rare signal: at most one primary action of a view (`Button variant="br
 "ready" state. The main action inside a form or a dialog is the white `default` button; the rest are `glass`/`outline`, `ghost` or
 `destructive`. `.corners` marks a selected or focused object with the viewfinder corners of the logo (`aria-selected="true"`).
 
+## Title bar
+
+The header of the shell is the title bar of the frameless window ([Desktop](../Desktop/architecture.md#frameless-window)). Its background
+is the caption (`.drag-region`, CSS `app-region: drag`): it drags the window, a double click maximizes or restores it and a right click
+opens the system menu. Every control inside is `no-drag` (buttons, Select triggers, fields and links get it from `.drag-region`; a
+non-interactive element with a tooltip adds `.no-drag`, since a drag area receives no hover).
+
+```tsx
+<TitleBar navigation={<>{allProjects}{projectSelect}</>} actions={<>{settings}{baseModels}{mcp}{language}</>} failed={setNotice} />
+```
+
+Left are the mark, the name (from `md`) and the breadcrumb, right the actions, a divider and the window buttons. The window buttons are
+46 px wide, as tall as the bar and flush with its top right corner: minimize, maximize or restore (the icon follows `window.stateChanged`)
+and close with the `#c42b1c` hover of Windows; they dim while the window is inactive. A flexible spacer between the groups keeps at least
+24 px of drag area at the minimum window, so header buttons become icon-only below `lg` (with an accessible name and a `title`) and quiet
+text becomes an icon with a tooltip below `xl`.
+
 ## Layout primitives
 
 Shared pieces live in `ui/src/components/layout/`: `SectionLayout`, `Pane`, `MasterDetail`, `Panel`, `Collapsible`, `EmptyState`,

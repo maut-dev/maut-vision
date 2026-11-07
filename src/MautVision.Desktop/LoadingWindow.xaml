@@ -3,11 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Maut Vision" Width="420" Height="360" ResizeMode="NoResize"
         Icon="Assets/maut-vision.ico"
-        WindowStartupLocation="CenterScreen" Background="#09090b">
-    <StackPanel Margin="40" VerticalAlignment="Center">
-        <Image Source="Assets/logo-full.png" Width="200" Height="200" Margin="0,0,0,8"
-               RenderOptions.BitmapScalingMode="HighQuality" />
-        <TextBlock x:Name="Message" FontFamily="Segoe UI" FontSize="14"
-                   Foreground="#a1a1aa" HorizontalAlignment="Center" />
-    </StackPanel>
+        WindowStartupLocation="CenterScreen" Background="#07090a"
+        MouseLeftButtonDown="OnMouseLeftButtonDown">
+  <!-- Frameless like the main window: no system caption, the DWM shadow and rounded corners stay; the whole window drags. -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0" ResizeBorderThickness="0" GlassFrameThickness="0,0,0,1" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+  <StackPanel Margin="40" VerticalAlignment="Center">
+    <Image Source="Assets/logo-full.png" Width="200" Height="200" Margin="0,0,0,8"
+           RenderOptions.BitmapScalingMode="HighQuality" />
+    <TextBlock x:Name="Message" FontFamily="Segoe UI" FontSize="14"
+               Foreground="#aab2ab" HorizontalAlignment="Center" />
+  </StackPanel>
 </Window>

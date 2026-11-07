@@ -91,6 +91,7 @@ internal static partial class SmokeRunner
                             await CheckOverviewUiAsync(web, id, final, token);
                             await CheckInsightsLanguageAsync(web, id, host, final, token);
                             await CheckLifecycleAsync(web, root, id, host, final, token);
+                            await CheckWindowControlsAsync(web, host, setMinimized, final, token);
                             await CheckLanguageAsync(web, root, id, host, final, token);
                             // Checked before CheckMcpAsync is compiled: its code refers to the MCP client of the SDK.
                             RequireMcpNotLoaded(final);

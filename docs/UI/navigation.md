@@ -24,8 +24,8 @@ project), Core keeps it.
 Leaving a screen with unsaved changes requires confirmation; the UI enforces this rule for every way of navigating, including the mouse
 and keyboard "back" buttons.
 
-The window close button only hides the window to the tray ([Desktop](../Desktop/architecture.md#window-tray-and-single-instance)), and the
-page becomes hidden. Exit ("Exit" in the tray) does not raise `beforeunload`, so the host first asks the page: the event
+The close button of the title bar (`window.close`) and Alt+F4 only hide the window to the tray
+([Desktop](../Desktop/architecture.md#window-tray-and-single-instance)), and the page becomes hidden. Exit ("Exit" in the tray) does not raise `beforeunload`, so the host first asks the page: the event
 `app.closeRequested {requestId}` and the answer `system.closeDecision {requestId, allow}`. Without unsaved changes the UI answers
 `allow: true`, and the application exits. With changes the UI answers `allow: false` and shows the shared unsaved changes dialog; after
 "save and continue" or "leave without saving" the UI asks the host to complete the exit (`system.close`), and "continue editing" keeps the
